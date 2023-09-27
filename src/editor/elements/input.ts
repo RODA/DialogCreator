@@ -1,4 +1,4 @@
-export type buttonElementType = {
+export type inputElementType = {
     parentId: string;
     type: string;
     name: string;
@@ -12,7 +12,7 @@ export type buttonElementType = {
     conditions: string;
 }
 
-export const buttonElement: buttonElementType = {
+export const inputElement: inputElementType = {
     parentId: '', 
     type: 'Input', 
     name: 'input1', 
