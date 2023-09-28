@@ -8,6 +8,7 @@ export const editorSettings = {
         title: 'New dialog', 
         width: 640, 
         height: 480, 
+        background: '#FFFFFF', 
         dependencies: '' 
     },
 

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8" />
+        <title>Dialog creator</title>
+        <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'" />
+        <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self'" />
+        <link rel="stylesheet" href="../../assets/global.css">
+        <link rel="stylesheet" href="stylesEditor.css">
+    </head>
+
+    <body>
+        <div class="container">
+            <!-- List available elements -->
+            <div class="item elements" id="elementsList"></div>
+            <!-- Dialog area -->
+            <div class="item dialog">
+                <div id="paper"></div>
+                <div id="dlgProps">
+                    <div>
+                        <fieldset>
+                            <legend>Dialog's properties</legend>
+                            <div class="dProp">
+                                <label for="dialogName">Name</label>
+                                <input name="name" id="dialogName" />
+                            </div>
+                            <div class="dProp">
+                                <label for="dialogTitle">Title</label>
+                                <input name="title" id="dialogTitle" />
+                            </div>
+                            <div class="size">
+                                <div class="dProp">
+                                    <label for="dialogWidth">Width</label>
+                                    <input name="width" id="dialogWidth" />
+                                </div>
+                                <div class="dProp">
+                                    <label for="dialogHeight" class="text-center">Height</label>
+                                    <input name="height" id="dialogHeight" />
+                                </div>
+                            </div>
+                            <div class="dProp">
+                                <label for="dialogDependencies">R packages</label>
+                                <input name="dependencies" id="dialogDependencies" placeholder="semicolon (;) separated" />
+                            </div>
+                        </fieldset>
+                    </div>
+                    <div class="dialogButtons">
+                        <button id="dlgSyntax" disabled>Syntax</button>
+                    </div>
+                </div>
+            </div>
+            <!-- Dialog elements area -->
+            <div class="item" id="properties">
+                <!-- <h4>Properties</h4> -->
+                <div id="propertiesList" class="hidden">
+                    <input type="hidden" name="elparentId" id="elparentId" />
+                    <fieldset>
+                        <legend>General</legend>
+                        <!-- all -->
+                        <div class="elprop hidden">
+                            <label for="eltype">Type</label>
+                            <input type="text" disabled name="eltype" id="eltype" readonly />
+                        </div>
+                        <!-- usable -->
+                        <div class="elprop hidden">
+                            <label for="elname">Name (ID)</label>
+                            <input type="text" name="elname" id="elname" />
+                        </div>
+                        <!-- text -->
+                        <div class="elprop hidden">
+                            <label for="eltext">Text</label>
+                            <input type="text" name="eltext" id="eltext" />
+                        </div>
+                        <!-- label -->
+                        <div class="elprop hidden">
+                            <label for="ellabel">Label</label>
+                            <input type="text" name="ellabel" id="ellabel" />
+                        </div>
+                        <!-- Radio Group -->
+                        <div class="elprop hidden">
+                            <label for="elradioGroup">Radio Group</label>
+                            <input type="text" name="elradioGroup" id="elradioGroup" />
+                        </div>
+                    </fieldset>
+                    <fieldset>
+                        <!-- all -->
+                        <legend>Layout properties</legend>
+                        <div class="elprop hidden">
+                            <label for="elleft">Left</label>
+                            <input type="text" name="elleft" id="elleft" />
+                        </div>
+
+                        <!-- container & select -->
+                        <div class="elprop hidden">
+                            <label for="eltop">Top</label>
+                            <input type="text" name="eltop" id="eltop" />
+                        </div>
+                        <div class="elprop hidden">
+                            <label for="elwidth">Width</label>
+                            <input type="text" name="elwidth" id="elwidth" />
+                        </div>
+                        <div class="elprop hidden">
+                            <label for="elheight">Height</label>
+                            <input type="text" name="elheight" id="elheight" />
+                        </div>
+
+                        <!-- Container Type -->
+                        <div class="elprop hidden">
+                            <label for="elobjViewClass">Object class</label>
+                            <select name="elobjViewClass" id="elobjViewClass">
+                                <option value="dataSet">Dataset</option>
+                                <option value="variable">Variable</option>
+                            </select>
+                        </div>
+                        <!-- Parent Container -->
+                        <div class="elprop hidden" id="parentContainer">
+                            <label for="elparentContainer">Parent</label>
+                            <input type="text" name="elparentContainer" id="elparentContainer" />
+                        </div>
+
+                        <!-- label -->
+                        <div class="elprop hidden">
+                            <label for="elfontSize">Font size</label>
+                            <input type="text" name="elfontSize" id="elfontSize" />
+                        </div>
+
+                        <!-- separator -->
+                        <div class="elprop hidden">
+                            <label for="eldirection">Direction</label>
+                            <select name="eldirection" id="eldirection">
+                                <option value="x">Horizontal</option>
+                                <option value="y">Vertical</option>
+                            </select>
+                        </div>
+                        <!-- separator -->
+                        <div class="elprop hidden">
+                            <label for="ellength">Length</label>
+                            <input type="text" name="ellength" id="ellength" />
+                        </div>
+
+                        <!-- Counter start val -->
+                        <div class="elprop hidden">
+                            <label for="elstartval">Start Val</label>
+                            <input type="text" name="elstartval" id="elstartval" />
+                        </div>
+                        <!-- Counter max val -->
+                        <div class="elprop hidden">
+                            <label for="elmaxval">Max val</label>
+                            <input type="text" name="elmaxval" id="elmaxval" />
+                        </div>
+                        <!-- Input val -->
+                        <div class="elprop hidden">
+                            <label for="elvalue">Value</label>
+                            <input type="text" name="elvalue" id="elvalue" />
+                        </div>
+                        <!-- Input val
+                  <div class="elprop hidden">
+                      <label for="eldataValue">Value</label>
+                      <input type="text" name="eldataValue" id="eldataValue"/>
+                  </div> -->
+                        <!-- ============================================== -->
+                        <!-- isVisible -->
+                        <div class="elprop hidden">
+                            <label for="elisVisible">Visible</label>
+                            <select name="elisVisible" id="elisVisible">
+                                <option value="true">Show</option>
+                                <option value="false">Hide</option>
+                            </select>
+                        </div>
+                        <!-- isEnabled -->
+                        <div class="elprop hidden">
+                            <label for="elisEnabled">Enabled</label>
+                            <select name="elisEnabled" id="elisEnabled">
+                                <option value="true">Yes</option>
+                                <option value="false">No</option>
+                            </select>
+                        </div>
+                        <!-- isEnabled -->
+                        <div class="elprop hidden">
+                            <label for="elonClick">Click</label>
+                            <select name="elonClick" id="elonClick">
+                                <option value="run">Run Command</option>
+                                <option value="reset">Reset Dialog</option>
+                            </select>
+                        </div>
+                        <!-- checkbox -->
+                        <div class="elprop hidden">
+                            <label for="elisChecked">Checked</label>
+                            <select name="elisChecked" id="elisChecked">
+                                <option value="true">Yes</option>
+                                <option value="false">No</option>
+                            </select>
+                        </div>
+                        <!-- radiobox -->
+                        <div class="elprop hidden">
+                            <label for="elisSelected">Selected</label>
+                            <select name="elisSelected" id="elisSelected">
+                                <option value="true">Yes</option>
+                                <option value="false">No</option>
+                            </select>
+                        </div>
+                        <!-- select -->
+                        <div class="elprop hidden">
+                            <label for="eldataSource">Data source</label>
+                            <select name="eldataSource" id="eldataSource">
+                                <option value="custom">Custom</option>
+                                <option value="fromR">From R</option>
+                            </select>
+                        </div>
+                        <div class="elprop hidden" id="selectSourceChange"></div>
+                        <div class="elprop" id="selectVariableType">
+                            <label for="elvariableType">Variable type</label>
+                            <input type="text" name="elvariableType" id="elvariableType" />
+                        </div>
+                    </fieldset>
+                    <fieldset>
+                        <legend>Actions</legend>
+                        <div class="text-right">
+                            <button type="button" id="conditions">Conditions</button>
+                            <button type="button" disabled id="removeElement">Remove</button>
+                        </div>
+                    </fieldset>
+                </div>
+            </div>
+        </div>
+    </body>
+
+</html>
