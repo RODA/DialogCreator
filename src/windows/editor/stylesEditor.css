@@ -45,6 +45,9 @@ html, body {
     border: 1px solid #7f7f7f;
     background-color: #a6a6a6;
     height: calc(100vh - 200px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .dialog #dlgProps{
     padding: 0px 0px 5px 0px;
