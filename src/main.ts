@@ -12,8 +12,10 @@ function mainWindow() {
     title: 'Dialog creator',
     webPreferences: {
       preload: path.join(__dirname, "windows/editor/preloadEditor.js"),
+      contextIsolation: process.env.NODE_ENV !== "development" ? true : false,
       // TODO -- use webpack to enable this
       sandbox: false
+    
     },
     width: 1200,
     height: 800,

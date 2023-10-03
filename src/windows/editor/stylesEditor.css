@@ -1,4 +1,5 @@
-html, body {
+html,
+body {
     height: 100%;
     margin: 0;
     padding: 0;
@@ -7,41 +8,46 @@ html, body {
     font-size: 0.9rem;
 }
 
-.container{
+.container {
     display: flex;
     align-items: stretch;
     justify-content: space-around;
 }
-.item{
+
+.item {
     align-items: stretch;
 }
+
 /* Elements */
-.elements{
+.elements {
     flex-grow: 1;
     padding: 20px 10px 0px 10px;
     background-color: #f0f0f0;
     max-width: 250px;
 }
-#paperAvailableElements{
+
+#paperAvailableElements {
     margin: 0px;
     padding: 0px;
     list-style-type: none;
 }
-#paperAvailableElements li{
+
+#paperAvailableElements li {
     cursor: pointer;
     padding: 10px 20px;
     border-bottom: 1px solid #FFF;
 }
 
 /* Dialog properties */
-.dialog{
+.dialog {
     padding: 0px;
     flex-grow: 3;
     display: flex;
     flex-direction: column;
     text-align: center;
 }
-.dialog #paper{
+
+.dialog #paper {
     border: 1px solid #7f7f7f;
     background-color: #a6a6a6;
     height: calc(100vh - 200px);
@@ -49,7 +55,8 @@ html, body {
     align-items: center;
     justify-content: center;
 }
-.dialog #dlgProps{
+
+.dialog #dlgProps {
     padding: 0px 0px 5px 0px;
     background-color: #f0f0f0;
     display: flex;
@@ -57,25 +64,31 @@ html, body {
     border-left: 1px solid #EEE;
     border-right: 1px solid #EEE;
 }
-#dlgProps .dProp{
+
+#dlgProps .dProp {
     margin: 3px 0px;
     align-items: stretch;
     text-align: left;
 }
+
 .size div {
     display: inline-block;
     width: 49%;
 }
-.size .dProp label{
-    width: 78px!important;
+
+.size .dProp label {
+    width: 78px !important;
 }
-.size .dProp input{
-    width: 80px!important;
+
+.size .dProp input {
+    width: 80px !important;
 }
-#dialogDependencies::placeholder{
+
+#dialogDependencies::placeholder {
     color: #a9a9a9;
 }
-#dlgProps label{
+
+#dlgProps label {
     display: inline-block;
     color: #323232;
     width: 80px;
@@ -84,7 +97,8 @@ html, body {
     cursor: pointer;
     text-align: left;
 }
-#dlgProps input{
+
+#dlgProps input {
     box-sizing: border-box;
     display: inline-block;
     width: 250px;
@@ -92,14 +106,17 @@ html, body {
     border: 1px solid #e6e5e5;
     padding: 2px 5px;
 }
-#dlgProps > div{
+
+#dlgProps>div {
     flex-grow: 1;
 }
+
 /* see properties for button style */
-#conditions{
-    margin: 0px!important;
+#conditions {
+    margin: 0px !important;
 }
-#dlgProps:last-child{
+
+#dlgProps:last-child {
     margin: 0px;
     display: flex;
     align-items: center;
@@ -107,7 +124,7 @@ html, body {
 }
 
 /* Element properties */
-#properties{
+#properties {
     padding: 0px 10px 50px 10px;
     background-color: #f0f0f0;
     display: flex;
@@ -116,22 +133,28 @@ html, body {
     max-width: 250px;
     width: 250px;
 }
-#propertiesList h4{
+
+#propertiesList h4 {
     padding: 0px;
     margin: 0px 0px 10px 0px;
     /* text-align: center; */
     text-transform: uppercase;
 }
-#propertiesList .elprop{
+
+#propertiesList .elprop {
     margin: 3px 0px;
     align-items: stretch;
 }
-#propertiesList fieldset,  #dlgProps fieldset{
+
+#propertiesList fieldset,
+#dlgProps fieldset {
     border: 0px;
     margin: 10px 0px;
     padding: 0px;
 }
-#propertiesList fieldset legend, #dlgProps fieldset legend{
+
+#propertiesList fieldset legend,
+#dlgProps fieldset legend {
     color: #000000;
     font-weight: 600;
     padding-bottom: 3px;
@@ -140,20 +163,25 @@ html, body {
     margin-bottom: 10px;
     font-size: 14px;
 }
-#dlgProps fieldset{
+
+#dlgProps fieldset {
     max-width: 340px;
 }
-#dlgProps fieldset legend{
+
+#dlgProps fieldset legend {
     text-align: left;
 }
-#propertiesList label{
+
+#propertiesList label {
     display: inline-block;
     color: #323232;
     width: 110px;
     box-sizing: border-box;
     padding-right: 10px;
 }
-#propertiesList input, #propertiesList select{
+
+#propertiesList input,
+#propertiesList select {
     box-sizing: border-box;
     display: inline-block;
     width: 130px;
@@ -161,44 +189,68 @@ html, body {
     border: 1px solid #e6e5e5;
     padding: 2px 5px;
 }
-#propertiesList input:disabled, #propertiesList input:read-only{
+
+#propertiesList input:disabled,
+#propertiesList input:read-only {
     background-color: #f0f0f0;
 }
-#removeElement, #conditions, #dlgSyntax{
+
+#removeElement,
+#conditions,
+#dlgSyntax {
     margin-top: 0px;
     width: 80px;
     height: 30px;
     cursor: pointer;
     background-color: #f0f0f0;
     border-top: 2px solid #eaeaea;
-    border-left:2px solid #eaeaea;
+    border-left: 2px solid #eaeaea;
     border-bottom: 2px solid #BBB;
     border-right: 2px solid #BBB;
 }
-#removeElement:active, #conditions:active, #dlgSyntax:active{
-    border-left:2px solid #BBB;
+
+#removeElement:active,
+#conditions:active,
+#dlgSyntax:active {
+    border-left: 2px solid #BBB;
     border-top: 2px solid #BBB;
-    border-right:2px solid #d6d6d6;
+    border-right: 2px solid #d6d6d6;
     border-bottom: 2px solid #d6d6d6;
     transition: all;
 }
-#removeElement:disabled, #conditions:disabled, #dlgSyntax:disabled{
-    color:#aaa;
+
+#removeElement:disabled,
+#conditions:disabled,
+#dlgSyntax:disabled {
+    color: #aaa;
 }
-#removeElement:focus, #conditions:focus, #conditions:focus, #dlgSyntax:focus{
+
+#removeElement:focus,
+#conditions:focus,
+#conditions:focus,
+#dlgSyntax:focus {
     outline: none;
 }
-#properties .buttons{
+
+#properties .buttons {
     margin-top: 50px;
     text-align: center;
 }
 
 /* dialog ---------- */
-.dialogButtons{
+.dialogButtons {
     text-align: right;
 }
-#dlgSyntax{
+
+#dlgSyntax {
     display: block;
     margin: 5px 0px;
     width: 150px;
+}
+
+
+/* New classes */
+.selectedElement {
+    outline: 1px dotted dodgerblue;
+    outline-offset: 3px;
 }

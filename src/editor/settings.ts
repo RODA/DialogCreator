@@ -1,5 +1,20 @@
-export const editorSettings = {
-    fontSize: '13px',
+export interface DialogPropertiesInterface {
+    name: string;
+    title: string;
+    width: number;
+    height: number;
+    background: string;
+    dependencies: string;
+}
+export interface EditorSettingsInterface {
+    fontSize: number;
+    fontFamily: string;
+    dialog: DialogPropertiesInterface;
+    availableElements: string[];
+}
+
+export const editorSettings: EditorSettingsInterface = {
+    fontSize: 13,
     fontFamily: 'Arial',
 
     // dialog properties

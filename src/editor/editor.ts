@@ -1,9 +1,9 @@
 import { EventEmitter } from 'events';
 import { editorSettings } from './settings';
-import * as elementsConfig from './elements/index';
-import { elementsInterfaces } from './elements/index';
+import { buttonElementType, checkboxElementType, elements, ElementsInterface } from './elements';
 import { v4 as uuidv4 } from 'uuid';
 import { editorElements, editorElementsTypes } from './editorElements';
+import { dialogContainer } from './editorContainer';
 console.log(editorElements);
 interface EditorInterface {
     dialog: HTMLDivElement;
@@ -11,9 +11,11 @@ interface EditorInterface {
     editorEvents: EventEmitter;
     make: (dialogContainer: HTMLDivElement) => void;
     drawAvailableElements: () => HTMLUListElement;
-    // deselectAll: () => void;
+    deselectAll: () => void;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     addElementToDialog: (type: string, withData?: any) => void;
+    addElementListeners: <T extends (buttonElementType | checkboxElementType) >(element: T) => void;
+    addDragAndDrop:(element: HTMLElement) => void;
 }
 
 export const editor: EditorInterface = {
@@ -32,7 +34,23 @@ export const editor: EditorInterface = {
         editor.dialog.style.height = editorSettings.dialog.height + 'px';
         editor.dialog.style.backgroundColor = editorSettings.dialog.background;
         editor.dialog.style.border = '1px solid gray';
-        // dialog.addEventListener('click', editor.deselectAll);
+        editor.dialog.addEventListener('click', (event) => {
+            // if((event.target as HTMLElement).id === editor.dialogId){
+            editor.deselectAll();
+            // }
+        });
+        editor.dialog.addEventListener("drop", (event) => {
+            // prevent default action (open as link for some elements)
+            event.preventDefault();
+            console.log('drop zone');
+            console.log(event);
+
+            // move dragged element to the selected drop target
+            // if (event.target.className === "dropzone") {
+            //     dragged.parentNode.removeChild(dragged);
+            //     event.target.appendChild(dragged);
+            // }
+        });
 
         dialogContainer.append(editor.dialog)
 
@@ -67,32 +85,22 @@ export const editor: EditorInterface = {
     addElementToDialog: function (type, withData) {
         // checking if there is a paper
         if (editor.dialog) {
-
-
+            // check for method
             if (!editorSettings.availableElements.includes(type) || !Object.hasOwn(editorElements, 'add' + type)) {
                 alert("Element type not available. Probably functionality not added.");
                 return;
             }
-
+            // get passed or default element settings
             let dataSettings;
-
+            const elementType = (type.toLowerCase() + 'Element') as keyof ElementsInterface;
             if (withData !== null) {
                 dataSettings = withData;
             } else {
-                const aa = (type.toLowerCase() + 'Element') as elementsInterfaces;
-                dataSettings = elementsConfig[aa];
+                dataSettings = elements[elementType];
             }
 
-            // checking for duplicate names | checking for the name propertie if exist should not be necessary as all elements should have it           
-            // if (Object.hasOwn(dataSettings, 'name')) {
-            //     dataSettings.name = container.elementNameReturn(dataSettings.name);
-            // }
-
-            // check for wrong values
-            // dataSettings = container.cleanValues(dataSettings);
-
-            editorElements['add' + type as editorElementsTypes](editor.dialog, dataSettings);
-
+            const createdElement = editorElements['add' + type as editorElementsTypes](editor.dialog, dataSettings);
+            editor.addElementListeners(createdElement);
             // adn cover, drag and drop and add it to the container
             // this.addCoverAndDrag(element, dataSettings, false);
 
@@ -102,12 +110,84 @@ export const editor: EditorInterface = {
         }
     },
 
-    // deselectAll: function()
-    // {
-    //     for(const element of editor.elementList){
-    //         // last element in the set should be the cover
-    //         element.items[element.items.length - 1].attr({'stroke-width': 0, 'stroke-opacity': 0});
-    //     }
-    //     // editorWindow.webContents.send('deselectedElements');
-    // },
+    addElementListeners(element) {
+        const htmlCreatedElement = document.getElementById(element.id);
+        if (htmlCreatedElement) {
+            // select element on click
+            htmlCreatedElement.addEventListener('click', (event) => {
+                event.stopPropagation();
+                if (!htmlCreatedElement.classList.contains('selectedElement')) {
+                    editor.deselectAll();
+                    htmlCreatedElement.classList.add('selectedElement');
+                }
+            })
+            
+            editor.addDragAndDrop(htmlCreatedElement);
+
+        } else {
+            throw new Error('Could not find the element!')
+        }
+    },
+
+    addDragAndDrop(htmlCreatedElement) {
+        const dialogW = editor.dialog.getBoundingClientRect().width;
+        const dialogH = editor.dialog.getBoundingClientRect().height;
+        let top = 0;
+        let left = 0;
+        const elementWidth = htmlCreatedElement.getBoundingClientRect().width;
+        const elementHeight = htmlCreatedElement.getBoundingClientRect().height;
+        let offsetX: number = 0, offsetY: number = 0, isDragging = false;
+
+        // Event listeners for mouse down, move, and up events
+        htmlCreatedElement.addEventListener('mousedown', (e) => {
+            isDragging = true;
+
+            // Get the initial mouse position relative to the element
+            offsetX = htmlCreatedElement.parentElement.getBoundingClientRect().left + Math.floor(elementWidth / 2);
+            offsetY = htmlCreatedElement.parentElement.getBoundingClientRect().top + Math.floor(elementHeight / 2);
+
+            // Change cursor style while dragging
+            htmlCreatedElement.style.cursor = 'grabbing';
+
+            if (!htmlCreatedElement.classList.contains('selectedElement')) {
+                editor.deselectAll();
+                htmlCreatedElement.classList.add('selectedElement');
+            }
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            top = e.clientY - offsetY;
+            left = e.clientX - offsetX;
+
+            if (left + elementWidth + 10 > dialogW) { left = dialogW - elementWidth - 10; }
+            if (left < 10) { left = 10; }
+
+            if (top + elementHeight + 10 > dialogH) { top = dialogH - elementHeight - 10; }
+            if (top < 10) { top = 10; }
+
+            // Apply the new position
+            htmlCreatedElement.style.left = left + 'px';
+            htmlCreatedElement.style.top = top + 'px';
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+
+            // Restore cursor style
+            htmlCreatedElement.style.cursor = 'grab';
+        });
+    },
+
+    deselectAll: function () {
+        for (const element of editor.dialog.children) {
+            // last element in the set should be the cover
+            element.classList.remove('selectedElement')
+        }
+        // se va deselecta din container ---  sa dispara proprietatile
+        // editorWindow.webContents.send('deselectedElements');
+    },
+
 }

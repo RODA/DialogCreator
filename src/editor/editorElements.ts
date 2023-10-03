@@ -1,13 +1,13 @@
-import * as elementsConfig from './elements/index';
-
-export type editorElementsTypes = 'addButton';
+import { v4 as uuidv4 } from 'uuid';
+import { ElementsInterface, buttonElementType } from './elements';
+export type editorElementsTypes = 'addButton'
 // | 'addCheckbox' | 'addContainer' | 'addCounter' | 'addInput' | 'addLabel' | 'addRadio' | 'addSelect' | 'addSeparator' | 'addSlider';
 
 export interface EditorElementsInterface {
     fontSize: number;
     fontFamily: string;
     setDefaultFont: (size: number, family: string) => void;
-    addButton: (dialog: HTMLDivElement, data: elementsConfig.buttonElementType) => void;
+    addButton: (dialog: HTMLDivElement, data: buttonElementType) => buttonElementType;
     // addCheckbox: (dialog: HTMLDivElement, data: elementsConfig.checkboxElementType) => void;
     // addContainer: (dialog: HTMLDivElement, data: elementsConfig.containerElementType) => void;
     // addCounter: (dialog: HTMLDivElement, data: elementsConfig.counterElementType) => void;
@@ -44,14 +44,21 @@ export const editorElements: EditorElementsInterface = {
             // label
             button.innerText = data.label
 
+            const buttonId = uuidv4();
+            // on screen
+            button.id = buttonId;
+            // in container
+            data.id = buttonId
+            data.parentId = dialog.id;
+
             if (!data.isEnabled) {
                 button.disabled = true;
             }
             if (!data.isVisible) {
                 button.style.display = 'none';
             }
-
             dialog.appendChild(button);
+            return data;
         } else {
             return;
         }
@@ -434,55 +441,5 @@ export const editorElements: EditorElementsInterface = {
 
     // Helpers
     // ==============================================
-    // Make element + cover draggable
-    // draggable: function (paperEvents, container) {
-    //     var me = this,
-    //         lx = 0,
-    //         ly = 0,
-    //         ox = 0,
-    //         oy = 0,
-    //         pw = this.paper.width,
-    //         ph = this.paper.height,
-    //         moveFnc = function (dx, dy) {
-    //             lx = dx + ox;
-    //             ly = dy + oy;
 
-    //             // do not drag outside - right side
-    //             if (lx + this.attr().width + this.attr().x + 10 > pw) {
-    //                 lx = pw - this.attr().width - this.attr().x - 10;
-    //             }
-    //             // do not drag outside - left side 
-    //             if ((lx + this.attr().x) - 10 < 10) {
-    //                 lx = - this.attr().x + 10;
-    //             }
-
-    //             // do not drag outside - bottom side
-    //             if (ly + this.attr().y + this.attr().height + 10 > ph) {
-    //                 ly = ph - (this.attr().height + this.attr().y) - 10;
-    //             }
-
-    //             // do not drag outside - top side
-    //             if ((ly + this.attr().y) - 10 < 10) {
-    //                 ly = - this.attr().y + 10;
-    //             }
-
-    //             me.transform('T' + lx + ',' + ly);
-    //         },
-    //         startFnc = function () {
-    //             // this is needed for when the paper is resized - elements should update draggable area
-    //             pw = this.paper.width;
-    //             ph = this.paper.height;
-    //         },
-    //         endFnc = function () {
-    //             ox = lx;
-    //             oy = ly;
-    //             // update element position and reload
-    //             let newBBox = me.getBBox();
-    //             container.elements[this.data("elId")].left = Math.round(newBBox.x) + 5;
-    //             container.elements[this.data("elId")].top = Math.round(newBBox.y) + 5;
-    //             paperEvents.emit('getEl', container.getElement(this.data("elId")));
-    //         };
-
-    //     this.drag(moveFnc, startFnc, endFnc);
-    // },
 };
