@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export type buttonElementType = {
     parentId: string;
     id: string;
@@ -10,6 +11,7 @@ export type buttonElementType = {
     onClick: string;
     elementIds: string[];
     conditions: string;
+    [key: string]: any;
 }
 export type checkboxElementType = {
     parentId: string;
@@ -23,6 +25,7 @@ export type checkboxElementType = {
     isEnabled: boolean;
     elementIds: string[];
     conditions: string;
+    [key: string]: any;
 }
 export type containerElementType = {
     parentId: string;
@@ -39,6 +42,7 @@ export type containerElementType = {
     isEnabled: boolean;
     elementIds: string[];
     conditions: string;
+    [key: string]: any;
 }
 export type counterElementType = {
     parentId: string;
@@ -53,6 +57,7 @@ export type counterElementType = {
     isEnabled: boolean;
     elementIds: string[];
     conditions: string;
+    [key: string]: any;
 }
 export type inputElementType = {
     parentId: string;
@@ -66,6 +71,7 @@ export type inputElementType = {
     value: string;
     elementIds: string[];
     conditions: string;
+    [key: string]: any;
 }
 
 export interface ElementsInterface {

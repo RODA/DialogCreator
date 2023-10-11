@@ -1,15 +1,20 @@
 import { DialogPropertiesInterface } from './settings';
 import { ElementsInterface } from './elements';
+
+type Foo<T> = T extends ElementsInterface[keyof ElementsInterface] ? ElementsInterface[keyof ElementsInterface] : never;
+
 interface DialogContainerInterface {
     properties: DialogPropertiesInterface;
-    elements: { [key: string]: keyof ElementsInterface } 
+    elements: { [key: string]: ElementsInterface[keyof ElementsInterface] } 
     syntax: {
         command: string,
         defaultElements: []
     }
     initialize: (obj: DialogPropertiesInterface) => void;
-    updateProperties: (obj: DialogPropertiesInterface) => void;
-    addElement: (parentId: string, element: keyof ElementsInterface, data: any) => {error: boolean; message: string}
+    updateProperties: (id: string, payload: {prop: string, value: string}) => void;
+    addElement: (element: ElementsInterface[keyof ElementsInterface]) => void;
+    removeElement: (elId: string) => void;
+    getElement: (elId: string) => void;
 }
 
 export const dialogContainer: DialogContainerInterface = {
@@ -28,60 +33,55 @@ export const dialogContainer: DialogContainerInterface = {
         this.properties = {...obj};
     },
     
+    
+
     // update dialog props
-    updateProperties: function(obj)
+    updateProperties: function(id, payload)
     {
-        // for new props please define in initialization edior.js : make
-        for (const prop in obj) 
-        {
-            if(prop === 'dependencies' && this.properties[prop].length === 0) {
-                this.properties[prop] = obj[prop];
-            }
-            if(this.properties[prop]) {
-                const idx = prop as keyof DialogPropertiesInterface;
-                this.properties[prop] = obj[idx];
-            }
+        // console.log(id);
+        console.trace(payload);
+        // console.log(dialogContainer.elements);
+        // console.log(dialogContainer.elements[id]);
+
+        const elToUpdate = dialogContainer.elements[id];
+        
+        if(Object.hasOwn(elToUpdate, payload.prop)) {
+            elToUpdate[payload.prop] = payload.value;
         }
+        
+        console.log(dialogContainer.elements);
+        // // for new props please define in initialization edior.js : make
+        // for (const prop in obj) 
+        // {
+        //     if(prop === 'dependencies' && this.properties[prop].length === 0) {
+        //         this.properties[prop] = obj[prop];
+        //     }
+        //     if(this.properties[prop]) {
+        //         const idx = prop as keyof DialogPropertiesInterface;
+        //         this.properties[prop] = obj[idx];
+        //     }
+        // }
     },
 
     // Elements 
     // ======================================
     // add/save an element
-    addElement: function(parentID, element, data) 
+    addElement: function(element) 
     {
-        // data.parentId = parentID;
-
-        // if(element.type == 'set') {
-        //     element.forEach( (element) => {
-        //         data.elementIds.push(element.id);
-        //     });
-        // } else {
-        //     data.elementIds.push(element.id);
-        // }
-
-        // // we are modifying the data object here
-        // let isDataOK = this.prepareData(data);
-        
-        // // add/save element
-        // this.elements[parentID] = Object.assign({}, data);  
-
-        // // check if we have errors | if true show message
-        // if(isDataOK.error){
-        //     return isDataOK;
-        // }
-        // everythig is okay
-        return {error: false, message: ''};
+        dialogContainer.elements[element.id] = {...element};
     },
+
     // remove element from container
-    // removeElement: function(elID)
-    // {
-    //     delete this.elements[elID];
-    // },
-    // // return an element by ID
-    // getElement: function(elId)
-    // {       
-    //     return this.elements[elId];
-    // },
+    removeElement: function(elID)
+    {
+        delete this.elements[elID];
+    },
+
+    // return an element by ID
+    getElement: function(elId)
+    {       
+        return this.elements[elId];
+    },
 
     // Elements helper 
     // ======================================

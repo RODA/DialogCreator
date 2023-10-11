@@ -3,7 +3,7 @@ import { editorSettings } from './settings';
 import { buttonElementType, checkboxElementType, elements, ElementsInterface } from './elements';
 import { v4 as uuidv4 } from 'uuid';
 import { editorElements, editorElementsTypes } from './editorElements';
-import { dialogContainer } from './editorContainer';
+import { dialogContainer } from './dialogContainer';
 console.log(editorElements);
 interface EditorInterface {
     dialog: HTMLDivElement;
@@ -15,7 +15,8 @@ interface EditorInterface {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     addElementToDialog: (type: string, withData?: any) => void;
     addElementListeners: <T extends (buttonElementType | checkboxElementType) >(element: T) => void;
-    addDragAndDrop:(element: HTMLElement) => void;
+    addDragAndDrop: (element: HTMLElement) => void;
+    updateElement: (id: string, payload: { prop: string, value: string }) => void;
 }
 
 export const editor: EditorInterface = {
@@ -42,9 +43,6 @@ export const editor: EditorInterface = {
         editor.dialog.addEventListener("drop", (event) => {
             // prevent default action (open as link for some elements)
             event.preventDefault();
-            console.log('drop zone');
-            console.log(event);
-
             // move dragged element to the selected drop target
             // if (event.target.className === "dropzone") {
             //     dragged.parentNode.removeChild(dragged);
@@ -101,8 +99,7 @@ export const editor: EditorInterface = {
 
             const createdElement = editorElements['add' + type as editorElementsTypes](editor.dialog, dataSettings);
             editor.addElementListeners(createdElement);
-            // adn cover, drag and drop and add it to the container
-            // this.addCoverAndDrag(element, dataSettings, false);
+            dialogContainer.addElement(createdElement);
 
         } else {
             // dialog.showMessageBox(editorWindow, { type: "info", message: "Please create a new dialog first.", title: "No dialog", buttons: ["OK"] });
@@ -120,8 +117,9 @@ export const editor: EditorInterface = {
                     editor.deselectAll();
                     htmlCreatedElement.classList.add('selectedElement');
                 }
+                editor.editorEvents.emit('selectElement', dialogContainer.getElement(element.id));
             })
-            
+
             editor.addDragAndDrop(htmlCreatedElement);
 
         } else {
@@ -189,5 +187,8 @@ export const editor: EditorInterface = {
         // se va deselecta din container ---  sa dispara proprietatile
         // editorWindow.webContents.send('deselectedElements');
     },
+    updateElement(elId, payload) {
 
+        dialogContainer.updateProperties(elId, payload);
+    }
 }
