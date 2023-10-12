@@ -8,6 +8,7 @@ console.log(editorElements);
 interface EditorInterface {
     dialog: HTMLDivElement;
     dialogId: string;
+    selectedElementId: string;
     editorEvents: EventEmitter;
     make: (dialogContainer: HTMLDivElement) => void;
     drawAvailableElements: () => HTMLUListElement;
@@ -16,13 +17,15 @@ interface EditorInterface {
     addElementToDialog: (type: string, withData?: any) => void;
     addElementListeners: <T extends (buttonElementType | checkboxElementType) >(element: T) => void;
     addDragAndDrop: (element: HTMLElement) => void;
-    updateElement: (id: string, payload: { prop: string, value: string }) => void;
+    updateElement: (payload: { prop: string, value: string }) => void;
+    removeSelectedElement: () => void;
 }
 
 export const editor: EditorInterface = {
 
     dialog: document.createElement('div'),
     dialogId: '',
+    selectedElementId: '',
     editorEvents: new EventEmitter(),
     make: (dialogContainer: HTMLDivElement) => {
 
@@ -98,6 +101,7 @@ export const editor: EditorInterface = {
             }
 
             const createdElement = editorElements['add' + type as editorElementsTypes](editor.dialog, dataSettings);
+            console.log(createdElement);
             editor.addElementListeners(createdElement);
             dialogContainer.addElement(createdElement);
 
@@ -113,9 +117,11 @@ export const editor: EditorInterface = {
             // select element on click
             htmlCreatedElement.addEventListener('click', (event) => {
                 event.stopPropagation();
+                editor.selectedElementId = element.id;
                 if (!htmlCreatedElement.classList.contains('selectedElement')) {
                     editor.deselectAll();
                     htmlCreatedElement.classList.add('selectedElement');
+                    
                 }
                 editor.editorEvents.emit('selectElement', dialogContainer.getElement(element.id));
             })
@@ -134,7 +140,7 @@ export const editor: EditorInterface = {
         let left = 0;
         const elementWidth = htmlCreatedElement.getBoundingClientRect().width;
         const elementHeight = htmlCreatedElement.getBoundingClientRect().height;
-        let offsetX: number = 0, offsetY: number = 0, isDragging = false;
+        let offsetX: number = 0, offsetY: number = 0, isDragging = false, isMoved = false;
 
         // Event listeners for mouse down, move, and up events
         htmlCreatedElement.addEventListener('mousedown', (e) => {
@@ -167,8 +173,11 @@ export const editor: EditorInterface = {
             if (top < 10) { top = 10; }
 
             // Apply the new position
+            top = Math.round(top);
+            left = Math.round(left);
             htmlCreatedElement.style.left = left + 'px';
             htmlCreatedElement.style.top = top + 'px';
+            isMoved = true;
         });
 
         document.addEventListener('mouseup', () => {
@@ -177,6 +186,18 @@ export const editor: EditorInterface = {
             // Restore cursor style
             htmlCreatedElement.style.cursor = 'grab';
         });
+
+        htmlCreatedElement.addEventListener('dragend', () => {
+            console.log('dragend');
+        });
+
+        htmlCreatedElement.addEventListener('mouseup', () => {
+            if (isMoved) {
+                dialogContainer.updateProperties(htmlCreatedElement.id, { prop: 'top', value: String(top) });
+                dialogContainer.updateProperties(htmlCreatedElement.id, { prop: 'left', value: String(left) });
+                isMoved = false; // position updated
+            }
+        })
     },
 
     deselectAll: function () {
@@ -184,11 +205,24 @@ export const editor: EditorInterface = {
             // last element in the set should be the cover
             element.classList.remove('selectedElement')
         }
+        editor.selectedElementId = '';
         // se va deselecta din container ---  sa dispara proprietatile
         // editorWindow.webContents.send('deselectedElements');
     },
-    updateElement(elId, payload) {
 
-        dialogContainer.updateProperties(elId, payload);
-    }
+    updateElement(payload) {
+
+        dialogContainer.updateProperties(editor.selectedElementId, payload);
+    },
+
+    // remove element form paper and container
+    removeSelectedElement() {
+        console.log(editor.selectedElementId);
+        
+        // remove from dialog
+        document.getElementById(editor.selectedElementId).remove();
+
+        // remove from container
+        dialogContainer.removeElement(editor.selectedElementId);
+    },
 }

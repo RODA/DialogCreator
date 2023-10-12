@@ -36,6 +36,42 @@ export const editorElements: EditorElementsInterface = {
     // Add button
     addButton: function (dialog, data) {
         if (typeof data === 'object' && !Array.isArray(data)) {
+            
+            const buttonId = uuidv4();
+
+            const dataProxy = new Proxy({ ...data }, {
+                set(obj, key: string, value) {
+
+                    const el = document.getElementById(buttonId) as HTMLButtonElement;
+
+                    switch (key) {
+                        case 'label':
+                            el.innerText = value;
+                            obj[key] = value;
+                            break;
+                        case 'top':
+                            obj[key] = parseInt(value);
+                            if (el) {
+                                el.style.top = value + 'px';
+                            }
+                            break;
+                        case 'left':
+                            obj[key] = parseInt(value);
+                            if (el) {
+                                el.style.left = value + 'px';
+                            }
+                            break;
+                        case 'isEnabled':
+                            obj[key] = value === 'true';
+                            break;
+                        default:
+                            obj[key] = value;
+
+                    }
+                    return true;
+                }
+            })
+
             const button = document.createElement('button');
             // position
             button.style.position = 'absolute';
@@ -44,12 +80,12 @@ export const editorElements: EditorElementsInterface = {
             // label
             button.innerText = data.label
 
-            const buttonId = uuidv4();
+            
             // on screen
             button.id = buttonId;
             // in container
-            data.id = buttonId
-            data.parentId = dialog.id;
+            dataProxy.id = buttonId
+            dataProxy.parentId = dialog.id;
 
             if (!data.isEnabled) {
                 button.disabled = true;
@@ -58,7 +94,7 @@ export const editorElements: EditorElementsInterface = {
                 button.style.display = 'none';
             }
             dialog.appendChild(button);
-            return data;
+            return dataProxy;
         } else {
             return;
         }

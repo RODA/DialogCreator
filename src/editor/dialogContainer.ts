@@ -1,8 +1,6 @@
 import { DialogPropertiesInterface } from './settings';
 import { ElementsInterface } from './elements';
 
-type Foo<T> = T extends ElementsInterface[keyof ElementsInterface] ? ElementsInterface[keyof ElementsInterface] : never;
-
 interface DialogContainerInterface {
     properties: DialogPropertiesInterface;
     elements: { [key: string]: ElementsInterface[keyof ElementsInterface] } 
@@ -38,15 +36,9 @@ export const dialogContainer: DialogContainerInterface = {
     // update dialog props
     updateProperties: function(id, payload)
     {
-        // console.log(id);
-        console.trace(payload);
-        // console.log(dialogContainer.elements);
-        // console.log(dialogContainer.elements[id]);
 
-        const elToUpdate = dialogContainer.elements[id];
-        
-        if(Object.hasOwn(elToUpdate, payload.prop)) {
-            elToUpdate[payload.prop] = payload.value;
+        if(Object.hasOwn(dialogContainer.elements[id], payload.prop)) {
+            dialogContainer.elements[id][payload.prop] = payload.value;
         }
         
         console.log(dialogContainer.elements);
@@ -68,7 +60,7 @@ export const dialogContainer: DialogContainerInterface = {
     // add/save an element
     addElement: function(element) 
     {
-        dialogContainer.elements[element.id] = {...element};
+        dialogContainer.elements[element.id] = element;
     },
 
     // remove element from container

@@ -40,9 +40,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 el.style.display = 'block';
                 el.parentElement.style.display = 'block';
                 el.value = String(element[key as keyof ElementsInterface[keyof ElementsInterface]]);
-                el.addEventListener('blur', (ev) => {
-                    propertyUpdate(element.id, ev);
-                });
+
+                el.removeEventListener('blur', propertyUpdate);
+                el.addEventListener('blur', propertyUpdate);
             }
         }
         // disable update and remove button | force reselection
@@ -55,11 +55,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     });
 
-    const propertyUpdate = (elId: string, ev: FocusEvent) =>
-    {
-        // console.log(ev.target);
+
+    const propertyUpdate = (ev: FocusEvent) => {
         const el = ev.target as HTMLInputElement
-        editor.updateElement(elId, {prop: el.name.substring(2), value: el.value});
+        editor.updateElement({ prop: el.name.substring(2), value: el.value });
 
         // save on blur
         // element.addEventListener('blur', (ev) => {
@@ -84,6 +83,32 @@ document.addEventListener('DOMContentLoaded', () => {
         //     }
         // });
     }
+
+
+    const removeElement = () => {
+        editor.removeSelectedElement()
+        cleaPropsList();
+    }
+
+    // clear element props
+    const cleaPropsList = () => {
+        // clear data form
+        const properties = document.querySelectorAll('#propertiesList [id^="el"]');
+
+        properties.forEach(item => {
+            (item as HTMLInputElement).value = '';
+        });
+
+        // hide props list
+        document.getElementById('propertiesList').style.display = 'none';
+        document.querySelectorAll('#propertiesList .elprop').forEach(item => {
+            item.classList.add('hidden');
+        });
+
+        // disable buttons
+        (document.getElementById('removeElement') as HTMLButtonElement).disabled = true;
+    }
+    document.getElementById('removeElement').addEventListener('click', removeElement);
 
     // draw available elements
     const elementsList = document.getElementById('elementsList');
