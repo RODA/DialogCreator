@@ -19,6 +19,7 @@ interface EditorInterface {
     addDragAndDrop: (element: HTMLElement) => void;
     updateElement: (payload: { prop: string, value: string }) => void;
     removeSelectedElement: () => void;
+    cleaPropsList: () => void;
 }
 
 export const editor: EditorInterface = {
@@ -39,9 +40,11 @@ export const editor: EditorInterface = {
         editor.dialog.style.backgroundColor = editorSettings.dialog.background;
         editor.dialog.style.border = '1px solid gray';
         editor.dialog.addEventListener('click', (event) => {
-            // if((event.target as HTMLElement).id === editor.dialogId){
-            editor.deselectAll();
-            // }
+            if ((event.target as HTMLDivElement).id === editor.dialogId) {
+                console.log('dialog click');
+                
+                editor.deselectAll();
+            }
         });
         editor.dialog.addEventListener("drop", (event) => {
             // prevent default action (open as link for some elements)
@@ -101,7 +104,6 @@ export const editor: EditorInterface = {
             }
 
             const createdElement = editorElements['add' + type as editorElementsTypes](editor.dialog, dataSettings);
-            console.log(createdElement);
             editor.addElementListeners(createdElement);
             dialogContainer.addElement(createdElement);
 
@@ -121,7 +123,7 @@ export const editor: EditorInterface = {
                 if (!htmlCreatedElement.classList.contains('selectedElement')) {
                     editor.deselectAll();
                     htmlCreatedElement.classList.add('selectedElement');
-                    
+
                 }
                 editor.editorEvents.emit('selectElement', dialogContainer.getElement(element.id));
             })
@@ -156,6 +158,7 @@ export const editor: EditorInterface = {
             if (!htmlCreatedElement.classList.contains('selectedElement')) {
                 editor.deselectAll();
                 htmlCreatedElement.classList.add('selectedElement');
+                editor.editorEvents.emit('selectElement', dialogContainer.getElement(htmlCreatedElement.id));
             }
             e.preventDefault();
         });
@@ -206,8 +209,7 @@ export const editor: EditorInterface = {
             element.classList.remove('selectedElement')
         }
         editor.selectedElementId = '';
-        // se va deselecta din container ---  sa dispara proprietatile
-        // editorWindow.webContents.send('deselectedElements');
+        editor.cleaPropsList();
     },
 
     updateElement(payload) {
@@ -217,12 +219,30 @@ export const editor: EditorInterface = {
 
     // remove element form paper and container
     removeSelectedElement() {
-        console.log(editor.selectedElementId);
-        
         // remove from dialog
         document.getElementById(editor.selectedElementId).remove();
-
         // remove from container
         dialogContainer.removeElement(editor.selectedElementId);
+        // clear element properties
+        editor.cleaPropsList();
+    },
+
+    // clear element props
+    cleaPropsList() {
+        // clear data form
+        const properties = document.querySelectorAll('#propertiesList [id^="el"]');
+
+        properties.forEach(item => {
+            (item as HTMLInputElement).value = '';
+        });
+
+        // hide props list
+        document.getElementById('propertiesList').classList.add('hidden');
+        document.querySelectorAll('#propertiesList .element-property').forEach(item => {
+            item.classList.add('hidden-element');
+        });
+
+        // disable buttons
+        (document.getElementById('removeElement') as HTMLButtonElement).disabled = true;
     },
 }

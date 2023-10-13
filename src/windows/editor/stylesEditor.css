@@ -1,3 +1,8 @@
+:root {
+    --main-bg-color: #a6a6a6;
+    --main-blue-color: dodgerblue;
+}
+
 html,
 body {
     height: 100%;
@@ -14,16 +19,12 @@ body {
     justify-content: space-around;
 }
 
-.item {
-    align-items: stretch;
-}
-
-/* Elements */
+/* Elements ===================== */
 .elements {
     flex-grow: 1;
     padding: 20px 10px 0px 10px;
     background-color: #f0f0f0;
-    max-width: 250px;
+    max-width: 200px;
 }
 
 #paperAvailableElements {
@@ -38,7 +39,7 @@ body {
     border-bottom: 1px solid #FFF;
 }
 
-/* Dialog properties */
+/* Dialog properties ===================== */
 .dialog {
     padding: 0px;
     flex-grow: 3;
@@ -47,16 +48,16 @@ body {
     text-align: center;
 }
 
-.dialog #paper {
+.dialog #dialog {
     border: 1px solid #7f7f7f;
-    background-color: #a6a6a6;
+    background-color: var(--main-bg-color);
     height: calc(100vh - 200px);
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-.dialog #dlgProps {
+.dialog #dialogProperties {
     padding: 0px 0px 5px 0px;
     background-color: #f0f0f0;
     display: flex;
@@ -65,65 +66,13 @@ body {
     border-right: 1px solid #EEE;
 }
 
-#dlgProps .dProp {
+#dialogProperties .dialog-property {
     margin: 3px 0px;
     align-items: stretch;
     text-align: left;
 }
 
-.size div {
-    display: inline-block;
-    width: 49%;
-}
-
-.size .dProp label {
-    width: 78px !important;
-}
-
-.size .dProp input {
-    width: 80px !important;
-}
-
-#dialogDependencies::placeholder {
-    color: #a9a9a9;
-}
-
-#dlgProps label {
-    display: inline-block;
-    color: #323232;
-    width: 80px;
-    box-sizing: border-box;
-    padding-right: 10px;
-    cursor: pointer;
-    text-align: left;
-}
-
-#dlgProps input {
-    box-sizing: border-box;
-    display: inline-block;
-    width: 250px;
-    height: 25px;
-    border: 1px solid #e6e5e5;
-    padding: 2px 5px;
-}
-
-#dlgProps>div {
-    flex-grow: 1;
-}
-
-/* see properties for button style */
-#conditions {
-    margin: 0px !important;
-}
-
-#dlgProps:last-child {
-    margin: 0px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Element properties */
+/* Dialog element properties ===================== */
 #properties {
     padding: 0px 10px 50px 10px;
     background-color: #f0f0f0;
@@ -131,126 +80,55 @@ body {
     flex-direction: column;
     flex-grow: 1;
     max-width: 250px;
-    width: 250px;
+    width: 200px;
 }
 
-#propertiesList h4 {
-    padding: 0px;
-    margin: 0px 0px 10px 0px;
-    /* text-align: center; */
-    text-transform: uppercase;
+#propertiesList {
+    padding: 0 5px;
 }
 
-#propertiesList .elprop {
-    margin: 3px 0px;
-    align-items: stretch;
-}
-
-#propertiesList fieldset,
-#dlgProps fieldset {
-    border: 0px;
-    margin: 10px 0px;
-    padding: 0px;
-}
-
-#propertiesList fieldset legend,
-#dlgProps fieldset legend {
-    color: #000000;
-    font-weight: 600;
-    padding-bottom: 3px;
+#propertiesList h2 {
+    font-size: 0.9rem;
     border-bottom: 2px solid #FFF;
-    width: 100%;
-    margin-bottom: 10px;
-    font-size: 14px;
-}
-
-#dlgProps fieldset {
-    max-width: 340px;
-}
-
-#dlgProps fieldset legend {
-    text-align: left;
-}
-
-#propertiesList label {
-    display: inline-block;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
     color: #323232;
-    width: 110px;
-    box-sizing: border-box;
-    padding-right: 10px;
 }
 
-#propertiesList input,
-#propertiesList select {
-    box-sizing: border-box;
-    display: inline-block;
-    width: 130px;
-    height: 25px;
+#propertiesList .element-property {
+    display: grid;
+    grid-template-columns: calc(40% - 5px) calc(60% - 5px);
+    gap: 10px;
+    margin-bottom: 0.5rem;
+    align-items: center;
+}
+
+#propertiesList .element-property label {
+    color: #323232;
+    font-size: 0.8rem;
+}
+
+#propertiesList .element-property input, #propertiesList .element-property select {
+    border-radius: 0px;
     border: 1px solid #e6e5e5;
-    padding: 2px 5px;
+    padding: 3px 3px;
+    color: #323232;
+    font-size: 0.8rem;
 }
 
-#propertiesList input:disabled,
-#propertiesList input:read-only {
-    background-color: #f0f0f0;
+#propertiesList .element-property input:focus-visible, #propertiesList .element-property select:focus-visible {
+    outline: var(--main-blue-color) auto 1px;
+    outline-style: solid;
+}
+#propertiesList .element-property input {
+    padding: 3px 5px;
+}
+#properties .hidden-element {
+    display: none;
 }
 
-#removeElement,
-#conditions,
-#dlgSyntax {
-    margin-top: 0px;
-    width: 80px;
-    height: 30px;
-    cursor: pointer;
-    background-color: #f0f0f0;
-    border-top: 2px solid #eaeaea;
-    border-left: 2px solid #eaeaea;
-    border-bottom: 2px solid #BBB;
-    border-right: 2px solid #BBB;
-}
-
-#removeElement:active,
-#conditions:active,
-#dlgSyntax:active {
-    border-left: 2px solid #BBB;
-    border-top: 2px solid #BBB;
-    border-right: 2px solid #d6d6d6;
-    border-bottom: 2px solid #d6d6d6;
-    transition: all;
-}
-
-#removeElement:disabled,
-#conditions:disabled,
-#dlgSyntax:disabled {
-    color: #aaa;
-}
-
-#removeElement:focus,
-#conditions:focus,
-#conditions:focus,
-#dlgSyntax:focus {
-    outline: none;
-}
-
-#properties .buttons {
-    margin-top: 50px;
-    text-align: center;
-}
-
-/* dialog ---------- */
-.dialogButtons {
-    text-align: right;
-}
-
-#dlgSyntax {
-    display: block;
-    margin: 5px 0px;
-    width: 150px;
-}
-
-
-/* New classes */
+/* =====================*/
 .selectedElement {
-    outline: 1px dotted dodgerblue;
+    outline: 1px dotted var(--main-blue-color);
     outline-offset: 3px;
 }

@@ -41,7 +41,7 @@ export const dialogContainer: DialogContainerInterface = {
             dialogContainer.elements[id][payload.prop] = payload.value;
         }
         
-        console.log(dialogContainer.elements);
+        // console.log(dialogContainer.elements);
         // // for new props please define in initialization edior.js : make
         // for (const prop in obj) 
         // {
