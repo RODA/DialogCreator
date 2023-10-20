@@ -43,7 +43,8 @@ export const editorElements: EditorElementsInterface = {
                 set(obj, key: string, value) {
 
                     const el = document.getElementById(buttonId) as HTMLButtonElement;
-
+                    console.log('key' + key);
+                    
                     switch (key) {
                         case 'label':
                             el.innerText = value;

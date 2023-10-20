@@ -1,5 +1,6 @@
 import { DialogPropertiesInterface } from './settings';
 import { ElementsInterface } from './elements';
+import { ipcRenderer } from 'electron';
 
 interface DialogContainerInterface {
     properties: DialogPropertiesInterface;
@@ -36,11 +37,19 @@ export const dialogContainer: DialogContainerInterface = {
     // update dialog props
     updateProperties: function(id, payload)
     {
-
+        let noPropFound = true;
+        const notFound: string[] = [];
         if(Object.hasOwn(dialogContainer.elements[id], payload.prop)) {
             dialogContainer.elements[id][payload.prop] = payload.value;
+            noPropFound = false;
+        } else {
+            notFound.push(payload.prop)
         }
         
+        if(noPropFound) {
+            ipcRenderer.send('showDialogMessage', {title: 'Notice', message: 'Props "' + notFound.join(',') +'" not found to update!'})
+        }
+
         // console.log(dialogContainer.elements);
         // // for new props please define in initialization edior.js : make
         // for (const prop in obj) 

@@ -215,6 +215,7 @@ export const editor: EditorInterface = {
     updateElement(payload) {
 
         dialogContainer.updateProperties(editor.selectedElementId, payload);
+        console.log(dialogContainer.elements);
     },
 
     // remove element form paper and container

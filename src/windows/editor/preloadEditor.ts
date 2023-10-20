@@ -63,8 +63,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const propertyUpdate = (ev: FocusEvent) => {
-        const el = ev.target as HTMLInputElement
-        editor.updateElement({ prop: el.name.substring(2), value: el.value });
+        const el = ev.target as HTMLInputElement        
+        editor.updateElement({ prop: el.name, value: el.value });
     }
 
     // On Enter blur element so it triggers update
