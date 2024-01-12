@@ -6,7 +6,9 @@ export type editorElementsTypes = 'addButton'
 export interface EditorElementsInterface {
     fontSize: number;
     fontFamily: string;
-    setDefaultFont: (size: number, family: string) => void;
+    maxWidth: number;
+    maxHeight: number;
+    setDefaults: (size: number, family: string, maxWidth: number, maxHeight: number) => void;
     addButton: (dialog: HTMLDivElement, data: buttonElementType) => buttonElementType;
     // addCheckbox: (dialog: HTMLDivElement, data: elementsConfig.checkboxElementType) => void;
     // addContainer: (dialog: HTMLDivElement, data: elementsConfig.containerElementType) => void;
@@ -23,13 +25,17 @@ export interface EditorElementsInterface {
 export const editorElements: EditorElementsInterface = {
 
     // defaults
-    fontSize: 0,
-    fontFamily: '',
+    fontSize: 12,
+    fontFamily: 'Arial, Helvetica, sans-serif',
+    maxWidth: 615,
+    maxHeight: 455,
 
     // set default font size and family
-    setDefaultFont: function (size: number, family: string) {
+    setDefaults: function (size, family, maxWidth, maxHeight) {
         this.fontSize = size;
         this.fontFamily = family;
+        this.maxWidth = maxWidth;
+        this.maxHeight = maxHeight;
     },
     // The elements
     // ==============================================
@@ -43,7 +49,7 @@ export const editorElements: EditorElementsInterface = {
                 set(obj, key: string, value) {
 
                     const el = document.getElementById(buttonId) as HTMLButtonElement;
-                    console.log('key' + key);
+                    console.log(obj);
                     
                     switch (key) {
                         case 'label':
@@ -51,9 +57,11 @@ export const editorElements: EditorElementsInterface = {
                             obj[key] = value;
                             break;
                         case 'top':
-                            obj[key] = parseInt(value);
-                            if (el) {
+                            if (el && editorElements.maxHeight >= value) {
+                                obj[key] = parseInt(value);
                                 el.style.top = value + 'px';
+                            } else {
+                                el.style.top = editorElements.maxHeight + 'px';
                             }
                             break;
                         case 'left':
@@ -81,7 +89,12 @@ export const editorElements: EditorElementsInterface = {
             // label
             button.innerText = data.label
 
+            button.style.maxWidth = editorElements.maxWidth + 'px';
+            button.style.maxHeight = editorElements.maxHeight + 'px';
             
+            button.style.fontFamily = editorElements.fontFamily;
+            button.style.fontSize = editorElements.fontSize + 'px';
+
             // on screen
             button.id = buttonId;
             // in container

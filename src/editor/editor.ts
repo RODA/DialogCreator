@@ -1,10 +1,11 @@
+import { showMessageBox } from './../FrontToBackCommunication';
 import { EventEmitter } from 'events';
 import { editorSettings } from './settings';
 import { buttonElementType, checkboxElementType, elements, ElementsInterface } from './elements';
 import { v4 as uuidv4 } from 'uuid';
 import { editorElements, editorElementsTypes } from './editorElements';
 import { dialogContainer } from './dialogContainer';
-console.log(editorElements);
+
 interface EditorInterface {
     dialog: HTMLDivElement;
     dialogId: string;
@@ -41,35 +42,24 @@ export const editor: EditorInterface = {
         editor.dialog.style.border = '1px solid gray';
         editor.dialog.addEventListener('click', (event) => {
             if ((event.target as HTMLDivElement).id === editor.dialogId) {
-                console.log('dialog click');
-                
                 editor.deselectAll();
             }
         });
         editor.dialog.addEventListener("drop", (event) => {
-            // prevent default action (open as link for some elements)
             event.preventDefault();
-            // move dragged element to the selected drop target
-            // if (event.target.className === "dropzone") {
-            //     dragged.parentNode.removeChild(dragged);
-            //     event.target.appendChild(dragged);
-            // }
         });
 
         dialogContainer.append(editor.dialog)
+        editor.editorEvents.emit('initializeDialogProperties', editorSettings.dialog);
 
-        // // bg id for resize
-        // this.bgId = bgRect.id;
-        // // set paper exists
-        // this.paperExists = true;
-        // // set font size and family
-        // elements.setDefaultFont(this.settings.fontSize, this.settings.fontFamily);
-        // //add info to container - add availabel props
-        // container.initialize(this.settings.dialog);
-        // // emit dialog update
-        editor.editorEvents.emit('dialogUpdate', editorSettings.dialog);
+        editorElements.setDefaults(
+            editorSettings.fontSize,
+            editorSettings.fontFamily,
+            editorSettings.dialog.width - 25, // - gutter
+            editorSettings.dialog.height - 25 // - gutter
+        )
     },
-
+    // called right after make
     drawAvailableElements: () => {
         const ul = document.createElement('ul');
         ul.setAttribute('id', 'paperAvailableElements');
@@ -85,13 +75,13 @@ export const editor: EditorInterface = {
         return ul;
     },
 
-    // add new element on paper
+    // add new element on dialog
     addElementToDialog: function (type, withData) {
-        // checking if there is a paper
-        if (editor.dialog) {
+        // checking if there is a dialog
+        if (editor.dialog && document.getElementById(editor.dialogId) !== null) {
             // check for method
             if (!editorSettings.availableElements.includes(type) || !Object.hasOwn(editorElements, 'add' + type)) {
-                alert("Element type not available. Probably functionality not added.");
+                showMessageBox({ type: 'info', title: 'Notice', message: "Element type not available. Probably functionality not added." })
                 return;
             }
             // get passed or default element settings
@@ -108,11 +98,10 @@ export const editor: EditorInterface = {
             dialogContainer.addElement(createdElement);
 
         } else {
-            // dialog.showMessageBox(editorWindow, { type: "info", message: "Please create a new dialog first.", title: "No dialog", buttons: ["OK"] });
-            alert('Please create a new dialog first.');
+            showMessageBox({ type: 'info', message: "Please create a new dialog first.", title: "No dialog" });
         }
     },
-
+    // add listener to the element
     addElementListeners(element) {
         const htmlCreatedElement = document.getElementById(element.id);
         if (htmlCreatedElement) {
@@ -123,7 +112,6 @@ export const editor: EditorInterface = {
                 if (!htmlCreatedElement.classList.contains('selectedElement')) {
                     editor.deselectAll();
                     htmlCreatedElement.classList.add('selectedElement');
-
                 }
                 editor.editorEvents.emit('selectElement', dialogContainer.getElement(element.id));
             })
@@ -140,13 +128,21 @@ export const editor: EditorInterface = {
         const dialogH = editor.dialog.getBoundingClientRect().height;
         let top = 0;
         let left = 0;
-        const elementWidth = htmlCreatedElement.getBoundingClientRect().width;
-        const elementHeight = htmlCreatedElement.getBoundingClientRect().height;
+        let elementWidth = 0;
+        let elementHeight = 0;
         let offsetX: number = 0, offsetY: number = 0, isDragging = false, isMoved = false;
 
         // Event listeners for mouse down, move, and up events
         htmlCreatedElement.addEventListener('mousedown', (e) => {
             isDragging = true;
+            if (!htmlCreatedElement.classList.contains('selectedElement')) {
+                editor.deselectAll();
+                htmlCreatedElement.classList.add('selectedElement');
+                editor.selectedElementId = htmlCreatedElement.id;
+                editor.editorEvents.emit('selectElement', dialogContainer.getElement(htmlCreatedElement.id));
+            }
+            elementWidth = htmlCreatedElement.getBoundingClientRect().width;
+            elementHeight = htmlCreatedElement.getBoundingClientRect().height;
 
             // Get the initial mouse position relative to the element
             offsetX = htmlCreatedElement.parentElement.getBoundingClientRect().left + Math.floor(elementWidth / 2);
@@ -154,12 +150,6 @@ export const editor: EditorInterface = {
 
             // Change cursor style while dragging
             htmlCreatedElement.style.cursor = 'grabbing';
-
-            if (!htmlCreatedElement.classList.contains('selectedElement')) {
-                editor.deselectAll();
-                htmlCreatedElement.classList.add('selectedElement');
-                editor.editorEvents.emit('selectElement', dialogContainer.getElement(htmlCreatedElement.id));
-            }
             e.preventDefault();
         });
 
@@ -190,15 +180,17 @@ export const editor: EditorInterface = {
             htmlCreatedElement.style.cursor = 'grab';
         });
 
-        htmlCreatedElement.addEventListener('dragend', () => {
+        document.addEventListener('dragend', () => {
             console.log('dragend');
         });
 
-        htmlCreatedElement.addEventListener('mouseup', () => {
+        document.addEventListener('mouseup', () => {
             if (isMoved) {
                 dialogContainer.updateProperties(htmlCreatedElement.id, { prop: 'top', value: String(top) });
                 dialogContainer.updateProperties(htmlCreatedElement.id, { prop: 'left', value: String(left) });
                 isMoved = false; // position updated
+                // TODO -- daca e deasupra la element mai face odata chestia asta
+                editor.editorEvents.emit('selectElement', dialogContainer.getElement(htmlCreatedElement.id));
             }
         })
     },
@@ -213,9 +205,9 @@ export const editor: EditorInterface = {
     },
 
     updateElement(payload) {
-
-        dialogContainer.updateProperties(editor.selectedElementId, payload);
-        console.log(dialogContainer.elements);
+        if (editor.selectedElementId !== '') {
+            dialogContainer.updateProperties(editor.selectedElementId, payload);
+        }
     },
 
     // remove element form paper and container

@@ -1,23 +1,43 @@
 
 import { editor } from "../../editor/editor";
 import { ElementsInterface } from '../../editor/elements';
+import { showMessageBox } from "../../FrontToBackCommunication";
 
 // helpers for when enter key is pressed
 let elementSelected = false;
 let mouseDown = false;
 
-document.addEventListener('DOMContentLoaded', () => {
+// dialog -- the white part
+// editor -- the whole window
+// dialogContainer --
 
-    // show dialog props -- wait for event
-    editor.editorEvents.on('dialogUpdate', function (props) {
+const onInitializeDialogProperties = () => {
+    // add dialog props
+    editor.editorEvents.on('initializeDialogProperties', function (props) {
         const properties: NodeListOf<HTMLInputElement> = document.querySelectorAll('#dialogProperties [id^="dialog"]');
         for (const el of properties) {
             const key = el.getAttribute('name');
             el.value = props[key];
         }
     });
+}
+const onElementSelected = () => {
 
-    // Paper Events ========================================
+    const propertyUpdate = (ev: FocusEvent) => {
+        const el = ev.target as HTMLInputElement
+        editor.updateElement({ prop: el.name, value: el.value });
+    }
+
+    // On Enter blur element so it triggers update
+    const propertyUpdateOnEnter = (ev: KeyboardEvent) => {
+        if (ev.key == 'Enter') {
+            if (elementSelected) {
+                const el = ev.target as HTMLInputElement
+                el.blur();
+            }
+        }
+    }
+    
     // show element properties
     editor.editorEvents.on('selectElement', function (element: ElementsInterface[keyof ElementsInterface]) {
 
@@ -61,92 +81,47 @@ document.addEventListener('DOMContentLoaded', () => {
         // disable update and remove button | force reselection
         (document.getElementById('removeElement') as HTMLButtonElement).disabled = false;
     });
+}
 
-    const propertyUpdate = (ev: FocusEvent) => {
-        const el = ev.target as HTMLInputElement        
-        editor.updateElement({ prop: el.name, value: el.value });
-    }
-
-    // On Enter blur element so it triggers update
-    const propertyUpdateOnEnter = (ev: KeyboardEvent) => {
-        if (ev.key == 'Enter') {
-            if (elementSelected) {
-                const el = ev.target as HTMLInputElement
-                el.blur();
-            }
-        }
-    }
-
-    const removeElement = () => {
-        editor.removeSelectedElement()
-    }
-
-
-    document.getElementById('removeElement').addEventListener('click', removeElement);
-
-    // draw available elements
+const addAvailableElementsToEditor = () => {
     const elementsList = document.getElementById('elementsList');
     if (elementsList) {
         elementsList.innerHTML = '';
+        // add available elements to the editor window
         elementsList.appendChild(editor.drawAvailableElements());
     } else {
-        alert('Cound not find element list!')
+        showMessageBox({ type: 'error', title: 'Error', message: 'Cound not find the element list in editor window. Please check the HTML!' })
     }
-
-    // create new dialog when first opend
-    const dialogContainer = document.getElementById('dialog');
-    if (dialogContainer) {
-        editor.make(dialogContainer as HTMLDivElement);
-    }
+}
+const removeElementFromDialog = () => {
+    // remove on button click
+    document.getElementById('removeElement').addEventListener('click', editor.removeSelectedElement);
 
     // remove the element on delete or backspace key
     document.addEventListener('keyup', function (ev) {
         if (ev.code == 'Delete' || ev.code == 'Backspace') {
             if (elementSelected) {
                 if (document.activeElement.tagName === 'BODY') {
-                    removeElement();
+                    editor.removeSelectedElement();
                 }
             }
         }
     });
+}
 
-    //     // Elements name (id) only leters and numbers and max 15 chars
-    //     $('#elname').on("change paste keyup", function() {
-    //         let newVal = $(this).val().replace(/[^a-z0-9]/g,'');
-    //         newVal = (newVal.length < 15) ? newVal : newVal.slice(0, 15);  
-    //         $(this).val(newVal);
-    //      });
-    //     // this.val.regex(/^[a-z0-9]+$/);
+document.addEventListener('DOMContentLoaded', () => {
 
-    // // update dialog properties
-    // var propertyAddEvent = document.querySelectorAll('#dlgProps [id^="dialog"]');
-    // for(let i = 0; i < propertyAddEvent.length; i++) {
-    //     propertyAddEvent[i].addEventListener('keyup', (ev) => {
-    //         if(ev.which == 13) {
-    //             let properties = $('#dlgProps [id^="dialog"]');
+    // Events - must be first ====
+    onInitializeDialogProperties();
+    onElementSelected();
 
-    //             let obj = {};
-    //             properties.each(function(){
-    //                 let el = $(this);
-    //                 let key = el.attr('name');
-    //                 obj[key] = el.val();
-    //             });                          
-    //            editor.update(obj);
-    //         }
-    //     });
-    //     // save on blur
-    //     propertyAddEvent[i].addEventListener('blur', (ev) => {
-    //         let properties = $('#dlgProps [id^="dialog"]');
-
-    //         let obj = {};
-    //         properties.each(function(){
-    //             let el = $(this);
-    //             let key = el.attr('name');
-    //             obj[key] = el.val();
-    //         });                          
-    //        editor.update(obj);
-    //     });
-    // }
+    // create new dialog when first opened and trigger events 
+    const dialogContainer = document.getElementById('dialog');
+    if (dialogContainer) {
+        editor.make(dialogContainer as HTMLDivElement);
+    }
+    addAvailableElementsToEditor();
+    removeElementFromDialog();
 
 })
 

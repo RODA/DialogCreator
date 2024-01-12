@@ -1,16 +1,16 @@
 import { DialogPropertiesInterface } from './settings';
 import { ElementsInterface } from './elements';
-import { ipcRenderer } from 'electron';
+import { showMessageBox } from '../FrontToBackCommunication';
 
 interface DialogContainerInterface {
     properties: DialogPropertiesInterface;
-    elements: { [key: string]: ElementsInterface[keyof ElementsInterface] } 
+    elements: { [key: string]: ElementsInterface[keyof ElementsInterface] }
     syntax: {
         command: string,
         defaultElements: []
     }
     initialize: (obj: DialogPropertiesInterface) => void;
-    updateProperties: (id: string, payload: {prop: string, value: string}) => void;
+    updateProperties: (id: string, payload: { prop: string, value: string }) => void;
     addElement: (element: ElementsInterface[keyof ElementsInterface]) => void;
     removeElement: (elId: string) => void;
     getElement: (elId: string) => void;
@@ -18,7 +18,7 @@ interface DialogContainerInterface {
 
 export const dialogContainer: DialogContainerInterface = {
 
-    properties: {} as DialogPropertiesInterface, 
+    properties: {} as DialogPropertiesInterface,
     elements: {},
     syntax: {
         command: '',
@@ -27,60 +27,44 @@ export const dialogContainer: DialogContainerInterface = {
 
     // Dialog =======================================
     // dialog properties: name, title, width, height
-    initialize: function(obj) 
-    {
-        this.properties = {...obj};
+    initialize: function (obj) {
+        this.properties = { ...obj };
     },
-    
-    
+
+
 
     // update dialog props
-    updateProperties: function(id, payload)
-    {
+    updateProperties: function (id, payload) {
         let noPropFound = true;
         const notFound: string[] = [];
-        if(Object.hasOwn(dialogContainer.elements[id], payload.prop)) {
+        if (Object.hasOwn(dialogContainer.elements[id], payload.prop)) {
             dialogContainer.elements[id][payload.prop] = payload.value;
             noPropFound = false;
         } else {
             notFound.push(payload.prop)
         }
-        
-        if(noPropFound) {
-            ipcRenderer.send('showDialogMessage', {title: 'Notice', message: 'Props "' + notFound.join(',') +'" not found to update!'})
+
+        if (noPropFound) {
+            showMessageBox({ type: 'warning', title: 'Notice', message: 'Props "' + notFound.join(',') + '" not found to update!' });
         }
 
-        // console.log(dialogContainer.elements);
-        // // for new props please define in initialization edior.js : make
-        // for (const prop in obj) 
-        // {
-        //     if(prop === 'dependencies' && this.properties[prop].length === 0) {
-        //         this.properties[prop] = obj[prop];
-        //     }
-        //     if(this.properties[prop]) {
-        //         const idx = prop as keyof DialogPropertiesInterface;
-        //         this.properties[prop] = obj[idx];
-        //     }
-        // }
+        
     },
 
     // Elements 
     // ======================================
     // add/save an element
-    addElement: function(element) 
-    {
+    addElement: function (element) {
         dialogContainer.elements[element.id] = element;
     },
 
     // remove element from container
-    removeElement: function(elID)
-    {
+    removeElement: function (elID) {
         delete this.elements[elID];
     },
 
     // return an element by ID
-    getElement: function(elId)
-    {       
+    getElement: function (elId) {
         return this.elements[elId];
     },
 
@@ -90,7 +74,7 @@ export const dialogContainer: DialogContainerInterface = {
     // prepareData: function(data)
     // {
     //     let response = { error: false, message: ''};
-        
+
     //     // trim & convert to int data
     //     this.cleanValues(data);
 
@@ -148,10 +132,10 @@ export const dialogContainer: DialogContainerInterface = {
     //         if(this.elements[data.id] !== void 0){
     //             // TO DO - parse conditions before adding them
     //             let isOK = conditions.parseConditions(data.conditions);
-                
+
     //             // console.log(JSON.stringify(isOK));
     //             // console.log(isOK);
-                
+
     //             if(!isOK.error) {
     //                 this.elements[data.id].conditions = data.conditions;
     //                 // data saved - return true
@@ -195,7 +179,7 @@ export const dialogContainer: DialogContainerInterface = {
 
     //     return response;
     // },
-    
+
     // save dialog syntax
     // saveSyntax: function(data)
     // {        

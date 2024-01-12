@@ -14,7 +14,7 @@ function createMainWindow() {
     title: 'Dialog creator',
     webPreferences: {
       preload: path.join(__dirname, "windows/editor/preloadEditor.js"),
-      contextIsolation: process.env.NODE_ENV !== "development" ? true : false,
+      contextIsolation: process.env.NODE_ENV !== "development",
       // TODO -- use webpack to enable this
       sandbox: false
 
@@ -56,6 +56,7 @@ app.on("window-all-closed", () => {
 
 ipcMain.on('showDialogMessage', (event, args) => {
   dialog.showMessageBox(mainWindow, {
+    type: args.type,
     title: args.title,
     message: args.message,
   })
