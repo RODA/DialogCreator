@@ -2,6 +2,7 @@
 import { editor } from "../../editor/editor";
 import { ElementsInterface } from '../../editor/elements';
 import { showMessageBox } from "../../FrontToBackCommunication";
+import { DialogPropertiesInterface } from '../../editor/settings';
 
 // helpers for when enter key is pressed
 let elementSelected = false;
@@ -13,13 +14,47 @@ let mouseDown = false;
 
 const onInitializeDialogProperties = () => {
     // add dialog props
+    const properties: NodeListOf<HTMLInputElement> = document.querySelectorAll('#dialog-properties [id^="dialog"]');
     editor.editorEvents.on('initializeDialogProperties', function (props) {
-        const properties: NodeListOf<HTMLInputElement> = document.querySelectorAll('#dialogProperties [id^="dialog"]');
         for (const el of properties) {
             const key = el.getAttribute('name');
             el.value = props[key];
         }
     });
+
+    // TODO -- ramas aici
+    const getAllProp = (properties: NodeListOf<HTMLInputElement>) => {
+        const obj = {} as DialogPropertiesInterface;
+        properties.forEach((el) => {
+            const key = el.getAttribute('name') as keyof DialogPropertiesInterface;
+            obj[key] = el.value;
+        });
+        return obj;
+    }
+
+    // update dialog properties
+    for (const element of properties) {
+        element.addEventListener('keyup', (ev: KeyboardEvent) => {
+            if (ev.key == 'Enter') {
+                editor.updateDialogProperties(getAllProp(properties));
+            }
+        });
+        // save on blur
+        element.addEventListener('blur', () => {
+            editor.updateDialogProperties(getAllProp(properties));
+        });
+    }
+
+    // add dialog syntax
+    // TODO
+    const dialogSyntax = document.getElementById('#dialog-syntax');
+    if (dialogSyntax) {
+        dialogSyntax.addEventListener('click', function () {
+            // ipcRenderer.send('startSyntaxWindow', editor.getDialogSyntax());
+            alert('click');
+        });
+    }
+
 }
 const onElementSelected = () => {
 
@@ -37,7 +72,7 @@ const onElementSelected = () => {
             }
         }
     }
-    
+
     // show element properties
     editor.editorEvents.on('selectElement', function (element: ElementsInterface[keyof ElementsInterface]) {
 

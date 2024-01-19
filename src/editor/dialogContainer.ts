@@ -10,6 +10,7 @@ interface DialogContainerInterface {
         defaultElements: []
     }
     initialize: (obj: DialogPropertiesInterface) => void;
+    updateDialogProperties: () => void;
     updateProperties: (id: string, payload: { prop: string, value: string }) => void;
     addElement: (element: ElementsInterface[keyof ElementsInterface]) => void;
     removeElement: (elId: string) => void;
@@ -31,9 +32,13 @@ export const dialogContainer: DialogContainerInterface = {
         this.properties = { ...obj };
     },
 
+    updateDialogProperties: () => {
+
+    },
 
 
-    // update dialog props
+    // update dialog element props !!!!!!
+    // TODO refactor name
     updateProperties: function (id, payload) {
         let noPropFound = true;
         const notFound: string[] = [];
@@ -47,8 +52,6 @@ export const dialogContainer: DialogContainerInterface = {
         if (noPropFound) {
             showMessageBox({ type: 'warning', title: 'Notice', message: 'Props "' + notFound.join(',') + '" not found to update!' });
         }
-
-        
     },
 
     // Elements 

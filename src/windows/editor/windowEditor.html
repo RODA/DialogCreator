@@ -18,36 +18,32 @@
             <!-- Dialog area -->
             <div class="dialog">
                 <div id="dialog"></div>
-                <div id="dialogProperties">
+                <h3 id="dialog-properties_title">Dialog's properties</h3>
+                <div id="dialog-properties">
                     <div>
-                        <fieldset>
-                            <legend>Dialog's properties</legend>
-                            <div class="dialog-property">
-                                <label for="dialogName">Name</label>
-                                <input name="name" id="dialogName" />
-                            </div>
-                            <div class="dialog-property">
-                                <label for="dialogTitle">Title</label>
-                                <input name="title" id="dialogTitle" />
-                            </div>
-                            <div class="size">
-                                <div class="dialog-property">
-                                    <label for="dialogWidth">Width</label>
-                                    <input name="width" id="dialogWidth" />
-                                </div>
-                                <div class="dialog-property">
-                                    <label for="dialogHeight" class="text-center">Height</label>
-                                    <input name="height" id="dialogHeight" />
-                                </div>
-                            </div>
-                            <div class="dialog-property">
-                                <label for="dialogDependencies">R packages</label>
-                                <input name="dependencies" id="dialogDependencies" placeholder="semicolon (;) separated" />
-                            </div>
-                        </fieldset>
+                        <div class="dialog-properties_property">
+                            <label for="dialogName">Name</label>
+                            <input name="name" id="dialogName" />
+                        </div>
+                        <div class="dialog-properties_property">
+                            <label for="dialogTitle">Title</label>
+                            <input name="title" id="dialogTitle" />
+                        </div>
+                        <div class="dialog-properties_property">
+                            <label for="dialogWidth">Width</label>
+                            <input name="width" id="dialogWidth" />
+                        </div>
+                        <div class="dialog-properties_property">
+                            <label for="dialogHeight" class="text-center">Height</label>
+                            <input name="height" id="dialogHeight" />
+                        </div>
+                        <!-- <div class="dialog-properties_property">
+                            <label for="dialogDependencies">R packages</label>
+                            <input name="dependencies" id="dialogDependencies" placeholder="semicolon (;) separated" />
+                        </div> -->
                     </div>
                     <div class="dialogButtons">
-                        <button id="dlgSyntax" disabled>Syntax</button>
+                        <button id="dialog-syntax" disabled>Syntax</button>
                     </div>
                 </div>
             </div>

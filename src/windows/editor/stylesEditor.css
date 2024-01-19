@@ -108,7 +108,8 @@ body {
     font-size: 0.8rem;
 }
 
-#propertiesList .element-property input, #propertiesList .element-property select {
+#propertiesList .element-property input,
+#propertiesList .element-property select {
     border-radius: 0px;
     border: 1px solid #e6e5e5;
     padding: 3px 3px;
@@ -116,13 +117,16 @@ body {
     font-size: 0.8rem;
 }
 
-#propertiesList .element-property input:focus-visible, #propertiesList .element-property select:focus-visible {
+#propertiesList .element-property input:focus-visible,
+#propertiesList .element-property select:focus-visible {
     outline: var(--main-blue-color) auto 1px;
     outline-style: solid;
 }
+
 #propertiesList .element-property input {
     padding: 3px 5px;
 }
+
 #properties .hidden-element {
     display: none;
 }
@@ -131,4 +135,51 @@ body {
 .selectedElement {
     outline: 1px dotted var(--main-blue-color);
     outline-offset: 3px;
+}
+
+
+/* ========= Dialog's properties ========= */
+#dialog-properties_title {
+    color: #323232;
+    font-size: 1rem;
+    text-align: left;
+    margin: 1rem 0 0.5rem 0;
+}
+
+#dialog-properties {
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid rgb(213, 213, 213);
+    padding-top: 0.5rem;
+}
+
+#dialog-properties .dialog-properties_property {
+    display: flex;
+    justify-content: space-between;
+    width: 250px;
+    margin: 0.3rem 0;
+    gap: 1rem;
+}
+
+#dialog-properties .dialog-properties_property label {
+    color: #323232;
+    font-size: 0.8rem;
+}
+
+#dialog-properties .dialog-properties_property input {
+    border-radius: 0px;
+    border: 1px solid #e6e5e5;
+    padding: 3px 3px;
+    color: #323232;
+    font-size: 0.8rem;
+}
+
+#dialog-properties .dialog-properties_property input:focus-visible,
+#dialog-properties .dialog-properties_property select:focus-visible {
+    outline: var(--main-blue-color) auto 1px;
+    outline-style: solid;
+}
+
+#dialog-properties .dialog-properties_property input {
+    padding: 3px 5px;
 }

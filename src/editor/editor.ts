@@ -1,6 +1,6 @@
 import { showMessageBox } from './../FrontToBackCommunication';
 import { EventEmitter } from 'events';
-import { editorSettings } from './settings';
+import { DialogPropertiesInterface, editorSettings } from './settings';
 import { buttonElementType, checkboxElementType, elements, ElementsInterface } from './elements';
 import { v4 as uuidv4 } from 'uuid';
 import { editorElements, editorElementsTypes } from './editorElements';
@@ -12,6 +12,7 @@ interface EditorInterface {
     selectedElementId: string;
     editorEvents: EventEmitter;
     make: (dialogContainer: HTMLDivElement) => void;
+    updateDialogProperties: (props: DialogPropertiesInterface) => void;
     drawAvailableElements: () => HTMLUListElement;
     deselectAll: () => void;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -59,6 +60,34 @@ export const editor: EditorInterface = {
             editorSettings.dialog.height - 25 // - gutter
         )
     },
+    // update paper
+    updateDialogProperties: function (props) {
+
+
+        // check for valid paper
+        if (editor.dialogId !== '') {
+
+            // let upSize = false;
+            if (props.width != container.properties.width || props.height != container.properties.height) {
+
+                this.paper.setSize(props.width, props.height);
+                // remove previous bg and create a new one
+                this.paper.getById(this.bgId).remove();
+                let bgRect = this.paper.rect(0, 0, props.width, props.height).attr({ 'fill': '#fdfdfd' }).toBack();
+                bgRect.click(editor.deselectAll);
+                this.bgId = bgRect.id;
+                // upSize = true;                
+            }
+
+            // update container        
+            container.updateProperties(props);
+        } else {
+            // alert no dialog
+            showMessageBox({ type: "info", message: "Please create a new dialog first.", title: "No dialog" });
+        }
+
+    },
+
     // called right after make
     drawAvailableElements: () => {
         const ul = document.createElement('ul');
