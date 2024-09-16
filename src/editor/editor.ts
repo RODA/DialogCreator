@@ -19,7 +19,7 @@ interface EditorInterface {
     addElementToDialog: (type: string, withData?: any) => void;
     addElementListeners: <T extends (buttonElementType | checkboxElementType) >(element: T) => void;
     addDragAndDrop: (element: HTMLElement) => void;
-    updateElement: (payload: { prop: string, value: string }) => void;
+    updateElement: (payload: { [key: string]: string }) => void;
     removeSelectedElement: () => void;
     cleaPropsList: () => void;
 }
@@ -61,26 +61,27 @@ export const editor: EditorInterface = {
         )
     },
     // update paper
-    updateDialogProperties: function (props) {
+    // updateDialogProperties: function (props) {
+    updateDialogProperties: function () {
 
 
         // check for valid paper
         if (editor.dialogId !== '') {
 
-            // let upSize = false;
-            if (props.width != container.properties.width || props.height != container.properties.height) {
+            // // let upSize = false;
+            // if (props.width != container.properties.width || props.height != container.properties.height) {
 
-                this.paper.setSize(props.width, props.height);
-                // remove previous bg and create a new one
-                this.paper.getById(this.bgId).remove();
-                let bgRect = this.paper.rect(0, 0, props.width, props.height).attr({ 'fill': '#fdfdfd' }).toBack();
-                bgRect.click(editor.deselectAll);
-                this.bgId = bgRect.id;
-                // upSize = true;                
-            }
+            //     this.paper.setSize(props.width, props.height);
+            //     // remove previous bg and create a new one
+            //     this.paper.getById(this.bgId).remove();
+            //     let bgRect = this.paper.rect(0, 0, props.width, props.height).attr({ 'fill': '#fdfdfd' }).toBack();
+            //     bgRect.click(editor.deselectAll);
+            //     this.bgId = bgRect.id;
+            //     // upSize = true;
+            // }
 
-            // update container        
-            container.updateProperties(props);
+            // // update container
+            // container.updateProperties(props);
         } else {
             // alert no dialog
             showMessageBox({ type: "info", message: "Please create a new dialog first.", title: "No dialog" });
@@ -207,21 +208,25 @@ export const editor: EditorInterface = {
 
             // Restore cursor style
             htmlCreatedElement.style.cursor = 'grab';
+
+            if (isMoved) {
+                dialogContainer.updateProperties(
+                    htmlCreatedElement.id,
+                    { top: String(top), left: String(left) }
+                );
+
+                isMoved = false; // position updated
+                // TODO -- daca e deasupra la element mai face odata chestia asta
+                editor.editorEvents.emit(
+                    'selectElement',
+                    dialogContainer.getElement(htmlCreatedElement.id)
+                );
+            }
         });
 
         document.addEventListener('dragend', () => {
             console.log('dragend');
         });
-
-        document.addEventListener('mouseup', () => {
-            if (isMoved) {
-                dialogContainer.updateProperties(htmlCreatedElement.id, { prop: 'top', value: String(top) });
-                dialogContainer.updateProperties(htmlCreatedElement.id, { prop: 'left', value: String(left) });
-                isMoved = false; // position updated
-                // TODO -- daca e deasupra la element mai face odata chestia asta
-                editor.editorEvents.emit('selectElement', dialogContainer.getElement(htmlCreatedElement.id));
-            }
-        })
     },
 
     deselectAll: function () {

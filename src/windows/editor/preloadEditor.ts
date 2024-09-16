@@ -2,11 +2,11 @@
 import { editor } from "../../editor/editor";
 import { ElementsInterface } from '../../editor/elements';
 import { showMessageBox } from "../../FrontToBackCommunication";
-import { DialogPropertiesInterface } from '../../editor/settings';
+// import { DialogPropertiesInterface } from '../../editor/settings';
 
 // helpers for when enter key is pressed
 let elementSelected = false;
-let mouseDown = false;
+// let mouseDown = false;
 
 // dialog -- the white part
 // editor -- the whole window
@@ -22,28 +22,28 @@ const onInitializeDialogProperties = () => {
         }
     });
 
-    // TODO -- ramas aici
-    const getAllProp = (properties: NodeListOf<HTMLInputElement>) => {
-        const obj = {} as DialogPropertiesInterface;
-        properties.forEach((el) => {
-            const key = el.getAttribute('name') as keyof DialogPropertiesInterface;
-            obj[key] = el.value;
-        });
-        return obj;
-    }
+    // // TODO -- ramas aici
+    // const getAllProp = (properties: NodeListOf<HTMLInputElement>) => {
+    //     const obj = {} as DialogPropertiesInterface;
+    //     properties.forEach((el) => {
+    //         const key = el.getAttribute('name') as keyof DialogPropertiesInterface;
+    //         obj[key] = el.value;
+    //     });
+    //     return obj;
+    // }
 
-    // update dialog properties
-    for (const element of properties) {
-        element.addEventListener('keyup', (ev: KeyboardEvent) => {
-            if (ev.key == 'Enter') {
-                editor.updateDialogProperties(getAllProp(properties));
-            }
-        });
-        // save on blur
-        element.addEventListener('blur', () => {
-            editor.updateDialogProperties(getAllProp(properties));
-        });
-    }
+    // // update dialog properties
+    // for (const element of properties) {
+    //     element.addEventListener('keyup', (ev: KeyboardEvent) => {
+    //         if (ev.key == 'Enter') {
+    //             editor.updateDialogProperties(getAllProp(properties));
+    //         }
+    //     });
+    //     // save on blur
+    //     element.addEventListener('blur', () => {
+    //         editor.updateDialogProperties(getAllProp(properties));
+    //     });
+    // }
 
     // add dialog syntax
     // TODO
@@ -59,8 +59,8 @@ const onInitializeDialogProperties = () => {
 const onElementSelected = () => {
 
     const propertyUpdate = (ev: FocusEvent) => {
-        const el = ev.target as HTMLInputElement
-        editor.updateElement({ prop: el.name, value: el.value });
+        const el = ev.target as HTMLInputElement;
+        editor.updateElement({ [el.name]: el.value });
     }
 
     // On Enter blur element so it triggers update
@@ -150,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
     onInitializeDialogProperties();
     onElementSelected();
 
-    // create new dialog when first opened and trigger events 
+    // create new dialog when first opened and trigger events
     const dialogContainer = document.getElementById('dialog');
     if (dialogContainer) {
         editor.make(dialogContainer as HTMLDivElement);

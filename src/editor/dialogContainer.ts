@@ -1,6 +1,7 @@
 import { DialogPropertiesInterface } from './settings';
 import { ElementsInterface } from './elements';
 import { showMessageBox } from '../FrontToBackCommunication';
+import { editor } from './editor';
 
 interface DialogContainerInterface {
     properties: DialogPropertiesInterface;
@@ -11,7 +12,7 @@ interface DialogContainerInterface {
     }
     initialize: (obj: DialogPropertiesInterface) => void;
     updateDialogProperties: () => void;
-    updateProperties: (id: string, payload: { prop: string, value: string }) => void;
+    updateProperties: (id: string, payload: { [key: string]: string }) => void;
     addElement: (element: ElementsInterface[keyof ElementsInterface]) => void;
     removeElement: (elId: string) => void;
     getElement: (elId: string) => void;
@@ -38,23 +39,44 @@ export const dialogContainer: DialogContainerInterface = {
 
 
     // update dialog element props !!!!!!
-    // TODO refactor name
     updateProperties: function (id, payload) {
-        let noPropFound = true;
+        const dialogW = editor.dialog.getBoundingClientRect().width;
+        const dialogH = editor.dialog.getBoundingClientRect().height;
         const notFound: string[] = [];
-        if (Object.hasOwn(dialogContainer.elements[id], payload.prop)) {
-            dialogContainer.elements[id][payload.prop] = payload.value;
-            noPropFound = false;
-        } else {
-            notFound.push(payload.prop)
+        const keys = Object.keys(payload);
+
+        for (let i = 0; i < keys.length; i++) {
+            if (Object.hasOwn(dialogContainer.elements[id], keys[i])) {
+                if (keys[i] == "left") {
+                    const elementWidth = document.getElementById(id).getBoundingClientRect().width;
+                    if (Number(payload[keys[i]]) + elementWidth + 10 > dialogW) {
+                        payload[keys[i]] = String(Math.round(dialogW - elementWidth - 10));
+                    }
+                    if (Number(payload[keys[i]]) < 10) { payload[keys[i]] = '10'; }
+                    const elleft = document.getElementById('elleft') as HTMLInputElement;
+                    elleft.value = payload[keys[i]];
+                } else if (keys[i] == "top") {
+                    const elementHeight = document.getElementById(id).getBoundingClientRect().height;
+                    if (Number(payload[keys[i]]) + elementHeight + 10 > dialogH) {
+                        payload[keys[i]] = String(Math.round(dialogH - elementHeight - 10));
+                    }
+                    if (Number(payload[keys[i]]) < 10) { payload[keys[i]] = '10'; }
+                    const eltop = document.getElementById('eltop') as HTMLInputElement;
+                    eltop.value = payload[keys[i]];
+                }
+
+                dialogContainer.elements[id][keys[i]] = payload[keys[i]];
+            } else {
+                notFound.push(keys[i]);
+            }
         }
 
-        if (noPropFound) {
+        if (notFound.length) {
             showMessageBox({ type: 'warning', title: 'Notice', message: 'Props "' + notFound.join(',') + '" not found to update!' });
         }
     },
 
-    // Elements 
+    // Elements
     // ======================================
     // add/save an element
     addElement: function (element) {
@@ -71,7 +93,7 @@ export const dialogContainer: DialogContainerInterface = {
         return this.elements[elId];
     },
 
-    // Elements helper 
+    // Elements helper
     // ======================================
     // clean / make element data
     // prepareData: function(data)
@@ -96,25 +118,25 @@ export const dialogContainer: DialogContainerInterface = {
     // element type container restrinctions
     // elementContainerDataSetExists()
     // {
-    //     for( let el in this.elements) {            
+    //     for( let el in this.elements) {
     //         if( this.elements[el].type == 'Container' && this.elements[el].objViewClass == 'dataSet'){
     //             return true;
     //         }
     //     }
-    //     return false;    
+    //     return false;
     // },
 
     // check if an element with the same name exists an make list with names
     // elementNameList(name)
-    // {          
+    // {
     //     let namesList = [];
     //     let exists = false;
-    //     for( let el in this.elements) {            
+    //     for( let el in this.elements) {
     //         namesList.push(this.elements[el].name);
     //         if( this.elements[el].name == name){
     //             exists = true;
     //         }
-    //     }        
+    //     }
     //     if(exists) {
     //         return namesList;
     //     }
@@ -122,12 +144,12 @@ export const dialogContainer: DialogContainerInterface = {
     // },
     // validate conditions and add them to the element
     // validateConditions : function(data)
-    // {      
+    // {
     //     // if empty string -  remove conditions and save
     //     if(data.conditions === ''){
     //         this.elements[data.id].conditions = '';
     //         return true;
-    //     }    
+    //     }
     //     // we received the data
     //     if(data.id !== void 0 & data.conditions != void 0 & data.name != void 0)
     //     {
@@ -153,7 +175,7 @@ export const dialogContainer: DialogContainerInterface = {
     // Syntax ======================================
     // get all the elements for the dialog syntax
     // dataForSyntax: function()
-    // {        
+    // {
     //     let noElements = Object.keys(this.elements);
     //     let response = { syntax: this.syntax, elements: []};
     //     let radioGroups = {};
@@ -185,10 +207,10 @@ export const dialogContainer: DialogContainerInterface = {
 
     // save dialog syntax
     // saveSyntax: function(data)
-    // {        
+    // {
     //     // update syntax and elements
     //     this.syntax.command = data.command;
-    //     this.syntax.defaultElements = data.defaultElements;       
+    //     this.syntax.defaultElements = data.defaultElements;
 
     //     return true;
     // }
