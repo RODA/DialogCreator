@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
-import { ElementsInterface, buttonElementType } from './elements';
-export type editorElementsTypes = 'addButton'
-// | 'addCheckbox' | 'addContainer' | 'addCounter' | 'addInput' | 'addLabel' | 'addRadio' | 'addSelect' | 'addSeparator' | 'addSlider';
+import { ElementsInterface } from './elements';
+export type editorElementsTypes = 'addButton' | 'addCheckbox'
+// | 'addContainer' | 'addCounter' | 'addInput' | 'addLabel' | 'addRadio' | 'addSelect' | 'addSeparator' | 'addSlider';
 
 export interface EditorElementsInterface {
     fontSize: number;
@@ -9,8 +9,8 @@ export interface EditorElementsInterface {
     maxWidth: number;
     maxHeight: number;
     setDefaults: (size: number, family: string, maxWidth: number, maxHeight: number) => void;
-    addButton: (dialog: HTMLDivElement, data: buttonElementType) => buttonElementType;
-    // addCheckbox: (dialog: HTMLDivElement, data: elementsConfig.checkboxElementType) => void;
+    addButton: (dialog: HTMLDivElement, data: ElementsInterface["buttonElement"]) => ElementsInterface["buttonElement"];
+    addCheckbox: (dialog: HTMLDivElement, data: ElementsInterface["checkboxElement"]) => ElementsInterface["checkboxElement"];
     // addContainer: (dialog: HTMLDivElement, data: elementsConfig.containerElementType) => void;
     // addCounter: (dialog: HTMLDivElement, data: elementsConfig.counterElementType) => void;
     // addInput: (dialog: HTMLDivElement, data: elementsConfig.inputElementType) => void;
@@ -41,15 +41,16 @@ export const editorElements: EditorElementsInterface = {
     // ==============================================
     // Add button
     addButton: function (dialog, data) {
+        // TODO: how to add the property isChecked...??
         if (typeof data === 'object' && !Array.isArray(data)) {
-            
+
             const buttonId = uuidv4();
 
             const dataProxy = new Proxy({ ...data }, {
                 set(obj, key: string, value) {
 
                     const el = document.getElementById(buttonId) as HTMLButtonElement;
-                    
+
                     switch (key) {
                         case 'label':
                             el.innerText = value;
@@ -90,7 +91,7 @@ export const editorElements: EditorElementsInterface = {
 
             button.style.maxWidth = editorElements.maxWidth + 'px';
             button.style.maxHeight = editorElements.maxHeight + 'px';
-            
+
             button.style.fontFamily = editorElements.fontFamily;
             button.style.fontSize = editorElements.fontSize + 'px';
 
@@ -114,65 +115,78 @@ export const editorElements: EditorElementsInterface = {
     },
 
     // Add checkbox
-    // addCheckbox: function (paper, data) {
-    //     if (this.isObject(data)) {
+    addCheckbox: function (dialog, data) {
+        if (typeof data === 'object' && !Array.isArray(data)) {
 
-    //         // check for user input
-    //         if (data.left < 10 || data.left > paper.width - 10) { data.left = 10; }
-    //         if (data.top < 10 || data.top > paper.height - 10) { data.top = 10; }
+            const checkboxId = uuidv4();
 
+            const dataProxy = new Proxy({ ...data }, {
+                set(obj, key: string, value) {
 
-    //         // data.top + 1 fix
-    //         let dataTop = (data.isChecked === 'true') ? parseInt(data.top) + 2 : parseInt(data.top) + 1;
-    //         let dataLeft = parseInt(data.left);
+                    const el = document.getElementById(checkboxId) as HTMLInputElement;
+                    console.log(obj);
 
-    //         // return Raphael object
-    //         var cb = [];
-    //         cb.active = true;
+                    switch (key) {
+                        case 'label':
+                            el.innerText = value;
+                            obj[key] = value;
+                            break;
+                        case 'top':
+                            if (el && editorElements.maxHeight >= value) {
+                                obj[key] = parseInt(value);
+                                el.style.top = value + 'px';
+                            } else {
+                                el.style.top = editorElements.maxHeight + 'px';
+                            }
+                            break;
+                        case 'left':
+                            obj[key] = parseInt(value);
+                            if (el) {
+                                el.style.left = value + 'px';
+                            }
+                            break;
+                        case 'isEnabled':
+                            obj[key] = value === 'true';
+                            break;
+                        default:
+                            obj[key] = value;
 
-    //         // an array because the label might be arranged on multiple lines
-    //         cb.label = new Array(1);
+                    }
+                    return true;
+                }
+            })
 
-    //         var txtanchor = "start";
-    //         var xpos = parseInt(data.left);
-    //         var ypos = dataTop;
-    //         var dim = 12;
+            // create checkbox
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            // position
+            checkbox.style.position = 'absolute';
+            checkbox.style.top = data.top + 'px';
+            checkbox.style.left = data.left + 'px';
+            // label
+            // checkbox.innerText = data.label
 
-    //         // label is to the right
-    //         xpos += 20;
-    //         ypos += dim / 2;
-    //         let label = paper.text(xpos, ypos, data.label).attr({ "text-anchor": txtanchor, "font-size": editorElements.fontSize, "font-family": editorElements.fontFamily });
-    //         let square = paper.rect(dataLeft, dataTop, dim, dim).attr({ fill: (data.isChecked === 'true') ? "#97bd6c" : "#eeeeee", "stroke-width": 1, stroke: "#5d5d5d" });
-    //         let checked;
+            checkbox.style.fontFamily = editorElements.fontFamily;
+            checkbox.style.fontSize = editorElements.fontSize + 'px';
 
-    //         if (data.isChecked === 'true') {
-    //             checked = paper.path([
-    //                 ["M", dataLeft + 0.2 * dim, dataTop + 0.3 * dim],
-    //                 ["l", 0.15 * dim * 2, 0.2 * dim * 2],
-    //                 ["l", 0.3 * dim * 2, -0.45 * dim * 2]
-    //             ]).attr({ "stroke-width": 2 });
-    //         }
+            // on screen
+            checkbox.id = checkboxId;
+            // in container
+            dataProxy.id = checkboxId;
+            dataProxy.parentId = dialog.id;
 
-    //         if (data.isEnabled == 'false') {
-    //             label.attr({ fill: "#848484" });
-    //             square.attr({ fill: "#cccccc", stroke: "#848484" });
-    //             if (data.isChecked === 'true') {
-    //                 checked.attr({ stroke: "#848484" });
-    //             }
-    //         }
-
-    //         let set = paper.set();
-
-    //         if (data.isChecked === 'true') {
-    //             set.push(label, square, checked);
-    //         } else {
-    //             set.push(label, square);
-    //         }
-    //         return set;
-    //     } else {
-    //         return;
-    //     }
-    // },
+            if (!data.isEnabled) {
+                checkbox.disabled = true;
+            }
+            if (!data.isVisible) {
+                checkbox.style.display = 'none';
+            }
+            dialog.appendChild(checkbox);
+            return dataProxy;
+        } else {
+            return;
+        }
+    },
 
     // Add container
     // addContainer: function (paper, data) {
@@ -284,8 +298,8 @@ export const editorElements: EditorElementsInterface = {
     // },
 
     // Label element
-    // addLabel: function(paper, data) 
-    // {             
+    // addLabel: function(paper, data)
+    // {
     //     if( this.isObject(data) ) {
 
     //         // check for user input
@@ -307,8 +321,8 @@ export const editorElements: EditorElementsInterface = {
     // Add plot
     // addPlot: function(paper, data)
     // {
-    //     if( this.isObject(data) ) 
-    //     {    
+    //     if( this.isObject(data) )
+    //     {
     //         // data to int
     //         let dataLeft = parseInt(data.left);
     //         let dataTop = parseInt(data.top);
@@ -334,8 +348,8 @@ export const editorElements: EditorElementsInterface = {
     // Add radio button
     // addRadio: function(paper, data)
     // {
-    //     if( this.isObject(data) ) 
-    //     {    
+    //     if( this.isObject(data) )
+    //     {
     //         let dataLeft = parseInt(data.left)+7;
     //         let dataTop = parseInt(data.top)+7;
 
@@ -410,8 +424,8 @@ export const editorElements: EditorElementsInterface = {
     //         if(data.top < 15 || data.top > paper.height - 15){ data.top = 15; }
 
     //         // return Raphael object
-    //         if(data.direction == 'x') 
-    //         {    
+    //         if(data.direction == 'x')
+    //         {
     //             // width to big
     //             if(data.length < 50) { data.length = 50; }
     //             else if(data.length > paper.width - 30) { data.length = paper.width - 30; data.left = 15;}
@@ -419,9 +433,9 @@ export const editorElements: EditorElementsInterface = {
     //             let v = parseInt(data.length) + parseInt(data.left);
 
     //             return paper.path("M" + data.left + " " + data.top + "L"+ v +" " + data.top).attr({stroke: "#5d5d5d"});
-    //         } 
-    //         else if(data.direction == 'y') 
-    //         {    
+    //         }
+    //         else if(data.direction == 'y')
+    //         {
     //             // width to big
     //             if(data.length < 50) { data.length = 50; }
     //             else if(data.length > paper.height - 30) { data.length = paper.height - 30; data.top = 15;}
