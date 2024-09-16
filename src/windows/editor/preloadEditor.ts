@@ -2,7 +2,7 @@
 import { editor } from "../../editor/editor";
 import { ElementsInterface } from '../../editor/elements';
 import { showMessageBox } from "../../FrontToBackCommunication";
-// import { DialogPropertiesInterface } from '../../editor/settings';
+import { DialogPropertiesInterface } from '../../editor/settings';
 
 // helpers for when enter key is pressed
 let elementSelected = false;
@@ -22,28 +22,29 @@ const onInitializeDialogProperties = () => {
         }
     });
 
-    // // TODO -- ramas aici
-    // const getAllProp = (properties: NodeListOf<HTMLInputElement>) => {
-    //     const obj = {} as DialogPropertiesInterface;
-    //     properties.forEach((el) => {
-    //         const key = el.getAttribute('name') as keyof DialogPropertiesInterface;
-    //         obj[key] = el.value;
-    //     });
-    //     return obj;
-    // }
+    // TODO -- ramas aici
+    const getAllProp = (properties: NodeListOf<HTMLInputElement>) => {
+        const obj = {} as DialogPropertiesInterface;
+        properties.forEach((el) => {
+            // const key = el.getAttribute('name') as keyof DialogPropertiesInterface;
+            // obj[key] = el.value;
+            obj.name = el.value;
+        });
+        return obj;
+    }
 
-    // // update dialog properties
-    // for (const element of properties) {
-    //     element.addEventListener('keyup', (ev: KeyboardEvent) => {
-    //         if (ev.key == 'Enter') {
-    //             editor.updateDialogProperties(getAllProp(properties));
-    //         }
-    //     });
-    //     // save on blur
-    //     element.addEventListener('blur', () => {
-    //         editor.updateDialogProperties(getAllProp(properties));
-    //     });
-    // }
+    // update dialog properties
+    for (const element of properties) {
+        element.addEventListener('keyup', (ev: KeyboardEvent) => {
+            if (ev.key == 'Enter') {
+                editor.updateDialogProperties(getAllProp(properties));
+            }
+        });
+        // save on blur
+        element.addEventListener('blur', () => {
+            editor.updateDialogProperties(getAllProp(properties));
+        });
+    }
 
     // add dialog syntax
     // TODO

@@ -17,11 +17,11 @@ export const editorSettings: EditorSettingsInterface = {
     fontFamily: 'Arial',
 
     // dialog properties
-    dialog: { 
-        name: 'NewDialog', 
-        title: 'New dialog', 
-        width: 640, 
-        height: 480, 
+    dialog: {
+        name: 'NewDialog',
+        title: 'New dialog',
+        width: 640,
+        height: 480,
         background: '#FFFFFF',
     },
 
