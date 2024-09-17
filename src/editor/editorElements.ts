@@ -41,7 +41,6 @@ export const editorElements: EditorElementsInterface = {
     // ==============================================
     // Add button
     addButton: function (dialog, data) {
-        // TODO: how to add the property isChecked...??
         if (typeof data === 'object' && !Array.isArray(data)) {
 
             const buttonId = uuidv4();
@@ -116,15 +115,14 @@ export const editorElements: EditorElementsInterface = {
 
     // Add checkbox
     addCheckbox: function (dialog, data) {
+        // TODO: how to add the property isChecked, in the property panel...????
         if (typeof data === 'object' && !Array.isArray(data)) {
 
             const checkboxId = uuidv4();
 
             const dataProxy = new Proxy({ ...data }, {
                 set(obj, key: string, value) {
-
                     const el = document.getElementById(checkboxId) as HTMLInputElement;
-                    console.log(obj);
 
                     switch (key) {
                         case 'label':
@@ -163,8 +161,6 @@ export const editorElements: EditorElementsInterface = {
             checkbox.style.position = 'absolute';
             checkbox.style.top = data.top + 'px';
             checkbox.style.left = data.left + 'px';
-            // label
-            // checkbox.innerText = data.label
 
             checkbox.style.fontFamily = editorElements.fontFamily;
             checkbox.style.fontSize = editorElements.fontSize + 'px';
