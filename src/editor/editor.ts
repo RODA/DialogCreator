@@ -21,7 +21,7 @@ interface EditorInterface {
     addDragAndDrop: (element: HTMLElement) => void;
     updateElement: (payload: { [key: string]: string }) => void;
     removeSelectedElement: () => void;
-    cleaPropsList: () => void;
+    clearPropsList: () => void;
 }
 
 export const editor: EditorInterface = {
@@ -110,8 +110,15 @@ export const editor: EditorInterface = {
         // checking if there is a dialog
         if (editor.dialog && document.getElementById(editor.dialogId) !== null) {
             // check for method
-            if (!editorSettings.availableElements.includes(type) || !Object.hasOwn(editorElements, 'add' + type)) {
-                showMessageBox({ type: 'info', title: 'Notice', message: "Element type not available. Probably functionality not added." })
+            if (
+                !editorSettings.availableElements.includes(type) ||
+                !Object.hasOwn(editorElements, 'add' + type))
+            {
+                showMessageBox({
+                    type: 'info',
+                    title: 'Notice',
+                    message: "Element type not available. Probably functionality not added."
+                })
                 return;
             }
             // get passed or default element settings
@@ -122,7 +129,7 @@ export const editor: EditorInterface = {
             } else {
                 dataSettings = elements[elementType];
             }
-
+console.log(dataSettings);
             const createdElement = editorElements['add' + type as editorElementsTypes](editor.dialog, dataSettings);
             editor.addElementListeners(createdElement);
             dialogContainer.addElement(createdElement);
@@ -143,7 +150,8 @@ export const editor: EditorInterface = {
                     editor.deselectAll();
                     htmlCreatedElement.classList.add('selectedElement');
                 }
-                editor.editorEvents.emit('selectElement', dialogContainer.getElement(element.id));
+                // there is another emit on the "mousedown" event, this does it twice
+                // editor.editorEvents.emit('selectElement', dialogContainer.getElement(element.id));
             })
 
             editor.addDragAndDrop(htmlCreatedElement);
@@ -169,7 +177,10 @@ export const editor: EditorInterface = {
                 editor.deselectAll();
                 htmlCreatedElement.classList.add('selectedElement');
                 editor.selectedElementId = htmlCreatedElement.id;
-                editor.editorEvents.emit('selectElement', dialogContainer.getElement(htmlCreatedElement.id));
+                editor.editorEvents.emit(
+                    'selectElement',
+                    dialogContainer.getElement(htmlCreatedElement.id)
+                );
             }
             elementWidth = htmlCreatedElement.getBoundingClientRect().width;
             elementHeight = htmlCreatedElement.getBoundingClientRect().height;
@@ -235,7 +246,7 @@ export const editor: EditorInterface = {
             element.classList.remove('selectedElement')
         }
         editor.selectedElementId = '';
-        editor.cleaPropsList();
+        editor.clearPropsList();
     },
 
     updateElement(payload) {
@@ -251,11 +262,11 @@ export const editor: EditorInterface = {
         // remove from container
         dialogContainer.removeElement(editor.selectedElementId);
         // clear element properties
-        editor.cleaPropsList();
+        editor.clearPropsList();
     },
 
     // clear element props
-    cleaPropsList() {
+    clearPropsList() {
         // clear data form
         const properties = document.querySelectorAll('#propertiesList [id^="el"]');
 
