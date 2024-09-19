@@ -40,14 +40,17 @@ export const dialogContainer: DialogContainerInterface = {
 
     // update dialog element props !!!!!!
     updateProperties: function (id, payload) {
+        // TODO: move these into some sort of global variables?
         const dialogW = editor.dialog.getBoundingClientRect().width;
         const dialogH = editor.dialog.getBoundingClientRect().height;
+        //----
+
         const notFound: string[] = [];
         const keys = Object.keys(payload);
 
         for (let i = 0; i < keys.length; i++) {
             if (Object.hasOwn(dialogContainer.elements[id], keys[i])) {
-                if (keys[i] == "left") {
+                if (keys[i] == 'left') {
                     const elementWidth = document.getElementById(id).getBoundingClientRect().width;
                     if (Number(payload[keys[i]]) + elementWidth + 10 > dialogW) {
                         payload[keys[i]] = String(Math.round(dialogW - elementWidth - 10));
@@ -55,7 +58,7 @@ export const dialogContainer: DialogContainerInterface = {
                     if (Number(payload[keys[i]]) < 10) { payload[keys[i]] = '10'; }
                     const elleft = document.getElementById('elleft') as HTMLInputElement;
                     elleft.value = payload[keys[i]];
-                } else if (keys[i] == "top") {
+                } else if (keys[i] == 'top') {
                     const elementHeight = document.getElementById(id).getBoundingClientRect().height;
                     if (Number(payload[keys[i]]) + elementHeight + 10 > dialogH) {
                         payload[keys[i]] = String(Math.round(dialogH - elementHeight - 10));
@@ -65,7 +68,19 @@ export const dialogContainer: DialogContainerInterface = {
                     eltop.value = payload[keys[i]];
                 }
 
+                // payload[keys[i]] is a string, including the "left" property
                 dialogContainer.elements[id][keys[i]] = payload[keys[i]];
+
+                if (keys[i] == 'label') {
+                    const elementWidth = document.getElementById(id).getBoundingClientRect().width;
+                    const elleft = document.getElementById('elleft') as HTMLInputElement;
+                    if (Number(elleft.value) + elementWidth + 10 > dialogW) {
+                        const newleft = String(Math.round(dialogW - elementWidth - 10));
+                        elleft.value = newleft;
+                        // why does it requires a number, here ??
+                        dialogContainer.elements[id]['left'] = Number(newleft);
+                    }
+                }
             } else {
                 notFound.push(keys[i]);
             }
