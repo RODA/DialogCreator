@@ -160,6 +160,7 @@ export const editorElements: EditorElementsInterface = {
             // create checkbox
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
+            // checkbox.readOnly = true; // does not work, so we need to add a cover on top
             // position
             checkbox.style.position = 'absolute';
             checkbox.style.top = data.top + 'px';
