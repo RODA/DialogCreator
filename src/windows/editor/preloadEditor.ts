@@ -86,7 +86,8 @@ const onElementSelected = () => {
         document.querySelectorAll('#propertiesList [id^="el"]').forEach(el => {
 
             const item = el as HTMLInputElement;
-            if (element[item.name]) {
+
+            if (item.name in element) {
                 // show main element
                 item.disabled = false;
                 item.parentElement.classList.remove('hidden-element');
