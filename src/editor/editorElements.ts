@@ -29,6 +29,9 @@ export const editorElements: EditorElementsInterface = {
     fontFamily: 'Arial, Helvetica, sans-serif',
     maxWidth: 615,
     maxHeight: 455,
+    // TODO:
+    // minWidth: 0,
+    // minHeight: 0,
 
     // set default font size and family
     setDefaults: function (size, family, maxWidth, maxHeight) {

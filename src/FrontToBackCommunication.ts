@@ -1,3 +1,5 @@
+// encapsulation
+
 import { ipcRenderer } from 'electron';
 
 interface ShowMessageBoxInterface {
