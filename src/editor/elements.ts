@@ -17,7 +17,6 @@ export type checkboxElementType = {
     parentId: string;
     type: string;
     id: string;
-    label: string;
     left: number;
     top: number;
     isChecked: boolean;
@@ -100,7 +99,6 @@ export const elements: ElementsInterface = {
         parentId: '',
         type: 'Checkbox',
         id: '',
-        label: 'checkbox',
         left: 10,
         top: 10,
         isChecked: false,

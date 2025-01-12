@@ -118,7 +118,6 @@ export const editorElements: EditorElementsInterface = {
 
     // Add checkbox
     addCheckbox: function (dialog, data) {
-        // TODO: how to add the property isChecked, in the property panel...????
         if (typeof data === 'object' && !Array.isArray(data)) {
 
             const checkboxId = uuidv4();
@@ -128,10 +127,6 @@ export const editorElements: EditorElementsInterface = {
                     const el = document.getElementById(checkboxId) as HTMLInputElement;
 
                     switch (key) {
-                        case 'label':
-                            el.innerText = value;
-                            obj[key] = value;
-                            break;
                         case 'top':
                             if (el && editorElements.maxHeight >= value) {
                                 obj[key] = parseInt(value);
