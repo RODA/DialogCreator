@@ -152,27 +152,58 @@ export const editorElements: EditorElementsInterface = {
                 }
             })
 
-            // create checkbox
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            // checkbox.readOnly = true; // does not work, so we need to add a cover on top
+            const checkbox = document.createElement('div');
+            checkbox.className = 'element-div';
+            checkbox.id = checkboxId;
+
             // position
-            checkbox.style.position = 'absolute';
             checkbox.style.top = data.top + 'px';
             checkbox.style.left = data.left + 'px';
+            checkbox.style.width = '11px';
+            checkbox.style.height = '11px';
 
-            checkbox.style.fontFamily = editorElements.fontFamily;
-            checkbox.style.fontSize = editorElements.fontSize + 'px';
+            // Create the hidden input (checkbox)
+            const checkboxInput = document.createElement('input');
+            checkboxInput.type = 'checkbox';
+            checkboxInput.className = 'custom';
 
-            // on screen
-            checkbox.id = checkboxId;
+            // Create the custom checkbox
+            const customCheckbox = document.createElement('span');
+            customCheckbox.className = 'custom-checkbox';
+
+            // Create the cover div
+            const cover = document.createElement('div');
+            cover.className = 'cover';
+            // Append the cover to the custom checkbox
+            customCheckbox.appendChild(cover);
+
+
+            checkbox.appendChild(checkboxInput);
+            checkbox.appendChild(customCheckbox);
+
+            // // create checkbox
+            // const checkbox = document.createElement('input');
+            // checkbox.type = 'checkbox';
+            // // position
+            // checkbox.style.position = 'absolute';
+            // checkbox.style.top = data.top + 'px';
+            // checkbox.style.left = data.left + 'px';
+
+            // checkbox.style.fontFamily = editorElements.fontFamily;
+            // checkbox.style.fontSize = editorElements.fontSize + 'px';
+
+            // // on screen
+            // checkbox.id = checkboxId;
+
+
             // in container
             dataProxy.id = checkboxId;
             dataProxy.parentId = dialog.id;
 
-            if (!data.isEnabled) {
-                checkbox.disabled = true;
-            }
+            // if (!data.isEnabled) {
+            //     checkbox.disabled = true;
+            // }
+
             if (!data.isVisible) {
                 checkbox.style.display = 'none';
             }

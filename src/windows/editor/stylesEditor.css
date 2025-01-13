@@ -183,3 +183,122 @@ body {
 #dialog-properties .dialog-properties_property input {
     padding: 3px 5px;
 }
+
+
+/* Custom elements (ex. checkbox, radio buttons etc.) */
+
+/* Custom element container div */
+.element-div {
+    position: absolute; /* Allows it to be draggable */
+    cursor: grab; /* Indicate draggable element */
+}
+
+.element-div.dragging {
+    cursor: grabbing; /* Cursor during drag */
+}
+
+/* Element: checkbox */
+
+/* Hide the native checkbox */
+input[type="checkbox"].custom {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+/* Custom checkbox */
+.custom-checkbox {
+    display: inline-block;
+    width: 100%; /* Matches the container div size */
+    height: 100%;
+    background-color: #fff;
+    border: 1px solid #333;
+    border-radius: 0.1em;
+    position: relative;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+/* Style the checked state for custom checkbox */
+input[type="checkbox"].custom:checked + .custom-checkbox {
+    background-color: #4CAF50;
+    border-color: #4CAF50;
+}
+
+/* Checkmark (proportional using em units) */
+.custom-checkbox::after {
+    content: '';
+    position: absolute;
+    display: none;
+    left: 28%;
+    /* Increased width to extend more towards upper-right corner */
+    width: 28%;
+    /* Increased height */
+    height: 70%;
+    border: solid white;
+    border-width: 0 0.15em 0.15em 0;
+    transform: rotate(35deg);
+}
+
+/* Show checkmark when checked */
+input[type="checkbox"].custom:checked+.custom-checkbox::after {
+    display: block;
+}
+
+
+/* Element: radio button */
+
+/* Hide the native radio button */
+input[type="radio"].custom {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+/* Custom radio button */
+.custom-radio {
+    display: inline-block;
+    width: 100%; /* Matches the container size */
+    height: 100%;
+    background-color: #fff;
+    border: 1px solid #333;
+    border-radius: 50%;
+    /* Make it circular */
+    position: relative;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+/* Inner dot for custom radio button (selected state) */
+.custom-radio::after {
+    content: '';
+    position: absolute;
+    display: none;
+    top: 50%;
+    left: 50%;
+    width: 50%;
+    height: 50%;
+    /* Color of the selected dot */
+    background-color: #4CAF50;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Show the inner dot when radio is checked */
+input[type="radio"].custom:checked + .custom-radio::after {
+    display: block;
+}
+
+/* Change radio button border color when selected */
+input[type="radio"].custom:checked + .custom-radio {
+    border-color: #4CAF50;
+}
+
+/* Cover over checkbox (and general elements) to prevent
+   their click event when dragging in the editor */
+.cover {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+}
