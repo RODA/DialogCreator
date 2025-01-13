@@ -130,7 +130,10 @@ export const editor: EditorInterface = {
                 dataSettings = elements[elementType];
             }
 
-            const createdElement = editorElements['add' + type as editorElementsTypes](editor.dialog, dataSettings);
+            const createdElement = editorElements['add' + type as editorElementsTypes](
+                editor.dialog,
+                dataSettings
+            );
             editor.addElementListeners(createdElement);
             dialogContainer.addElement(createdElement);
 
