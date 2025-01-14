@@ -125,6 +125,8 @@ export const editorElements: EditorElementsInterface = {
             const dataProxy = new Proxy({ ...data }, {
                 set(obj, key: string, value) {
                     const el = document.getElementById(checkboxId) as HTMLInputElement;
+                    const cb = document.getElementById("checkbox-" + checkboxId) as HTMLElement;
+                    const cover = document.getElementById("cover-" + checkboxId) as HTMLElement;
 
                     switch (key) {
                         case 'top':
@@ -143,43 +145,58 @@ export const editorElements: EditorElementsInterface = {
                             break;
                         case 'isEnabled':
                             obj[key] = value === 'true';
+                            if (obj[key]) {
+                                // el.disabled = false;
+                                cover.classList.remove('disabled-div');
+                            } else {
+                                // el.disabled = true;
+                                cover.classList.add('disabled-div');
+                            }
+                            break;
+                        case 'isChecked':
+                            obj[key] = value === 'true';
+                            cb.setAttribute("aria-checked", value);
                             break;
                         default:
                             obj[key] = value;
-
                     }
+
                     return true;
                 }
             })
 
             const checkbox = document.createElement('div');
             checkbox.className = 'element-div';
-            checkbox.id = checkboxId;
 
             // position
             checkbox.style.top = data.top + 'px';
             checkbox.style.left = data.left + 'px';
-            checkbox.style.width = '11px';
-            checkbox.style.height = '11px';
-
-            // Create the hidden input (checkbox)
-            const checkboxInput = document.createElement('input');
-            checkboxInput.type = 'checkbox';
-            checkboxInput.className = 'custom';
+            checkbox.style.width = '13px';
+            checkbox.style.height = '13px';
 
             // Create the custom checkbox
-            const customCheckbox = document.createElement('span');
+            const customCheckbox = document.createElement('div');
+            customCheckbox.id = "checkbox-" + checkboxId;
             customCheckbox.className = 'custom-checkbox';
+            customCheckbox.setAttribute('role', 'checkbox');
+            customCheckbox.setAttribute('tabindex', '0');
+            customCheckbox.setAttribute('aria-checked', 'false');
+
+            customCheckbox.addEventListener('click', () => {
+                const isChecked = customCheckbox.getAttribute('aria-checked') === 'true';
+                customCheckbox.setAttribute('aria-checked', isChecked ? "false" : "true");
+            });
 
             // Create the cover div
             const cover = document.createElement('div');
+            cover.id = "cover-" + checkboxId;
             cover.className = 'cover';
             // Append the cover to the custom checkbox
-            customCheckbox.appendChild(cover);
+            // customCheckbox.appendChild(cover);
 
 
-            checkbox.appendChild(checkboxInput);
             checkbox.appendChild(customCheckbox);
+            checkbox.appendChild(cover);
 
             // // create checkbox
             // const checkbox = document.createElement('input');
@@ -192,17 +209,19 @@ export const editorElements: EditorElementsInterface = {
             // checkbox.style.fontFamily = editorElements.fontFamily;
             // checkbox.style.fontSize = editorElements.fontSize + 'px';
 
-            // // on screen
-            // checkbox.id = checkboxId;
+            // on screen
+            checkbox.id = checkboxId;
 
 
             // in container
             dataProxy.id = checkboxId;
             dataProxy.parentId = dialog.id;
 
-            // if (!data.isEnabled) {
-            //     checkbox.disabled = true;
-            // }
+            checkbox.classList.remove('disabled-div');
+            if (!data.isEnabled) {
+                // checkbox.disabled = true;
+                checkbox.classList.add('disabled-div');
+            }
 
             if (!data.isVisible) {
                 checkbox.style.display = 'none';

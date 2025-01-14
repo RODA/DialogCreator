@@ -86,7 +86,6 @@ const onElementSelected = () => {
         document.querySelectorAll('#propertiesList [id^="el"]').forEach(el => {
 
             const item = el as HTMLInputElement;
-
             if (item.name in element) {
                 // show main element
                 item.disabled = false;
@@ -99,6 +98,10 @@ const onElementSelected = () => {
                 if (item.tagName !== "SELECT") {
                     item.removeEventListener('keyup', propertyUpdateOnEnter);
                     item.addEventListener('keyup', propertyUpdateOnEnter);
+                } else {
+                    item.addEventListener("change", () => {
+                        item.blur();
+                    });
                 }
             } else {
                 item.disabled = true;

@@ -197,16 +197,13 @@ body {
     cursor: grabbing; /* Cursor during drag */
 }
 
-/* Element: checkbox */
-
-/* Hide the native checkbox */
-input[type="checkbox"].custom {
-    position: absolute;
-    opacity: 0;
-    cursor: pointer;
+.disabled-div {
+    background-color: #808080;
+    opacity: 0.5; /* Make it look visually disabled */
 }
 
-/* Custom checkbox */
+
+/* Element: checkbox */
 .custom-checkbox {
     display: inline-block;
     width: 100%; /* Matches the container div size */
@@ -215,11 +212,12 @@ input[type="checkbox"].custom {
     border: 1px solid #333;
     border-radius: 0.1em;
     position: relative;
+    box-sizing: border-box;
     transition: background-color 0.3s, border-color 0.3s;
 }
 
 /* Style the checked state for custom checkbox */
-input[type="checkbox"].custom:checked + .custom-checkbox {
+.custom-checkbox[aria-checked="true"] {
     background-color: #4CAF50;
     border-color: #4CAF50;
 }
@@ -240,7 +238,7 @@ input[type="checkbox"].custom:checked + .custom-checkbox {
 }
 
 /* Show checkmark when checked */
-input[type="checkbox"].custom:checked+.custom-checkbox::after {
+.custom-checkbox[aria-checked="true"]::after {
     display: block;
 }
 
