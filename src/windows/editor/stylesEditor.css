@@ -213,7 +213,6 @@ body {
     border-radius: 0.1em;
     position: relative;
     box-sizing: border-box;
-    transition: background-color 0.3s, border-color 0.3s;
 }
 
 /* Style the checked state for custom checkbox */
@@ -244,15 +243,6 @@ body {
 
 
 /* Element: radio button */
-
-/* Hide the native radio button */
-input[type="radio"].custom {
-    position: absolute;
-    opacity: 0;
-    cursor: pointer;
-}
-
-/* Custom radio button */
 .custom-radio {
     display: inline-block;
     width: 100%; /* Matches the container size */
@@ -262,7 +252,13 @@ input[type="radio"].custom {
     border-radius: 50%;
     /* Make it circular */
     position: relative;
-    transition: background-color 0.3s, border-color 0.3s;
+    box-sizing: border-box;
+}
+
+/* Checked state for custom radio */
+.custom-radio[aria-checked="true"] {
+    background-color: #4CAF50;
+    border-color: #4CAF50;
 }
 
 /* Inner dot for custom radio button (selected state) */
@@ -281,12 +277,8 @@ input[type="radio"].custom {
 }
 
 /* Show the inner dot when radio is checked */
-input[type="radio"].custom:checked + .custom-radio::after {
+.custom-radio[aria-checked="true"]::after {
     display: block;
-}
-
-/* Change radio button border color when selected */
-input[type="radio"].custom:checked + .custom-radio {
     border-color: #4CAF50;
 }
 

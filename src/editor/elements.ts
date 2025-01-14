@@ -26,6 +26,20 @@ export type checkboxElementType = {
     conditions: string;
     [key: string]: any;
 }
+export type radioElementType = {
+    parentId: string;
+    type: string;
+    id: string;
+    left: number;
+    top: number;
+    group: string;
+    isSelected: boolean;
+    isVisible: boolean;
+    isEnabled: boolean;
+    elementIds: string[];
+    conditions: string;
+    [key: string]: any;
+}
 export type containerElementType = {
     parentId: string;
     type: string;
@@ -76,6 +90,7 @@ export type inputElementType = {
 export interface ElementsInterface {
     buttonElement: buttonElementType;
     checkboxElement: checkboxElementType;
+    radioElement: radioElementType;
     containerElement: containerElementType;
     counterElement: counterElementType;
     inputElement: inputElementType;
@@ -102,6 +117,19 @@ export const elements: ElementsInterface = {
         left: 10,
         top: 10,
         isChecked: false,
+        isEnabled: true,
+        isVisible: true,
+        elementIds: [],
+        conditions: ''
+    },
+    radioElement: {
+        parentId: '',
+        type: 'Checkbox',
+        id: '',
+        left: 10,
+        top: 10,
+        group: 'radiogroup1',
+        isSelected: false,
         isEnabled: true,
         isVisible: true,
         elementIds: [],

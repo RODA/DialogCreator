@@ -11,11 +11,11 @@ export interface EditorElementsInterface {
     setDefaults: (size: number, family: string, maxWidth: number, maxHeight: number) => void;
     addButton: (dialog: HTMLDivElement, data: ElementsInterface["buttonElement"]) => ElementsInterface["buttonElement"];
     addCheckbox: (dialog: HTMLDivElement, data: ElementsInterface["checkboxElement"]) => ElementsInterface["checkboxElement"];
+    addRadio: (dialog: HTMLDivElement, data: ElementsInterface["checkboxElement"]) => ElementsInterface["checkboxElement"];
     // addContainer: (dialog: HTMLDivElement, data: elementsConfig.containerElementType) => void;
     // addCounter: (dialog: HTMLDivElement, data: elementsConfig.counterElementType) => void;
     // addInput: (dialog: HTMLDivElement, data: elementsConfig.inputElementType) => void;
     // addLabel: (dialog: HTMLDivElement, data: elementsConfig.label ) => void;
-    // addRadio: (dialog: HTMLDivElement, data: elementsConfig.radio ) => void;
     // addSelect: (dialog: HTMLDivElement, data: elementsConfig.select ) => void;
     // addSeparator: (dialog: HTMLDivElement, data: elementsConfig.separator ) => void;
     // addSlider: (dialog: HTMLDivElement, data: elementsConfig.slider ) => void;
@@ -192,11 +192,9 @@ export const editorElements: EditorElementsInterface = {
             cover.id = "cover-" + checkboxId;
             cover.className = 'cover';
             // Append the cover to the custom checkbox
-            // customCheckbox.appendChild(cover);
-
+            customCheckbox.appendChild(cover);
 
             checkbox.appendChild(customCheckbox);
-            checkbox.appendChild(cover);
 
             // // create checkbox
             // const checkbox = document.createElement('input');
@@ -232,6 +230,140 @@ export const editorElements: EditorElementsInterface = {
             return;
         }
     },
+
+    // Add radio button
+    addRadio: function (dialog, data) {
+
+        if (typeof data === 'object' && !Array.isArray(data)) {
+
+            const radioId = uuidv4();
+
+            const dataProxy = new Proxy({ ...data }, {
+                set(obj, key: string, value) {
+                    const el = document.getElementById(radioId) as HTMLInputElement;
+                    const rd = document.getElementById("radio-" + radioId) as HTMLElement;
+                    const cover = document.getElementById("cover-" + radioId) as HTMLElement;
+
+                    switch (key) {
+                        case 'top':
+                            if (el && editorElements.maxHeight >= value) {
+                                obj[key] = parseInt(value);
+                                el.style.top = value + 'px';
+                            } else {
+                                el.style.top = editorElements.maxHeight + 'px';
+                            }
+                            break;
+                        case 'left':
+                            obj[key] = parseInt(value);
+                            if (el) {
+                                el.style.left = value + 'px';
+                            }
+                            break;
+                        case 'isEnabled':
+                            obj[key] = value === 'true';
+                            if (obj[key]) {
+                                // el.disabled = false;
+                                cover.classList.remove('disabled-div');
+                            } else {
+                                // el.disabled = true;
+                                cover.classList.add('disabled-div');
+                            }
+                            break;
+                        case 'isChecked':
+                            obj[key] = value === 'true';
+                            rd.setAttribute("aria-checked", value);
+                            break;
+                        default:
+                            obj[key] = value;
+                    }
+
+                    return true;
+                }
+            })
+
+            const radio = document.createElement('div');
+            radio.className = 'element-div';
+
+            // position
+            radio.style.top = data.top + 'px';
+            radio.style.left = data.left + 'px';
+            radio.style.width = '13px';
+            radio.style.height = '13px';
+
+            // Create the custom radio
+            const customRadio = document.createElement('div');
+            customRadio.id = "radio-" + radioId;
+            customRadio.className = 'custom-radio';
+            customRadio.setAttribute('role', 'radio');
+            customRadio.setAttribute('tabindex', '0');
+            customRadio.setAttribute('aria-checked', 'false');
+
+            // Create the cover div
+            const cover = document.createElement('div');
+            cover.id = "cover-" + radioId;
+            cover.className = 'cover';
+            // Append the cover to the custom radio
+            customRadio.appendChild(cover);
+
+            radio.appendChild(customRadio);
+
+            // on screen
+            radio.id = radioId;
+
+
+            // in container
+            dataProxy.id = radioId;
+            dataProxy.parentId = dialog.id;
+
+            radio.classList.remove('disabled-div');
+            if (!data.isEnabled) {
+                // radio.disabled = true;
+                radio.classList.add('disabled-div');
+            }
+
+            if (!data.isVisible) {
+                radio.style.display = 'none';
+            }
+            dialog.appendChild(radio);
+            return dataProxy;
+        } else {
+            return;
+        }
+    },
+
+    //     if( this.isObject(data) )
+    //     {
+    //         let dataLeft = parseInt(data.left)+7;
+    //         let dataTop = parseInt(data.top)+7;
+
+    //         let label = paper.text(dataLeft + 15, dataTop, data.label).attr({"text-anchor": "start", "font-size": editorElements.fontSize, "font-family": editorElements.fontFamily});
+
+    //         // the regular gray circles
+    //         let circle = paper.circle(dataLeft, dataTop, 7).attr({fill: "#eeeeee", "stroke": "#5d5d5d", "stroke-width": 1});
+
+    //         let set = paper.set();
+
+    //         if(data.isEnabled === 'false')
+    //         {
+    //             circle.attr({fill: "#cccccc", "stroke": "#848484"});
+    //             label.attr({fill: '#848484'});
+    //         }
+
+    //         if(data.isSelected === 'true')
+    //         {
+    //             let circle1 = paper.circle(dataLeft, dataTop, 6).attr({fill: "#97bd6c", stroke: "none"});
+    //             let circle2 = paper.circle(dataLeft, dataTop, 3).attr({fill: (data.isEnabled === 'false') ? "#848484" : "#000000", stroke: "none"});
+
+    //             set.push( label, circle, circle1, circle2);
+    //         } else {
+    //             set.push( label, circle );
+    //         }
+
+    //         return set;
+    //     } else {
+    //         return;
+    //     }
+    // },
 
     // Add container
     // addContainer: function (paper, data) {
@@ -385,43 +517,6 @@ export const editorElements: EditorElementsInterface = {
     //             rect.attr({fill: "#eeeeee"});
     //         }
     //         return rect;
-    //     } else {
-    //         return;
-    //     }
-    // },
-
-    // Add radio button
-    // addRadio: function(paper, data)
-    // {
-    //     if( this.isObject(data) )
-    //     {
-    //         let dataLeft = parseInt(data.left)+7;
-    //         let dataTop = parseInt(data.top)+7;
-
-    //         let label = paper.text(dataLeft + 15, dataTop, data.label).attr({"text-anchor": "start", "font-size": editorElements.fontSize, "font-family": editorElements.fontFamily});
-
-    //         // the regular gray circles
-    //         let circle = paper.circle(dataLeft, dataTop, 7).attr({fill: "#eeeeee", "stroke": "#5d5d5d", "stroke-width": 1});
-
-    //         let set = paper.set();
-
-    //         if(data.isEnabled === 'false')
-    //         {
-    //             circle.attr({fill: "#cccccc", "stroke": "#848484"});
-    //             label.attr({fill: '#848484'});
-    //         }
-
-    //         if(data.isSelected === 'true')
-    //         {
-    //             let circle1 = paper.circle(dataLeft, dataTop, 6).attr({fill: "#97bd6c", stroke: "none"});
-    //             let circle2 = paper.circle(dataLeft, dataTop, 3).attr({fill: (data.isEnabled === 'false') ? "#848484" : "#000000", stroke: "none"});
-
-    //             set.push( label, circle, circle1, circle2);
-    //         } else {
-    //             set.push( label, circle );
-    //         }
-
-    //         return set;
     //     } else {
     //         return;
     //     }
