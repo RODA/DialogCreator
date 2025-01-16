@@ -1,7 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import { ElementsInterface } from './elements';
-export type editorElementsTypes = 'addButton' | 'addCheckbox'
-// | 'addContainer' | 'addCounter' | 'addInput' | 'addLabel' | 'addRadio' | 'addSelect' | 'addSeparator' | 'addSlider';
+import { dialogContainer } from './dialogContainer';
+export type editorElementsTypes = 'addButton' | 'addCheckbox' | 'addRadio'
+// | 'addContainer' | 'addCounter' | 'addInput' | 'addLabel' | 'addSelect' | 'addSeparator' | 'addSlider';
 
 export interface EditorElementsInterface {
     fontSize: number;
@@ -192,9 +193,9 @@ export const editorElements: EditorElementsInterface = {
             cover.id = "cover-" + checkboxId;
             cover.className = 'cover';
             // Append the cover to the custom checkbox
-            customCheckbox.appendChild(cover);
 
             checkbox.appendChild(customCheckbox);
+            checkbox.appendChild(cover);
 
             // // create checkbox
             // const checkbox = document.createElement('input');
@@ -234,6 +235,14 @@ export const editorElements: EditorElementsInterface = {
     // Add radio button
     addRadio: function (dialog, data) {
 
+        const unselectRadioGroup = function(element: HTMLElement) {
+            document.querySelectorAll(`[group="${element.getAttribute("group")}"]`).forEach((radio) => {
+                const id = radio.id.slice(6);
+                dialogContainer.elements[id].isSelected = false;
+                radio.setAttribute('aria-checked', 'false');
+            });
+        };
+
         if (typeof data === 'object' && !Array.isArray(data)) {
 
             const radioId = uuidv4();
@@ -245,6 +254,10 @@ export const editorElements: EditorElementsInterface = {
                     const cover = document.getElementById("cover-" + radioId) as HTMLElement;
 
                     switch (key) {
+                        case 'group':
+                            obj[key] = value;
+                            rd.setAttribute("group", value);
+                            break;
                         case 'top':
                             if (el && editorElements.maxHeight >= value) {
                                 obj[key] = parseInt(value);
@@ -269,9 +282,12 @@ export const editorElements: EditorElementsInterface = {
                                 cover.classList.add('disabled-div');
                             }
                             break;
-                        case 'isChecked':
+                        case 'isSelected':
+                            if (value === 'true') {
+                                unselectRadioGroup(rd);
+                            }
+                            rd.setAttribute('aria-checked', value);
                             obj[key] = value === 'true';
-                            rd.setAttribute("aria-checked", value);
                             break;
                         default:
                             obj[key] = value;
@@ -297,6 +313,7 @@ export const editorElements: EditorElementsInterface = {
             customRadio.setAttribute('role', 'radio');
             customRadio.setAttribute('tabindex', '0');
             customRadio.setAttribute('aria-checked', 'false');
+            customRadio.setAttribute('group', data.group);
 
             // Create the cover div
             const cover = document.createElement('div');
@@ -325,6 +342,7 @@ export const editorElements: EditorElementsInterface = {
                 radio.style.display = 'none';
             }
             dialog.appendChild(radio);
+
             return dataProxy;
         } else {
             return;

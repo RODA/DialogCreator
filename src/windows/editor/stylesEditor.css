@@ -255,12 +255,6 @@ body {
     box-sizing: border-box;
 }
 
-/* Checked state for custom radio */
-.custom-radio[aria-checked="true"] {
-    background-color: #4CAF50;
-    border-color: #4CAF50;
-}
-
 /* Inner dot for custom radio button (selected state) */
 .custom-radio::after {
     content: '';
@@ -276,10 +270,14 @@ body {
     transform: translate(-50%, -50%);
 }
 
+/* Checked state for custom radio */
+.custom-radio[aria-checked="true"] {
+    border-color: #4CAF50;
+}
+
 /* Show the inner dot when radio is checked */
 .custom-radio[aria-checked="true"]::after {
     display: block;
-    border-color: #4CAF50;
 }
 
 /* Cover over checkbox (and general elements) to prevent
