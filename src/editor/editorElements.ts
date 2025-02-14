@@ -15,7 +15,7 @@ export interface EditorElementsInterface {
     addRadio: (dialog: HTMLDivElement, data: ElementsInterface["checkboxElement"]) => ElementsInterface["checkboxElement"];
     // addContainer: (dialog: HTMLDivElement, data: elementsConfig.containerElementType) => void;
     // addCounter: (dialog: HTMLDivElement, data: elementsConfig.counterElementType) => void;
-    // addInput: (dialog: HTMLDivElement, data: elementsConfig.inputElementType) => void;
+    addInput: (dialog: HTMLDivElement, data: ElementsInterface["inputElement"]) => ElementsInterface["inputElement"];
     // addLabel: (dialog: HTMLDivElement, data: elementsConfig.label ) => void;
     // addSelect: (dialog: HTMLDivElement, data: elementsConfig.select ) => void;
     // addSeparator: (dialog: HTMLDivElement, data: elementsConfig.separator ) => void;
@@ -101,7 +101,7 @@ export const editorElements: EditorElementsInterface = {
             // on screen
             button.id = buttonId;
             // in container
-            dataProxy.id = buttonId
+            dataProxy.id = buttonId;
             dataProxy.parentId = dialog.id;
 
             if (!data.isEnabled) {
@@ -458,39 +458,80 @@ export const editorElements: EditorElementsInterface = {
     // },
 
     // Add Input
-    // addInput: function (paper, data) {
-    //     if (this.isObject(data)) {
-    //         // data to int
-    //         let dataLeft = parseInt(data.left);
-    //         let dataTop = parseInt(data.top);
+    addInput: function (dialog, data) {
+        if (typeof data === 'object' && !Array.isArray(data)) {
 
-    //         // check for user input
-    //         if (data.width < 50) { data.width = 50; }
-    //         else if (data.width > paper.width - 15) { data.width = paper.width - 30; dataLeft = 15; }
+            const inputId = uuidv4();
 
-    //         if (data.height < 50) { data.height = 50; }
-    //         else if (data.height > paper.height - 15) { data.height = paper.height - 30; dataTop = 15; }
+            const dataProxy = new Proxy({ ...data }, {
+                set(obj, key: string, value) {
 
-    //         let rect = paper.rect(dataLeft, dataTop, data.width, 25).attr({ fill: "#ffffff", "stroke": "#5d5d5d", "stroke-width": 1 });
+                    const el = document.getElementById(inputId) as HTMLButtonElement;
 
-    //         if (data.isEnabled == 'false') {
-    //             rect.attr({ fill: "#cccccc", stroke: "#848484" });
-    //         }
+                    switch (key) {
+                        case 'top':
+                            if (el && editorElements.maxHeight >= value) {
+                                obj[key] = parseInt(value);
+                                el.style.top = value + 'px';
+                            } else {
+                                el.style.top = editorElements.maxHeight + 'px';
+                            }
+                            break;
+                        case 'left':
+                            obj[key] = parseInt(value);
+                            if (el) {
+                                el.style.left = value + 'px';
+                            }
+                            break;
+                        case 'value':
+                            obj[key] = value;
+                            if (el) {
+                                el.value = value;
+                            }
+                            break;
+                        case 'isEnabled':
+                            obj[key] = value === 'true';
+                            break;
+                        default:
+                            obj[key] = value;
 
-    //         if (data.value.trim() != '') {
-    //             let label = paper.text(dataLeft + 7, dataTop + 12, data.value).attr({ "text-anchor": "start", "font-size": editorElements.fontSize, "font-family": editorElements.fontFamily, fill: (data.isEnabled == 'false') ? "#848484" : " #000000" });
-    //             let set = paper.set();
-    //             set.push(label, rect);
-    //             return set;
-    //         } else {
-    //             return rect;
-    //         }
+                    }
+                    return true;
+                }
+            })
 
+            const input = document.createElement('input');
+            input.type = 'text';
+            // position
+            input.style.position = 'absolute';
+            input.style.top = data.top + 'px';
+            input.style.left = data.left + 'px';
+            input.value = data.value;
 
-    //     } else {
-    //         return;
-    //     }
-    // },
+            input.style.maxWidth = editorElements.maxWidth + 'px';
+            input.style.maxHeight = editorElements.maxHeight + 'px';
+
+            input.style.fontFamily = editorElements.fontFamily;
+            input.style.fontSize = editorElements.fontSize + 'px';
+
+            // on screen
+            input.id = inputId;
+            // in container
+            dataProxy.id = inputId;
+            dataProxy.parentId = dialog.id;
+
+            if (!data.isEnabled) {
+                input.disabled = true;
+            }
+            if (!data.isVisible) {
+                input.style.display = 'none';
+            }
+            dialog.appendChild(input);
+            return dataProxy;
+        } else {
+            return;
+        }
+    },
 
     // Label element
     // addLabel: function(paper, data)
