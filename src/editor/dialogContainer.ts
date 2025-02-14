@@ -71,7 +71,7 @@ export const dialogContainer: DialogContainerInterface = {
                 // payload[keys[i]] is a string, including the "left" property
                 dialogContainer.elements[id][keys[i]] = payload[keys[i]];
 
-                if (keys[i] == 'label') {
+                if (keys[i] == 'label' || keys[i] == 'width') {
                     const elementWidth = document.getElementById(id).getBoundingClientRect().width;
                     const elleft = document.getElementById('elleft') as HTMLInputElement;
                     if (Number(elleft.value) + elementWidth + 10 > dialogW) {

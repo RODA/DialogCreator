@@ -6,6 +6,7 @@ export type buttonElementType = {
     label: string;
     left: number;
     top: number;
+    width: number;
     isVisible: boolean;
     isEnabled: boolean;
     onClick: string;
@@ -104,6 +105,7 @@ export const elements: ElementsInterface = {
         label: 'Button',
         left: 15,
         top: 15,
+        width: 60,
         isVisible: true,
         isEnabled: true,
         onClick: 'run',

@@ -73,6 +73,12 @@ export const editorElements: EditorElementsInterface = {
                                 el.style.left = value + 'px';
                             }
                             break;
+                        case 'width':
+                            obj[key] = parseInt(value);
+                            if (el) {
+                                el.style.width = value + 'px';
+                            }
+                            break;
                         case 'isEnabled':
                             obj[key] = value === 'true';
                             break;
@@ -89,6 +95,7 @@ export const editorElements: EditorElementsInterface = {
             button.style.position = 'absolute';
             button.style.top = data.top + 'px';
             button.style.left = data.left + 'px';
+            button.style.width = data.width + 'px';
             // label
             button.innerText = data.label
 
@@ -481,6 +488,12 @@ export const editorElements: EditorElementsInterface = {
                             obj[key] = parseInt(value);
                             if (el) {
                                 el.style.left = value + 'px';
+                            }
+                            break;
+                        case 'width':
+                            obj[key] = parseInt(value);
+                            if (el) {
+                                el.style.width = value + 'px';
                             }
                             break;
                         case 'value':
