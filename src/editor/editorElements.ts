@@ -1,8 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
 import { ElementsInterface } from './elements';
 import { dialogContainer } from './dialogContainer';
-export type editorElementsTypes = 'addButton' | 'addCheckbox' | 'addRadio'
-// | 'addContainer' | 'addCounter' | 'addInput' | 'addLabel' | 'addSelect' | 'addSeparator' | 'addSlider';
+import { editor } from './editor';
+export type editorElementsTypes = 'addButton' | 'addCheckbox' | 'addRadio' | 'addLabel' | 'addSeparator'
+// | 'addContainer' | 'addCounter' | 'addInput' | 'addSelect' | 'addSlider';
 
 export interface EditorElementsInterface {
     fontSize: number;
@@ -16,9 +17,9 @@ export interface EditorElementsInterface {
     // addContainer: (dialog: HTMLDivElement, data: elementsConfig.containerElementType) => void;
     // addCounter: (dialog: HTMLDivElement, data: elementsConfig.counterElementType) => void;
     addInput: (dialog: HTMLDivElement, data: ElementsInterface["inputElement"]) => ElementsInterface["inputElement"];
-    // addLabel: (dialog: HTMLDivElement, data: elementsConfig.label ) => void;
+    addLabel: (dialog: HTMLDivElement, data: ElementsInterface["labelElement"]) => ElementsInterface["labelElement"];
+    addSeparator: (dialog: HTMLDivElement, data: ElementsInterface["separatorElement"]) => ElementsInterface["separatorElement"];
     // addSelect: (dialog: HTMLDivElement, data: elementsConfig.select ) => void;
-    // addSeparator: (dialog: HTMLDivElement, data: elementsConfig.separator ) => void;
     // addSlider: (dialog: HTMLDivElement, data: elementsConfig.slider ) => void;
     // [propName: string]: any;
 }
@@ -356,40 +357,6 @@ export const editorElements: EditorElementsInterface = {
         }
     },
 
-    //     if( this.isObject(data) )
-    //     {
-    //         let dataLeft = parseInt(data.left)+7;
-    //         let dataTop = parseInt(data.top)+7;
-
-    //         let label = paper.text(dataLeft + 15, dataTop, data.label).attr({"text-anchor": "start", "font-size": editorElements.fontSize, "font-family": editorElements.fontFamily});
-
-    //         // the regular gray circles
-    //         let circle = paper.circle(dataLeft, dataTop, 7).attr({fill: "#eeeeee", "stroke": "#5d5d5d", "stroke-width": 1});
-
-    //         let set = paper.set();
-
-    //         if(data.isEnabled === 'false')
-    //         {
-    //             circle.attr({fill: "#cccccc", "stroke": "#848484"});
-    //             label.attr({fill: '#848484'});
-    //         }
-
-    //         if(data.isSelected === 'true')
-    //         {
-    //             let circle1 = paper.circle(dataLeft, dataTop, 6).attr({fill: "#97bd6c", stroke: "none"});
-    //             let circle2 = paper.circle(dataLeft, dataTop, 3).attr({fill: (data.isEnabled === 'false') ? "#848484" : "#000000", stroke: "none"});
-
-    //             set.push( label, circle, circle1, circle2);
-    //         } else {
-    //             set.push( label, circle );
-    //         }
-
-    //         return set;
-    //     } else {
-    //         return;
-    //     }
-    // },
-
     // Add container
     // addContainer: function (paper, data) {
     //     if (this.isObject(data)) {
@@ -473,7 +440,7 @@ export const editorElements: EditorElementsInterface = {
             const dataProxy = new Proxy({ ...data }, {
                 set(obj, key: string, value) {
 
-                    const el = document.getElementById(inputId) as HTMLButtonElement;
+                    const el = document.getElementById(inputId) as HTMLInputElement;
 
                     switch (key) {
                         case 'top':
@@ -546,53 +513,189 @@ export const editorElements: EditorElementsInterface = {
         }
     },
 
-    // Label element
-    // addLabel: function(paper, data)
-    // {
-    //     if( this.isObject(data) ) {
+    // Add Label
+    addLabel: function (dialog, data) {
+        if (typeof data === 'object' && !Array.isArray(data)) {
 
-    //         // check for user input
-    //         if(data.left < 10 || data.left > paper.width - 10){ data.left = 10; }
-    //         if(data.top < 10 || data.top > paper.height - 10){ data.top = 10; }
-    //         if(data.fontSize < 10 || data.fontSize > 20){ data.fontSize = 14; }
+            const inputId = uuidv4();
 
-    //         // data.top + 7 fix
-    //         let dataTop = parseInt(data.top) + 7;
-    //         let dataLeft = parseInt(data.left);
+            const dataProxy = new Proxy({ ...data }, {
+                set(obj, key: string, value) {
 
-    //         // return Raphael object
-    //         return paper.text(dataLeft, dataTop, data.text).attr({fill: '#000', 'text-anchor': 'start', "font-size": data.fontSize, "font-family": editorElements.fontFamily});
-    //     } else {
-    //         return;
-    //     }
-    // },
+                    const el = document.getElementById(inputId) as HTMLInputElement;
 
-    // Add plot
-    // addPlot: function(paper, data)
-    // {
-    //     if( this.isObject(data) )
-    //     {
-    //         // data to int
-    //         let dataLeft = parseInt(data.left);
-    //         let dataTop = parseInt(data.top);
+                    switch (key) {
+                        case 'top':
+                            if (el && editorElements.maxHeight >= value) {
+                                obj[key] = parseInt(value);
+                                el.style.top = value + 'px';
+                            } else {
+                                el.style.top = editorElements.maxHeight + 'px';
+                            }
+                            break;
+                        case 'left':
+                            obj[key] = parseInt(value);
+                            if (el) {
+                                el.style.left = value + 'px';
+                            }
+                            break;
+                        case 'width':
+                            obj[key] = parseInt(value);
+                            if (el) {
+                                el.style.width = value + 'px';
+                            }
+                            break;
+                        case 'value':
+                            obj[key] = value;
+                            if (el) {
+                                el.innerText = value;
+                            }
+                            break;
+                        case 'isEnabled':
+                            obj[key] = value === 'true';
+                            break;
+                        default:
+                            obj[key] = value;
 
-    //         // check for user input
-    //         if(data.width < 50) { data.width = 50; }
-    //         else if(data.width > paper.width - 15) { data.width = paper.width - 30; dataLeft = 15;}
+                    }
+                    return true;
+                }
+            })
 
-    //         if(data.height < 50) { data.height = 50; }
-    //         else if(data.height > paper.height - 15) { data.height = paper.height - 30; dataTop = 15; }
+            const input = document.createElement('div');
 
-    //         let rect = paper.rect(dataLeft, dataTop, data.width, data.height).attr({fill: "#ffffff", "stroke": "#d6d6d6", "stroke-width": 1});
+            // position
+            input.style.position = 'absolute';
+            input.style.top = data.top + 'px';
+            input.style.left = data.left + 'px';
+            input.innerText = data.value;
 
-    //         if(data.isEnabled == 'false'){
-    //             rect.attr({fill: "#eeeeee"});
-    //         }
-    //         return rect;
-    //     } else {
-    //         return;
-    //     }
-    // },
+            input.style.maxWidth = editorElements.maxWidth + 'px';
+            input.style.maxHeight = editorElements.maxHeight + 'px';
+
+            input.style.fontFamily = editorElements.fontFamily;
+            input.style.fontSize = editorElements.fontSize + 'px';
+
+            // on screen
+            input.id = inputId;
+            // in container
+            dataProxy.id = inputId;
+            dataProxy.parentId = dialog.id;
+
+            if (!data.isEnabled) {
+                // input.disabled = true;
+                input.classList.add('disabled-div');
+            }
+            if (!data.isVisible) {
+                input.style.display = 'none';
+            }
+            dialog.appendChild(input);
+            return dataProxy;
+        } else {
+            return;
+        }
+    },
+
+    // Add Separator
+    addSeparator: function (dialog, data) {
+        if (typeof data === 'object' && !Array.isArray(data)) {
+
+            const inputId = uuidv4();
+
+            const dataProxy = new Proxy({ ...data }, {
+                set(obj, key: string, value) {
+
+                    const el = document.getElementById(inputId) as HTMLInputElement;
+
+                    switch (key) {
+                        case 'top':
+                            if (el && editorElements.maxHeight >= value) {
+                                obj[key] = parseInt(value);
+                                el.style.top = value + 'px';
+                            } else {
+                                el.style.top = editorElements.maxHeight + 'px';
+                            }
+                            break;
+                        case 'left':
+                            obj[key] = parseInt(value);
+                            if (el) {
+                                el.style.left = value + 'px';
+                            }
+                            break;
+                        case 'width':
+                            obj[key] = parseInt(value);
+                            if (el) {
+                                el.style.width = value + 'px';
+                            }
+                            break;
+                        case 'height':
+                            obj[key] = parseInt(value);
+                            if (el) {
+                                el.style.height = value + 'px';
+                            }
+                            break;
+                        case 'color':
+                            obj[key] = value;
+                            if (el) {
+                                el.style.backgroundColor = value;
+                            }
+                            break;
+                        case 'direction':
+                            obj[key] = value;
+                            dialogContainer.updateProperties(
+                                obj.id,
+                                { width: String(obj["height"]), height: String(obj["width"]) }
+                            );
+                            editor.editorEvents.emit(
+                                'selectElement',
+                                dialogContainer.getElement(obj.id)
+                            );
+                            break;
+                        case 'isVisible':
+                            obj[key] = value === 'true';
+                            break;
+                        default:
+                            obj[key] = value;
+
+                    }
+                    return true;
+                }
+            })
+
+            // const input = document.createElement('span');
+            const input = document.createElement('div');
+            input.className = 'separator';
+
+            // position
+            input.style.position = 'absolute';
+            input.style.top = data.top + 'px';
+            input.style.left = data.left + 'px';
+
+            input.style.width = data.width + 'px';
+            input.style.height = data.height + 'px';
+            input.style.maxWidth = editorElements.maxWidth + 'px';
+            input.style.maxHeight = editorElements.maxHeight + 'px';
+
+            input.style.backgroundColor = data.color + 'px';
+
+            input.style.fontFamily = editorElements.fontFamily;
+            input.style.fontSize = editorElements.fontSize + 'px';
+
+            // on screen
+            input.id = inputId;
+            // in container
+            dataProxy.id = inputId;
+            dataProxy.parentId = dialog.id;
+
+            if (!data.isVisible) {
+                input.style.display = 'none';
+            }
+            dialog.appendChild(input);
+            return dataProxy;
+        } else {
+            return;
+        }
+    },
 
     // Add select
     // addSelect: function(paper, data)

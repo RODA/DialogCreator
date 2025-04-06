@@ -87,6 +87,34 @@ export type inputElementType = {
     conditions: string;
     [key: string]: any;
 }
+export type labelElementType = {
+    parentId: string;
+    type: string;
+    id: string;
+    width: number;
+    left: number;
+    top: number;
+    isVisible: boolean;
+    isEnabled: boolean;
+    value: string;
+    elementIds: string[];
+    conditions: string;
+    [key: string]: any;
+}
+export type separatorElementType = {
+    parentId: string;
+    type: string;
+    id: string;
+    width: number;
+    height: number;
+    left: number;
+    top: number;
+    direction: string;
+    color: string;
+    isVisible: boolean;
+    conditions: string;
+    [key: string]: any;
+}
 
 export interface ElementsInterface {
     buttonElement: buttonElementType;
@@ -95,6 +123,8 @@ export interface ElementsInterface {
     containerElement: containerElementType;
     counterElement: counterElementType;
     inputElement: inputElementType;
+    labelElement: labelElementType;
+    separatorElement: separatorElementType;
 }
 
 export const elements: ElementsInterface = {
@@ -177,6 +207,33 @@ export const elements: ElementsInterface = {
         isVisible: true,
         isEnabled: true,
         value: '',
+        elementIds: [],
+        conditions: ''
+    },
+    labelElement: {
+        parentId: '',
+        type: 'Label',
+        id: '',
+        width: 120,
+        left: 15,
+        top: 15,
+        isVisible: true,
+        isEnabled: true,
+        value: 'Label',
+        elementIds: [],
+        conditions: ''
+    },
+    separatorElement: {
+        parentId: '',
+        type: 'Separator',
+        id: '',
+        width: 200,
+        height: 1,
+        left: 15,
+        top: 15,
+        direction: "x", // Horizontal
+        color: "#000000",
+        isVisible: true,
         elementIds: [],
         conditions: ''
     }
