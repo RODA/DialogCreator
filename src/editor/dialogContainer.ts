@@ -80,6 +80,14 @@ export const dialogContainer: DialogContainerInterface = {
                         // why does it requires a number, here ??
                         dialogContainer.elements[id]['left'] = Number(newleft);
                     }
+                } else if (keys[i] == 'height') {
+                    const eltop = document.getElementById('eltop') as HTMLInputElement;
+                    const elementHeight = document.getElementById(id).getBoundingClientRect().height;
+                    if (Number(eltop.value) + elementHeight + 10 > dialogH) {
+                        const newtop = String(Math.round(dialogH - elementHeight - 10));
+                        eltop.value = newtop;
+                        dialogContainer.elements[id]['top'] = Number(newtop);
+                    }
                 }
             } else {
                 notFound.push(keys[i]);
