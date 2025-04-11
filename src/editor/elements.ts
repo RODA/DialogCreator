@@ -115,6 +115,19 @@ export type separatorElementType = {
     conditions: string;
     [key: string]: any;
 }
+export type selectElementType = {
+    parentId: string;
+    type: string;
+    id: string;
+    width: number;
+    left: number;
+    top: number;
+    isVisible: boolean;
+    isEnabled: boolean;
+    elementIds: string[];
+    conditions: string;
+    [key: string]: any;
+}
 
 export interface ElementsInterface {
     buttonElement: buttonElementType;
@@ -125,6 +138,7 @@ export interface ElementsInterface {
     inputElement: inputElementType;
     labelElement: labelElementType;
     separatorElement: separatorElementType;
+    selectElement: selectElementType;
 }
 
 export const elements: ElementsInterface = {
@@ -149,8 +163,8 @@ export const elements: ElementsInterface = {
         left: 10,
         top: 10,
         isChecked: false,
-        isEnabled: true,
         isVisible: true,
+        isEnabled: true,
         elementIds: [],
         conditions: ''
     },
@@ -162,8 +176,8 @@ export const elements: ElementsInterface = {
         top: 10,
         group: 'radiogroup1',
         isSelected: false,
-        isEnabled: true,
         isVisible: true,
+        isEnabled: true,
         elementIds: [],
         conditions: ''
     },
@@ -234,6 +248,18 @@ export const elements: ElementsInterface = {
         direction: "x", // Horizontal
         color: "#000000",
         isVisible: true,
+        elementIds: [],
+        conditions: ''
+    },
+    selectElement: {
+        parentId: '',
+        type: 'Select',
+        id: '',
+        width: 120,
+        left: 15,
+        top: 15,
+        isVisible: true,
+        isEnabled: true,
         elementIds: [],
         conditions: ''
     }

@@ -2,8 +2,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { ElementsInterface } from './elements';
 import { dialogContainer } from './dialogContainer';
 import { editor } from './editor';
-export type editorElementsTypes = 'addButton' | 'addCheckbox' | 'addRadio' | 'addLabel' | 'addSeparator'
-// | 'addContainer' | 'addCounter' | 'addInput' | 'addSelect' | 'addSlider';
+export type editorElementsTypes = 'addButton' | 'addCheckbox' | 'addRadio' | 'addLabel' |
+    'addSeparator' | 'addSelect' // | 'addContainer' | 'addCounter' | 'addInput' | 'addSlider';
 
 export interface EditorElementsInterface {
     fontSize: number;
@@ -19,6 +19,7 @@ export interface EditorElementsInterface {
     addInput: (dialog: HTMLDivElement, data: ElementsInterface["inputElement"]) => ElementsInterface["inputElement"];
     addLabel: (dialog: HTMLDivElement, data: ElementsInterface["labelElement"]) => ElementsInterface["labelElement"];
     addSeparator: (dialog: HTMLDivElement, data: ElementsInterface["separatorElement"]) => ElementsInterface["separatorElement"];
+    addSelect: (dialog: HTMLDivElement, data: ElementsInterface["selectElement"]) => ElementsInterface["selectElement"];
     // addSelect: (dialog: HTMLDivElement, data: elementsConfig.select ) => void;
     // addSlider: (dialog: HTMLDivElement, data: elementsConfig.slider ) => void;
     // [propName: string]: any;
@@ -80,6 +81,9 @@ export const editorElements: EditorElementsInterface = {
                                 el.style.width = value + 'px';
                             }
                             break;
+                        case 'isVisible':
+                            obj[key] = value === 'true';
+                            break;
                         case 'isEnabled':
                             obj[key] = value === 'true';
                             break;
@@ -112,11 +116,11 @@ export const editorElements: EditorElementsInterface = {
             dataProxy.id = buttonId;
             dataProxy.parentId = dialog.id;
 
-            if (!data.isEnabled) {
-                button.disabled = true;
-            }
             if (!data.isVisible) {
                 button.style.display = 'none';
+            }
+            if (!data.isEnabled) {
+                button.disabled = true;
             }
             dialog.appendChild(button);
             return dataProxy;
@@ -151,6 +155,9 @@ export const editorElements: EditorElementsInterface = {
                             if (el) {
                                 el.style.left = value + 'px';
                             }
+                            break;
+                        case 'isVisible':
+                            obj[key] = value === 'true';
                             break;
                         case 'isEnabled':
                             obj[key] = value === 'true';
@@ -224,15 +231,15 @@ export const editorElements: EditorElementsInterface = {
             dataProxy.id = checkboxId;
             dataProxy.parentId = dialog.id;
 
-            checkbox.classList.remove('disabled-div');
-            if (!data.isEnabled) {
-                // checkbox.disabled = true;
-                checkbox.classList.add('disabled-div');
-            }
-
             if (!data.isVisible) {
                 checkbox.style.display = 'none';
             }
+
+            checkbox.classList.remove('disabled-div');
+            if (!data.isEnabled) {
+                checkbox.classList.add('disabled-div');
+            }
+
             dialog.appendChild(checkbox);
             return dataProxy;
         } else {
@@ -279,6 +286,9 @@ export const editorElements: EditorElementsInterface = {
                             if (el) {
                                 el.style.left = value + 'px';
                             }
+                            break;
+                        case 'isVisible':
+                            obj[key] = value === 'true';
                             break;
                         case 'isEnabled':
                             obj[key] = value === 'true';
@@ -340,17 +350,374 @@ export const editorElements: EditorElementsInterface = {
             dataProxy.id = radioId;
             dataProxy.parentId = dialog.id;
 
-            radio.classList.remove('disabled-div');
-            if (!data.isEnabled) {
-                // radio.disabled = true;
-                radio.classList.add('disabled-div');
-            }
-
             if (!data.isVisible) {
                 radio.style.display = 'none';
             }
+
+            radio.classList.remove('disabled-div');
+            if (!data.isEnabled) {
+                radio.classList.add('disabled-div');
+            }
             dialog.appendChild(radio);
 
+            return dataProxy;
+        } else {
+            return;
+        }
+    },
+
+    // Add Input
+    addInput: function (dialog, data) {
+        if (typeof data === 'object' && !Array.isArray(data)) {
+
+            const inputId = uuidv4();
+
+            const dataProxy = new Proxy({ ...data }, {
+                set(obj, key: string, value) {
+
+                    const el = document.getElementById(inputId) as HTMLInputElement;
+
+                    switch (key) {
+                        case 'top':
+                            if (el && editorElements.maxHeight >= value) {
+                                obj[key] = parseInt(value);
+                                el.style.top = value + 'px';
+                            } else {
+                                el.style.top = editorElements.maxHeight + 'px';
+                            }
+                            break;
+                        case 'left':
+                            obj[key] = parseInt(value);
+                            if (el) {
+                                el.style.left = value + 'px';
+                            }
+                            break;
+                        case 'width':
+                            obj[key] = parseInt(value);
+                            if (el) {
+                                el.style.width = value + 'px';
+                            }
+                            break;
+                        case 'value':
+                            obj[key] = value;
+                            if (el) {
+                                el.value = value;
+                            }
+                            break;
+                        case 'isVisible':
+                            obj[key] = value === 'true';
+                            break;
+                        case 'isEnabled':
+                            obj[key] = value === 'true';
+                            break;
+                        default:
+                            obj[key] = value;
+
+                    }
+                    return true;
+                }
+            })
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            // position
+            input.style.position = 'absolute';
+            input.style.top = data.top + 'px';
+            input.style.left = data.left + 'px';
+            input.style.width = data.width + 'px';
+            input.value = data.value;
+
+            input.style.maxWidth = editorElements.maxWidth + 'px';
+            input.style.maxHeight = editorElements.maxHeight + 'px';
+
+            input.style.fontFamily = editorElements.fontFamily;
+            input.style.fontSize = editorElements.fontSize + 'px';
+
+            // on screen
+            input.id = inputId;
+            // in container
+            dataProxy.id = inputId;
+            dataProxy.parentId = dialog.id;
+
+            if (!data.isVisible) {
+                input.style.display = 'none';
+            }
+            if (!data.isEnabled) {
+                input.disabled = true;
+            }
+            dialog.appendChild(input);
+            return dataProxy;
+        } else {
+            return;
+        }
+    },
+
+    // Add Label
+    addLabel: function (dialog, data) {
+        if (typeof data === 'object' && !Array.isArray(data)) {
+
+            const inputId = uuidv4();
+
+            const dataProxy = new Proxy({ ...data }, {
+                set(obj, key: string, value) {
+
+                    const el = document.getElementById(inputId) as HTMLInputElement;
+
+                    switch (key) {
+                        case 'top':
+                            if (el && editorElements.maxHeight >= value) {
+                                obj[key] = parseInt(value);
+                                el.style.top = value + 'px';
+                            } else {
+                                el.style.top = editorElements.maxHeight + 'px';
+                            }
+                            break;
+                        case 'left':
+                            obj[key] = parseInt(value);
+                            if (el) {
+                                el.style.left = value + 'px';
+                            }
+                            break;
+                        case 'width':
+                            obj[key] = parseInt(value);
+                            if (el) {
+                                el.style.width = value + 'px';
+                            }
+                            break;
+                        case 'value':
+                            obj[key] = value;
+                            if (el) {
+                                el.innerText = value;
+                            }
+                            break;
+                        case 'isVisible':
+                            obj[key] = value === 'true';
+                            break;
+                        case 'isEnabled':
+                            obj[key] = value === 'true';
+                            break;
+                        default:
+                            obj[key] = value;
+
+                    }
+                    return true;
+                }
+            })
+
+            const input = document.createElement('div');
+
+            // position
+            input.style.position = 'absolute';
+            input.style.top = data.top + 'px';
+            input.style.left = data.left + 'px';
+            input.innerText = data.value;
+
+            input.style.maxWidth = editorElements.maxWidth + 'px';
+            input.style.maxHeight = editorElements.maxHeight + 'px';
+
+            input.style.fontFamily = editorElements.fontFamily;
+            input.style.fontSize = editorElements.fontSize + 'px';
+
+            // on screen
+            input.id = inputId;
+            // in container
+            dataProxy.id = inputId;
+            dataProxy.parentId = dialog.id;
+
+            if (!data.isVisible) {
+                input.style.display = 'none';
+            }
+            if (!data.isEnabled) {
+                input.classList.add('disabled-div');
+            }
+            dialog.appendChild(input);
+            return dataProxy;
+        } else {
+            return;
+        }
+    },
+
+    // Add Separator
+    addSeparator: function (dialog, data) {
+        if (typeof data === 'object' && !Array.isArray(data)) {
+
+            const inputId = uuidv4();
+
+            const dataProxy = new Proxy({ ...data }, {
+                set(obj, key: string, value) {
+
+                    const el = document.getElementById(inputId) as HTMLInputElement;
+
+                    switch (key) {
+                        case 'top':
+                            if (el && editorElements.maxHeight >= value) {
+                                obj[key] = parseInt(value);
+                                el.style.top = value + 'px';
+                            } else {
+                                el.style.top = editorElements.maxHeight + 'px';
+                            }
+                            break;
+                        case 'left':
+                            obj[key] = parseInt(value);
+                            if (el) {
+                                el.style.left = value + 'px';
+                            }
+                            break;
+                        case 'width':
+                            obj[key] = parseInt(value);
+                            if (el) {
+                                el.style.width = value + 'px';
+                            }
+                            break;
+                        case 'height':
+                            obj[key] = parseInt(value);
+                            if (el) {
+                                el.style.height = value + 'px';
+                            }
+                            break;
+                        case 'color':
+                            obj[key] = value;
+                            if (el) {
+                                el.style.backgroundColor = value;
+                            }
+                            break;
+                        case 'direction':
+                            obj[key] = value;
+                            dialogContainer.updateProperties(
+                                obj.id,
+                                { width: String(obj["height"]), height: String(obj["width"]) }
+                            );
+                            editor.editorEvents.emit(
+                                'selectElement',
+                                dialogContainer.getElement(obj.id)
+                            );
+                            break;
+                        case 'isVisible':
+                            obj[key] = value === 'true';
+                            break;
+                        default:
+                            obj[key] = value;
+
+                    }
+                    return true;
+                }
+            })
+
+            const input = document.createElement('div');
+            input.className = 'separator';
+
+            // position
+            input.style.position = 'absolute';
+            input.style.top = data.top + 'px';
+            input.style.left = data.left + 'px';
+
+            input.style.width = data.width + 'px';
+            input.style.height = data.height + 'px';
+            input.style.maxWidth = editorElements.maxWidth + 'px';
+            input.style.maxHeight = editorElements.maxHeight + 'px';
+
+            input.style.backgroundColor = data.color + 'px';
+
+            input.style.fontFamily = editorElements.fontFamily;
+            input.style.fontSize = editorElements.fontSize + 'px';
+
+            // on screen
+            input.id = inputId;
+            // in container
+            dataProxy.id = inputId;
+            dataProxy.parentId = dialog.id;
+
+            if (!data.isVisible) {
+                input.style.display = 'none';
+            }
+            dialog.appendChild(input);
+            return dataProxy;
+        } else {
+            return;
+        }
+    },
+
+    // Add Input
+    addSelect: function (dialog, data) {
+        if (typeof data === 'object' && !Array.isArray(data)) {
+
+            const selectId = uuidv4();
+
+            const dataProxy = new Proxy({ ...data }, {
+                set(obj, key: string, value) {
+
+                    const el = document.getElementById(selectId) as HTMLSelectElement;
+
+                    switch (key) {
+                        case 'top':
+                            if (el && editorElements.maxHeight >= value) {
+                                obj[key] = parseInt(value);
+                                el.style.top = value + 'px';
+                            } else {
+                                el.style.top = editorElements.maxHeight + 'px';
+                            }
+                            break;
+                        case 'left':
+                            obj[key] = parseInt(value);
+                            if (el) {
+                                el.style.left = value + 'px';
+                            }
+                            break;
+                        case 'width':
+                            obj[key] = parseInt(value);
+                            if (el) {
+                                el.style.width = value + 'px';
+                            }
+                            break;
+                        case 'value':
+                            obj[key] = value;
+                            if (el) {
+                                el.value = value;
+                            }
+                            break;
+                        case 'isVisible':
+                            obj[key] = value === 'true';
+                            break;
+                        case 'isEnabled':
+                            obj[key] = value === 'true';
+                            break;
+                        default:
+                            obj[key] = value;
+
+                    }
+                    return true;
+                }
+            })
+
+            const select = document.createElement('select');
+            select.className = 'custom-select';
+
+            // position
+            select.style.position = 'absolute';
+            select.style.top = data.top + 'px';
+            select.style.left = data.left + 'px';
+            select.style.width = data.width + 'px';
+            select.style.padding = '3px';
+
+            select.style.maxWidth = editorElements.maxWidth + 'px';
+            select.style.maxHeight = editorElements.maxHeight + 'px';
+
+            select.style.fontFamily = editorElements.fontFamily;
+            select.style.fontSize = editorElements.fontSize + 'px';
+
+            // on screen
+            select.id = selectId;
+            // in container
+            dataProxy.id = selectId;
+            dataProxy.parentId = dialog.id;
+
+            if (!data.isVisible) {
+                select.style.display = 'none';
+            }
+            if (!data.isEnabled) {
+                select.disabled = true;
+            }
+            dialog.appendChild(select);
             return dataProxy;
         } else {
             return;
@@ -431,334 +798,50 @@ export const editorElements: EditorElementsInterface = {
     //     }
     // },
 
-    // Add Input
-    addInput: function (dialog, data) {
-        if (typeof data === 'object' && !Array.isArray(data)) {
+    // Add counter
+    // addCounter: function (paper, data) {
+    //     if (this.isObject(data)) {
+    //         // data to int
+    //         let dataLeft = parseInt(data.left) + 24;
+    //         let dataTop = parseInt(data.top) + 7;
 
-            const inputId = uuidv4();
+    //         var txtanchor = "middle";
+    //         let crtVal = data.startval;
 
-            const dataProxy = new Proxy({ ...data }, {
-                set(obj, key: string, value) {
+    //         let textvalue = paper.text(dataLeft, dataTop, "" + data.startval)
+    //             .attr({ "text-anchor": txtanchor, "font-size": editorElements.fontSize, "font-family": editorElements.fontFamily });
 
-                    const el = document.getElementById(inputId) as HTMLInputElement;
+    //         let downsign = paper.path([
+    //             ["M", dataLeft - 12 - parseInt(data.width) / 2, dataTop - 6],
+    //             ["l", 12, 0],
+    //             ["l", -6, 12],
+    //             ["z"]
+    //         ]).attr({ fill: "#eeeeee", "stroke-width": 1, stroke: "#5d5d5d" });
 
-                    switch (key) {
-                        case 'top':
-                            if (el && editorElements.maxHeight >= value) {
-                                obj[key] = parseInt(value);
-                                el.style.top = value + 'px';
-                            } else {
-                                el.style.top = editorElements.maxHeight + 'px';
-                            }
-                            break;
-                        case 'left':
-                            obj[key] = parseInt(value);
-                            if (el) {
-                                el.style.left = value + 'px';
-                            }
-                            break;
-                        case 'width':
-                            obj[key] = parseInt(value);
-                            if (el) {
-                                el.style.width = value + 'px';
-                            }
-                            break;
-                        case 'value':
-                            obj[key] = value;
-                            if (el) {
-                                el.value = value;
-                            }
-                            break;
-                        case 'isEnabled':
-                            obj[key] = value === 'true';
-                            break;
-                        default:
-                            obj[key] = value;
+    //         let upsign = paper.path([
+    //             ["M", dataLeft + parseInt(data.width) / 2, dataTop + 6],
+    //             ["l", 12, 0],
+    //             ["l", -6, -12],
+    //             ["z"]
+    //         ]).attr({ fill: "#eeeeee", "stroke-width": 1, stroke: "#5d5d5d" });
 
-                    }
-                    return true;
-                }
-            })
+    //         // let down = paper.rect(dataLeft - 22, dataTop - 6, 15, 15)
+    //         //     .attr({fill: "#fff", opacity: 0, stroke: "#000", "stroke-width": 1, cursor: "pointer"});
 
-            const input = document.createElement('input');
-            input.type = 'text';
-            // position
-            input.style.position = 'absolute';
-            input.style.top = data.top + 'px';
-            input.style.left = data.left + 'px';
-            input.value = data.value;
+    //         // let up = paper.rect(dataLeft + 8, dataTop - 8, 15, 15)
+    //         //     .attr({fill: "#fff", opacity: 0, stroke: "#000", "stroke-width": 1, cursor: "pointer"});
 
-            input.style.maxWidth = editorElements.maxWidth + 'px';
-            input.style.maxHeight = editorElements.maxHeight + 'px';
-
-            input.style.fontFamily = editorElements.fontFamily;
-            input.style.fontSize = editorElements.fontSize + 'px';
-
-            // on screen
-            input.id = inputId;
-            // in container
-            dataProxy.id = inputId;
-            dataProxy.parentId = dialog.id;
-
-            if (!data.isEnabled) {
-                input.disabled = true;
-            }
-            if (!data.isVisible) {
-                input.style.display = 'none';
-            }
-            dialog.appendChild(input);
-            return dataProxy;
-        } else {
-            return;
-        }
-    },
-
-    // Add Label
-    addLabel: function (dialog, data) {
-        if (typeof data === 'object' && !Array.isArray(data)) {
-
-            const inputId = uuidv4();
-
-            const dataProxy = new Proxy({ ...data }, {
-                set(obj, key: string, value) {
-
-                    const el = document.getElementById(inputId) as HTMLInputElement;
-
-                    switch (key) {
-                        case 'top':
-                            if (el && editorElements.maxHeight >= value) {
-                                obj[key] = parseInt(value);
-                                el.style.top = value + 'px';
-                            } else {
-                                el.style.top = editorElements.maxHeight + 'px';
-                            }
-                            break;
-                        case 'left':
-                            obj[key] = parseInt(value);
-                            if (el) {
-                                el.style.left = value + 'px';
-                            }
-                            break;
-                        case 'width':
-                            obj[key] = parseInt(value);
-                            if (el) {
-                                el.style.width = value + 'px';
-                            }
-                            break;
-                        case 'value':
-                            obj[key] = value;
-                            if (el) {
-                                el.innerText = value;
-                            }
-                            break;
-                        case 'isEnabled':
-                            obj[key] = value === 'true';
-                            break;
-                        default:
-                            obj[key] = value;
-
-                    }
-                    return true;
-                }
-            })
-
-            const input = document.createElement('div');
-
-            // position
-            input.style.position = 'absolute';
-            input.style.top = data.top + 'px';
-            input.style.left = data.left + 'px';
-            input.innerText = data.value;
-
-            input.style.maxWidth = editorElements.maxWidth + 'px';
-            input.style.maxHeight = editorElements.maxHeight + 'px';
-
-            input.style.fontFamily = editorElements.fontFamily;
-            input.style.fontSize = editorElements.fontSize + 'px';
-
-            // on screen
-            input.id = inputId;
-            // in container
-            dataProxy.id = inputId;
-            dataProxy.parentId = dialog.id;
-
-            if (!data.isEnabled) {
-                // input.disabled = true;
-                input.classList.add('disabled-div');
-            }
-            if (!data.isVisible) {
-                input.style.display = 'none';
-            }
-            dialog.appendChild(input);
-            return dataProxy;
-        } else {
-            return;
-        }
-    },
-
-    // Add Separator
-    addSeparator: function (dialog, data) {
-        if (typeof data === 'object' && !Array.isArray(data)) {
-
-            const inputId = uuidv4();
-
-            const dataProxy = new Proxy({ ...data }, {
-                set(obj, key: string, value) {
-
-                    const el = document.getElementById(inputId) as HTMLInputElement;
-
-                    switch (key) {
-                        case 'top':
-                            if (el && editorElements.maxHeight >= value) {
-                                obj[key] = parseInt(value);
-                                el.style.top = value + 'px';
-                            } else {
-                                el.style.top = editorElements.maxHeight + 'px';
-                            }
-                            break;
-                        case 'left':
-                            obj[key] = parseInt(value);
-                            if (el) {
-                                el.style.left = value + 'px';
-                            }
-                            break;
-                        case 'width':
-                            obj[key] = parseInt(value);
-                            if (el) {
-                                el.style.width = value + 'px';
-                            }
-                            break;
-                        case 'height':
-                            obj[key] = parseInt(value);
-                            if (el) {
-                                el.style.height = value + 'px';
-                            }
-                            break;
-                        case 'color':
-                            obj[key] = value;
-                            if (el) {
-                                el.style.backgroundColor = value;
-                            }
-                            break;
-                        case 'direction':
-                            obj[key] = value;
-                            dialogContainer.updateProperties(
-                                obj.id,
-                                { width: String(obj["height"]), height: String(obj["width"]) }
-                            );
-                            editor.editorEvents.emit(
-                                'selectElement',
-                                dialogContainer.getElement(obj.id)
-                            );
-                            break;
-                        case 'isVisible':
-                            obj[key] = value === 'true';
-                            break;
-                        default:
-                            obj[key] = value;
-
-                    }
-                    return true;
-                }
-            })
-
-            // const input = document.createElement('span');
-            const input = document.createElement('div');
-            input.className = 'separator';
-
-            // position
-            input.style.position = 'absolute';
-            input.style.top = data.top + 'px';
-            input.style.left = data.left + 'px';
-
-            input.style.width = data.width + 'px';
-            input.style.height = data.height + 'px';
-            input.style.maxWidth = editorElements.maxWidth + 'px';
-            input.style.maxHeight = editorElements.maxHeight + 'px';
-
-            input.style.backgroundColor = data.color + 'px';
-
-            input.style.fontFamily = editorElements.fontFamily;
-            input.style.fontSize = editorElements.fontSize + 'px';
-
-            // on screen
-            input.id = inputId;
-            // in container
-            dataProxy.id = inputId;
-            dataProxy.parentId = dialog.id;
-
-            if (!data.isVisible) {
-                input.style.display = 'none';
-            }
-            dialog.appendChild(input);
-            return dataProxy;
-        } else {
-            return;
-        }
-    },
-
-    // Add select
-    // addSelect: function(paper, data)
-    // {
-    //     // data to int
-    //     let dataLeft = parseInt(data.left);
-    //     let dataTop = parseInt(data.top);
-    //     // not widther than 350
-    //     data.width = (data.width > 350) ? 350 : data.width;
-    //     let dataWidth = parseInt(data.width);
-
-
-    //     let rect = paper.rect(dataLeft, dataTop, dataWidth, 25).attr({fill: "#FFFFFF", "stroke": "#5d5d5d", "stroke-width": 1});
-
-    //     let downsign = paper.path([
-    //         ["M", dataLeft + dataWidth- 15 , dataTop + 8 ],
-    //         ["l", 8, 0],
-    //         ["l", -4, 8],
-    //         ["z"]
-    //     ]).attr({fill: "#5d5d5d", "stroke-width": 0});
-
-    //     // if select is disable
-    //     if(data.isEnabled == 'false'){
-    //         rect.attr({fill: "#cccccc", stroke: "#848484"});
-    //         downsign.attr({fill: "#848484"});
-    //     }
-
-    //     let set = paper.set();
-    //     set.push(rect, downsign);
-
-    //     return set;
-    // },
-
-    // Add separator
-    // addSeparator: function(paper, data)
-    // {
-    //     if( this.isObject(data) ) {
-
-    //         // check for user input
-    //         if(data.left < 15 || data.left > paper.width - 15){ data.left = 15; }
-    //         if(data.top < 15 || data.top > paper.height - 15){ data.top = 15; }
-
-    //         // return Raphael object
-    //         if(data.direction == 'x')
-    //         {
-    //             // width to big
-    //             if(data.length < 50) { data.length = 50; }
-    //             else if(data.length > paper.width - 30) { data.length = paper.width - 30; data.left = 15;}
-
-    //             let v = parseInt(data.length) + parseInt(data.left);
-
-    //             return paper.path("M" + data.left + " " + data.top + "L"+ v +" " + data.top).attr({stroke: "#5d5d5d"});
+    //         if (data.isEnabled == 'false') {
+    //             textvalue.attr({ fill: '#848484' });
+    //             upsign.attr({ fill: "#cccccc", stroke: "#848484" });
+    //             downsign.attr({ fill: "#cccccc", stroke: "#848484" });
     //         }
-    //         else if(data.direction == 'y')
-    //         {
-    //             // width to big
-    //             if(data.length < 50) { data.length = 50; }
-    //             else if(data.length > paper.height - 30) { data.length = paper.height - 30; data.top = 15;}
 
-    //             let v = parseInt(data.length) + parseInt(data.top);
+    //         let set = paper.set();
 
-    //             return paper.path("M" + data.left + " " + data.top + "L" + data.left + " " + v).attr({stroke: "#5d5d5d"});
-    //         }
+    //         set.push(textvalue, downsign, upsign);
+
+    //         return set;
     //     } else {
     //         return;
     //     }
