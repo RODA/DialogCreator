@@ -314,6 +314,6 @@ input[type="text"] {
 
     background-image: url(./arrow-down.svg);
     background-repeat: no-repeat;
-    background-position: right 5px center;
+    background-position: right 3px center;
     background-size: 10px;
 }

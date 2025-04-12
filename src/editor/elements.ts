@@ -122,6 +122,9 @@ export type selectElementType = {
     width: number;
     left: number;
     top: number;
+    // dataSource: string; // too R specific
+    // Robjects: string;   // too R specific
+    value: string;
     isVisible: boolean;
     isEnabled: boolean;
     elementIds: string[];
@@ -258,6 +261,9 @@ export const elements: ElementsInterface = {
         width: 120,
         left: 15,
         top: 15,
+        // dataSource: 'custom', // too R specific
+        // Robjects: 'all',      // too R specific
+        value: '',
         isVisible: true,
         isEnabled: true,
         elementIds: [],

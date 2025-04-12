@@ -175,6 +175,28 @@ export const editor: EditorInterface = {
 
         // Event listeners for mouse down, move, and up events
         htmlCreatedElement.addEventListener('mousedown', (e) => {
+            if (htmlCreatedElement.tagName == "SELECT") {
+                /*
+                // This works and could be used, but it is very R specific and the
+                // Dialog Creator could theoretically be used for any other language
+                let value = document.getElementById('eldataSource').dataset.savedValue;
+                if (!value) {
+                    value = "custom";
+                }
+
+                if (value == "custom") {
+                    document.getElementById('divRobjects').style.display = 'none';
+                    document.getElementById('divalue').style.display = '';
+                } else {
+                    document.getElementById('divRobjects').style.display = '';
+                    document.getElementById('divalue').style.display = 'none';
+                }
+                */
+                document.getElementById('valuelabel').innerText = 'Values';
+            } else {
+                document.getElementById('valuelabel').innerText = 'Value';
+            }
+
             isDragging = true;
             if (!htmlCreatedElement.classList.contains('selectedElement')) {
                 editor.deselectAll();
@@ -185,6 +207,7 @@ export const editor: EditorInterface = {
                     dialogContainer.getElement(htmlCreatedElement.id)
                 );
             }
+
             elementWidth = htmlCreatedElement.getBoundingClientRect().width;
             elementHeight = htmlCreatedElement.getBoundingClientRect().height;
 

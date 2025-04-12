@@ -669,6 +669,21 @@ export const editorElements: EditorElementsInterface = {
                                 el.style.width = value + 'px';
                             }
                             break;
+                        case 'dataSource':
+                            obj[key] = value;
+                            /*
+                            // This works and could be used, but it is very R specific and the
+                            // Dialog Creator could theoretically be used for any other language
+                            document.getElementById('eldataSource').dataset.savedValue = value;
+                            if (value == "custom") {
+                                document.getElementById('divRobjects').style.display = 'none';
+                                document.getElementById('divalue').style.display = '';
+                            } else {
+                                document.getElementById('divRobjects').style.display = '';
+                                document.getElementById('divalue').style.display = 'none';
+                            }
+                            */
+                            break;
                         case 'value':
                             obj[key] = value;
                             if (el) {
