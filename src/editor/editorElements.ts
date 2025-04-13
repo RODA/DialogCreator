@@ -766,7 +766,8 @@ export const editorElements: EditorElementsInterface = {
                             obj[key] = parseInt(value);
 
                             if (obj["direction"] == "x") {
-                                handle.style.left = ((parseInt(value) * Number(obj["start"]) / 100) - handlewidth) + 'px';
+                                const handlepos = (obj["start"] - obj["min"]) / (obj["max"] - obj["min"]);
+                                handle.style.left = ((parseInt(value) * handlepos) - handlewidth) + 'px';
                             }
                             if (el) {
                                 el.style.width = value + 'px';
@@ -775,7 +776,8 @@ export const editorElements: EditorElementsInterface = {
                         case 'height':
                             obj[key] = parseInt(value);
                             if (obj["direction"] == "y") {
-                                handle.style.top = (parseInt(value) * (1 - (Number(obj["start"]) / 100)) - handlewidth) + 'px';
+                                const handlepos = (obj["start"] - obj["min"]) / (obj["max"] - obj["min"]);
+                                handle.style.top = (parseInt(value) * (1 - handlepos) - handlewidth) + 'px';
                             }
                             if (el) {
                                 el.style.height = value + 'px';
@@ -795,17 +797,17 @@ export const editorElements: EditorElementsInterface = {
                             );
 
                             {
-                                const start = (Number(obj["start"]) / 100);
+                                const handlepos = (obj["start"] - obj["min"]) / (obj["max"] - obj["min"]);
                                 if (value == "y") {
                                     handle.classList.remove('horizontal');
                                     handle.classList.add('vertical');
                                     handle.style.left = '100%';
-                                    handle.style.top = (obj["height"] * (1 - start) - handlewidth) + 'px';
+                                    handle.style.top = (obj["height"] * (1 - handlepos) - handlewidth) + 'px';
                                 } else {
                                     handle.classList.remove('vertical');
                                     handle.classList.add('horizontal');
                                     handle.style.top = '100%';
-                                    handle.style.left = (obj["width"] * start - handlewidth + 1) + 'px';
+                                    handle.style.left = (obj["width"] * handlepos - handlewidth) + 'px';
                                 }
                             }
 
@@ -815,13 +817,36 @@ export const editorElements: EditorElementsInterface = {
                             );
 
                             break;
+                        case 'min':
+                            obj[key] = value;
+                            {
+                                const handlepos = (obj["start"] - obj["min"]) / (obj["max"] - obj["min"]);
+                                if (obj["direction"] == "y") {
+                                    handle.style.top = (Number(obj["height"]) * (1 - handlepos) - handlewidth) + 'px';
+                                } else {
+                                    handle.style.left = (Number(obj["width"]) * handlepos - handlewidth) + 'px';
+                                }
+                            }
+                            break;
+                        case 'max':
+                            obj[key] = value;
+                            {
+                                const handlepos = (obj["start"] - obj["min"]) / (obj["max"] - obj["min"]);
+                                if (obj["direction"] == "y") {
+                                    handle.style.top = (Number(obj["height"]) * (1 - handlepos) - handlewidth) + 'px';
+                                } else {
+                                    handle.style.left = (Number(obj["width"]) * handlepos - handlewidth) + 'px';
+                                }
+                            }
+                            break;
                         case 'start':
                             obj[key] = value;
                             {
+                                const handlepos = (obj["start"] - obj["min"]) / (obj["max"] - obj["min"]);
                                 if (obj["direction"] == "y") {
-                                    handle.style.top = (Number(obj["height"]) * (1 - value / 100) - handlewidth) + 'px';
+                                    handle.style.top = (Number(obj["height"]) * (1 - handlepos) - handlewidth) + 'px';
                                 } else {
-                                    handle.style.left = (Number(obj["width"]) * value / 100 - handlewidth) + 'px';
+                                    handle.style.left = (Number(obj["width"]) * handlepos - handlewidth) + 'px';
                                 }
                             }
                             break;
@@ -841,7 +866,7 @@ export const editorElements: EditorElementsInterface = {
             const handle = document.createElement('div');
             handle.className = 'slider-handle horizontal';
             handle.id = 'slider-handle-' + sliderId;
-            handle.style.left = (data.width * Number(data.start) / 100 - handlewidth) + 'px';
+            handle.style.left = (data.width * (data.start - data.min) / (data.max - data.min) - handlewidth) + 'px';
 
             slider.appendChild(handle);
 

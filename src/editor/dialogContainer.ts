@@ -95,7 +95,11 @@ export const dialogContainer: DialogContainerInterface = {
         }
 
         if (notFound.length) {
-            showMessageBox({ type: 'warning', title: 'Notice', message: 'Props "' + notFound.join(',') + '" not found to update!' });
+            showMessageBox({
+                type: 'warning',
+                title: 'Notice',
+                message: 'Props "' + notFound.join(',') + '" not found to update!'
+            });
         }
     },
 
