@@ -20,8 +20,7 @@ export interface EditorElementsInterface {
     addLabel: (dialog: HTMLDivElement, data: ElementsInterface["labelElement"]) => ElementsInterface["labelElement"];
     addSeparator: (dialog: HTMLDivElement, data: ElementsInterface["separatorElement"]) => ElementsInterface["separatorElement"];
     addSelect: (dialog: HTMLDivElement, data: ElementsInterface["selectElement"]) => ElementsInterface["selectElement"];
-    // addSelect: (dialog: HTMLDivElement, data: elementsConfig.select ) => void;
-    // addSlider: (dialog: HTMLDivElement, data: elementsConfig.slider ) => void;
+    addSlider: (dialog: HTMLDivElement, data: ElementsInterface["sliderElement"]) => ElementsInterface["sliderElement"];
     // [propName: string]: any;
 }
 
@@ -618,9 +617,6 @@ export const editorElements: EditorElementsInterface = {
 
             input.style.backgroundColor = data.color + 'px';
 
-            input.style.fontFamily = editorElements.fontFamily;
-            input.style.fontSize = editorElements.fontSize + 'px';
-
             // on screen
             input.id = inputId;
             // in container
@@ -733,6 +729,144 @@ export const editorElements: EditorElementsInterface = {
                 select.disabled = true;
             }
             dialog.appendChild(select);
+            return dataProxy;
+        } else {
+            return;
+        }
+    },
+
+    // Add Separator
+    addSlider: function (dialog, data) {
+        if (typeof data === 'object' && !Array.isArray(data)) {
+
+            const sliderId = uuidv4();
+            const handlewidth = 8; // px
+
+            const dataProxy = new Proxy({ ...data }, {
+                set(obj, key: string, value) {
+
+                    const el = document.getElementById(sliderId) as HTMLInputElement;
+
+                    switch (key) {
+                        case 'top':
+                            if (el && editorElements.maxHeight >= value) {
+                                obj[key] = parseInt(value);
+                                el.style.top = value + 'px';
+                            } else {
+                                el.style.top = editorElements.maxHeight + 'px';
+                            }
+                            break;
+                        case 'left':
+                            obj[key] = parseInt(value);
+                            if (el) {
+                                el.style.left = value + 'px';
+                            }
+                            break;
+                        case 'width':
+                            obj[key] = parseInt(value);
+
+                            if (obj["direction"] == "x") {
+                                handle.style.left = ((parseInt(value) * Number(obj["start"]) / 100) - handlewidth) + 'px';
+                            }
+                            if (el) {
+                                el.style.width = value + 'px';
+                            }
+                            break;
+                        case 'height':
+                            obj[key] = parseInt(value);
+                            if (obj["direction"] == "y") {
+                                handle.style.top = (parseInt(value) * (1 - (Number(obj["start"]) / 100)) - handlewidth) + 'px';
+                            }
+                            if (el) {
+                                el.style.height = value + 'px';
+                            }
+                            break;
+                        case 'color':
+                            obj[key] = value;
+                            if (el) {
+                                el.style.backgroundColor = value;
+                            }
+                            break;
+                        case 'direction':
+                            obj[key] = value;
+                            dialogContainer.updateProperties(
+                                obj.id,
+                                { width: String(obj["height"]), height: String(obj["width"]) }
+                            );
+
+                            {
+                                const start = (Number(obj["start"]) / 100);
+                                if (value == "y") {
+                                    handle.classList.remove('horizontal');
+                                    handle.classList.add('vertical');
+                                    handle.style.left = '100%';
+                                    handle.style.top = (obj["height"] * (1 - start) - handlewidth) + 'px';
+                                } else {
+                                    handle.classList.remove('vertical');
+                                    handle.classList.add('horizontal');
+                                    handle.style.top = '100%';
+                                    handle.style.left = (obj["width"] * start - handlewidth + 1) + 'px';
+                                }
+                            }
+
+                            editor.editorEvents.emit(
+                                'selectElement',
+                                dialogContainer.getElement(obj.id)
+                            );
+
+                            break;
+                        case 'start':
+                            obj[key] = value;
+                            {
+                                if (obj["direction"] == "y") {
+                                    handle.style.top = (Number(obj["height"]) * (1 - value / 100) - handlewidth) + 'px';
+                                } else {
+                                    handle.style.left = (Number(obj["width"]) * value / 100 - handlewidth) + 'px';
+                                }
+                            }
+                            break;
+                        case 'isVisible':
+                            obj[key] = value === 'true';
+                            break;
+                        default:
+                            obj[key] = value;
+
+                    }
+                    return true;
+                }
+            })
+
+            const slider = document.createElement('div');
+            slider.className = 'separator';
+            const handle = document.createElement('div');
+            handle.className = 'slider-handle horizontal';
+            handle.id = 'slider-handle-' + sliderId;
+            handle.style.left = (data.width * Number(data.start) / 100 - handlewidth) + 'px';
+
+            slider.appendChild(handle);
+
+            // position
+            slider.style.position = 'absolute';
+            slider.style.top = data.top + 'px';
+            slider.style.left = data.left + 'px';
+
+            slider.style.width = data.width + 'px';
+            slider.style.height = data.height + 'px';
+            slider.style.maxWidth = editorElements.maxWidth + 'px';
+            slider.style.maxHeight = editorElements.maxHeight + 'px';
+
+            // slider.style.backgroundColor = data.color + 'px';
+
+            // on screen
+            slider.id = sliderId;
+            // in container
+            dataProxy.id = sliderId;
+            dataProxy.parentId = dialog.id;
+
+            if (!data.isVisible) {
+                slider.style.display = 'none';
+            }
+            dialog.appendChild(slider);
             return dataProxy;
         } else {
             return;

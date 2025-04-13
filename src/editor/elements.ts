@@ -131,6 +131,25 @@ export type selectElementType = {
     conditions: string;
     [key: string]: any;
 }
+export type sliderElementType = {
+    parentId: string;
+    type: string;
+    min: number;
+    max: number;
+    start: number;
+    id: string;
+    width: number;
+    height: number;
+    left: number;
+    top: number;
+    direction: string;
+    color: string;
+    isVisible: boolean;
+    conditions: string;
+    [key: string]: any;
+}
+
+//checkbuttonElementType
 
 export interface ElementsInterface {
     buttonElement: buttonElementType;
@@ -142,6 +161,7 @@ export interface ElementsInterface {
     labelElement: labelElementType;
     separatorElement: separatorElementType;
     selectElement: selectElementType;
+    sliderElement: sliderElementType;
 }
 
 export const elements: ElementsInterface = {
@@ -266,6 +286,23 @@ export const elements: ElementsInterface = {
         value: '',
         isVisible: true,
         isEnabled: true,
+        elementIds: [],
+        conditions: ''
+    },
+    sliderElement: {
+        parentId: '',
+        type: 'Slider',
+        min: 0,
+        max: 200,
+        start: 50,
+        id: '',
+        width: 120,
+        height: 1,
+        left: 15,
+        top: 15,
+        direction: "x", // Horizontal
+        color: "#000000",
+        isVisible: true,
         elementIds: [],
         conditions: ''
     }
