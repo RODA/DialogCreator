@@ -135,9 +135,9 @@ export type sliderElementType = {
     parentId: string;
     type: string;
     id: string;
+    handle: number;
     width: number;
     height: number;
-    handle: number;
     left: number;
     top: number;
     direction: string;
@@ -291,9 +291,9 @@ export const elements: ElementsInterface = {
         parentId: '',
         type: 'Slider',
         id: '',
+        handle: 50,
         width: 120,
         height: 1,
-        handle: 60,
         left: 15,
         top: 15,
         direction: "x", // Horizontal

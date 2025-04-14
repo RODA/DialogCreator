@@ -766,7 +766,7 @@ export const editorElements: EditorElementsInterface = {
                             obj[key] = parseInt(value);
 
                             if (obj["direction"] == "x") {
-                                handle.style.left = (obj["handle"] - handlewidth) + 'px';
+                                handle.style.left = (obj["width"] * obj["handle"] / 100 - handlewidth) + 'px';
                             }
                             if (el) {
                                 el.style.width = value + 'px';
@@ -775,7 +775,7 @@ export const editorElements: EditorElementsInterface = {
                         case 'height':
                             obj[key] = parseInt(value);
                             if (obj["direction"] == "y") {
-                                handle.style.top = (obj["height"] - obj["handle"] - handlewidth) + 'px';
+                                handle.style.top = ((obj["height"] * (1 - obj["handle"] / 100)) - handlewidth) + 'px';
                             }
                             if (el) {
                                 el.style.height = value + 'px';
@@ -796,8 +796,8 @@ export const editorElements: EditorElementsInterface = {
 
                             {
                                 const handlepos = (obj["direction"] == "x") ?
-                                    (obj["handle"] - handlewidth) :
-                                    (obj["height"] - obj["handle"] - handlewidth);
+                                    (obj["width"] * obj["handle"] / 100 - handlewidth) :
+                                    ((obj["height"] * (1 - obj["handle"] / 100)) - handlewidth);
                                 if (value == "y") {
                                     handle.classList.remove('horizontal');
                                     handle.classList.add('vertical');
@@ -818,14 +818,24 @@ export const editorElements: EditorElementsInterface = {
 
                             break;
                         case 'handle':
-                            obj[key] = value;
-                            {
-                                if (obj["direction"] == "x") {
-                                    handle.style.left = (obj["handle"] - handlewidth) + 'px';
-                                } else {
-                                    handle.style.top = (obj["height"] - obj["handle"] - handlewidth) + 'px';
-                                }
+                            if (value < 0) {
+                                value = 0;
+                            } else if (value > 100) {
+                                value = 100;
                             }
+
+                            obj[key] = value;
+
+                            if (obj["direction"] == "x") {
+                                handle.style.left = (obj["width"] * obj["handle"] / 100 - handlewidth) + 'px';
+                            } else {
+                                handle.style.top = (obj["height"] * (1 - obj["handle"] / 100) - handlewidth) + 'px';
+                            }
+
+                            editor.editorEvents.emit(
+                                'selectElement',
+                                dialogContainer.getElement(obj.id)
+                            );
                             break;
                         case 'isVisible':
                             obj[key] = value === 'true';
@@ -843,7 +853,7 @@ export const editorElements: EditorElementsInterface = {
             const handle = document.createElement('div');
             handle.className = 'slider-handle horizontal';
             handle.id = 'slider-handle-' + sliderId;
-            const handlepos = (data.direction == "x") ? data.handle : (data.height - data.handle);
+            const handlepos = (data.direction == "x") ? (data.width * data.handle / 100) : (data.height * (1 - data.handle / 100));
             handle.style.left = (handlepos - handlewidth) + 'px';
 
             slider.appendChild(handle);
