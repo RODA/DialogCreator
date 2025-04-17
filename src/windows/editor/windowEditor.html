@@ -85,11 +85,6 @@
                             <label for="elradioGroup">Radio Group</label>
                             <input type="text" name="radioGroup" id="elradioGroup" />
                         </div>
-                        <!-- Slider handle -->
-                        <div class="element-property hidden-element">
-                            <label for="elhandle">Handle (%)</label>
-                            <input type="text" name="handle" id="elhandle" />
-                        </div>
                     </div>
 
                     <!-- Layout properties -->
@@ -138,12 +133,12 @@
                         <div class="element-property hidden-element">
                             <label for="eldirection">Direction</label>
                             <select name="direction" id="eldirection">
-                                <option value="x">Horizontal</option>
-                                <option value="y">Vertical</option>
+                                <option value="horizontal">Horizontal</option>
+                                <option value="vertical">Vertical</option>
                             </select>
                         </div>
                         <div class="element-property hidden-element">
-                            <label for="elcolor">Color</label>
+                            <label for="elcolor" id="colorlabel">Color</label>
                             <input type="text" name="color" id="elcolor" />
                         </div>
 
@@ -228,6 +223,31 @@
                             </select>
                         </div>
                     </div>
+
+                    <!-- Slider handle properties -->
+                    <div class="mt-1_5 hidden-element" id="sliderHandleProperties">
+                        <h2>Handle properties</h2>
+                        <div class="element-property hidden-element">
+                            <label for="elhandlepos">Position (%)</label>
+                            <input type="text" name="handlepos" id="elhandlepos" />
+                        </div>
+                        <div class="element-property hidden-element">
+                            <label for="elhandleshape">Shape</label>
+                            <select name="handleshape" id="elhandleshape">
+                                <option value="triangle">Triangle</option>
+                                <option value="circle">Circle</option>
+                            </select>
+                        </div>
+                        <div class="element-property hidden-element">
+                            <label for="elhandlecolor">Color</label>
+                            <input type="text" name="handlecolor" id="elhandlecolor" />
+                        </div>
+                        <div class="element-property hidden-element">
+                            <label for="elhandlesize">Size (px)</label>
+                            <input type="text" name="handlesize" id="elhandlesize" />
+                        </div>
+                    </div>
+
                     <!-- Actions -->
                     <div class="mt-1_5">
                         <h2>Actions</h2>

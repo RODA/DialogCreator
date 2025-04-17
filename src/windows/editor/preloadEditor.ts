@@ -109,6 +109,38 @@ const onElementSelected = () => {
             }
         });
 
+        if (element.type === 'Slider') {
+            document.getElementById('colorlabel').innerText = 'Track color';
+            document.getElementById('sliderHandleProperties').classList.remove('hidden-element');
+        } else {
+            document.getElementById('colorlabel').innerText = 'Color';
+            document.getElementById('sliderHandleProperties').classList.add('hidden-element');
+        }
+
+
+        if (element.type == "Select") {
+            /*
+            // This works and could be used, but it is very R specific and the
+            // Dialog Creator could theoretically be used for any other language
+            let value = document.getElementById('eldataSource').dataset.savedValue;
+            if (!value) {
+                value = "custom";
+            }
+
+            if (value == "custom") {
+                document.getElementById('divRobjects').style.display = 'none';
+                document.getElementById('divalue').style.display = '';
+            } else {
+                document.getElementById('divRobjects').style.display = '';
+                document.getElementById('divalue').style.display = 'none';
+            }
+            */
+            document.getElementById('valuelabel').innerText = 'Values';
+        } else {
+            document.getElementById('valuelabel').innerText = 'Value';
+        }
+
+
         // trigger change for the select element source values
         // if (element.dataSource) {
         //     document.getElementById('eldataSource').dispatchEvent(new Event('change'));

@@ -135,7 +135,10 @@ export type sliderElementType = {
     parentId: string;
     type: string;
     id: string;
-    handle: number;
+    handlepos: number;
+    handleshape: string;
+    handlecolor: string;
+    handlesize: number;
     width: number;
     height: number;
     left: number;
@@ -291,12 +294,15 @@ export const elements: ElementsInterface = {
         parentId: '',
         type: 'Slider',
         id: '',
-        handle: 50,
+        handlepos: 50,
+        handleshape: 'triangle',
+        handlecolor: '#4CAF50',
+        handlesize: 8,
         width: 120,
         height: 1,
         left: 15,
         top: 15,
-        direction: "x", // Horizontal
+        direction: "horizontal",
         color: "#000000",
         isVisible: true,
         elementIds: [],

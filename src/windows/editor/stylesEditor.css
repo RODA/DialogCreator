@@ -318,56 +318,35 @@ input[type="text"] {
     background-size: 10px;
 }
 
-.triangle-slider {
-    appearance: none;
-    -webkit-appearance: none;
-    background: transparent;
+
+/* Common slider track */
+.slider-track {
+    position: relative;
+    background-color: #000;
+}
+
+/* Common handle styles */
+.slider-handle {
+    position: absolute;
     cursor: pointer;
 }
 
-/* Track */
-.triangle-slider::-webkit-slider-runnable-track {
-    height: 1px;
-    background: #000;
-    border: none;
-    border-radius: 0;
-    margin: 0;
-    padding: 0;
+/* === Triangle Shape === */
+
+/* Horizontal triangle (points up, under the track) */
+.slider-handle[data-shape="triangle"][data-direction="horizontal"] {
+    transform: translateX(-50%);
 }
 
-/* Triangle thumb */
-.triangle-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    position: relative;
-    width: 0;
-    height: 0;
-    margin-top: 1px;
-    border-left: 8px solid transparent;
-    border-right: 8px solid transparent;
-    border-bottom: 12px solid #4CAF50;
+/* Vertical triangle (points left, to the left of the track) */
+.slider-handle[data-shape="triangle"][data-direction="vertical"] {
+    transform: translateY(-50%);
 }
 
-.slider-handle.horizontal {
-    position: relative;
-    top: 100%;
-    width: 0;
-    height: 0;
-    margin-top: 0px;
-    border-left: 8px solid transparent;
-    border-right: 8px solid transparent;
-    border-bottom: 12px solid #4CAF50; /* triangle pointing up */
-    cursor: pointer;
-}
+/* === Circle Shape === */
 
-/* Vertical triangle (points left) */
-.slider-handle.vertical {
-    position: relative;
-    left: 100%;
-    width: 0;
-    height: 0;
-    margin-left: 0px;
-    border-top: 8px solid transparent;
-    border-bottom: 8px solid transparent;
-    border-right: 12px solid #4CAF50;
-    cursor: pointer;
+/* Horizontal circle: centered on track */
+.slider-handle[data-shape="circle"] {
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
 }

@@ -740,7 +740,6 @@ export const editorElements: EditorElementsInterface = {
         if (typeof data === 'object' && !Array.isArray(data)) {
 
             const sliderId = uuidv4();
-            const handlewidth = 8; // px
 
             const dataProxy = new Proxy({ ...data }, {
                 set(obj, key: string, value) {
@@ -764,19 +763,12 @@ export const editorElements: EditorElementsInterface = {
                             break;
                         case 'width':
                             obj[key] = parseInt(value);
-
-                            if (obj["direction"] == "x") {
-                                handle.style.left = (obj["width"] * obj["handle"] / 100 - handlewidth) + 'px';
-                            }
                             if (el) {
                                 el.style.width = value + 'px';
                             }
                             break;
                         case 'height':
                             obj[key] = parseInt(value);
-                            if (obj["direction"] == "y") {
-                                handle.style.top = ((obj["height"] * (1 - obj["handle"] / 100)) - handlewidth) + 'px';
-                            }
                             if (el) {
                                 el.style.height = value + 'px';
                             }
@@ -793,69 +785,70 @@ export const editorElements: EditorElementsInterface = {
                                 obj.id,
                                 { width: String(obj["height"]), height: String(obj["width"]) }
                             );
-
-                            {
-                                const handlepos = (obj["direction"] == "x") ?
-                                    (obj["width"] * obj["handle"] / 100 - handlewidth) :
-                                    ((obj["height"] * (1 - obj["handle"] / 100)) - handlewidth);
-                                if (value == "y") {
-                                    handle.classList.remove('horizontal');
-                                    handle.classList.add('vertical');
-                                    handle.style.left = '100%';
-                                    handle.style.top = handlepos + 'px';
-                                } else {
-                                    handle.classList.remove('vertical');
-                                    handle.classList.add('horizontal');
-                                    handle.style.top = '100%';
-                                    handle.style.left = handlepos + 'px';
-                                }
-                            }
-
                             editor.editorEvents.emit(
                                 'selectElement',
                                 dialogContainer.getElement(obj.id)
                             );
-
                             break;
-                        case 'handle':
+                        case 'handlepos':
                             if (value < 0) {
                                 value = 0;
                             } else if (value > 100) {
                                 value = 100;
                             }
-
                             obj[key] = value;
-
-                            if (obj["direction"] == "x") {
-                                handle.style.left = (obj["width"] * obj["handle"] / 100 - handlewidth) + 'px';
-                            } else {
-                                handle.style.top = (obj["height"] * (1 - obj["handle"] / 100) - handlewidth) + 'px';
-                            }
-
+                            // if (obj["direction"] == "horizontal") {
+                            //     handle.style.left = value + '%';
+                            // } else {
+                            //     handle.style.top = (100 - value) + '%';
+                            // }
                             editor.editorEvents.emit(
                                 'selectElement',
                                 dialogContainer.getElement(obj.id)
                             );
+                            break;
+                        case 'handlesize':
+                            obj[key] = value;
+                            break;
+                        case 'handleshape':
+                            obj[key] = value;
+                            break;
+                        case 'handlecolor':
+                            obj[key] = value;
                             break;
                         case 'isVisible':
                             obj[key] = value === 'true';
                             break;
                         default:
                             obj[key] = value;
-
                     }
+
+                    updateHandleStyle(
+                        handle,
+                        obj["handleshape"],
+                        obj["direction"],
+                        obj["handlecolor"],
+                        obj["handlesize"],
+                        obj["handlepos"]
+                    );
+
                     return true;
                 }
             })
 
             const slider = document.createElement('div');
-            slider.className = 'separator';
+            slider.className = 'separator'; // slider-track
             const handle = document.createElement('div');
-            handle.className = 'slider-handle horizontal';
+            handle.className = 'slider-handle';
             handle.id = 'slider-handle-' + sliderId;
-            const handlepos = (data.direction == "x") ? (data.width * data.handle / 100) : (data.height * (1 - data.handle / 100));
-            handle.style.left = (handlepos - handlewidth) + 'px';
-
+            updateHandleStyle(
+                handle,
+                data.handleshape,
+                data.direction,
+                data.handlecolor,
+                data.handlesize,
+                data.handlepos
+            );
             slider.appendChild(handle);
 
             // position
@@ -1066,3 +1059,60 @@ export const editorElements: EditorElementsInterface = {
     // ==============================================
 
 };
+
+
+function updateHandleStyle(
+    handle: HTMLDivElement,
+    shape: string,
+    direction: string,
+    color: string,
+    size: number,
+    position: number
+) {
+    // Clear all shape-specific inline styles
+    handle.style.border = '';
+    handle.style.borderLeft = '';
+    handle.style.borderRight = '';
+    handle.style.borderTop = '';
+    handle.style.borderBottom = '';
+    handle.style.backgroundColor = '';
+    handle.style.width = '';
+    handle.style.height = '';
+    handle.style.borderRadius = '';
+
+    // Update dataset (this triggers your CSS-based fallback if needed)
+    handle.dataset.shape = shape;
+    handle.dataset.direction = direction;
+
+    // Now apply inline styles based on shape
+    if (shape === 'triangle') {
+        if (direction === 'horizontal') {
+            handle.style.borderLeft = size + 'px solid transparent';
+            handle.style.borderRight = size + 'px solid transparent';
+            handle.style.borderBottom = (1.5 * size) + 'px solid ' + color;
+            handle.style.left = position + "%";
+            handle.style.top = "100%";
+        } else if (direction === 'vertical') {
+            handle.style.borderTop = size + 'px solid transparent';
+            handle.style.borderBottom = size + 'px solid transparent';
+            handle.style.borderRight = (1.5 * size) + 'px solid ' + color;
+            handle.style.left = "0%";
+            handle.style.top = (100 - position) + "%";
+        }
+        handle.style.width = '0px';
+        handle.style.height = '0px';
+    } else if (shape === 'circle') {
+        const radius = 1.5 * size;
+        handle.style.width = `${radius}px`;
+        handle.style.height = `${radius}px`;
+        handle.style.backgroundColor = color;
+        handle.style.borderRadius = '50%';
+        if (direction == "horizontal") {
+            handle.style.left = position + "%";
+            handle.style.top = "50%";
+        } else {
+            handle.style.left = "50%";
+            handle.style.top = (100 - position) + "%";
+        }
+    }
+}
