@@ -99,6 +99,30 @@ export const helpers = {
         );
 
         return !allIds.has(newId);
+    },
+
+    makeCounter: function(start: number, uuid: string): HTMLElement {
+        const wrapper = document.createElement("div");
+        wrapper.className = "counter-wrapper";
+
+        const decrease = document.createElement("div");
+        decrease.className = "counter-arrow down";
+        decrease.innerHTML = "&#9660;"; // ▼
+
+        const display = document.createElement("div");
+        display.className = "counter-value";
+        display.id = "counter-value-" + uuid;
+        display.textContent = String(start);
+
+        const increase = document.createElement("div");
+        increase.className = "counter-arrow up";
+        increase.innerHTML = "&#9650;"; // ▲
+
+        wrapper.appendChild(decrease);
+        wrapper.appendChild(display);
+        wrapper.appendChild(increase);
+
+        return wrapper;
     }
 }
 

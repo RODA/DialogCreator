@@ -67,7 +67,7 @@ export type counterElementType = {
     nameid: string;
     startval: number;
     maxval: number;
-    width: number;
+    space: number;
     left: number;
     top: number;
     isVisible: boolean;
@@ -236,7 +236,7 @@ export const elements: ElementsInterface = {
         nameid: '',
         startval: 1,
         maxval: 5,
-        width: 25,
+        space: 4,
         left: 15,
         top: 15,
         isVisible: true,
