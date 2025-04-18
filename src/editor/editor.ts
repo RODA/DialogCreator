@@ -107,39 +107,39 @@ export const editor: EditorInterface = {
 
     // add new element on dialog
     addElementToDialog: function (type, withData) {
-        // checking if there is a dialog
-        if (editor.dialog && document.getElementById(editor.dialogId) !== null) {
-            // check for method
-            if (
-                !editorSettings.availableElements.includes(type) ||
-                !Object.hasOwn(editorElements, 'add' + type)
-            ){
-                showMessageBox({
-                    type: 'info',
-                    title: 'Notice',
-                    message: "Element type not available. Probably functionality not added."
-                })
-                return;
-            }
-            // get passed or default element settings
-            let dataSettings;
-            const elementType = (type.toLowerCase() + 'Element') as keyof ElementsInterface;
-            if (withData !== null) {
-                dataSettings = withData;
-            } else {
-                dataSettings = elements[elementType];
-            }
-
-            const createdElement = editorElements['add' + type as editorElementsTypes](
-                editor.dialog,
-                dataSettings
-            );
-            editor.addElementListeners(createdElement);
-            dialogContainer.addElement(createdElement);
-
-        } else {
-            showMessageBox({ type: 'info', message: "Please create a new dialog first.", title: "No dialog" });
+        // check for method
+        if (
+            !editorSettings.availableElements.includes(type) ||
+            !Object.hasOwn(editorElements, 'add' + type)
+        ){
+            showMessageBox({
+                type: 'info',
+                title: 'Notice',
+                message: "Element type not available. Probably functionality not added."
+            })
+            return;
         }
+        // get passed or default element settings
+        let dataSettings;
+        const elementType = (type.toLowerCase() + 'Element') as keyof ElementsInterface;
+        if (withData !== null) {
+            dataSettings = withData;
+        } else {
+            dataSettings = elements[elementType];
+        }
+
+        const createdElement = editorElements['add' + type as editorElementsTypes](
+            editor.dialog,
+            dataSettings
+        );
+        editor.addElementListeners(createdElement);
+        dialogContainer.addElement(createdElement);
+        // checking if there is a dialog
+        // if (editor.dialog && document.getElementById(editor.dialogId) !== null) {
+
+        // } else {
+        //     showMessageBox({ type: 'info', message: "Please create a new dialog first.", title: "No dialog" });
+        // }
     },
     // add listener to the element
     addElementListeners(element) {
