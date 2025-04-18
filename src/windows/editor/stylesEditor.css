@@ -318,12 +318,23 @@ input[type="text"] {
     background-size: 10px;
 }
 
-
-/* Common slider track */
-.slider-track {
-    position: relative;
-    background-color: #000;
+.input-as-text {
+    border: none !important;
+    outline: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: inherit;
+    font: inherit;
+    padding: 0;
+    margin: 0;
+    width: auto;
+    pointer-events: none;
+    appearance: none;
 }
+
+
+
+
 
 /* Common handle styles */
 .slider-handle {
