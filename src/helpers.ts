@@ -77,6 +77,8 @@ export const helpers = {
                 .map(el => el.dataset.nameid!)
         );
 
+        type = type.toLowerCase();
+
         if (!(type in nameidRecords)) {
             nameidRecords[type] = 1;
         }

@@ -78,7 +78,6 @@ const onElementSelected = () => {
     editor.editorEvents.on('selectElement', function (element: ElementsInterface[keyof ElementsInterface]) {
 
         elementSelected = true;
-
         // update props tab
         document.getElementById('propertiesList').classList.remove('hidden');
 

@@ -52,8 +52,6 @@ export const editorElements: EditorElementsInterface = {
     addButton: function (dialog, data) {
         if (typeof data === 'object' && !Array.isArray(data)) {
 
-            const buttonId = uuidv4();
-
             const dataProxy = new Proxy({ ...data }, {
                 set(obj, key: string, value) {
 
@@ -80,7 +78,7 @@ export const editorElements: EditorElementsInterface = {
                             obj[key] = value;
                             break;
                         case 'top':
-                            if (button && editorElements.maxHeight >= value) {
+                            if (editorElements.maxHeight >= value) {
                                 obj[key] = parseInt(value);
                                 button.style.top = value + 'px';
                             } else {
@@ -89,19 +87,13 @@ export const editorElements: EditorElementsInterface = {
                             break;
                         case 'left':
                             obj[key] = parseInt(value);
-                            if (button) {
-                                button.style.left = value + 'px';
-                            }
+                            button.style.left = value + 'px';
                             break;
                         case 'width':
                             obj[key] = parseInt(value);
-                            if (button) {
-                                button.style.width = value + 'px';
-                            }
+                            button.style.width = value + 'px';
                             break;
                         case 'isVisible':
-                            obj[key] = value === 'true';
-                            break;
                         case 'isEnabled':
                             obj[key] = value === 'true';
                             break;
@@ -112,6 +104,8 @@ export const editorElements: EditorElementsInterface = {
                     return true;
                 }
             })
+
+            const uuid = uuidv4();
 
             const button = document.createElement('button');
             // position
@@ -129,12 +123,12 @@ export const editorElements: EditorElementsInterface = {
             button.style.fontSize = editorElements.fontSize + 'px';
 
             // on screen
-            button.id = buttonId;
+            button.id = uuid;
             // in container
-            dataProxy.id = buttonId;
+            dataProxy.id = uuid;
             dataProxy.parentId = dialog.id;
 
-            const nameid = helpers.generateUniqueNameID("button", editorElements.nameidRecords);
+            const nameid = helpers.generateUniqueNameID(data.type, editorElements.nameidRecords);
             dataProxy.nameid = nameid;
             button.dataset.nameid = nameid;
 
@@ -155,28 +149,39 @@ export const editorElements: EditorElementsInterface = {
     addCheckbox: function (dialog, data) {
         if (typeof data === 'object' && !Array.isArray(data)) {
 
-            const checkboxId = uuidv4();
-
             const dataProxy = new Proxy({ ...data }, {
                 set(obj, key: string, value) {
-                    const el = document.getElementById(checkboxId) as HTMLInputElement;
-                    const cb = document.getElementById("checkbox-" + checkboxId) as HTMLElement;
-                    const cover = document.getElementById("cover-" + checkboxId) as HTMLElement;
+                    const cb = document.getElementById("checkbox-" + uuid) as HTMLElement;
+                    const cover = document.getElementById("cover-" + uuid) as HTMLElement;
 
                     switch (key) {
-                        case 'top':
-                            if (el && editorElements.maxHeight >= value) {
-                                obj[key] = parseInt(value);
-                                el.style.top = value + 'px';
+                        case 'nameid':
+                            if (helpers.nameidValidChange(value, checkbox)) {
+                                obj[key] = value;
+                                checkbox.dataset.nameid = value;
                             } else {
-                                el.style.top = editorElements.maxHeight + 'px';
+                                editor.editorEvents.emit(
+                                    'selectElement',
+                                    dialogContainer.getElement(obj.id)
+                                );
+                                showMessageBox({
+                                    type: 'warning',
+                                    title: 'Notice',
+                                    message: 'Name already exists.'
+                                });
+                            }
+                            break;
+                        case 'top':
+                            if (editorElements.maxHeight >= value) {
+                                obj[key] = parseInt(value);
+                                checkbox.style.top = value + 'px';
+                            } else {
+                                checkbox.style.top = editorElements.maxHeight + 'px';
                             }
                             break;
                         case 'left':
                             obj[key] = parseInt(value);
-                            if (el) {
-                                el.style.left = value + 'px';
-                            }
+                            checkbox.style.left = value + 'px';
                             break;
                         case 'isVisible':
                             obj[key] = value === 'true';
@@ -184,10 +189,10 @@ export const editorElements: EditorElementsInterface = {
                         case 'isEnabled':
                             obj[key] = value === 'true';
                             if (obj[key]) {
-                                // el.disabled = false;
+                                // checkbox.disabled = false;
                                 cover.classList.remove('disabled-div');
                             } else {
-                                // el.disabled = true;
+                                // checkbox.disabled = true;
                                 cover.classList.add('disabled-div');
                             }
                             break;
@@ -203,6 +208,8 @@ export const editorElements: EditorElementsInterface = {
                 }
             })
 
+            const uuid = uuidv4();
+
             const checkbox = document.createElement('div');
             checkbox.className = 'element-div';
 
@@ -214,7 +221,7 @@ export const editorElements: EditorElementsInterface = {
 
             // Create the custom checkbox
             const customCheckbox = document.createElement('div');
-            customCheckbox.id = "checkbox-" + checkboxId;
+            customCheckbox.id = "checkbox-" + uuid;
             customCheckbox.className = 'custom-checkbox';
             customCheckbox.setAttribute('role', 'checkbox');
             customCheckbox.setAttribute('tabindex', '0');
@@ -227,30 +234,22 @@ export const editorElements: EditorElementsInterface = {
 
             // Create the cover div
             const cover = document.createElement('div');
-            cover.id = "cover-" + checkboxId;
+            cover.id = "cover-" + uuid;
             cover.className = 'cover';
             // Append the cover to the custom checkbox
+
+            const nameid = helpers.generateUniqueNameID(data.type, editorElements.nameidRecords);
+            dataProxy.nameid = nameid;
+            checkbox.dataset.nameid = nameid;
 
             checkbox.appendChild(customCheckbox);
             checkbox.appendChild(cover);
 
-            // // create checkbox
-            // const checkbox = document.createElement('input');
-            // checkbox.type = 'checkbox';
-            // // position
-            // checkbox.style.position = 'absolute';
-            // checkbox.style.top = data.top + 'px';
-            // checkbox.style.left = data.left + 'px';
-
-            // checkbox.style.fontFamily = editorElements.fontFamily;
-            // checkbox.style.fontSize = editorElements.fontSize + 'px';
-
             // on screen
-            checkbox.id = checkboxId;
-
+            checkbox.id = uuid;
 
             // in container
-            dataProxy.id = checkboxId;
+            dataProxy.id = uuid;
             dataProxy.parentId = dialog.id;
 
             if (!data.isVisible) {
@@ -272,42 +271,45 @@ export const editorElements: EditorElementsInterface = {
     // Add radio button
     addRadio: function (dialog, data) {
 
-        const unselectRadioGroup = function(element: HTMLElement) {
-            document.querySelectorAll(`[group="${element.getAttribute("group")}"]`).forEach((radio) => {
-                const id = radio.id.slice(6);
-                dialogContainer.elements[id].isSelected = false;
-                radio.setAttribute('aria-checked', 'false');
-            });
-        };
-
         if (typeof data === 'object' && !Array.isArray(data)) {
-
-            const radioId = uuidv4();
 
             const dataProxy = new Proxy({ ...data }, {
                 set(obj, key: string, value) {
-                    const el = document.getElementById(radioId) as HTMLInputElement;
-                    const rd = document.getElementById("radio-" + radioId) as HTMLElement;
-                    const cover = document.getElementById("cover-" + radioId) as HTMLElement;
+                    const rd = document.getElementById("radio-" + uuid) as HTMLElement;
+                    const cover = document.getElementById("cover-" + uuid) as HTMLElement;
 
                     switch (key) {
+                        case 'nameid':
+                            if (helpers.nameidValidChange(value, radio)) {
+                                obj[key] = value;
+                                radio.dataset.nameid = value;
+                            } else {
+                                editor.editorEvents.emit(
+                                    'selectElement',
+                                    dialogContainer.getElement(obj.id)
+                                );
+                                showMessageBox({
+                                    type: 'warning',
+                                    title: 'Notice',
+                                    message: 'Name already exists.'
+                                });
+                            }
+                            break;
                         case 'group':
                             obj[key] = value;
                             rd.setAttribute("group", value);
                             break;
                         case 'top':
-                            if (el && editorElements.maxHeight >= value) {
+                            if (editorElements.maxHeight >= value) {
                                 obj[key] = parseInt(value);
-                                el.style.top = value + 'px';
+                                radio.style.top = value + 'px';
                             } else {
-                                el.style.top = editorElements.maxHeight + 'px';
+                                radio.style.top = editorElements.maxHeight + 'px';
                             }
                             break;
                         case 'left':
                             obj[key] = parseInt(value);
-                            if (el) {
-                                el.style.left = value + 'px';
-                            }
+                            radio.style.left = value + 'px';
                             break;
                         case 'isVisible':
                             obj[key] = value === 'true';
@@ -315,16 +317,16 @@ export const editorElements: EditorElementsInterface = {
                         case 'isEnabled':
                             obj[key] = value === 'true';
                             if (obj[key]) {
-                                // el.disabled = false;
+                                // radio.disabled = false;
                                 cover.classList.remove('disabled-div');
                             } else {
-                                // el.disabled = true;
+                                // radio.disabled = true;
                                 cover.classList.add('disabled-div');
                             }
                             break;
                         case 'isSelected':
                             if (value === 'true') {
-                                unselectRadioGroup(rd);
+                                helpers.unselectRadioGroup(rd);
                             }
                             rd.setAttribute('aria-checked', value);
                             obj[key] = value === 'true';
@@ -337,6 +339,8 @@ export const editorElements: EditorElementsInterface = {
                 }
             })
 
+            const uuid = uuidv4();
+
             const radio = document.createElement('div');
             radio.className = 'element-div';
 
@@ -348,7 +352,7 @@ export const editorElements: EditorElementsInterface = {
 
             // Create the custom radio
             const customRadio = document.createElement('div');
-            customRadio.id = "radio-" + radioId;
+            customRadio.id = "radio-" + uuid;
             customRadio.className = 'custom-radio';
             customRadio.setAttribute('role', 'radio');
             customRadio.setAttribute('tabindex', '0');
@@ -357,19 +361,22 @@ export const editorElements: EditorElementsInterface = {
 
             // Create the cover div
             const cover = document.createElement('div');
-            cover.id = "cover-" + radioId;
+            cover.id = "cover-" + uuid;
             cover.className = 'cover';
             // Append the cover to the custom radio
             customRadio.appendChild(cover);
 
             radio.appendChild(customRadio);
 
-            // on screen
-            radio.id = radioId;
+            const nameid = helpers.generateUniqueNameID(data.type, editorElements.nameidRecords);
+            dataProxy.nameid = nameid;
+            radio.dataset.nameid = nameid;
 
+            // on screen
+            radio.id = uuid;
 
             // in container
-            dataProxy.id = radioId;
+            dataProxy.id = uuid;
             dataProxy.parentId = dialog.id;
 
             if (!data.isVisible) {
@@ -392,43 +399,53 @@ export const editorElements: EditorElementsInterface = {
     addInput: function (dialog, data) {
         if (typeof data === 'object' && !Array.isArray(data)) {
 
-            const inputId = uuidv4();
-
             const dataProxy = new Proxy({ ...data }, {
                 set(obj, key: string, value) {
 
-                    const el = document.getElementById(inputId) as HTMLInputElement;
-
                     switch (key) {
-                        case 'top':
-                            if (el && editorElements.maxHeight >= value) {
-                                obj[key] = parseInt(value);
-                                el.style.top = value + 'px';
+                        case 'nameid':
+                            if (helpers.nameidValidChange(value, input)) {
+                                obj[key] = value;
+                                input.dataset.nameid = value;
                             } else {
-                                el.style.top = editorElements.maxHeight + 'px';
+                                editor.editorEvents.emit(
+                                    'selectElement',
+                                    dialogContainer.getElement(obj.id)
+                                );
+                                showMessageBox({
+                                    type: 'warning',
+                                    title: 'Notice',
+                                    message: 'Name already exists.'
+                                });
+                            }
+                            break;
+                        case 'top':
+                            if (editorElements.maxHeight >= value) {
+                                obj[key] = parseInt(value);
+                                input.style.top = value + 'px';
+                            } else {
+                                input.style.top = editorElements.maxHeight + 'px';
                             }
                             break;
                         case 'left':
                             obj[key] = parseInt(value);
-                            if (el) {
-                                el.style.left = value + 'px';
+                            if (input) {
+                                input.style.left = value + 'px';
                             }
                             break;
                         case 'width':
                             obj[key] = parseInt(value);
-                            if (el) {
-                                el.style.width = value + 'px';
+                            if (input) {
+                                input.style.width = value + 'px';
                             }
                             break;
                         case 'value':
                             obj[key] = value;
-                            if (el) {
-                                el.value = value;
+                            if (input) {
+                                input.value = value;
                             }
                             break;
                         case 'isVisible':
-                            obj[key] = value === 'true';
-                            break;
                         case 'isEnabled':
                             obj[key] = value === 'true';
                             break;
@@ -439,6 +456,8 @@ export const editorElements: EditorElementsInterface = {
                     return true;
                 }
             })
+
+            const uuid = uuidv4();
 
             const input = document.createElement('input');
             input.type = 'text';
@@ -455,10 +474,14 @@ export const editorElements: EditorElementsInterface = {
             input.style.fontFamily = editorElements.fontFamily;
             input.style.fontSize = editorElements.fontSize + 'px';
 
+            const nameid = helpers.generateUniqueNameID(data.type, editorElements.nameidRecords);
+            dataProxy.nameid = nameid;
+            input.dataset.nameid = nameid;
+
             // on screen
-            input.id = inputId;
+            input.id = uuid;
             // in container
-            dataProxy.id = inputId;
+            dataProxy.id = uuid;
             dataProxy.parentId = dialog.id;
 
             if (!data.isVisible) {
@@ -478,39 +501,29 @@ export const editorElements: EditorElementsInterface = {
     addLabel: function (dialog, data) {
         if (typeof data === 'object' && !Array.isArray(data)) {
 
-            const inputId = uuidv4();
-
             const dataProxy = new Proxy({ ...data }, {
                 set(obj, key: string, value) {
 
-                    const el = document.getElementById(inputId) as HTMLInputElement;
-
                     switch (key) {
                         case 'top':
-                            if (el && editorElements.maxHeight >= value) {
+                            if (editorElements.maxHeight >= value) {
                                 obj[key] = parseInt(value);
-                                el.style.top = value + 'px';
+                                label.style.top = value + 'px';
                             } else {
-                                el.style.top = editorElements.maxHeight + 'px';
+                                label.style.top = editorElements.maxHeight + 'px';
                             }
                             break;
                         case 'left':
                             obj[key] = parseInt(value);
-                            if (el) {
-                                el.style.left = value + 'px';
-                            }
+                            label.style.left = value + 'px';
                             break;
                         case 'width':
                             obj[key] = parseInt(value);
-                            if (el) {
-                                el.style.width = value + 'px';
-                            }
+                            label.style.width = value + 'px';
                             break;
                         case 'value':
                             obj[key] = value;
-                            if (el) {
-                                el.innerText = value;
-                            }
+                            label.innerText = value;
                             break;
                         case 'isVisible':
                             obj[key] = value === 'true';
@@ -526,33 +539,35 @@ export const editorElements: EditorElementsInterface = {
                 }
             })
 
-            const input = document.createElement('div');
+            const uuid = uuidv4();
+
+            const label = document.createElement('div');
 
             // position
-            input.style.position = 'absolute';
-            input.style.top = data.top + 'px';
-            input.style.left = data.left + 'px';
-            input.innerText = data.value;
+            label.style.position = 'absolute';
+            label.style.top = data.top + 'px';
+            label.style.left = data.left + 'px';
+            label.innerText = data.value;
 
-            input.style.maxWidth = editorElements.maxWidth + 'px';
-            input.style.maxHeight = editorElements.maxHeight + 'px';
+            label.style.maxWidth = editorElements.maxWidth + 'px';
+            label.style.maxHeight = editorElements.maxHeight + 'px';
 
-            input.style.fontFamily = editorElements.fontFamily;
-            input.style.fontSize = editorElements.fontSize + 'px';
+            label.style.fontFamily = editorElements.fontFamily;
+            label.style.fontSize = editorElements.fontSize + 'px';
 
             // on screen
-            input.id = inputId;
+            label.id = uuid;
             // in container
-            dataProxy.id = inputId;
+            dataProxy.id = uuid;
             dataProxy.parentId = dialog.id;
 
             if (!data.isVisible) {
-                input.style.display = 'none';
+                label.style.display = 'none';
             }
             if (!data.isEnabled) {
-                input.classList.add('disabled-div');
+                label.classList.add('disabled-div');
             }
-            dialog.appendChild(input);
+            dialog.appendChild(label);
             return dataProxy;
         } else {
             return;
@@ -563,45 +578,33 @@ export const editorElements: EditorElementsInterface = {
     addSeparator: function (dialog, data) {
         if (typeof data === 'object' && !Array.isArray(data)) {
 
-            const inputId = uuidv4();
-
             const dataProxy = new Proxy({ ...data }, {
                 set(obj, key: string, value) {
 
-                    const el = document.getElementById(inputId) as HTMLInputElement;
-
                     switch (key) {
                         case 'top':
-                            if (el && editorElements.maxHeight >= value) {
+                            if (editorElements.maxHeight >= value) {
                                 obj[key] = parseInt(value);
-                                el.style.top = value + 'px';
+                                separator.style.top = value + 'px';
                             } else {
-                                el.style.top = editorElements.maxHeight + 'px';
+                                separator.style.top = editorElements.maxHeight + 'px';
                             }
                             break;
                         case 'left':
                             obj[key] = parseInt(value);
-                            if (el) {
-                                el.style.left = value + 'px';
-                            }
+                            separator.style.left = value + 'px';
                             break;
                         case 'width':
                             obj[key] = parseInt(value);
-                            if (el) {
-                                el.style.width = value + 'px';
-                            }
+                            separator.style.width = value + 'px';
                             break;
                         case 'height':
                             obj[key] = parseInt(value);
-                            if (el) {
-                                el.style.height = value + 'px';
-                            }
+                            separator.style.height = value + 'px';
                             break;
                         case 'color':
                             obj[key] = value;
-                            if (el) {
-                                el.style.backgroundColor = value;
-                            }
+                            separator.style.backgroundColor = value;
                             break;
                         case 'direction':
                             obj[key] = value;
@@ -625,68 +628,78 @@ export const editorElements: EditorElementsInterface = {
                 }
             })
 
-            const input = document.createElement('div');
-            input.className = 'separator';
+            const uuid = uuidv4();
+
+            const separator = document.createElement('div');
+            separator.className = 'separator';
 
             // position
-            input.style.position = 'absolute';
-            input.style.top = data.top + 'px';
-            input.style.left = data.left + 'px';
+            separator.style.position = 'absolute';
+            separator.style.top = data.top + 'px';
+            separator.style.left = data.left + 'px';
 
-            input.style.width = data.width + 'px';
-            input.style.height = data.height + 'px';
-            input.style.maxWidth = editorElements.maxWidth + 'px';
-            input.style.maxHeight = editorElements.maxHeight + 'px';
+            separator.style.width = data.width + 'px';
+            separator.style.height = data.height + 'px';
+            separator.style.maxWidth = editorElements.maxWidth + 'px';
+            separator.style.maxHeight = editorElements.maxHeight + 'px';
 
-            input.style.backgroundColor = data.color + 'px';
+            separator.style.backgroundColor = data.color + 'px';
 
             // on screen
-            input.id = inputId;
+            separator.id = uuid;
             // in container
-            dataProxy.id = inputId;
+            dataProxy.id = uuid;
             dataProxy.parentId = dialog.id;
 
             if (!data.isVisible) {
-                input.style.display = 'none';
+                separator.style.display = 'none';
             }
-            dialog.appendChild(input);
+            dialog.appendChild(separator);
             return dataProxy;
         } else {
             return;
         }
     },
 
-    // Add Input
+    // Add Select
     addSelect: function (dialog, data) {
         if (typeof data === 'object' && !Array.isArray(data)) {
-
-            const selectId = uuidv4();
 
             const dataProxy = new Proxy({ ...data }, {
                 set(obj, key: string, value) {
 
-                    const el = document.getElementById(selectId) as HTMLSelectElement;
-
                     switch (key) {
-                        case 'top':
-                            if (el && editorElements.maxHeight >= value) {
-                                obj[key] = parseInt(value);
-                                el.style.top = value + 'px';
+                        case 'nameid':
+                            if (helpers.nameidValidChange(value, select)) {
+                                obj[key] = value;
+                                select.dataset.nameid = value;
                             } else {
-                                el.style.top = editorElements.maxHeight + 'px';
+                                editor.editorEvents.emit(
+                                    'selectElement',
+                                    dialogContainer.getElement(obj.id)
+                                );
+                                showMessageBox({
+                                    type: 'warning',
+                                    title: 'Notice',
+                                    message: 'Name already exists.'
+                                });
+                            }
+                            break;
+                        case 'top':
+                            if (editorElements.maxHeight >= value) {
+                                obj[key] = parseInt(value);
+                                select.style.top = value + 'px';
+                            } else {
+                                select.style.top = editorElements.maxHeight + 'px';
                             }
                             break;
                         case 'left':
                             obj[key] = parseInt(value);
-                            if (el) {
-                                el.style.left = value + 'px';
-                            }
+                            select.style.left = value + 'px';
                             break;
                         case 'width':
                             obj[key] = parseInt(value);
-                            if (el) {
-                                el.style.width = value + 'px';
-                            }
+                            select.style.width = value + 'px';
                             break;
                         case 'dataSource':
                             obj[key] = value;
@@ -705,13 +718,9 @@ export const editorElements: EditorElementsInterface = {
                             break;
                         case 'value':
                             obj[key] = value;
-                            if (el) {
-                                el.value = value;
-                            }
+                            select.value = value;
                             break;
                         case 'isVisible':
-                            obj[key] = value === 'true';
-                            break;
                         case 'isEnabled':
                             obj[key] = value === 'true';
                             break;
@@ -722,6 +731,8 @@ export const editorElements: EditorElementsInterface = {
                     return true;
                 }
             })
+
+            const uuid = uuidv4();
 
             const select = document.createElement('select');
             select.className = 'custom-select';
@@ -739,10 +750,14 @@ export const editorElements: EditorElementsInterface = {
             select.style.fontFamily = editorElements.fontFamily;
             select.style.fontSize = editorElements.fontSize + 'px';
 
+            const nameid = helpers.generateUniqueNameID(data.type, editorElements.nameidRecords);
+            dataProxy.nameid = nameid;
+            select.dataset.nameid = nameid;
+
             // on screen
-            select.id = selectId;
+            select.id = uuid;
             // in container
-            dataProxy.id = selectId;
+            dataProxy.id = uuid;
             dataProxy.parentId = dialog.id;
 
             if (!data.isVisible) {
@@ -762,45 +777,49 @@ export const editorElements: EditorElementsInterface = {
     addSlider: function (dialog, data) {
         if (typeof data === 'object' && !Array.isArray(data)) {
 
-            const sliderId = uuidv4();
-
             const dataProxy = new Proxy({ ...data }, {
                 set(obj, key: string, value) {
 
-                    const el = document.getElementById(sliderId) as HTMLInputElement;
-
                     switch (key) {
-                        case 'top':
-                            if (el && editorElements.maxHeight >= value) {
-                                obj[key] = parseInt(value);
-                                el.style.top = value + 'px';
+                        case 'nameid':
+                            if (helpers.nameidValidChange(value, slider)) {
+                                obj[key] = value;
+                                slider.dataset.nameid = value;
                             } else {
-                                el.style.top = editorElements.maxHeight + 'px';
+                                editor.editorEvents.emit(
+                                    'selectElement',
+                                    dialogContainer.getElement(obj.id)
+                                );
+                                showMessageBox({
+                                    type: 'warning',
+                                    title: 'Notice',
+                                    message: 'Name already exists.'
+                                });
+                            }
+                            break;
+                        case 'top':
+                            if (editorElements.maxHeight >= value) {
+                                obj[key] = parseInt(value);
+                                slider.style.top = value + 'px';
+                            } else {
+                                slider.style.top = editorElements.maxHeight + 'px';
                             }
                             break;
                         case 'left':
                             obj[key] = parseInt(value);
-                            if (el) {
-                                el.style.left = value + 'px';
-                            }
+                            slider.style.left = value + 'px';
                             break;
                         case 'width':
                             obj[key] = parseInt(value);
-                            if (el) {
-                                el.style.width = value + 'px';
-                            }
+                            slider.style.width = value + 'px';
                             break;
                         case 'height':
                             obj[key] = parseInt(value);
-                            if (el) {
-                                el.style.height = value + 'px';
-                            }
+                            slider.style.height = value + 'px';
                             break;
                         case 'color':
                             obj[key] = value;
-                            if (el) {
-                                el.style.backgroundColor = value;
-                            }
+                            slider.style.backgroundColor = value;
                             break;
                         case 'direction':
                             obj[key] = value;
@@ -820,11 +839,6 @@ export const editorElements: EditorElementsInterface = {
                                 value = 100;
                             }
                             obj[key] = value;
-                            // if (obj["direction"] == "horizontal") {
-                            //     handle.style.left = value + '%';
-                            // } else {
-                            //     handle.style.top = (100 - value) + '%';
-                            // }
                             editor.editorEvents.emit(
                                 'selectElement',
                                 dialogContainer.getElement(obj.id)
@@ -859,11 +873,14 @@ export const editorElements: EditorElementsInterface = {
                 }
             })
 
+            const uuid = uuidv4();
+
             const slider = document.createElement('div');
             slider.className = 'separator';
+
             const handle = document.createElement('div');
             handle.className = 'slider-handle';
-            handle.id = 'slider-handle-' + sliderId;
+            handle.id = 'slider-handle-' + uuid;
             helpers.updateHandleStyle(
                 handle,
                 data.handleshape,
@@ -884,12 +901,14 @@ export const editorElements: EditorElementsInterface = {
             slider.style.maxWidth = editorElements.maxWidth + 'px';
             slider.style.maxHeight = editorElements.maxHeight + 'px';
 
-            // slider.style.backgroundColor = data.color + 'px';
+            const nameid = helpers.generateUniqueNameID(data.type, editorElements.nameidRecords);
+            dataProxy.nameid = nameid;
+            slider.dataset.nameid = nameid;
 
             // on screen
-            slider.id = sliderId;
+            slider.id = uuid;
             // in container
-            dataProxy.id = sliderId;
+            dataProxy.id = uuid;
             dataProxy.parentId = dialog.id;
 
             if (!data.isVisible) {

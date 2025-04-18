@@ -19,6 +19,7 @@ export type checkboxElementType = {
     parentId: string;
     type: string;
     id: string;
+    nameid: string;
     left: number;
     top: number;
     isChecked: boolean;
@@ -63,6 +64,7 @@ export type counterElementType = {
     parentId: string;
     type: string;
     id: string;
+    nameid: string;
     startval: number;
     maxval: number;
     width: number;
@@ -78,6 +80,7 @@ export type inputElementType = {
     parentId: string;
     type: string;
     id: string;
+    nameid: string;
     width: number;
     left: number;
     top: number;
@@ -120,6 +123,7 @@ export type selectElementType = {
     parentId: string;
     type: string;
     id: string;
+    nameid: string;
     width: number;
     left: number;
     top: number;
@@ -136,6 +140,7 @@ export type sliderElementType = {
     parentId: string;
     type: string;
     id: string;
+    nameid: string;
     handlepos: number;
     handleshape: string;
     handlecolor: string;
@@ -186,6 +191,7 @@ export const elements: ElementsInterface = {
         parentId: '',
         type: 'Checkbox',
         id: '',
+        nameid: '',
         left: 10,
         top: 10,
         isChecked: false,
@@ -196,7 +202,7 @@ export const elements: ElementsInterface = {
     },
     radioElement: {
         parentId: '',
-        type: 'Checkbox',
+        type: 'Radio',
         id: '',
         left: 10,
         top: 10,
@@ -227,6 +233,7 @@ export const elements: ElementsInterface = {
         parentId: '',
         type: 'Counter',
         id: '',
+        nameid: '',
         startval: 1,
         maxval: 5,
         width: 25,
@@ -241,6 +248,7 @@ export const elements: ElementsInterface = {
         parentId: '',
         type: 'Input',
         id: '',
+        nameid: '',
         width: 120,
         left: 15,
         top: 15,
@@ -271,7 +279,7 @@ export const elements: ElementsInterface = {
         height: 1,
         left: 15,
         top: 15,
-        direction: "x", // Horizontal
+        direction: "horizontal",
         color: "#000000",
         isVisible: true,
         elementIds: [],
@@ -281,6 +289,7 @@ export const elements: ElementsInterface = {
         parentId: '',
         type: 'Select',
         id: '',
+        nameid: '',
         width: 120,
         left: 15,
         top: 15,
@@ -296,6 +305,7 @@ export const elements: ElementsInterface = {
         parentId: '',
         type: 'Slider',
         id: '',
+        nameid: '',
         handlepos: 50,
         handleshape: 'triangle',
         handlecolor: '#4CAF50',
