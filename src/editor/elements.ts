@@ -2,6 +2,7 @@
 export type buttonElementType = {
     parentId: string;
     id: string;
+    nameid: string;
     type: string;
     label: string;
     left: number;
@@ -169,6 +170,7 @@ export const elements: ElementsInterface = {
     buttonElement: {
         parentId: '',
         id: '',
+        nameid: '',
         type: 'Button',
         label: 'Button',
         left: 15,
