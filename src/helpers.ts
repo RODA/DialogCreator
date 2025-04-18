@@ -123,6 +123,62 @@ export const helpers = {
         wrapper.appendChild(increase);
 
         return wrapper;
-    }
+    },
+
+	setInputFilter: function (textbox: HTMLElement, inputFilter: (value: string) => boolean): void {
+		// https://stackoverflow.com/questions/469357/html-text-input-allow-only-numeric-input
+		// Restricts input for the given textbox to the given inputFilter function.
+		["input", "keydown", "keyup", "mousedown", "mouseup", "select", "contextmenu", "drop"].forEach(function (event) {
+			textbox.addEventListener(event, function () {
+				if (inputFilter(this.value)) {
+					this.oldValue = this.value;
+					this.oldSelectionStart = this.selectionStart;
+					this.oldSelectionEnd = this.selectionEnd;
+					// TODO -- check next line if it is okay: https://eslint.org/docs/rules/no-prototype-builtins
+				} else if (Object.prototype.hasOwnProperty.call(this, "oldValue")) {
+					this.value = this.oldValue;
+					this.setSelectionRange(this.oldSelectionStart, this.oldSelectionEnd);
+				} else {
+					this.value = "";
+				}
+			});
+		});
+	},
+
+	setOnlyNumbers: function (item: string): void {
+		helpers.setInputFilter(
+            document.getElementById(item),
+            function (value: string): boolean { return /^\d*$/.test(value); }
+        );
+	},
+
+	setOnlyNumbersWithMinus: function (item: string): void {
+		helpers.setInputFilter(document.getElementById(item), function (value) {
+			return /^-?\d*$/.test(value);
+		});
+	},
+
+	setOnlyDouble: function (item: string): void {
+		helpers.setInputFilter(document.getElementById(item), function (value) {
+			if (value.endsWith("..") || value.endsWith(".,")) {
+				const x = value.split("");
+				x.splice(-1);
+				value = x.join("");
+				(<HTMLInputElement>document.getElementById(item)).value = value;
+				return false;
+			}
+			if (value.endsWith(",")) {
+				const x = value.split("");
+				x.splice(-1);
+				x.push(".");
+				value = x.join("");
+				(<HTMLInputElement>document.getElementById(item)).value = value;
+			}
+			if (value === "" || value.endsWith(".")) {
+				return true;
+			}
+			return /^\d*\.?\d{1,2}$/.test(value);
+		});
+	}
 }
 
