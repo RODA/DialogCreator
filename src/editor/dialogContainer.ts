@@ -5,17 +5,17 @@ import { editor } from './editor';
 
 interface DialogContainerInterface {
     properties: DialogPropertiesInterface;
-    elements: { [key: string]: ElementsInterface[keyof ElementsInterface] }
+    elements: { [key: string]: ElementsInterface[keyof ElementsInterface] };
     syntax: {
         command: string,
         defaultElements: []
-    }
+    };
     initialize: (obj: DialogPropertiesInterface) => void;
     updateDialogProperties: () => void;
     updateProperties: (id: string, payload: { [key: string]: string }) => void;
     addElement: (element: ElementsInterface[keyof ElementsInterface]) => void;
     removeElement: (elId: string) => void;
-    getElement: (elId: string) => void;
+    getElement: (elId: string) => ElementsInterface[keyof ElementsInterface] | undefined;
 }
 
 export const dialogContainer: DialogContainerInterface = {
