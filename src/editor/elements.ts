@@ -70,6 +70,7 @@ export type counterElementType = {
     space: number;
     left: number;
     top: number;
+    color: string;
     isVisible: boolean;
     isEnabled: boolean;
     elementIds: string[];
@@ -99,7 +100,6 @@ export type labelElementType = {
     left: number;
     top: number;
     isVisible: boolean;
-    isEnabled: boolean;
     value: string;
     elementIds: string[];
     conditions: string;
@@ -152,6 +152,7 @@ export type sliderElementType = {
     direction: string;
     color: string;
     isVisible: boolean;
+    isEnabled: boolean;
     conditions: string;
     [key: string]: any;
 }
@@ -239,6 +240,7 @@ export const elements: ElementsInterface = {
         space: 4,
         left: 15,
         top: 15,
+        color: '#4CAF50',
         isVisible: true,
         isEnabled: true,
         elementIds: [],
@@ -266,7 +268,6 @@ export const elements: ElementsInterface = {
         left: 15,
         top: 15,
         isVisible: true,
-        isEnabled: true,
         value: 'Label',
         elementIds: [],
         conditions: ''
@@ -317,6 +318,7 @@ export const elements: ElementsInterface = {
         direction: "horizontal",
         color: "#000000",
         isVisible: true,
+        isEnabled: true,
         elementIds: [],
         conditions: ''
     }

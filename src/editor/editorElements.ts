@@ -57,6 +57,7 @@ export const editorElements: EditorElementsInterface = {
 
         const dataProxy = new Proxy({ ...data }, {
             set(obj, key: string, value) {
+                const objid = obj.id;
 
                 switch (key) {
                     case 'nameid':
@@ -64,10 +65,6 @@ export const editorElements: EditorElementsInterface = {
                             obj[key] = value;
                             button.dataset.nameid = value;
                         } else {
-                            editor.editorEvents.emit(
-                                'selectElement',
-                                dialogContainer.getElement(obj.id)
-                            );
                             showMessageBox({
                                 type: 'warning',
                                 title: 'Notice',
@@ -97,13 +94,28 @@ export const editorElements: EditorElementsInterface = {
                         button.style.width = value + 'px';
                         break;
                     case 'isVisible':
+                        obj[key] = value === 'true';
+                        button.classList.add("design-hidden");
+                        if (obj[key]) {
+                            button.classList.remove("design-hidden");
+                        }
+                        break;
                     case 'isEnabled':
                         obj[key] = value === 'true';
+                        button.classList.add("disabled-div");
+                        if (obj[key]) {
+                            button.classList.remove("disabled-div");
+                        }
                         break;
                     default:
                         obj[key] = value;
-
                 }
+
+                const element = dialogContainer.getElement(objid);
+                if (element) {
+                    editor.editorEvents.emit('selectElement', element);
+                }
+
                 return true;
             }
         })
@@ -135,12 +147,16 @@ export const editorElements: EditorElementsInterface = {
         dataProxy.nameid = nameid;
         button.dataset.nameid = nameid;
 
-        if (!data.isVisible) {
-            button.style.display = 'none';
+        button.classList.add("design-hidden");
+        if (data.isVisible) {
+            button.classList.remove("design-hidden");
         }
-        if (!data.isEnabled) {
-            button.disabled = true;
+
+        button.classList.add("disabled-div");
+        if (data.isEnabled) {
+            button.classList.remove("disabled-div");
         }
+
         dialog.appendChild(button);
         return dataProxy;
     },
@@ -153,8 +169,7 @@ export const editorElements: EditorElementsInterface = {
 
         const dataProxy = new Proxy({ ...data }, {
             set(obj, key: string, value) {
-                const cb = document.getElementById("checkbox-" + uuid) as HTMLElement;
-                const cover = document.getElementById("cover-" + uuid) as HTMLElement;
+                const objid = obj.id;
 
                 switch (key) {
                     case 'nameid':
@@ -162,10 +177,6 @@ export const editorElements: EditorElementsInterface = {
                             obj[key] = value;
                             checkbox.dataset.nameid = value;
                         } else {
-                            editor.editorEvents.emit(
-                                'selectElement',
-                                dialogContainer.getElement(obj.id)
-                            );
                             showMessageBox({
                                 type: 'warning',
                                 title: 'Notice',
@@ -187,23 +198,29 @@ export const editorElements: EditorElementsInterface = {
                         break;
                     case 'isVisible':
                         obj[key] = value === 'true';
+                        checkbox.classList.add("design-hidden");
+                        if (obj[key]) {
+                            checkbox.classList.remove("design-hidden");
+                        }
                         break;
                     case 'isEnabled':
                         obj[key] = value === 'true';
+                        checkbox.classList.add('disabled-div');
                         if (obj[key]) {
-                            // checkbox.disabled = false;
-                            cover.classList.remove('disabled-div');
-                        } else {
-                            // checkbox.disabled = true;
-                            cover.classList.add('disabled-div');
+                            checkbox.classList.remove('disabled-div');
                         }
                         break;
                     case 'isChecked':
                         obj[key] = value === 'true';
-                        cb.setAttribute("aria-checked", value);
+                        document.getElementById("checkbox-" + uuid).setAttribute("aria-checked", value);
                         break;
                     default:
                         obj[key] = value;
+                }
+
+                const element = dialogContainer.getElement(objid);
+                if (element) {
+                    editor.editorEvents.emit('selectElement', element);
                 }
 
                 return true;
@@ -254,13 +271,14 @@ export const editorElements: EditorElementsInterface = {
         dataProxy.id = uuid;
         dataProxy.parentId = dialog.id;
 
-        if (!data.isVisible) {
-            checkbox.style.display = 'none';
+        checkbox.classList.add('design-hidden');
+        if (data.isVisible) {
+            checkbox.classList.remove('design-hidden');
         }
 
-        checkbox.classList.remove('disabled-div');
-        if (!data.isEnabled) {
-            checkbox.classList.add('disabled-div');
+        checkbox.classList.add('disabled-div');
+        if (data.isEnabled) {
+            checkbox.classList.remove('disabled-div');
         }
 
         dialog.appendChild(checkbox);
@@ -275,8 +293,8 @@ export const editorElements: EditorElementsInterface = {
 
         const dataProxy = new Proxy({ ...data }, {
             set(obj, key: string, value) {
+                const objid = obj.id;
                 const rd = document.getElementById("radio-" + uuid) as HTMLElement;
-                const cover = document.getElementById("cover-" + uuid) as HTMLElement;
 
                 switch (key) {
                     case 'nameid':
@@ -284,10 +302,6 @@ export const editorElements: EditorElementsInterface = {
                             obj[key] = value;
                             radio.dataset.nameid = value;
                         } else {
-                            editor.editorEvents.emit(
-                                'selectElement',
-                                dialogContainer.getElement(obj.id)
-                            );
                             showMessageBox({
                                 type: 'warning',
                                 title: 'Notice',
@@ -313,15 +327,16 @@ export const editorElements: EditorElementsInterface = {
                         break;
                     case 'isVisible':
                         obj[key] = value === 'true';
+                        radio.classList.add("design-hidden");
+                        if (obj[key]) {
+                            radio.classList.remove("design-hidden");
+                        }
                         break;
                     case 'isEnabled':
                         obj[key] = value === 'true';
+                        radio.classList.add('disabled-div');
                         if (obj[key]) {
-                            // radio.disabled = false;
-                            cover.classList.remove('disabled-div');
-                        } else {
-                            // radio.disabled = true;
-                            cover.classList.add('disabled-div');
+                            radio.classList.remove('disabled-div');
                         }
                         break;
                     case 'isSelected':
@@ -333,6 +348,11 @@ export const editorElements: EditorElementsInterface = {
                         break;
                     default:
                         obj[key] = value;
+                }
+
+                const element = dialogContainer.getElement(objid);
+                if (element) {
+                    editor.editorEvents.emit('selectElement', element);
                 }
 
                 return true;
@@ -379,14 +399,16 @@ export const editorElements: EditorElementsInterface = {
         dataProxy.id = uuid;
         dataProxy.parentId = dialog.id;
 
-        if (!data.isVisible) {
-            radio.style.display = 'none';
+        radio.classList.add('design-hidden');
+        if (data.isVisible) {
+            radio.classList.remove('design-hidden');
         }
 
-        radio.classList.remove('disabled-div');
-        if (!data.isEnabled) {
-            radio.classList.add('disabled-div');
+        radio.classList.add('disabled-div');
+        if (data.isEnabled) {
+            radio.classList.remove('disabled-div');
         }
+
         dialog.appendChild(radio);
 
         return dataProxy;
@@ -400,6 +422,7 @@ export const editorElements: EditorElementsInterface = {
 
         const dataProxy = new Proxy({ ...data }, {
             set(obj, key: string, value) {
+                const objid = obj.id;
 
                 switch (key) {
                     case 'nameid':
@@ -407,10 +430,6 @@ export const editorElements: EditorElementsInterface = {
                             obj[key] = value;
                             input.dataset.nameid = value;
                         } else {
-                            editor.editorEvents.emit(
-                                'selectElement',
-                                dialogContainer.getElement(obj.id)
-                            );
                             showMessageBox({
                                 type: 'warning',
                                 title: 'Notice',
@@ -445,13 +464,29 @@ export const editorElements: EditorElementsInterface = {
                         }
                         break;
                     case 'isVisible':
+                        obj[key] = value === 'true';
+                        input.classList.add("design-hidden");
+                        if (obj[key]) {
+                            input.classList.remove("design-hidden");
+                        }
+                        break;
                     case 'isEnabled':
                         obj[key] = value === 'true';
+                        input.classList.add('disabled-div');
+                        if (obj[key]) {
+                            input.classList.remove('disabled-div');
+                        }
                         break;
                     default:
                         obj[key] = value;
 
                 }
+
+                const element = dialogContainer.getElement(objid);
+                if (element) {
+                    editor.editorEvents.emit('selectElement', element);
+                }
+
                 return true;
             }
         })
@@ -483,12 +518,16 @@ export const editorElements: EditorElementsInterface = {
         dataProxy.id = uuid;
         dataProxy.parentId = dialog.id;
 
-        if (!data.isVisible) {
-            input.style.display = 'none';
+        input.classList.add('design-hidden');
+        if (data.isVisible) {
+            input.classList.remove('design-hidden');
         }
-        if (!data.isEnabled) {
-            input.disabled = true;
+
+        input.classList.add('disabled-div');
+        if (data.isEnabled) {
+            input.classList.remove('disabled-div');
         }
+
         dialog.appendChild(input);
         return dataProxy;
     },
@@ -525,9 +564,10 @@ export const editorElements: EditorElementsInterface = {
                         break;
                     case 'isVisible':
                         obj[key] = value === 'true';
-                        break;
-                    case 'isEnabled':
-                        obj[key] = value === 'true';
+                        label.classList.add("design-hidden");
+                        if (obj[key]) {
+                            label.classList.remove("design-hidden");
+                        }
                         break;
                     default:
                         obj[key] = value;
@@ -559,12 +599,11 @@ export const editorElements: EditorElementsInterface = {
         dataProxy.id = uuid;
         dataProxy.parentId = dialog.id;
 
-        if (!data.isVisible) {
-            label.style.display = 'none';
+        label.classList.add("design-hidden");
+        if (data.isVisible) {
+            label.classList.remove("design-hidden");
         }
-        if (!data.isEnabled) {
-            label.classList.add('disabled-div');
-        }
+
         dialog.appendChild(label);
         return dataProxy;
     },
@@ -577,6 +616,7 @@ export const editorElements: EditorElementsInterface = {
 
         const dataProxy = new Proxy({ ...data }, {
             set(obj, key: string, value) {
+                const objid = obj.id;
 
                 switch (key) {
                     case 'top':
@@ -600,8 +640,10 @@ export const editorElements: EditorElementsInterface = {
                         separator.style.height = value + 'px';
                         break;
                     case 'color':
-                        obj[key] = value;
-                        separator.style.backgroundColor = value;
+                        if (helpers.isValidColor(value)) {
+                            obj[key] = value;
+                            separator.style.backgroundColor = value;
+                        }
                         break;
                     case 'direction':
                         obj[key] = value;
@@ -609,18 +651,23 @@ export const editorElements: EditorElementsInterface = {
                             obj.id,
                             { width: String(obj["height"]), height: String(obj["width"]) }
                         );
-                        editor.editorEvents.emit(
-                            'selectElement',
-                            dialogContainer.getElement(obj.id)
-                        );
                         break;
                     case 'isVisible':
                         obj[key] = value === 'true';
+                        separator.classList.add("design-hidden");
+                        if (obj[key]) {
+                            separator.classList.remove("design-hidden");
+                        }
                         break;
                     default:
                         obj[key] = value;
-
                 }
+
+                const element = dialogContainer.getElement(objid);
+                if (element) {
+                    editor.editorEvents.emit('selectElement', element);
+                }
+
                 return true;
             }
         })
@@ -648,9 +695,11 @@ export const editorElements: EditorElementsInterface = {
         dataProxy.id = uuid;
         dataProxy.parentId = dialog.id;
 
-        if (!data.isVisible) {
-            separator.style.display = 'none';
+        separator.classList.add("design-hidden");
+        if (data.isVisible) {
+            separator.classList.remove("design-hidden");
         }
+
         dialog.appendChild(separator);
         return dataProxy;
     },
@@ -663,6 +712,7 @@ export const editorElements: EditorElementsInterface = {
 
         const dataProxy = new Proxy({ ...data }, {
             set(obj, key: string, value) {
+                const objid = obj.id;
 
                 switch (key) {
                     case 'nameid':
@@ -670,10 +720,6 @@ export const editorElements: EditorElementsInterface = {
                             obj[key] = value;
                             select.dataset.nameid = value;
                         } else {
-                            editor.editorEvents.emit(
-                                'selectElement',
-                                dialogContainer.getElement(obj.id)
-                            );
                             showMessageBox({
                                 type: 'warning',
                                 title: 'Notice',
@@ -717,13 +763,28 @@ export const editorElements: EditorElementsInterface = {
                         select.value = value;
                         break;
                     case 'isVisible':
+                        obj[key] = value === 'true';
+                        select.classList.add("design-hidden");
+                        if (obj[key]) {
+                            select.classList.remove("design-hidden");
+                        }
+                        break;
                     case 'isEnabled':
                         obj[key] = value === 'true';
+                        select.classList.add('disabled-div');
+                        if (obj[key]) {
+                            select.classList.remove('disabled-div');
+                        }
                         break;
                     default:
                         obj[key] = value;
-
                 }
+
+                const element = dialogContainer.getElement(objid);
+                if (element) {
+                    editor.editorEvents.emit('selectElement', element);
+                }
+
                 return true;
             }
         })
@@ -756,12 +817,16 @@ export const editorElements: EditorElementsInterface = {
         dataProxy.id = uuid;
         dataProxy.parentId = dialog.id;
 
-        if (!data.isVisible) {
-            select.style.display = 'none';
+        select.classList.add("design-hidden");
+        if (data.isVisible) {
+            select.classList.remove("design-hidden");
         }
-        if (!data.isEnabled) {
-            select.disabled = true;
+
+        select.classList.add('disabled-div');
+        if (data.isEnabled) {
+            select.classList.remove('disabled-div');
         }
+
         dialog.appendChild(select);
         return dataProxy;
     },
@@ -774,6 +839,7 @@ export const editorElements: EditorElementsInterface = {
 
         const dataProxy = new Proxy({ ...data }, {
             set(obj, key: string, value) {
+                const objid = obj.id;
 
                 switch (key) {
                     case 'nameid':
@@ -781,10 +847,6 @@ export const editorElements: EditorElementsInterface = {
                             obj[key] = value;
                             slider.dataset.nameid = value;
                         } else {
-                            editor.editorEvents.emit(
-                                'selectElement',
-                                dialogContainer.getElement(obj.id)
-                            );
                             showMessageBox({
                                 type: 'warning',
                                 title: 'Notice',
@@ -813,18 +875,16 @@ export const editorElements: EditorElementsInterface = {
                         slider.style.height = value + 'px';
                         break;
                     case 'color':
-                        obj[key] = value;
-                        slider.style.backgroundColor = value;
+                        if (helpers.isValidColor(value)) {
+                            obj[key] = value;
+                            slider.style.backgroundColor = value;
+                        }
                         break;
                     case 'direction':
                         obj[key] = value;
                         dialogContainer.updateProperties(
                             obj.id,
                             { width: String(obj["height"]), height: String(obj["width"]) }
-                        );
-                        editor.editorEvents.emit(
-                            'selectElement',
-                            dialogContainer.getElement(obj.id)
                         );
                         break;
                     case 'handlepos':
@@ -834,10 +894,6 @@ export const editorElements: EditorElementsInterface = {
                             value = 100;
                         }
                         obj[key] = value;
-                        editor.editorEvents.emit(
-                            'selectElement',
-                            dialogContainer.getElement(obj.id)
-                        );
                         break;
                     case 'handlesize':
                         obj[key] = value;
@@ -846,13 +902,31 @@ export const editorElements: EditorElementsInterface = {
                         obj[key] = value;
                         break;
                     case 'handlecolor':
-                        obj[key] = value;
+                        if (helpers.isValidColor(value)) {
+                            obj[key] = value;
+                        }
                         break;
                     case 'isVisible':
                         obj[key] = value === 'true';
+                        slider.classList.add("design-hidden");
+                        if (obj[key]) {
+                            slider.classList.remove("design-hidden");
+                        }
+                        break;
+                    case 'isEnabled':
+                        obj[key] = value === 'true';
+                        slider.classList.add('disabled-div');
+                        if (obj[key]) {
+                            slider.classList.remove('disabled-div');
+                        }
                         break;
                     default:
                         obj[key] = value;
+                }
+
+                const element = dialogContainer.getElement(objid);
+                if (element) {
+                    editor.editorEvents.emit('selectElement', element);
                 }
 
                 helpers.updateHandleStyle(
@@ -906,9 +980,16 @@ export const editorElements: EditorElementsInterface = {
         dataProxy.id = uuid;
         dataProxy.parentId = dialog.id;
 
-        if (!data.isVisible) {
-            slider.style.display = 'none';
+        slider.classList.add("design-hidden");
+        if (data.isVisible) {
+            slider.classList.remove("design-hidden");
         }
+
+        slider.classList.add('disabled-div');
+        if (data.isEnabled) {
+            slider.classList.remove('disabled-div');
+        }
+
         dialog.appendChild(slider);
         return dataProxy;
     },
@@ -921,6 +1002,7 @@ export const editorElements: EditorElementsInterface = {
 
         const dataProxy = new Proxy({ ...data }, {
             set(obj, key: string, value) {
+                const objid = obj.id;
 
                 switch (key) {
                     case 'nameid':
@@ -928,10 +1010,6 @@ export const editorElements: EditorElementsInterface = {
                             obj[key] = value;
                             counter.dataset.nameid = value;
                         } else {
-                            editor.editorEvents.emit(
-                                'selectElement',
-                                dialogContainer.getElement(obj.id)
-                            );
                             showMessageBox({
                                 type: 'warning',
                                 title: 'Notice',
@@ -951,45 +1029,51 @@ export const editorElements: EditorElementsInterface = {
                         obj[key] = parseInt(value);
                         counter.style.left = value + 'px';
                         break;
+                    case 'color':
+                        if (helpers.isValidColor(value)) {
+                            obj[key] = value;
+                        }
+                        break;
                     case 'space':
                         if (value < 0) {
                             value = 0;
                         }
                         obj[key] = parseInt(value);
-                        editor.editorEvents.emit(
-                            'selectElement',
-                            dialogContainer.getElement(obj.id)
-                        );
                         document.getElementById("counter-value-" + uuid).style.padding = '0px ' + value + 'px';
                         document.getElementById("counter-value-" + uuid).style.padding = '0px ' + value + 'px';
                         break;
                     case 'startval':
-                        if (value >= obj["maxval"]) {
-                            value = obj["maxval"] - 1;
+                        if (value < obj["maxval"]) {
+                            obj[key] = parseInt(value);
+                            document.getElementById("counter-value-" + uuid).innerHTML = value;
                         }
-                        obj[key] = parseInt(value);
-                        editor.editorEvents.emit(
-                            'selectElement',
-                            dialogContainer.getElement(obj.id)
-                        );
-                        document.getElementById("counter-value-" + uuid).innerHTML = value;
                         break;
                     case 'maxval':
-                        if (value <= obj["startval"]) {
-                            value = obj["startval"] + 1;
+                        if (value > obj["startval"]) {
+                            obj[key] = parseInt(value);
                         }
-                        obj[key] = parseInt(value);
-                        editor.editorEvents.emit(
-                            'selectElement',
-                            dialogContainer.getElement(obj.id)
-                        );
                         break;
                     case 'isVisible':
+                        obj[key] = value === 'true';
+                        counter.classList.add("design-hidden");
+                        if (obj[key]) {
+                            counter.classList.remove("design-hidden");
+                        }
+                        break;
                     case 'isEnabled':
                         obj[key] = value === 'true';
+                        counter.classList.add("disabled-div");
+                        if (obj[key]) {
+                            counter.classList.remove("disabled-div");
+                        }
                         break;
                     default:
                         obj[key] = value;
+                }
+
+                const element = dialogContainer.getElement(objid);
+                if (element) {
+                    editor.editorEvents.emit('selectElement', element);
                 }
 
                 return true;
@@ -1015,11 +1099,17 @@ export const editorElements: EditorElementsInterface = {
         dataProxy.id = uuid;
         dataProxy.parentId = dialog.id;
 
-        if (!data.isVisible) {
-            counter.style.display = 'none';
+        counter.classList.add("design-hidden");
+        if (data.isVisible) {
+            counter.classList.remove("design-hidden");
         }
-        dialog.appendChild(counter);
 
+        counter.classList.add("disabled-div");
+        if (data.isEnabled) {
+            counter.classList.remove("disabled-div");
+        }
+
+        dialog.appendChild(counter);
         return dataProxy;
     }
 };
