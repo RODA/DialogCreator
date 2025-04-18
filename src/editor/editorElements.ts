@@ -44,15 +44,8 @@ export const editorElements: EditorElementsInterface = {
         editorElements.fontFamily = family;
         editorElements.maxWidth = maxWidth;
         editorElements.maxHeight = maxHeight;
-        helpers.setOnlyNumbers("elwidth");
-        helpers.setOnlyNumbers("elheight");
-        helpers.setOnlyNumbers("elspace");
-        helpers.setOnlyNumbers("elleft");
-        helpers.setOnlyNumbers("eltop");
-        helpers.setOnlyNumbers("elhandlesize");
-        helpers.setOnlyNumbers("elhandlepos");
-        helpers.setOnlyNumbersWithMinus("elstartval");
-        helpers.setOnlyNumbersWithMinus("elmaxval");
+        helpers.setOnlyNumbers(["width", "height", "space", "left", "top", "handlesize", "handlepos"]);
+        helpers.setOnlyNumbersWithMinus(["startval", "maxval"]);
     },
     // The elements
     // ==============================================

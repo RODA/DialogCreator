@@ -145,40 +145,50 @@ export const helpers = {
 		});
 	},
 
-	setOnlyNumbers: function (item: string): void {
-		helpers.setInputFilter(
-            document.getElementById(item),
-            function (value: string): boolean { return /^\d*$/.test(value); }
-        );
+	setOnlyNumbers: function (items: string[]): void {
+        items.forEach((item) => {
+            helpers.setInputFilter(
+                document.getElementById('el' + item),
+                function (value: string): boolean { return /^\d*$/.test(value); }
+            );
+        })
 	},
 
-	setOnlyNumbersWithMinus: function (item: string): void {
-		helpers.setInputFilter(document.getElementById(item), function (value) {
-			return /^-?\d*$/.test(value);
-		});
+	setOnlyNumbersWithMinus: function (items: string[]): void {
+        items.forEach((item) => {
+            helpers.setInputFilter(
+                document.getElementById('el' + item),
+                function (value) { return /^-?\d*$/.test(value);}
+            );
+        });
 	},
 
-	setOnlyDouble: function (item: string): void {
-		helpers.setInputFilter(document.getElementById(item), function (value) {
-			if (value.endsWith("..") || value.endsWith(".,")) {
-				const x = value.split("");
-				x.splice(-1);
-				value = x.join("");
-				(<HTMLInputElement>document.getElementById(item)).value = value;
-				return false;
-			}
-			if (value.endsWith(",")) {
-				const x = value.split("");
-				x.splice(-1);
-				x.push(".");
-				value = x.join("");
-				(<HTMLInputElement>document.getElementById(item)).value = value;
-			}
-			if (value === "" || value.endsWith(".")) {
-				return true;
-			}
-			return /^\d*\.?\d{1,2}$/.test(value);
-		});
+	setOnlyDouble: function (items: string[]): void {
+        items.forEach((item) => {
+            helpers.setInputFilter(
+                document.getElementById(item),
+                function (value) {
+                    if (value.endsWith("..") || value.endsWith(".,")) {
+                        const x = value.split("");
+                        x.splice(-1);
+                        value = x.join("");
+                        (<HTMLInputElement>document.getElementById(item)).value = value;
+                        return false;
+                    }
+                    if (value.endsWith(",")) {
+                        const x = value.split("");
+                        x.splice(-1);
+                        x.push(".");
+                        value = x.join("");
+                        (<HTMLInputElement>document.getElementById(item)).value = value;
+                    }
+                    if (value === "" || value.endsWith(".")) {
+                        return true;
+                    }
+                    return /^\d*\.?\d{1,2}$/.test(value);
+                }
+            );
+        })
 	}
 }
 
