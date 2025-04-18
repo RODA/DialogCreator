@@ -189,6 +189,16 @@ export const helpers = {
                 }
             );
         })
-	}
+	},
+
+    isValidColor: function(value: string): boolean {
+        const x = new Option().style;
+        x.color = value;
+        return x.color !== '';
+    },
+
+    isTrue: function(x: string) {
+        return x === 'true';
+    }
 }
 
