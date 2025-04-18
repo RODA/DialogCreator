@@ -1,11 +1,14 @@
 import { v4 as uuidv4 } from 'uuid';
 import { ElementsInterface } from './elements';
 import { dialogContainer } from './dialogContainer';
+import { helpers } from '../helpers';
+import { showMessageBox } from '../FrontToBackCommunication';
 import { editor } from './editor';
 export type editorElementsTypes = 'addButton' | 'addCheckbox' | 'addRadio' | 'addLabel' |
     'addSeparator' | 'addSelect' // | 'addContainer' | 'addCounter' | 'addInput' | 'addSlider';
 
 export interface EditorElementsInterface {
+    nameidRecords: Record<string, number>;
     fontSize: number;
     fontFamily: string;
     maxWidth: number;
@@ -25,6 +28,7 @@ export interface EditorElementsInterface {
 }
 
 export const editorElements: EditorElementsInterface = {
+    nameidRecords: {},
 
     // defaults
     fontSize: 12,
@@ -37,10 +41,10 @@ export const editorElements: EditorElementsInterface = {
 
     // set default font size and family
     setDefaults: function (size, family, maxWidth, maxHeight) {
-        this.fontSize = size;
-        this.fontFamily = family;
-        this.maxWidth = maxWidth;
-        this.maxHeight = maxHeight;
+        editorElements.fontSize = size;
+        editorElements.fontFamily = family;
+        editorElements.maxWidth = maxWidth;
+        editorElements.maxHeight = maxHeight;
     },
     // The elements
     // ==============================================
@@ -53,31 +57,46 @@ export const editorElements: EditorElementsInterface = {
             const dataProxy = new Proxy({ ...data }, {
                 set(obj, key: string, value) {
 
-                    const el = document.getElementById(buttonId) as HTMLButtonElement;
-
                     switch (key) {
+                        case 'nameid':
+                            if (helpers.nameidValidChange(value, button)) {
+                                obj[key] = value;
+                                button.dataset.nameid = value;
+                            } else {
+                                editor.editorEvents.emit(
+                                    'selectElement',
+                                    dialogContainer.getElement(obj.id)
+                                );
+                                showMessageBox({
+                                    type: 'warning',
+                                    title: 'Notice',
+                                    message: 'Name already exists.'
+                                });
+
+                            }
+                            break;
                         case 'label':
-                            el.innerText = value;
+                            button.innerText = value;
                             obj[key] = value;
                             break;
                         case 'top':
-                            if (el && editorElements.maxHeight >= value) {
+                            if (button && editorElements.maxHeight >= value) {
                                 obj[key] = parseInt(value);
-                                el.style.top = value + 'px';
+                                button.style.top = value + 'px';
                             } else {
-                                el.style.top = editorElements.maxHeight + 'px';
+                                button.style.top = editorElements.maxHeight + 'px';
                             }
                             break;
                         case 'left':
                             obj[key] = parseInt(value);
-                            if (el) {
-                                el.style.left = value + 'px';
+                            if (button) {
+                                button.style.left = value + 'px';
                             }
                             break;
                         case 'width':
                             obj[key] = parseInt(value);
-                            if (el) {
-                                el.style.width = value + 'px';
+                            if (button) {
+                                button.style.width = value + 'px';
                             }
                             break;
                         case 'isVisible':
@@ -114,6 +133,10 @@ export const editorElements: EditorElementsInterface = {
             // in container
             dataProxy.id = buttonId;
             dataProxy.parentId = dialog.id;
+
+            const nameid = helpers.generateUniqueNameID("button", editorElements.nameidRecords);
+            dataProxy.nameid = nameid;
+            button.dataset.nameid = nameid;
 
             if (!data.isVisible) {
                 button.style.display = 'none';
@@ -823,7 +846,7 @@ export const editorElements: EditorElementsInterface = {
                             obj[key] = value;
                     }
 
-                    updateHandleStyle(
+                    helpers.updateHandleStyle(
                         handle,
                         obj["handleshape"],
                         obj["direction"],
@@ -837,11 +860,11 @@ export const editorElements: EditorElementsInterface = {
             })
 
             const slider = document.createElement('div');
-            slider.className = 'separator'; // slider-track
+            slider.className = 'separator';
             const handle = document.createElement('div');
             handle.className = 'slider-handle';
             handle.id = 'slider-handle-' + sliderId;
-            updateHandleStyle(
+            helpers.updateHandleStyle(
                 handle,
                 data.handleshape,
                 data.direction,
@@ -1060,59 +1083,3 @@ export const editorElements: EditorElementsInterface = {
 
 };
 
-
-function updateHandleStyle(
-    handle: HTMLDivElement,
-    shape: string,
-    direction: string,
-    color: string,
-    size: number,
-    position: number
-) {
-    // Clear all shape-specific inline styles
-    handle.style.border = '';
-    handle.style.borderLeft = '';
-    handle.style.borderRight = '';
-    handle.style.borderTop = '';
-    handle.style.borderBottom = '';
-    handle.style.backgroundColor = '';
-    handle.style.width = '';
-    handle.style.height = '';
-    handle.style.borderRadius = '';
-
-    // Update dataset (this triggers your CSS-based fallback if needed)
-    handle.dataset.shape = shape;
-    handle.dataset.direction = direction;
-
-    // Now apply inline styles based on shape
-    if (shape === 'triangle') {
-        if (direction === 'horizontal') {
-            handle.style.borderLeft = size + 'px solid transparent';
-            handle.style.borderRight = size + 'px solid transparent';
-            handle.style.borderBottom = (1.5 * size) + 'px solid ' + color;
-            handle.style.left = position + "%";
-            handle.style.top = "100%";
-        } else if (direction === 'vertical') {
-            handle.style.borderTop = size + 'px solid transparent';
-            handle.style.borderBottom = size + 'px solid transparent';
-            handle.style.borderRight = (1.5 * size) + 'px solid ' + color;
-            handle.style.left = "0%";
-            handle.style.top = (100 - position) + "%";
-        }
-        handle.style.width = '0px';
-        handle.style.height = '0px';
-    } else if (shape === 'circle') {
-        const radius = 1.5 * size;
-        handle.style.width = `${radius}px`;
-        handle.style.height = `${radius}px`;
-        handle.style.backgroundColor = color;
-        handle.style.borderRadius = '50%';
-        if (direction == "horizontal") {
-            handle.style.left = position + "%";
-            handle.style.top = "50%";
-        } else {
-            handle.style.left = "50%";
-            handle.style.top = (100 - position) + "%";
-        }
-    }
-}
