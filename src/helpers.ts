@@ -1,5 +1,16 @@
+import { dialogContainer } from './editor/dialogContainer';
 
 export const helpers = {
+
+    unselectRadioGroup: function(element: HTMLElement) {
+        document.querySelectorAll(`[group="${element.getAttribute("group")}"]`).forEach(
+            (radio) => {
+                const id = radio.id.slice(6);
+                dialogContainer.elements[id].isSelected = false;
+                radio.setAttribute('aria-checked', 'false');
+            }
+        );
+    },
 
     updateHandleStyle: function(
         handle: HTMLDivElement,
@@ -57,7 +68,10 @@ export const helpers = {
         }
     },
 
-    generateUniqueNameID: function(type: string, nameidRecords: Record<string, number>): string {
+    generateUniqueNameID: function(
+        type: string,
+        nameidRecords: Record<string, number>
+    ): string {
         const existingIds = new Set(
             Array.from(document.querySelectorAll<HTMLElement>('[data-nameid]'))
                 .map(el => el.dataset.nameid!)
