@@ -112,8 +112,8 @@ export const editor: EditorInterface = {
             // check for method
             if (
                 !editorSettings.availableElements.includes(type) ||
-                !Object.hasOwn(editorElements, 'add' + type))
-            {
+                !Object.hasOwn(editorElements, 'add' + type)
+            ){
                 showMessageBox({
                     type: 'info',
                     title: 'Notice',
