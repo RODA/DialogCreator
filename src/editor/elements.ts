@@ -7,7 +7,8 @@ export type buttonElementType = {
     label: string;
     left: number;
     top: number;
-    width: number;
+    color: string;
+    fontColor: string;
     isVisible: boolean;
     isEnabled: boolean;
     onClick: string;
@@ -22,6 +23,7 @@ export type checkboxElementType = {
     nameid: string;
     left: number;
     top: number;
+    size: number;
     color: string;
     isChecked: boolean;
     isVisible: boolean;
@@ -182,7 +184,8 @@ export const elements: ElementsInterface = {
         label: 'Button',
         left: 15,
         top: 15,
-        width: 60,
+        color: '#EFEFEF',
+        fontColor: '#000000',
         isVisible: true,
         isEnabled: true,
         onClick: 'run',
@@ -196,6 +199,7 @@ export const elements: ElementsInterface = {
         nameid: '',
         left: 10,
         top: 10,
+        size: 13,
         color: '#4CAF50',
         isChecked: false,
         isVisible: true,
