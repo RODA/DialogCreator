@@ -127,6 +127,61 @@ export const helpers = {
         return counter;
     },
 
+    makeCheckbox: function(
+        uuid: string,
+        nameid: string,
+        top: number,
+        left: number,
+        visible: boolean,
+        enabled: boolean,
+        color: string
+    ) {
+        const checkbox = document.createElement('div');
+        checkbox.className = 'element-div';
+        checkbox.style.top = top + 'px';
+        checkbox.style.left = left + 'px';
+        checkbox.style.width = '13px';
+        checkbox.style.height = '13px';
+
+        const customCheckbox = document.createElement('div');
+        customCheckbox.id = "checkbox-" + uuid;
+        customCheckbox.className = 'custom-checkbox';
+        customCheckbox.setAttribute('role', 'checkbox');
+        customCheckbox.setAttribute('tabindex', '0');
+        customCheckbox.setAttribute('aria-checked', 'false');
+        customCheckbox.style.setProperty('--checkbox-color', color);  // <-- key line
+
+        customCheckbox.addEventListener('click', () => {
+            const isChecked = customCheckbox.getAttribute('aria-checked') === 'true';
+            customCheckbox.setAttribute('aria-checked', isChecked ? "false" : "true");
+        });
+
+        const cover = document.createElement('div');
+        cover.id = "cover-" + uuid;
+        cover.className = 'cover';
+
+        checkbox.dataset.nameid = nameid;
+
+        checkbox.classList.add('design-hidden');
+        if (visible) checkbox.classList.remove('design-hidden');
+
+        checkbox.classList.add('disabled-div');
+        if (enabled) checkbox.classList.remove('disabled-div');
+
+        checkbox.appendChild(customCheckbox);
+        checkbox.appendChild(cover);
+        checkbox.id = uuid;
+
+        return checkbox;
+    },
+
+    updateCheckboxColor: function(uuid: string, newColor: string) {
+        const customCheckbox = document.querySelector(`#checkbox-${uuid}`) as HTMLElement;
+        if (customCheckbox) {
+            customCheckbox.style.setProperty('--checkbox-color', newColor);
+        }
+    },
+
 	setInputFilter: function (textbox: HTMLElement, inputFilter: (value: string) => boolean): void {
 		// https://stackoverflow.com/questions/469357/html-text-input-allow-only-numeric-input
 		// Restricts input for the given textbox to the given inputFilter function.

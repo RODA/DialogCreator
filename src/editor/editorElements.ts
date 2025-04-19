@@ -196,6 +196,12 @@ export const editorElements: EditorElementsInterface = {
                         obj[key] = parseInt(value);
                         checkbox.style.left = value + 'px';
                         break;
+                    case 'color':
+                        if (helpers.isValidColor(value)) {
+                            obj[key] = value;
+                            helpers.updateCheckboxColor(uuid, value);
+                        }
+                        break;
                     case 'isVisible':
                         obj[key] = value === 'true';
                         checkbox.classList.add("design-hidden");
@@ -228,58 +234,22 @@ export const editorElements: EditorElementsInterface = {
         })
 
         const uuid = uuidv4();
-
-        const checkbox = document.createElement('div');
-        checkbox.className = 'element-div';
-
-        // position
-        checkbox.style.top = data.top + 'px';
-        checkbox.style.left = data.left + 'px';
-        checkbox.style.width = '13px';
-        checkbox.style.height = '13px';
-
-        // Create the custom checkbox
-        const customCheckbox = document.createElement('div');
-        customCheckbox.id = "checkbox-" + uuid;
-        customCheckbox.className = 'custom-checkbox';
-        customCheckbox.setAttribute('role', 'checkbox');
-        customCheckbox.setAttribute('tabindex', '0');
-        customCheckbox.setAttribute('aria-checked', 'false');
-
-        customCheckbox.addEventListener('click', () => {
-            const isChecked = customCheckbox.getAttribute('aria-checked') === 'true';
-            customCheckbox.setAttribute('aria-checked', isChecked ? "false" : "true");
-        });
-
-        // Create the cover div
-        const cover = document.createElement('div');
-        cover.id = "cover-" + uuid;
-        cover.className = 'cover';
-        // Append the cover to the custom checkbox
-
         const nameid = helpers.generateUniqueNameID(data.type, editorElements.nameidRecords);
-        dataProxy.nameid = nameid;
-        checkbox.dataset.nameid = nameid;
 
-        checkbox.appendChild(customCheckbox);
-        checkbox.appendChild(cover);
-
-        // on screen
-        checkbox.id = uuid;
+        const checkbox = helpers.makeCheckbox(
+            uuid,
+            nameid,
+            data.top,
+            data.left,
+            data.isVisible,
+            data.isEnabled,
+            data.color
+        )
 
         // in container
         dataProxy.id = uuid;
+        dataProxy.nameid = nameid;
         dataProxy.parentId = dialog.id;
-
-        checkbox.classList.add('design-hidden');
-        if (data.isVisible) {
-            checkbox.classList.remove('design-hidden');
-        }
-
-        checkbox.classList.add('disabled-div');
-        if (data.isEnabled) {
-            checkbox.classList.remove('disabled-div');
-        }
 
         dialog.appendChild(checkbox);
         return dataProxy;

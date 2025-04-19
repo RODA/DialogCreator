@@ -22,6 +22,7 @@ export type checkboxElementType = {
     nameid: string;
     left: number;
     top: number;
+    color: string;
     isChecked: boolean;
     isVisible: boolean;
     isEnabled: boolean;
@@ -195,6 +196,7 @@ export const elements: ElementsInterface = {
         nameid: '',
         left: 10,
         top: 10,
+        color: '#4CAF50',
         isChecked: false,
         isVisible: true,
         isEnabled: true,

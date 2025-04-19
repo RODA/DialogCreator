@@ -219,12 +219,13 @@ body {
     border-radius: 0.1em;
     position: relative;
     box-sizing: border-box;
+    transition: background-color 0.2s, border-color 0.2s;
 }
 
 /* Style the checked state for custom checkbox */
 .custom-checkbox[aria-checked="true"] {
-    background-color: #4CAF50;
-    border-color: #4CAF50;
+    background-color: var(--checkbox-color, #4CAF50);
+    border-color: var(--checkbox-color, #4CAF50);
 }
 
 /* Checkmark (proportional using em units) */
