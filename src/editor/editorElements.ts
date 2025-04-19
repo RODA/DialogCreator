@@ -1032,6 +1032,8 @@ export const editorElements: EditorElementsInterface = {
                     case 'color':
                         if (helpers.isValidColor(value)) {
                             obj[key] = value;
+                            document.getElementById("counter-decrease-" + uuid).style.color = value;
+                            document.getElementById("counter-increase-" + uuid).style.color = value;
                         }
                         break;
                     case 'space':
