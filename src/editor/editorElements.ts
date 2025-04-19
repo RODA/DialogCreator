@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { ElementsInterface } from './elements';
 import { dialogContainer } from './dialogContainer';
-import { helpers } from '../helpers';
+import { util } from '../utils';
 import { showMessageBox } from '../FrontToBackCommunication';
 import { editor } from './editor';
 export type editorElementsTypes = 'addButton' | 'addCheckbox' | 'addRadio' | 'addLabel' | 'addInput' | 'addSlider' | 'addSeparator' | 'addSelect' | 'addCounter' // | 'addContainer';
@@ -12,16 +12,48 @@ export interface EditorElementsInterface {
     fontFamily: string;
     maxWidth: number;
     maxHeight: number;
-    setDefaults: (size: number, family: string, maxWidth: number, maxHeight: number) => void;
-    addButton: (dialog: HTMLDivElement, data: ElementsInterface["buttonElement"]) => ElementsInterface["buttonElement"];
-    addCheckbox: (dialog: HTMLDivElement, data: ElementsInterface["checkboxElement"]) => ElementsInterface["checkboxElement"];
-    addRadio: (dialog: HTMLDivElement, data: ElementsInterface["checkboxElement"]) => ElementsInterface["checkboxElement"];
-    addInput: (dialog: HTMLDivElement, data: ElementsInterface["inputElement"]) => ElementsInterface["inputElement"];
-    addLabel: (dialog: HTMLDivElement, data: ElementsInterface["labelElement"]) => ElementsInterface["labelElement"];
-    addSeparator: (dialog: HTMLDivElement, data: ElementsInterface["separatorElement"]) => ElementsInterface["separatorElement"];
-    addSelect: (dialog: HTMLDivElement, data: ElementsInterface["selectElement"]) => ElementsInterface["selectElement"];
-    addSlider: (dialog: HTMLDivElement, data: ElementsInterface["sliderElement"]) => ElementsInterface["sliderElement"];
-    addCounter: (dialog: HTMLDivElement, data: ElementsInterface["counterElement"]) => ElementsInterface["counterElement"];
+    setDefaults: (
+        size: number,
+        family: string,
+        maxWidth: number,
+        maxHeight: number
+    ) => void;
+    addButton: (
+        dialog: HTMLDivElement,
+        data: ElementsInterface["buttonElement"]
+    ) => ElementsInterface["buttonElement"];
+    addCheckbox: (
+        dialog: HTMLDivElement,
+        data: ElementsInterface["checkboxElement"]
+    ) => ElementsInterface["checkboxElement"];
+    addRadio: (
+        dialog: HTMLDivElement,
+        data: ElementsInterface["checkboxElement"]
+    ) => ElementsInterface["checkboxElement"];
+    addInput: (
+        dialog: HTMLDivElement,
+        data: ElementsInterface["inputElement"]
+    ) => ElementsInterface["inputElement"];
+    addLabel: (
+        dialog: HTMLDivElement,
+        data: ElementsInterface["labelElement"]
+    ) => ElementsInterface["labelElement"];
+    addSeparator: (
+        dialog: HTMLDivElement,
+        data: ElementsInterface["separatorElement"]
+    ) => ElementsInterface["separatorElement"];
+    addSelect: (
+        dialog: HTMLDivElement,
+        data: ElementsInterface["selectElement"]
+    ) => ElementsInterface["selectElement"];
+    addSlider: (
+        dialog: HTMLDivElement,
+        data: ElementsInterface["sliderElement"]
+    ) => ElementsInterface["sliderElement"];
+    addCounter: (
+        dialog: HTMLDivElement,
+        data: ElementsInterface["counterElement"]
+    ) => ElementsInterface["counterElement"];
     // addContainer: (dialog: HTMLDivElement, data: elementsConfig.containerElementType) => void;
     // [propName: string]: any;
 }
@@ -44,8 +76,8 @@ export const editorElements: EditorElementsInterface = {
         editorElements.fontFamily = family;
         editorElements.maxWidth = maxWidth;
         editorElements.maxHeight = maxHeight;
-        helpers.setOnlyNumbers(["width", "height", "space", "left", "top", "handlesize", "handlepos"]);
-        helpers.setOnlyNumbersWithMinus(["startval", "maxval"]);
+        util.setOnlyNumbers(["width", "height", "size", "space", "left", "top", "handlesize", "handlepos"]);
+        util.setOnlyNumbersWithMinus(["startval", "maxval"]);
     },
     // The elements
     // ==============================================
@@ -61,7 +93,7 @@ export const editorElements: EditorElementsInterface = {
 
                 switch (key) {
                     case 'nameid':
-                        if (helpers.nameidValidChange(value, button)) {
+                        if (util.nameidValidChange(value, button)) {
                             obj[key] = value;
                             button.dataset.nameid = value;
                         } else {
@@ -74,24 +106,35 @@ export const editorElements: EditorElementsInterface = {
                         }
                         break;
                     case 'label':
-                        button.innerText = value;
                         obj[key] = value;
+                        button.innerText = value;
                         break;
                     case 'top':
-                        if (editorElements.maxHeight >= value) {
-                            obj[key] = parseInt(value);
-                            button.style.top = value + 'px';
-                        } else {
-                            button.style.top = editorElements.maxHeight + 'px';
+                        if (value > editorElements.maxHeight) {
+                            value = editorElements.maxHeight;
                         }
+                        obj[key] = parseInt(value);
+                        button.style.top = value + 'px';
                         break;
                     case 'left':
+                        if (value > editorElements.maxWidth) {
+                            value = editorElements.maxWidth;
+                        }
                         obj[key] = parseInt(value);
+                        // const el = document.getElementById("")
                         button.style.left = value + 'px';
                         break;
-                    case 'width':
-                        obj[key] = parseInt(value);
-                        button.style.width = value + 'px';
+                    case 'color':
+                        if (util.isValidColor(value)) {
+                            obj[key] = value;
+                            button.style.backgroundColor = value;
+                        }
+                        break;
+                    case 'fontColor':
+                        if (util.isValidColor(value)) {
+                            obj[key] = value;
+                            button.style.color = value;
+                        }
                         break;
                     case 'isVisible':
                         obj[key] = value === 'true';
@@ -121,41 +164,28 @@ export const editorElements: EditorElementsInterface = {
         })
 
         const uuid = uuidv4();
+        const nameid = util.makeNameID(data.type, editorElements.nameidRecords);
 
-        const button = document.createElement('button');
-        // position
-        button.style.position = 'absolute';
-        button.style.top = data.top + 'px';
-        button.style.left = data.left + 'px';
-        button.style.width = data.width + 'px';
-        // label
-        button.innerText = data.label
+        const button = util.makeElement({
+            type: data.type,
+            uuid: uuid,
+            nameid: nameid,
+            top: data.top,
+            left: data.left,
+            label: data.label,
+            isVisible: data.isVisible,
+            isEnabled: data.isEnabled,
+            color: data.color,
+            fontColor: data.fontColor,
+            fontFamily: editorElements.fontFamily,
+            fontSize: editorElements.fontSize,
+            maxWidth: editorElements.maxWidth,
+            maxHeight: editorElements.maxHeight,
+        });
 
-        button.style.maxWidth = editorElements.maxWidth + 'px';
-        button.style.maxHeight = editorElements.maxHeight + 'px';
-
-        button.style.fontFamily = editorElements.fontFamily;
-        button.style.fontSize = editorElements.fontSize + 'px';
-
-        // on screen
-        button.id = uuid;
-        // in container
         dataProxy.id = uuid;
-        dataProxy.parentId = dialog.id;
-
-        const nameid = helpers.generateUniqueNameID(data.type, editorElements.nameidRecords);
         dataProxy.nameid = nameid;
-        button.dataset.nameid = nameid;
-
-        button.classList.add("design-hidden");
-        if (data.isVisible) {
-            button.classList.remove("design-hidden");
-        }
-
-        button.classList.add("disabled-div");
-        if (data.isEnabled) {
-            button.classList.remove("disabled-div");
-        }
+        dataProxy.parentId = dialog.id;
 
         dialog.appendChild(button);
         return dataProxy;
@@ -173,7 +203,7 @@ export const editorElements: EditorElementsInterface = {
 
                 switch (key) {
                     case 'nameid':
-                        if (helpers.nameidValidChange(value, checkbox)) {
+                        if (util.nameidValidChange(value, checkbox)) {
                             obj[key] = value;
                             checkbox.dataset.nameid = value;
                         } else {
@@ -196,10 +226,15 @@ export const editorElements: EditorElementsInterface = {
                         obj[key] = parseInt(value);
                         checkbox.style.left = value + 'px';
                         break;
+                    case 'size':
+                        obj[key] = parseInt(value);
+                        checkbox.style.width = value + 'px';
+                        checkbox.style.height = value + 'px';
+                        break;
                     case 'color':
-                        if (helpers.isValidColor(value)) {
+                        if (util.isValidColor(value)) {
                             obj[key] = value;
-                            helpers.updateCheckboxColor(uuid, value);
+                            util.updateCheckboxColor(uuid, value);
                         }
                         break;
                     case 'isVisible':
@@ -234,17 +269,19 @@ export const editorElements: EditorElementsInterface = {
         })
 
         const uuid = uuidv4();
-        const nameid = helpers.generateUniqueNameID(data.type, editorElements.nameidRecords);
+        const nameid = util.makeNameID(data.type, editorElements.nameidRecords);
 
-        const checkbox = helpers.makeCheckbox(
-            uuid,
-            nameid,
-            data.top,
-            data.left,
-            data.isVisible,
-            data.isEnabled,
-            data.color
-        )
+        const checkbox = util.makeElement({
+            type: data.type,
+            uuid: uuid,
+            nameid: nameid,
+            top: data.top,
+            left: data.left,
+            size: data.size,
+            isVisible: data.isVisible,
+            isEnabled: data.isEnabled,
+            color: data.color
+        });
 
         // in container
         dataProxy.id = uuid;
@@ -268,7 +305,7 @@ export const editorElements: EditorElementsInterface = {
 
                 switch (key) {
                     case 'nameid':
-                        if (helpers.nameidValidChange(value, radio)) {
+                        if (util.nameidValidChange(value, radio)) {
                             obj[key] = value;
                             radio.dataset.nameid = value;
                         } else {
@@ -311,7 +348,7 @@ export const editorElements: EditorElementsInterface = {
                         break;
                     case 'isSelected':
                         if (value === 'true') {
-                            helpers.unselectRadioGroup(rd);
+                            util.unselectRadioGroup(rd);
                         }
                         rd.setAttribute('aria-checked', value);
                         obj[key] = value === 'true';
@@ -358,7 +395,7 @@ export const editorElements: EditorElementsInterface = {
 
         radio.appendChild(customRadio);
 
-        const nameid = helpers.generateUniqueNameID(data.type, editorElements.nameidRecords);
+        const nameid = util.makeNameID(data.type, editorElements.nameidRecords);
         dataProxy.nameid = nameid;
         radio.dataset.nameid = nameid;
 
@@ -396,7 +433,7 @@ export const editorElements: EditorElementsInterface = {
 
                 switch (key) {
                     case 'nameid':
-                        if (helpers.nameidValidChange(value, input)) {
+                        if (util.nameidValidChange(value, input)) {
                             obj[key] = value;
                             input.dataset.nameid = value;
                         } else {
@@ -478,7 +515,7 @@ export const editorElements: EditorElementsInterface = {
         input.style.fontFamily = editorElements.fontFamily;
         input.style.fontSize = editorElements.fontSize + 'px';
 
-        const nameid = helpers.generateUniqueNameID(data.type, editorElements.nameidRecords);
+        const nameid = util.makeNameID(data.type, editorElements.nameidRecords);
         dataProxy.nameid = nameid;
         input.dataset.nameid = nameid;
 
@@ -557,9 +594,6 @@ export const editorElements: EditorElementsInterface = {
         label.style.left = data.left + 'px';
         label.innerText = data.value;
 
-        label.style.maxWidth = editorElements.maxWidth + 'px';
-        label.style.maxHeight = editorElements.maxHeight + 'px';
-
         label.style.fontFamily = editorElements.fontFamily;
         label.style.fontSize = editorElements.fontSize + 'px';
 
@@ -610,7 +644,7 @@ export const editorElements: EditorElementsInterface = {
                         separator.style.height = value + 'px';
                         break;
                     case 'color':
-                        if (helpers.isValidColor(value)) {
+                        if (util.isValidColor(value)) {
                             obj[key] = value;
                             separator.style.backgroundColor = value;
                         }
@@ -686,7 +720,7 @@ export const editorElements: EditorElementsInterface = {
 
                 switch (key) {
                     case 'nameid':
-                        if (helpers.nameidValidChange(value, select)) {
+                        if (util.nameidValidChange(value, select)) {
                             obj[key] = value;
                             select.dataset.nameid = value;
                         } else {
@@ -698,18 +732,20 @@ export const editorElements: EditorElementsInterface = {
                         }
                         break;
                     case 'top':
-                        if (editorElements.maxHeight >= value) {
-                            obj[key] = parseInt(value);
-                            select.style.top = value + 'px';
-                        } else {
-                            select.style.top = editorElements.maxHeight + 'px';
+                        if (value > editorElements.maxHeight) {
+                            value = editorElements.maxHeight;
                         }
+                        obj[key] = parseInt(value);
+                        select.style.top = value + 'px';
                         break;
                     case 'left':
                         obj[key] = parseInt(value);
                         select.style.left = value + 'px';
                         break;
                     case 'width':
+                        if (value > editorElements.maxWidth) {
+                            value = editorElements.maxWidth;
+                        }
                         obj[key] = parseInt(value);
                         select.style.width = value + 'px';
                         break;
@@ -777,7 +813,7 @@ export const editorElements: EditorElementsInterface = {
         select.style.fontFamily = editorElements.fontFamily;
         select.style.fontSize = editorElements.fontSize + 'px';
 
-        const nameid = helpers.generateUniqueNameID(data.type, editorElements.nameidRecords);
+        const nameid = util.makeNameID(data.type, editorElements.nameidRecords);
         dataProxy.nameid = nameid;
         select.dataset.nameid = nameid;
 
@@ -813,7 +849,7 @@ export const editorElements: EditorElementsInterface = {
 
                 switch (key) {
                     case 'nameid':
-                        if (helpers.nameidValidChange(value, slider)) {
+                        if (util.nameidValidChange(value, slider)) {
                             obj[key] = value;
                             slider.dataset.nameid = value;
                         } else {
@@ -845,7 +881,7 @@ export const editorElements: EditorElementsInterface = {
                         slider.style.height = value + 'px';
                         break;
                     case 'color':
-                        if (helpers.isValidColor(value)) {
+                        if (util.isValidColor(value)) {
                             obj[key] = value;
                             slider.style.backgroundColor = value;
                         }
@@ -872,7 +908,7 @@ export const editorElements: EditorElementsInterface = {
                         obj[key] = value;
                         break;
                     case 'handlecolor':
-                        if (helpers.isValidColor(value)) {
+                        if (util.isValidColor(value)) {
                             obj[key] = value;
                         }
                         break;
@@ -899,7 +935,7 @@ export const editorElements: EditorElementsInterface = {
                     editor.editorEvents.emit('selectElement', element);
                 }
 
-                helpers.updateHandleStyle(
+                util.updateHandleStyle(
                     handle,
                     obj["handleshape"],
                     obj["direction"],
@@ -920,7 +956,7 @@ export const editorElements: EditorElementsInterface = {
         const handle = document.createElement('div');
         handle.className = 'slider-handle';
         handle.id = 'slider-handle-' + uuid;
-        helpers.updateHandleStyle(
+        util.updateHandleStyle(
             handle,
             data.handleshape,
             data.direction,
@@ -940,7 +976,7 @@ export const editorElements: EditorElementsInterface = {
         slider.style.maxWidth = editorElements.maxWidth + 'px';
         slider.style.maxHeight = editorElements.maxHeight + 'px';
 
-        const nameid = helpers.generateUniqueNameID(data.type, editorElements.nameidRecords);
+        const nameid = util.makeNameID(data.type, editorElements.nameidRecords);
         dataProxy.nameid = nameid;
         slider.dataset.nameid = nameid;
 
@@ -976,7 +1012,7 @@ export const editorElements: EditorElementsInterface = {
 
                 switch (key) {
                     case 'nameid':
-                        if (helpers.nameidValidChange(value, counter)) {
+                        if (util.nameidValidChange(value, counter)) {
                             obj[key] = value;
                             counter.dataset.nameid = value;
                         } else {
@@ -1000,7 +1036,7 @@ export const editorElements: EditorElementsInterface = {
                         counter.style.left = value + 'px';
                         break;
                     case 'color':
-                        if (helpers.isValidColor(value)) {
+                        if (util.isValidColor(value)) {
                             obj[key] = value;
                             document.getElementById("counter-decrease-" + uuid).style.color = value;
                             document.getElementById("counter-increase-" + uuid).style.color = value;
@@ -1011,7 +1047,6 @@ export const editorElements: EditorElementsInterface = {
                             value = 0;
                         }
                         obj[key] = parseInt(value);
-                        document.getElementById("counter-value-" + uuid).style.padding = '0px ' + value + 'px';
                         document.getElementById("counter-value-" + uuid).style.padding = '0px ' + value + 'px';
                         break;
                     case 'startval':
@@ -1053,33 +1088,22 @@ export const editorElements: EditorElementsInterface = {
         })
 
         const uuid = uuidv4();
+        const nameid = util.makeNameID(data.type, editorElements.nameidRecords);
 
-        const counter = helpers.makeCounter(data.startval, uuid)
+        const counter = util.makeElement({
+            type: data.type,
+            uuid: uuid,
+            nameid: nameid,
+            top: data.top,
+            startval: data.startval,
+            left: data.left,
+            color: data.color,
+            space: data.space
+        });
 
-        // position
-        counter.style.position = 'absolute';
-        counter.style.top = data.top + 'px';
-        counter.style.left = data.left + 'px';
-
-        const nameid = helpers.generateUniqueNameID(data.type, editorElements.nameidRecords);
-        dataProxy.nameid = nameid;
-        counter.dataset.nameid = nameid;
-
-        // on screen
-        counter.id = uuid;
-        // in container
         dataProxy.id = uuid;
+        dataProxy.nameid = nameid;
         dataProxy.parentId = dialog.id;
-
-        counter.classList.add("design-hidden");
-        if (data.isVisible) {
-            counter.classList.remove("design-hidden");
-        }
-
-        counter.classList.add("disabled-div");
-        if (data.isEnabled) {
-            counter.classList.remove("disabled-div");
-        }
 
         dialog.appendChild(counter);
         return dataProxy;
