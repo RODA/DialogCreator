@@ -102,12 +102,13 @@ export const helpers = {
     },
 
     makeCounter: function(start: number, uuid: string): HTMLElement {
-        const wrapper = document.createElement("div");
-        wrapper.className = "counter-wrapper";
+        const counter = document.createElement("div");
+        counter.className = "counter-wrapper";
 
         const decrease = document.createElement("div");
         decrease.className = "counter-arrow down";
-        decrease.innerHTML = "&#9660;"; // ▼
+        decrease.innerHTML = "&#9654;";
+        decrease.id = "counter-decrease-" + uuid;
 
         const display = document.createElement("div");
         display.className = "counter-value";
@@ -116,13 +117,14 @@ export const helpers = {
 
         const increase = document.createElement("div");
         increase.className = "counter-arrow up";
-        increase.innerHTML = "&#9650;"; // ▲
+        increase.innerHTML = "&#9654;";
+        increase.id = "counter-increase-" + uuid;
 
-        wrapper.appendChild(decrease);
-        wrapper.appendChild(display);
-        wrapper.appendChild(increase);
+        counter.appendChild(decrease);
+        counter.appendChild(display);
+        counter.appendChild(increase);
 
-        return wrapper;
+        return counter;
     },
 
 	setInputFilter: function (textbox: HTMLElement, inputFilter: (value: string) => boolean): void {

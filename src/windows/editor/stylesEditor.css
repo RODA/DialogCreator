@@ -345,7 +345,7 @@ input[type="text"] {
     cursor: pointer;
 }
 
-/* === Triangle Shape === */
+/* --- Triangle Shape --- */
 
 /* Horizontal triangle (points up, under the track) */
 .slider-handle[data-shape="triangle"][data-direction="horizontal"] {
@@ -357,7 +357,7 @@ input[type="text"] {
     transform: translateY(-50%);
 }
 
-/* === Circle Shape === */
+/* --- Circle Shape --- */
 
 /* Horizontal circle: centered on track */
 .slider-handle[data-shape="circle"] {
@@ -379,6 +379,14 @@ input[type="text"] {
     width: 20px;
     text-align: center;
     color: #4CAF50;
+}
+
+.counter-arrow.up {
+    transform: rotate(-90deg);
+}
+
+.counter-arrow.down {
+    transform: rotate(90deg);
 }
 
 .counter-value {
