@@ -7,8 +7,11 @@ export type buttonElementType = {
     label: string;
     left: number;
     top: number;
+    widthMax: number;
+    lineClamp: number;
     color: string;
     fontColor: string;
+    // fontSize: number;
     isVisible: boolean;
     isEnabled: boolean;
     onClick: string;
@@ -36,9 +39,10 @@ export type radioElementType = {
     parentId: string;
     type: string;
     id: string;
+    group: string;
     left: number;
     top: number;
-    group: string;
+    color: string;
     isSelected: boolean;
     isVisible: boolean;
     isEnabled: boolean;
@@ -99,7 +103,7 @@ export type labelElementType = {
     parentId: string;
     type: string;
     id: string;
-    width: number;
+    // fontSize: number;
     left: number;
     top: number;
     isVisible: boolean;
@@ -184,8 +188,11 @@ export const elements: ElementsInterface = {
         label: 'Button',
         left: 15,
         top: 15,
+        widthMax: 200,
+        lineClamp: 1,
         color: '#EFEFEF',
         fontColor: '#000000',
+        // fontSize: 13,
         isVisible: true,
         isEnabled: true,
         onClick: 'run',
@@ -199,7 +206,7 @@ export const elements: ElementsInterface = {
         nameid: '',
         left: 10,
         top: 10,
-        size: 13,
+        size: 14,
         color: '#4CAF50',
         isChecked: false,
         isVisible: true,
@@ -211,9 +218,10 @@ export const elements: ElementsInterface = {
         parentId: '',
         type: 'Radio',
         id: '',
+        group: 'radiogroup1',
         left: 10,
         top: 10,
-        group: 'radiogroup1',
+        color: '#4CAF50',
         isSelected: false,
         isVisible: true,
         isEnabled: true,
@@ -270,7 +278,7 @@ export const elements: ElementsInterface = {
         parentId: '',
         type: 'Label',
         id: '',
-        width: 120,
+        // fontSize: 13,
         left: 15,
         top: 15,
         isVisible: true,

@@ -39,6 +39,8 @@ interface UtilsInterface {
         startval?: number;
         space?: number;
         width?: number;
+        widthMax?: number;
+        lineClamp?:number;
         height?: number;
         size?: number;
         color?: string;
@@ -50,7 +52,14 @@ interface UtilsInterface {
         fontSize?: number;
         maxWidth?: number;
         maxHeight?: number;
-    }) => HTMLDivElement | HTMLButtonElement;
+    }) => HTMLDivElement;
+    updateButton: (
+        button: HTMLDivElement,
+        text: string,
+        fontSize: number,
+        lineClamp: number,
+        widthMax: number
+    ) => void;
 }
 
 export const util: UtilsInterface = {
@@ -313,7 +322,7 @@ export const util: UtilsInterface = {
     },
 
     makeElement: function(options) {
-        const element = document.createElement(options.type == "Button" ? "button" : "div");
+        const element = document.createElement("div");
         element.id = options.uuid;
 
         element.style.position = 'absolute';
@@ -365,13 +374,30 @@ export const util: UtilsInterface = {
             element.appendChild(display);
             element.appendChild(increase);
         } else if (options.type == "Button") {
-            element.style.border = '1px solid black';
-            element.style.borderRadius = '2px';
-            element.style.padding = '3px 10px';
-            element.style.background = options.color;
-            element.innerText = options.label;
-            element.style.maxWidth = options.maxWidth + 'px';
-            element.style.maxHeight = options.maxHeight + 'px';
+            element.className = 'smart-button';
+            element.style.backgroundColor = options.color;
+            element.style.maxWidth = options.widthMax + 'px';
+
+            const lineHeight = options.fontSize * 1.2;
+            const paddingY = 3; // px
+            const maxHeight = (lineHeight * options.lineClamp) + 3 * paddingY;
+            element.style.maxHeight = maxHeight + 'px';
+
+            const span = document.createElement('span');
+            span.className = 'smart-button-text';
+            span.style.fontFamily = options.fontFamily;
+            /* --- textContent instead of innerHTML or innerText --- */
+            span.textContent = options.label;
+
+            element.appendChild(span);
+
+            util.updateButton(
+                element,
+                options.label,
+                options.fontSize,
+                options.lineClamp,
+                options.widthMax
+            )
         } else if (options.type == "Checkbox") {
             element.className = 'element-div';
             element.style.width = options.size + 'px';
@@ -425,6 +451,34 @@ export const util: UtilsInterface = {
         }
 
         return element;
+    },
+
+    updateButton: function(
+        button,
+        text,
+        fontSize,
+        lineClamp,
+        widthMax
+    ) {
+        button.style.maxWidth = widthMax + 'px';
+
+        const lineHeight = fontSize * 1.2;
+        const paddingY = 3; // px
+        const maxHeight = (lineHeight * lineClamp) + 3 * paddingY;
+        button.style.maxHeight = maxHeight + 'px';
+
+        const span = button.querySelector('.smart-button-text') as HTMLSpanElement;
+        span.style.fontSize = fontSize + 'px';
+        span.style.lineHeight = '1.2';
+        span.style.webkitLineClamp = String(lineClamp); // Clamp to max lines
+
+        span.textContent = text;
+
+        if (span.scrollHeight > span.offsetHeight) {
+            button.title = text;
+        } else {
+            button.removeAttribute('title');
+        }
     }
 }
 

@@ -107,7 +107,25 @@ export const editorElements: EditorElementsInterface = {
                         break;
                     case 'label':
                         obj[key] = value;
-                        button.innerText = value;
+                        util.updateButton(
+                            button,
+                            obj["label"],
+                            editorElements.fontSize, // obj["fontSize"],
+                            obj["lineClamp"],
+                            obj["widthMax"]
+                        );
+                        break;
+                    case 'lineClamp':
+                    case 'widthMax':
+                    case 'fontSize':
+                        obj[key] = value;
+                        util.updateButton(
+                            button,
+                            obj["label"],
+                            editorElements.fontSize, // obj["fontSize"],
+                            obj["lineClamp"],
+                            obj["widthMax"]
+                        );
                         break;
                     case 'top':
                         if (value > editorElements.maxHeight) {
@@ -173,6 +191,8 @@ export const editorElements: EditorElementsInterface = {
             top: data.top,
             left: data.left,
             label: data.label,
+            widthMax: data.widthMax,
+            lineClamp: data.lineClamp,
             isVisible: data.isVisible,
             isEnabled: data.isEnabled,
             color: data.color,
@@ -188,6 +208,7 @@ export const editorElements: EditorElementsInterface = {
         dataProxy.parentId = dialog.id;
 
         dialog.appendChild(button);
+
         return dataProxy;
     },
 
@@ -332,6 +353,12 @@ export const editorElements: EditorElementsInterface = {
                         obj[key] = parseInt(value);
                         radio.style.left = value + 'px';
                         break;
+                    case 'color':
+                        if (util.isValidColor(value)) {
+                            obj[key] = value;
+                            customRadio.style.setProperty('--radio-color', value);
+                        }
+                        break;
                     case 'isVisible':
                         obj[key] = value === 'true';
                         radio.classList.add("design-hidden");
@@ -374,8 +401,8 @@ export const editorElements: EditorElementsInterface = {
         // position
         radio.style.top = data.top + 'px';
         radio.style.left = data.left + 'px';
-        radio.style.width = '13px';
-        radio.style.height = '13px';
+        radio.style.width = '14px';
+        radio.style.height = '14px';
 
         // Create the custom radio
         const customRadio = document.createElement('div');
@@ -569,6 +596,10 @@ export const editorElements: EditorElementsInterface = {
                         obj[key] = value;
                         label.innerText = value;
                         break;
+                    // case 'fontSize':
+                    //     obj[key] = value;
+                    //     label.style.fontSize = value + 'px';
+                    //     break;
                     case 'isVisible':
                         obj[key] = value === 'true';
                         label.classList.add("design-hidden");

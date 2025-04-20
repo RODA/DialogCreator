@@ -251,15 +251,15 @@ body {
 
 /* Element: radio button */
 .custom-radio {
-    display: inline-block;
-    width: 100%; /* Matches the container size */
-    height: 100%;
+    --radio-color: #4CAF50; /* Default color */
     background-color: #fff;
     border: 1px solid #333;
     border-radius: 50%;
-    /* Make it circular */
     position: relative;
     box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    display: inline-block;
 }
 
 /* Inner dot for custom radio button (selected state) */
@@ -272,17 +272,16 @@ body {
     width: 50%;
     height: 50%;
     /* Color of the selected dot */
-    background-color: #4CAF50;
+    background-color: var(--radio-color);
     border-radius: 50%;
     transform: translate(-50%, -50%);
 }
 
-/* Checked state for custom radio */
+/* Checked state
 .custom-radio[aria-checked="true"] {
-    border-color: #4CAF50;
+    border-color: var(--radio-color);
 }
-
-/* Show the inner dot when radio is checked */
+*/
 .custom-radio[aria-checked="true"]::after {
     display: block;
 }
@@ -394,4 +393,29 @@ input[type="text"] {
     text-align: center;
     font-size: 14px;
     padding: 0px 4px;
+}
+
+
+
+.smart-button {
+    padding: 3px 10px;
+    border: 1px solid black;
+    border-radius: 2px;
+    background-color: #efefef;
+    color: #000;
+    max-width: 200px;
+    cursor: pointer;
+    box-sizing: border-box;
+    overflow: hidden;
+    line-height: 1.2;
+}
+
+.smart-button-text {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
+    white-space: normal;
+    line-height: 1.2;
 }
