@@ -353,6 +353,11 @@ export const editorElements: EditorElementsInterface = {
                         obj[key] = parseInt(value);
                         radio.style.left = value + 'px';
                         break;
+                    case 'size':
+                        obj[key] = parseInt(value);
+                        radio.style.width = value + 'px';
+                        radio.style.height = value + 'px';
+                        break;
                     case 'color':
                         if (util.isValidColor(value)) {
                             obj[key] = value;

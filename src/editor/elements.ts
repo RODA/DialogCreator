@@ -42,6 +42,7 @@ export type radioElementType = {
     group: string;
     left: number;
     top: number;
+    size: number;
     color: string;
     isSelected: boolean;
     isVisible: boolean;
@@ -221,6 +222,7 @@ export const elements: ElementsInterface = {
         group: 'radiogroup1',
         left: 10,
         top: 10,
+        size: 14,
         color: '#4CAF50',
         isSelected: false,
         isVisible: true,
