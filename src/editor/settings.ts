@@ -3,6 +3,7 @@ export interface DialogPropertiesInterface {
     title: string;
     width: number;
     height: number;
+    fontSize: number;
     background?: string;
 }
 export interface EditorSettingsInterface {
@@ -22,6 +23,7 @@ export const editorSettings: EditorSettingsInterface = {
         title: 'New dialog',
         width: 640,
         height: 480,
+        fontSize: 13,
         background: '#FFFFFF',
     },
 

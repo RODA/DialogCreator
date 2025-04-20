@@ -37,6 +37,10 @@
                             <label for="dialogHeight" class="text-center">Height</label>
                             <input name="height" id="dialogHeight" />
                         </div>
+                        <div class="dialog-properties_property">
+                            <label for="dialogFont" class="text-center">Font size (px)</label>
+                            <input name="fontSize" id="dialogFont" />
+                        </div>
                         <!-- <div class="dialog-properties_property">
                             <label for="dialogDependencies">R packages</label>
                             <input name="dependencies" id="dialogDependencies" placeholder="semicolon (;) separated" />
@@ -104,6 +108,16 @@
                             <label for="elwidth">Width</label>
                             <input type="text" name="width" id="elwidth" />
                         </div>
+
+                        <div class="element-property hidden-element"> <!-- button -->
+                            <label for="elwidthMax">Width (max)</label>
+                            <input type="text" name="widthMax" id="elwidthMax" />
+                        </div>
+                        <div class="element-property hidden-element"> <!-- button -->
+                            <label for="ellineClamp">Lines (max)</label>
+                            <input type="text" name="lineClamp" id="ellineClamp" />
+                        </div>
+
                         <div class="element-property hidden-element"> <!-- checkbox -->
                             <label for="elsize">Size (px)</label>
                             <input type="text" name="size" id="elsize" />
@@ -135,7 +149,7 @@
 
                         <!-- label -->
                         <div class="element-property hidden-element">
-                            <label for="elfontSize">Font size</label>
+                            <label for="elfontSize">Font size (px)</label>
                             <input type="text" name="fontSize" id="elfontSize" />
                         </div>
 
