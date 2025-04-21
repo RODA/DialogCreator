@@ -14,6 +14,7 @@ interface UtilsInterface {
     exists: (x: unknown) => boolean;
     isNull: (x: unknown) => boolean;
     isElement(x: string, set: string[]): boolean;
+    isNotElement(x: string, set: string[]): boolean;
     unselectRadioGroup: (element: HTMLElement) => void;
     updateHandleStyle: (
         handle: HTMLDivElement,
@@ -119,13 +120,26 @@ export const util: UtilsInterface = {
             util.isNull(x) ||
             util.missing(set) ||
             util.isNull(set) ||
-            set.length === 0 ||
-            set.indexOf(x) === -1
+            set.length === 0
         ) {
             return false;
         }
 
-        return true;
+        return set.indexOf(x) >= 0;
+    },
+
+    isNotElement: function (x, set) {
+        if (
+            util.missing(x) ||
+            util.isNull(x) ||
+            util.missing(set) ||
+            util.isNull(set) ||
+            set.length === 0
+        ) {
+            return false;
+        }
+
+        return set.indexOf(x) < 0;
     },
 
     unselectRadioGroup: function(element) {
@@ -299,13 +313,12 @@ export const util: UtilsInterface = {
     makeElement: function(data, uuid, nameid, fontSize, fontFamily) {
 
         let eltype: string;
-        if (data.type == "Input") {
-            eltype = "input";
-        } else if (data.type == "Select") {
-            eltype = "select";
+        if (util.isElement(data.type, ["Input", "Select"])) {
+            eltype = data.type.toLowerCase();
         } else {
-            eltype = "div";
+            eltype = 'div';
         }
+
         const element = document.createElement(eltype) as HTMLDivElement | HTMLInputElement | HTMLSelectElement;
 
         element.id = uuid;
@@ -316,7 +329,7 @@ export const util: UtilsInterface = {
         if (data.type == "Button") {
             element.className = 'smart-button';
             element.style.backgroundColor = data.color;
-            element.style.maxWidth = data.widthMax + 'px';
+            element.style.maxWidth = data.maxWidth + 'px';
 
             const lineHeight = fontSize * 1.2;
             const paddingY = 3; // px
@@ -471,12 +484,10 @@ export const util: UtilsInterface = {
             element.dataset.objViewClass = data.objViewClass;
         }
 
-        // if (util.isElement(data.type, ["Button", "Checkbox"])) {
-        if (!util.isElement(data.type, ["Counter", "Label"])) {
+        if (util.isNotElement(data.type, ["Counter", "Label"])) {
             element.dataset.nameid = nameid;
         }
 
-        /* --- start for button, label ---*/
         if (util.exists(fontFamily)) {
             element.style.fontFamily = fontFamily;
         }
@@ -488,7 +499,6 @@ export const util: UtilsInterface = {
         if (util.exists(data.fontColor)) {
             element.style.color = data.fontColor;
         }
-        /* --- end for button, label ---*/
 
         if (util.isFalse(data.isVisible)) {
             element.classList.add('design-hidden');
