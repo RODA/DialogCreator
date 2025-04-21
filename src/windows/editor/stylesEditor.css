@@ -224,8 +224,8 @@ body {
 
 /* Style the checked state for custom checkbox */
 .custom-checkbox[aria-checked="true"] {
-    background-color: var(--checkbox-color, #4CAF50);
-    border-color: var(--checkbox-color, #4CAF50);
+    background-color: var(--checkbox-color, #4caf50);
+    border-color: var(--checkbox-color, #4caf50);
 }
 
 /* Checkmark (proportional using em units) */
@@ -251,7 +251,7 @@ body {
 
 /* Element: radio button */
 .custom-radio {
-    --radio-color: #4CAF50; /* Default color */
+    --radio-color: #4caf50; /* Default color */
     background-color: #fff;
     border: 1px solid #333;
     border-radius: 50%;
@@ -348,19 +348,19 @@ input[type="text"] {
 /* --- Triangle Shape --- */
 
 /* Horizontal triangle (points up, under the track) */
-.slider-handle[data-shape="triangle"][data-direction="horizontal"] {
+.slider-handle[data-handleshape="triangle"][data-direction="horizontal"] {
     transform: translateX(-50%);
 }
 
 /* Vertical triangle (points left, to the left of the track) */
-.slider-handle[data-shape="triangle"][data-direction="vertical"] {
+.slider-handle[data-handleshape="triangle"][data-direction="vertical"] {
     transform: translateY(-50%);
 }
 
 /* --- Circle Shape --- */
 
 /* Horizontal circle: centered on track */
-.slider-handle[data-shape="circle"] {
+.slider-handle[data-handleshape="circle"] {
     transform: translate(-50%, -50%);
     border-radius: 50%;
 }
@@ -378,7 +378,7 @@ input[type="text"] {
     font-size: 18px;
     width: 20px;
     text-align: center;
-    color: #4CAF50;
+    color: #4caf50;
 }
 
 .counter-arrow.up {
@@ -418,4 +418,10 @@ input[type="text"] {
     word-break: break-word;
     white-space: normal;
     line-height: 1.2;
+}
+
+input {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
 }

@@ -105,6 +105,7 @@ export type labelElementType = {
     type: string;
     id: string;
     // fontSize: number;
+    fontColor: string;
     left: number;
     top: number;
     isVisible: boolean;
@@ -189,9 +190,9 @@ export const elements: ElementsInterface = {
         label: 'Button',
         left: 15,
         top: 15,
-        widthMax: 200,
+        widthMax: 100,
         lineClamp: 1,
-        color: '#EFEFEF',
+        color: '#efefef',
         fontColor: '#000000',
         // fontSize: 13,
         isVisible: true,
@@ -208,7 +209,7 @@ export const elements: ElementsInterface = {
         left: 10,
         top: 10,
         size: 14,
-        color: '#4CAF50',
+        color: '#4caf50',
         isChecked: false,
         isVisible: true,
         isEnabled: true,
@@ -223,7 +224,7 @@ export const elements: ElementsInterface = {
         left: 10,
         top: 10,
         size: 14,
-        color: '#4CAF50',
+        color: '#4caf50',
         isSelected: false,
         isVisible: true,
         isEnabled: true,
@@ -256,7 +257,7 @@ export const elements: ElementsInterface = {
         space: 4,
         left: 15,
         top: 15,
-        color: '#4CAF50',
+        color: '#4caf50',
         isVisible: true,
         isEnabled: true,
         elementIds: [],
@@ -280,6 +281,7 @@ export const elements: ElementsInterface = {
         parentId: '',
         type: 'Label',
         id: '',
+        fontColor: '#000000',
         // fontSize: 13,
         left: 15,
         top: 15,
@@ -325,7 +327,7 @@ export const elements: ElementsInterface = {
         nameid: '',
         handlepos: 50,
         handleshape: 'triangle',
-        handlecolor: '#4CAF50',
+        handlecolor: '#4caf50',
         handlesize: 8,
         width: 120,
         height: 1,

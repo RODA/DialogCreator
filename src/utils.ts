@@ -1,4 +1,5 @@
 import { dialogContainer } from './editor/dialogContainer';
+import { ElementsInterface } from './editor/elements';
 
 interface UtilsInterface {
     getKeys(obj: Record<string, unknown>): Array<string>;
@@ -16,11 +17,7 @@ interface UtilsInterface {
     unselectRadioGroup: (element: HTMLElement) => void;
     updateHandleStyle: (
         handle: HTMLDivElement,
-        shape: string,
-        direction: string,
-        color: string,
-        size: number,
-        position: number
+        obj: ElementsInterface[keyof ElementsInterface]
     ) => void;
     makeNameID: (type: string, nameidRecords: Record<string, number>) => string;
     nameidValidChange: (newId: string, currentElement: HTMLElement) => boolean;
@@ -30,29 +27,13 @@ interface UtilsInterface {
     setOnlyNumbersWithMinus: (items: string[]) => void;
     setOnlyDouble: (items: string[]) => void;
     isValidColor: (value: string) => boolean;
-    makeElement: (options: {
-        type: string;
-        uuid: string;
-        nameid: string;
-        left: number;
-        top: number;
-        startval?: number;
-        space?: number;
-        width?: number;
-        widthMax?: number;
-        lineClamp?:number;
-        height?: number;
-        size?: number;
-        color?: string;
-        label?: string;
-        isVisible?: boolean;
-        isEnabled?: boolean;
-        fontColor?: string;
-        fontFamily?: string;
-        fontSize?: number;
-        maxWidth?: number;
-        maxHeight?: number;
-    }) => HTMLDivElement;
+    makeElement: (
+        data: ElementsInterface[keyof ElementsInterface],
+        uuid: string,
+        nameid?: string,
+        fontSize?: number,
+        fontFamily?: string
+    ) => HTMLDivElement | HTMLInputElement;
     updateButton: (
         button: HTMLDivElement,
         text: string,
@@ -156,14 +137,7 @@ export const util: UtilsInterface = {
         );
     },
 
-    updateHandleStyle: function(
-        handle,
-        shape,
-        direction,
-        color,
-        size,
-        position
-    ) {
+    updateHandleStyle: function(handle, obj) {
         // Clear all shape-specific inline styles
         handle.style.border = '';
         handle.style.borderLeft = '';
@@ -176,38 +150,38 @@ export const util: UtilsInterface = {
         handle.style.borderRadius = '';
 
         // Update dataset (this triggers your CSS-based fallback if needed)
-        handle.dataset.shape = shape;
-        handle.dataset.direction = direction;
+        handle.dataset.handleshape = obj.handleshape;
+        handle.dataset.direction = obj.direction;
 
         // Now apply inline styles based on shape
-        if (shape === 'triangle') {
-            if (direction === 'horizontal') {
-                handle.style.borderLeft = size + 'px solid transparent';
-                handle.style.borderRight = size + 'px solid transparent';
-                handle.style.borderBottom = (1.5 * size) + 'px solid ' + color;
-                handle.style.left = position + "%";
+        if (obj.handleshape === 'triangle') {
+            if (obj.direction === 'horizontal') {
+                handle.style.borderLeft = obj.handlesize + 'px solid transparent';
+                handle.style.borderRight = obj.handlesize + 'px solid transparent';
+                handle.style.borderBottom = (1.5 * obj.handlesize) + 'px solid ' + obj.handlecolor;
+                handle.style.left = obj.handlepos + "%";
                 handle.style.top = "100%";
-            } else if (direction === 'vertical') {
-                handle.style.borderTop = size + 'px solid transparent';
-                handle.style.borderBottom = size + 'px solid transparent';
-                handle.style.borderRight = (1.5 * size) + 'px solid ' + color;
+            } else if (obj.direction === 'vertical') {
+                handle.style.borderTop = obj.handlesize + 'px solid transparent';
+                handle.style.borderBottom = obj.handlesize + 'px solid transparent';
+                handle.style.borderRight = (1.5 * obj.handlesize) + 'px solid ' + obj.handlecolor;
                 handle.style.left = "0%";
-                handle.style.top = (100 - position) + "%";
+                handle.style.top = (100 - obj.handlepos) + "%";
             }
             handle.style.width = '0px';
             handle.style.height = '0px';
-        } else if (shape === 'circle') {
-            const radius = 1.5 * size;
+        } else if (obj.handleshape === 'circle') {
+            const radius = 1.5 * obj.handlesize;
             handle.style.width = `${radius}px`;
             handle.style.height = `${radius}px`;
-            handle.style.backgroundColor = color;
+            handle.style.backgroundColor = obj.handlecolor;
             handle.style.borderRadius = '50%';
-            if (direction == "horizontal") {
-                handle.style.left = position + "%";
+            if (obj.direction == "horizontal") {
+                handle.style.left = obj.handlepos + "%";
                 handle.style.top = "50%";
             } else {
                 handle.style.left = "50%";
-                handle.style.top = (100 - position) + "%";
+                handle.style.top = (100 - obj.handlepos) + "%";
             }
         }
     },
@@ -321,95 +295,56 @@ export const util: UtilsInterface = {
         return x.color !== '';
     },
 
-    makeElement: function(options) {
-        const element = document.createElement("div");
-        element.id = options.uuid;
+    makeElement: function(data, uuid, nameid, fontSize, fontFamily) {
+        const eltype = data.type == "Input" ? "input" : "div";
+        const element = document.createElement(eltype);
+        element.id = uuid;
 
         element.style.position = 'absolute';
-        element.style.top = options.top + 'px';
-        element.style.left = options.left + 'px';
+        element.style.top = data.top + 'px';
+        element.style.left = data.left + 'px';
 
-        if (options.type == "Counter") {
-            element.className = "counter-wrapper";
+        element.style.position = 'absolute';
+        element.style.top = data.top + 'px';
+        element.style.left = data.left + 'px';
 
-            const decrease = document.createElement("div");
-            decrease.className = "counter-arrow down";
-            decrease.innerHTML = "&#9654;";
-            decrease.id = "counter-decrease-" + options.uuid;
-
-            if (util.exists(options.color)) {
-                decrease.style.color = options.color;
-            }
-
-            const display = document.createElement("div");
-            display.className = "counter-value";
-            display.id = "counter-value-" + options.uuid;
-            display.textContent = String(options.startval);
-
-            display.style.padding = '0px ' + options.space + 'px';
-            display.dataset.nameid = options.nameid;
-
-            if (util.exists(options.fontFamily)) {
-                display.style.fontFamily = options.fontFamily;
-            }
-
-            if (util.exists(options.fontSize)) {
-                display.style.fontSize = options.fontSize + 'px';
-            }
-
-            if (util.exists(options.fontColor)) {
-                display.style.color = options.fontColor || '#000000';
-            }
-
-            const increase = document.createElement("div");
-            increase.className = "counter-arrow up";
-            increase.innerHTML = "&#9654;";
-            increase.id = "counter-increase-" + options.uuid;
-
-            if (util.exists(options.color)) {
-                increase.style.color = options.color;
-            }
-
-            element.appendChild(decrease);
-            element.appendChild(display);
-            element.appendChild(increase);
-        } else if (options.type == "Button") {
+        if (data.type == "Button") {
             element.className = 'smart-button';
-            element.style.backgroundColor = options.color;
-            element.style.maxWidth = options.widthMax + 'px';
+            element.style.backgroundColor = data.color;
+            element.style.maxWidth = data.widthMax + 'px';
 
-            const lineHeight = options.fontSize * 1.2;
+            const lineHeight = fontSize * 1.2;
             const paddingY = 3; // px
-            const maxHeight = (lineHeight * options.lineClamp) + 3 * paddingY;
+            const maxHeight = (lineHeight * data.lineClamp) + 3 * paddingY;
             element.style.maxHeight = maxHeight + 'px';
 
             const span = document.createElement('span');
             span.className = 'smart-button-text';
-            span.style.fontFamily = options.fontFamily;
+            span.style.fontFamily = fontFamily;
             /* --- textContent instead of innerHTML or innerText --- */
-            span.textContent = options.label;
+            span.textContent = data.label;
 
             element.appendChild(span);
 
             util.updateButton(
                 element,
-                options.label,
-                options.fontSize,
-                options.lineClamp,
-                options.widthMax
+                data.label,
+                fontSize,
+                data.lineClamp,
+                data.widthMax
             )
-        } else if (options.type == "Checkbox") {
+        } else if (data.type == "Checkbox") {
             element.className = 'element-div';
-            element.style.width = options.size + 'px';
-            element.style.height = options.size + 'px';
+            element.style.width = data.size + 'px';
+            element.style.height = data.size + 'px';
 
             const customCheckbox = document.createElement('div');
-            customCheckbox.id = "checkbox-" + options.uuid;
+            customCheckbox.id = "checkbox-" + data.uuid;
             customCheckbox.className = 'custom-checkbox';
             customCheckbox.setAttribute('role', 'checkbox');
             customCheckbox.setAttribute('tabindex', '0');
             customCheckbox.setAttribute('aria-checked', 'false');
-            customCheckbox.style.setProperty('--checkbox-color', options.color);
+            customCheckbox.style.setProperty('--checkbox-color', data.color);
 
             customCheckbox.addEventListener('click', () => {
                 const isChecked = customCheckbox.getAttribute('aria-checked') === 'true';
@@ -417,36 +352,139 @@ export const util: UtilsInterface = {
             });
 
             const cover = document.createElement('div');
-            cover.id = "cover-" + options.uuid;
+            cover.id = "cover-" + data.uuid;
             cover.className = 'cover';
             element.appendChild(customCheckbox);
             element.appendChild(cover);
+        } else if (data.type == "Radio") {
+            element.className = 'element-div';
+            element.style.width = data.size + 'px';
+            element.style.height = data.size + 'px';
+
+            const customRadio = document.createElement('div');
+            customRadio.id = "radio-" + data.uuid;
+            customRadio.className = 'custom-radio';
+            customRadio.setAttribute('role', 'radio');
+            customRadio.setAttribute('tabindex', '0');
+            customRadio.setAttribute('aria-checked', 'false');
+            customRadio.setAttribute('group', data.group);
+
+            const cover = document.createElement('div');
+            cover.id = "cover-" + data.uuid;
+            cover.className = 'cover';
+            element.appendChild(customRadio);
+            element.appendChild(cover);
+        } else if (data.type == "Input") {
+            if (element instanceof HTMLInputElement) {
+                element.type = 'text';
+                element.value = data.value || '';
+            }
+            element.style.width = data.width + 'px';
+            element.style.maxHeight = data.height + 'px';
+            element.style.maxWidth = data.widthMax + 'px';
+            element.style.fontFamily = fontFamily;
+            element.style.fontSize = fontSize + 'px';
+        } else if (data.type == "Label") {
+            element.textContent = data.value;
+            element.style.fontFamily = fontFamily;
+            element.style.fontSize = fontSize + 'px';
+            element.style.color = data.fontColor || '#000000';
+        } else if (data.type == "Separator") {
+            element.className = 'separator';
+            element.style.width = data.width + 'px';
+            element.style.height = data.height + 'px';
+            element.style.backgroundColor = data.color;
+        } else if (data.type == "Select") {
+            element.className = 'custom-select';
+            element.style.width = data.width + 'px';
+            element.style.padding = '3px';
+            element.style.fontFamily = fontFamily;
+            element.style.fontSize = fontSize + 'px';
+        } else if (data.type == "Slider") {
+            element.className = 'separator';
+            element.style.width = data.width + 'px';
+            element.style.height = data.height + 'px';
+
+            const handle = document.createElement('div');
+            handle.className = 'slider-handle';
+            handle.id = 'slider-handle-' + uuid;
+            element.appendChild(handle);
+
+            util.updateHandleStyle(
+                handle,
+                data
+            );
+
+        } else if (data.type == "Counter") {
+            element.className = "counter-wrapper";
+
+            const decrease = document.createElement("div");
+            decrease.className = "counter-arrow down";
+            decrease.innerHTML = "&#9654;"; // rotated in the CSS
+            decrease.id = "counter-decrease-" + uuid;
+
+            if (util.exists(data.color)) {
+                decrease.style.color = data.color;
+            }
+
+            const display = document.createElement("div");
+            display.className = "counter-value";
+            display.id = "counter-value-" + uuid;
+            display.textContent = String(data.startval);
+
+            display.style.padding = '0px ' + data.space + 'px';
+            display.dataset.nameid = nameid;
+
+            if (util.exists(fontFamily)) {
+                display.style.fontFamily = fontFamily;
+            }
+
+            if (util.exists(fontSize)) {
+                display.style.fontSize = fontSize + 'px';
+            }
+
+            if (util.exists(data.fontColor)) {
+                display.style.color = data.fontColor || '#000000';
+            }
+
+            const increase = document.createElement("div");
+            increase.className = "counter-arrow up";
+            increase.innerHTML = "&#9654;"; // rotated in the CSS
+            increase.id = "counter-increase-" + uuid;
+
+            if (util.exists(data.color)) {
+                increase.style.color = data.color;
+            }
+
+            element.appendChild(decrease);
+            element.appendChild(display);
+            element.appendChild(increase);
         }
 
-        // if (util.isElement(options.type, ["Button", "Checkbox"])) {
-        if (!util.isElement(options.type, ["Counter"])) {
-            element.dataset.nameid = options.nameid;
+        // if (util.isElement(data.type, ["Button", "Checkbox"])) {
+        if (!util.isElement(data.type, ["Counter", "Label"])) {
+            element.dataset.nameid = nameid;
         }
 
         /* --- start for button, label ---*/
-        if (util.exists(options.fontFamily)) {
-            element.style.fontFamily = options.fontFamily;
+        if (util.exists(fontFamily)) {
+            element.style.fontFamily = fontFamily;
         }
 
-        if (util.exists(options.fontSize)) {
-            element.style.fontSize = options.fontSize + 'px';
+        if (util.exists(fontSize)) {
+            element.style.fontSize = fontSize + 'px';
         }
 
-        if (util.exists(options.fontColor)) {
-            element.style.color = options.fontColor;
+        if (util.exists(data.fontColor)) {
+            element.style.color = data.fontColor;
         }
         /* --- end for button, label ---*/
 
-        if (util.isFalse(options.isVisible)) {
+        if (util.isFalse(data.isVisible)) {
             element.classList.add('design-hidden');
         }
 
-        if (util.isFalse(options.isEnabled)) {
+        if (util.isFalse(data.isEnabled)) {
             element.classList.add('disabled-div');
         }
 

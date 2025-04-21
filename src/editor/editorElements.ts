@@ -184,24 +184,13 @@ export const editorElements: EditorElementsInterface = {
         const uuid = uuidv4();
         const nameid = util.makeNameID(data.type, editorElements.nameidRecords);
 
-        const button = util.makeElement({
-            type: data.type,
-            uuid: uuid,
-            nameid: nameid,
-            top: data.top,
-            left: data.left,
-            label: data.label,
-            widthMax: data.widthMax,
-            lineClamp: data.lineClamp,
-            isVisible: data.isVisible,
-            isEnabled: data.isEnabled,
-            color: data.color,
-            fontColor: data.fontColor,
-            fontFamily: editorElements.fontFamily,
-            fontSize: editorElements.fontSize,
-            maxWidth: editorElements.maxWidth,
-            maxHeight: editorElements.maxHeight,
-        });
+        const button = util.makeElement(
+            data,
+            uuid,
+            nameid,
+            editorElements.fontSize,
+            editorElements.fontFamily
+        );
 
         dataProxy.id = uuid;
         dataProxy.nameid = nameid;
@@ -292,17 +281,11 @@ export const editorElements: EditorElementsInterface = {
         const uuid = uuidv4();
         const nameid = util.makeNameID(data.type, editorElements.nameidRecords);
 
-        const checkbox = util.makeElement({
-            type: data.type,
-            uuid: uuid,
-            nameid: nameid,
-            top: data.top,
-            left: data.left,
-            size: data.size,
-            isVisible: data.isVisible,
-            isEnabled: data.isEnabled,
-            color: data.color
-        });
+        const checkbox = util.makeElement(
+            data,
+            uuid,
+            nameid
+        );
 
         // in container
         dataProxy.id = uuid;
@@ -361,7 +344,7 @@ export const editorElements: EditorElementsInterface = {
                     case 'color':
                         if (util.isValidColor(value)) {
                             obj[key] = value;
-                            customRadio.style.setProperty('--radio-color', value);
+                            rd.style.setProperty('--radio-color', value);
                         }
                         break;
                     case 'isVisible':
@@ -399,55 +382,17 @@ export const editorElements: EditorElementsInterface = {
         })
 
         const uuid = uuidv4();
-
-        const radio = document.createElement('div');
-        radio.className = 'element-div';
-
-        // position
-        radio.style.top = data.top + 'px';
-        radio.style.left = data.left + 'px';
-        radio.style.width = '14px';
-        radio.style.height = '14px';
-
-        // Create the custom radio
-        const customRadio = document.createElement('div');
-        customRadio.id = "radio-" + uuid;
-        customRadio.className = 'custom-radio';
-        customRadio.setAttribute('role', 'radio');
-        customRadio.setAttribute('tabindex', '0');
-        customRadio.setAttribute('aria-checked', 'false');
-        customRadio.setAttribute('group', data.group);
-
-        // Create the cover div
-        const cover = document.createElement('div');
-        cover.id = "cover-" + uuid;
-        cover.className = 'cover';
-        // Append the cover to the custom radio
-        customRadio.appendChild(cover);
-
-        radio.appendChild(customRadio);
-
         const nameid = util.makeNameID(data.type, editorElements.nameidRecords);
+
+        const radio = util.makeElement(
+            data,
+            uuid,
+            nameid
+        );
+
         dataProxy.nameid = nameid;
-        radio.dataset.nameid = nameid;
-
-        // on screen
-        radio.id = uuid;
-
-        // in container
         dataProxy.id = uuid;
         dataProxy.parentId = dialog.id;
-
-        radio.classList.add('design-hidden');
-        if (data.isVisible) {
-            radio.classList.remove('design-hidden');
-        }
-
-        radio.classList.add('disabled-div');
-        if (data.isEnabled) {
-            radio.classList.remove('disabled-div');
-        }
-
         dialog.appendChild(radio);
 
         return dataProxy;
@@ -498,7 +443,7 @@ export const editorElements: EditorElementsInterface = {
                         break;
                     case 'value':
                         obj[key] = value;
-                        if (input) {
+                        if (input instanceof HTMLInputElement) {
                             input.value = value;
                         }
                         break;
@@ -518,7 +463,6 @@ export const editorElements: EditorElementsInterface = {
                         break;
                     default:
                         obj[key] = value;
-
                 }
 
                 const element = dialogContainer.getElement(objid);
@@ -531,41 +475,19 @@ export const editorElements: EditorElementsInterface = {
         })
 
         const uuid = uuidv4();
-
-        const input = document.createElement('input');
-        input.type = 'text';
-        // position
-        input.style.position = 'absolute';
-        input.style.top = data.top + 'px';
-        input.style.left = data.left + 'px';
-        input.style.width = data.width + 'px';
-        input.value = data.value;
-
-        input.style.maxWidth = editorElements.maxWidth + 'px';
-        input.style.maxHeight = editorElements.maxHeight + 'px';
-
-        input.style.fontFamily = editorElements.fontFamily;
-        input.style.fontSize = editorElements.fontSize + 'px';
-
         const nameid = util.makeNameID(data.type, editorElements.nameidRecords);
-        dataProxy.nameid = nameid;
-        input.dataset.nameid = nameid;
 
-        // on screen
-        input.id = uuid;
-        // in container
+        const input = util.makeElement(
+            data,
+            uuid,
+            nameid,
+            editorElements.fontSize,
+            editorElements.fontFamily
+        );
+
         dataProxy.id = uuid;
+        dataProxy.nameid = nameid;
         dataProxy.parentId = dialog.id;
-
-        input.classList.add('design-hidden');
-        if (data.isVisible) {
-            input.classList.remove('design-hidden');
-        }
-
-        input.classList.add('disabled-div');
-        if (data.isEnabled) {
-            input.classList.remove('disabled-div');
-        }
 
         dialog.appendChild(input);
         return dataProxy;
@@ -582,12 +504,13 @@ export const editorElements: EditorElementsInterface = {
 
                 switch (key) {
                     case 'top':
-                        if (editorElements.maxHeight >= value) {
-                            obj[key] = parseInt(value);
-                            label.style.top = value + 'px';
-                        } else {
-                            label.style.top = editorElements.maxHeight + 'px';
+                        if (value > editorElements.maxHeight) {
+                            value = editorElements.maxHeight;
                         }
+                        // it cannot be < 0 because the input is set as
+                        // numeric non negative, the minus sign is blocked
+                        obj[key] = parseInt(value);
+                        label.style.top = value + 'px';
                         break;
                     case 'left':
                         obj[key] = parseInt(value);
@@ -605,6 +528,12 @@ export const editorElements: EditorElementsInterface = {
                     //     obj[key] = value;
                     //     label.style.fontSize = value + 'px';
                     //     break;
+                    case 'fontColor':
+                        if (util.isValidColor(value)) {
+                            obj[key] = value;
+                            label.style.color = value;
+                        }
+                        break;
                     case 'isVisible':
                         obj[key] = value === 'true';
                         label.classList.add("design-hidden");
@@ -622,27 +551,16 @@ export const editorElements: EditorElementsInterface = {
 
         const uuid = uuidv4();
 
-        const label = document.createElement('div');
+        const label = util.makeElement(
+            data,
+            uuid,
+            void 0,
+            editorElements.fontSize,
+            editorElements.fontFamily
+        );
 
-        // position
-        label.style.position = 'absolute';
-        label.style.top = data.top + 'px';
-        label.style.left = data.left + 'px';
-        label.innerText = data.value;
-
-        label.style.fontFamily = editorElements.fontFamily;
-        label.style.fontSize = editorElements.fontSize + 'px';
-
-        // on screen
-        label.id = uuid;
-        // in container
         dataProxy.id = uuid;
         dataProxy.parentId = dialog.id;
-
-        label.classList.add("design-hidden");
-        if (data.isVisible) {
-            label.classList.remove("design-hidden");
-        }
 
         dialog.appendChild(label);
         return dataProxy;
@@ -660,22 +578,27 @@ export const editorElements: EditorElementsInterface = {
 
                 switch (key) {
                     case 'top':
-                        if (editorElements.maxHeight >= value) {
-                            obj[key] = parseInt(value);
-                            separator.style.top = value + 'px';
-                        } else {
-                            separator.style.top = editorElements.maxHeight + 'px';
+                        if (value > editorElements.maxHeight) {
+                            value = editorElements.maxHeight;
                         }
+                        obj[key] = parseInt(value);
+                        separator.style.top = value + 'px';
                         break;
                     case 'left':
                         obj[key] = parseInt(value);
                         separator.style.left = value + 'px';
                         break;
                     case 'width':
+                        if (value > editorElements.maxWidth) {
+                            value = editorElements.maxWidth;
+                        }
                         obj[key] = parseInt(value);
                         separator.style.width = value + 'px';
                         break;
                     case 'height':
+                        if (value > editorElements.maxHeight) {
+                            value = editorElements.maxHeight;
+                        }
                         obj[key] = parseInt(value);
                         separator.style.height = value + 'px';
                         break;
@@ -714,31 +637,10 @@ export const editorElements: EditorElementsInterface = {
 
         const uuid = uuidv4();
 
-        const separator = document.createElement('div');
-        separator.className = 'separator';
+        const separator = util.makeElement(data, uuid);
 
-        // position
-        separator.style.position = 'absolute';
-        separator.style.top = data.top + 'px';
-        separator.style.left = data.left + 'px';
-
-        separator.style.width = data.width + 'px';
-        separator.style.height = data.height + 'px';
-        separator.style.maxWidth = editorElements.maxWidth + 'px';
-        separator.style.maxHeight = editorElements.maxHeight + 'px';
-
-        separator.style.backgroundColor = data.color + 'px';
-
-        // on screen
-        separator.id = uuid;
-        // in container
         dataProxy.id = uuid;
         dataProxy.parentId = dialog.id;
-
-        separator.classList.add("design-hidden");
-        if (data.isVisible) {
-            separator.classList.remove("design-hidden");
-        }
 
         dialog.appendChild(separator);
         return dataProxy;
@@ -802,7 +704,9 @@ export const editorElements: EditorElementsInterface = {
                         break;
                     case 'value':
                         obj[key] = value;
-                        select.value = value;
+                        if (select instanceof HTMLSelectElement) {
+                            select.value = value;
+                        }
                         break;
                     case 'isVisible':
                         obj[key] = value === 'true';
@@ -832,42 +736,19 @@ export const editorElements: EditorElementsInterface = {
         })
 
         const uuid = uuidv4();
-
-        const select = document.createElement('select');
-        select.className = 'custom-select';
-
-        // position
-        select.style.position = 'absolute';
-        select.style.top = data.top + 'px';
-        select.style.left = data.left + 'px';
-        select.style.width = data.width + 'px';
-        select.style.padding = '3px';
-
-        select.style.maxWidth = editorElements.maxWidth + 'px';
-        select.style.maxHeight = editorElements.maxHeight + 'px';
-
-        select.style.fontFamily = editorElements.fontFamily;
-        select.style.fontSize = editorElements.fontSize + 'px';
-
         const nameid = util.makeNameID(data.type, editorElements.nameidRecords);
-        dataProxy.nameid = nameid;
-        select.dataset.nameid = nameid;
 
-        // on screen
-        select.id = uuid;
-        // in container
+        const select = util.makeElement(
+            data,
+            uuid,
+            nameid,
+            editorElements.fontSize,
+            editorElements.fontFamily
+        );
+
         dataProxy.id = uuid;
+        dataProxy.nameid = nameid;
         dataProxy.parentId = dialog.id;
-
-        select.classList.add("design-hidden");
-        if (data.isVisible) {
-            select.classList.remove("design-hidden");
-        }
-
-        select.classList.add('disabled-div');
-        if (data.isEnabled) {
-            select.classList.remove('disabled-div');
-        }
 
         dialog.appendChild(select);
         return dataProxy;
@@ -897,22 +778,27 @@ export const editorElements: EditorElementsInterface = {
                         }
                         break;
                     case 'top':
-                        if (editorElements.maxHeight >= value) {
-                            obj[key] = parseInt(value);
-                            slider.style.top = value + 'px';
-                        } else {
-                            slider.style.top = editorElements.maxHeight + 'px';
+                        if (value > editorElements.maxHeight) {
+                            value = editorElements.maxHeight;
                         }
+                        obj[key] = parseInt(value);
+                        slider.style.top = value + 'px';
                         break;
                     case 'left':
                         obj[key] = parseInt(value);
                         slider.style.left = value + 'px';
                         break;
                     case 'width':
+                        if (value > editorElements.maxWidth) {
+                            value = editorElements.maxWidth;
+                        }
                         obj[key] = parseInt(value);
                         slider.style.width = value + 'px';
                         break;
                     case 'height':
+                        if (value > editorElements.maxHeight) {
+                            value = editorElements.maxHeight;
+                        }
                         obj[key] = parseInt(value);
                         slider.style.height = value + 'px';
                         break;
@@ -973,11 +859,7 @@ export const editorElements: EditorElementsInterface = {
 
                 util.updateHandleStyle(
                     handle,
-                    obj["handleshape"],
-                    obj["direction"],
-                    obj["handlecolor"],
-                    obj["handlesize"],
-                    obj["handlepos"]
+                    obj
                 );
 
                 return true;
@@ -985,52 +867,19 @@ export const editorElements: EditorElementsInterface = {
         })
 
         const uuid = uuidv4();
-
-        const slider = document.createElement('div');
-        slider.className = 'separator';
-
-        const handle = document.createElement('div');
-        handle.className = 'slider-handle';
-        handle.id = 'slider-handle-' + uuid;
-        util.updateHandleStyle(
-            handle,
-            data.handleshape,
-            data.direction,
-            data.handlecolor,
-            data.handlesize,
-            data.handlepos
-        );
-        slider.appendChild(handle);
-
-        // position
-        slider.style.position = 'absolute';
-        slider.style.top = data.top + 'px';
-        slider.style.left = data.left + 'px';
-
-        slider.style.width = data.width + 'px';
-        slider.style.height = data.height + 'px';
-        slider.style.maxWidth = editorElements.maxWidth + 'px';
-        slider.style.maxHeight = editorElements.maxHeight + 'px';
-
         const nameid = util.makeNameID(data.type, editorElements.nameidRecords);
-        dataProxy.nameid = nameid;
-        slider.dataset.nameid = nameid;
 
-        // on screen
-        slider.id = uuid;
-        // in container
+        const slider = util.makeElement(
+            data,
+            uuid,
+            nameid
+        );
+
+        const handle = slider.querySelector("#slider-handle-" + uuid) as HTMLDivElement;
+
         dataProxy.id = uuid;
+        dataProxy.nameid = nameid;
         dataProxy.parentId = dialog.id;
-
-        slider.classList.add("design-hidden");
-        if (data.isVisible) {
-            slider.classList.remove("design-hidden");
-        }
-
-        slider.classList.add('disabled-div');
-        if (data.isEnabled) {
-            slider.classList.remove('disabled-div');
-        }
 
         dialog.appendChild(slider);
         return dataProxy;
@@ -1088,7 +937,7 @@ export const editorElements: EditorElementsInterface = {
                     case 'startval':
                         if (value < obj["maxval"]) {
                             obj[key] = parseInt(value);
-                            document.getElementById("counter-value-" + uuid).innerHTML = value;
+                            document.getElementById("counter-value-" + uuid).textContent = value;
                         }
                         break;
                     case 'maxval':
@@ -1126,16 +975,11 @@ export const editorElements: EditorElementsInterface = {
         const uuid = uuidv4();
         const nameid = util.makeNameID(data.type, editorElements.nameidRecords);
 
-        const counter = util.makeElement({
-            type: data.type,
-            uuid: uuid,
-            nameid: nameid,
-            top: data.top,
-            startval: data.startval,
-            left: data.left,
-            color: data.color,
-            space: data.space
-        });
+        const counter = util.makeElement(
+            data,
+            uuid,
+            nameid
+        );
 
         dataProxy.id = uuid;
         dataProxy.nameid = nameid;
