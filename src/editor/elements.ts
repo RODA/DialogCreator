@@ -7,7 +7,7 @@ export type buttonElementType = {
     label: string;
     left: number;
     top: number;
-    widthMax: number;
+    maxWidth: number;
     lineClamp: number;
     color: string;
     fontColor: string;
@@ -191,7 +191,7 @@ export const elements: ElementsInterface = {
         label: 'Button',
         left: 15,
         top: 15,
-        widthMax: 100,
+        maxWidth: 100,
         lineClamp: 1,
         color: '#efefef',
         fontColor: '#000000',

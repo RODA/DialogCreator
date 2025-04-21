@@ -104,7 +104,6 @@ export const editorElements: EditorElementsInterface = {
                                 title: 'Notice',
                                 message: 'Name already exists.'
                             });
-
                         }
                         break;
                     case 'label':
@@ -118,15 +117,15 @@ export const editorElements: EditorElementsInterface = {
                         );
                         break;
                     case 'lineClamp':
-                    case 'widthMax':
+                    case 'maxWidth':
                     case 'fontSize':
                         obj[key] = value;
                         util.updateButton(
                             button as HTMLDivElement,
                             obj["label"],
-                            editorElements.fontSize, // obj["fontSize"],
+                            editorElements.fontSize, // obj["fontSize"], // ?
                             obj["lineClamp"],
-                            obj["widthMax"]
+                            obj["maxWidth"]
                         );
                         break;
                     case 'top':
