@@ -1,13 +1,14 @@
 // encapsulation
 
 import { ipcRenderer } from 'electron';
+import * as interfaces from '../src/library/interfaces';
 
-interface ShowMessageBoxInterface {
-    type: 'info' | 'error' | 'question' | 'warning';
-    title: string;
-    message: string;
+
+export const showMessage = (obj: interfaces.ShowMessage) => {
+    ipcRenderer.send('showDialogMessage', obj);
 }
 
-export const showMessageBox = (obj: ShowMessageBoxInterface) => {
-    ipcRenderer.send('showDialogMessage', obj);
+
+export const showError = (message: string) => {
+    ipcRenderer.send('showError', message);
 }

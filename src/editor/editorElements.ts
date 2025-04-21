@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { dialogContainer } from './dialogContainer';
 import * as interfaces from '../library/interfaces';
 import { utils } from '../library/utils';
-import { showMessageBox } from '../communication';
+import { showError } from '../communication';
 import { editor } from './editor';
 export type editorElementsTypes = 'addButton' | 'addCheckbox' | 'addRadio' | 'addLabel' | 'addInput' | 'addSlider' | 'addSeparator' | 'addSelect' | 'addCounter' | 'addContainer';
 
@@ -45,11 +45,7 @@ export const editorElements: interfaces.EditorElements = {
                             obj[key] = value;
                             button.dataset.nameid = value;
                         } else {
-                            showMessageBox({
-                                type: 'warning',
-                                title: 'Notice',
-                                message: 'Name already exists.'
-                            });
+                            showError('Name already exists.');
                         }
                         break;
                     case 'label':
@@ -163,11 +159,7 @@ export const editorElements: interfaces.EditorElements = {
                             obj[key] = value;
                             input.dataset.nameid = value;
                         } else {
-                            showMessageBox({
-                                type: 'warning',
-                                title: 'Notice',
-                                message: 'Name already exists.'
-                            });
+                            showError('Name already exists.');
                         }
                         break;
                     case 'top':
@@ -257,11 +249,7 @@ export const editorElements: interfaces.EditorElements = {
                             obj[key] = value;
                             select.dataset.nameid = value;
                         } else {
-                            showMessageBox({
-                                type: 'warning',
-                                title: 'Notice',
-                                message: 'Name already exists.'
-                            });
+                            showError('Name already exists.');
                         }
                         break;
                     case 'top':
@@ -364,11 +352,7 @@ export const editorElements: interfaces.EditorElements = {
                             obj[key] = value;
                             checkbox.dataset.nameid = value;
                         } else {
-                            showMessageBox({
-                                type: 'warning',
-                                title: 'Notice',
-                                message: 'Name already exists.'
-                            });
+                            showError('Name already exists.');
                         }
                         break;
                     case 'top':
@@ -459,11 +443,7 @@ export const editorElements: interfaces.EditorElements = {
                             obj[key] = value;
                             radio.dataset.nameid = value;
                         } else {
-                            showMessageBox({
-                                type: 'warning',
-                                title: 'Notice',
-                                message: 'Name already exists.'
-                            });
+                            showError('Name already exists.');
                         }
                         break;
                     case 'group':
@@ -559,11 +539,7 @@ export const editorElements: interfaces.EditorElements = {
                             obj[key] = value;
                             counter.dataset.nameid = value;
                         } else {
-                            showMessageBox({
-                                type: 'warning',
-                                title: 'Notice',
-                                message: 'Name already exists.'
-                            });
+                            showError('Name already exists.');
                         }
                         break;
                     case 'top':
@@ -662,11 +638,7 @@ export const editorElements: interfaces.EditorElements = {
                             obj[key] = value;
                             slider.dataset.nameid = value;
                         } else {
-                            showMessageBox({
-                                type: 'warning',
-                                title: 'Notice',
-                                message: 'Name already exists.'
-                            });
+                            showError('Name already exists.');
                         }
                         break;
                     case 'top':
@@ -943,11 +915,7 @@ export const editorElements: interfaces.EditorElements = {
                             obj[key] = value;
                             container.dataset.nameid = value;
                         } else {
-                            showMessageBox({
-                                type: 'warning',
-                                title: 'Notice',
-                                message: 'Name already exists.'
-                            });
+                            showError('Name already exists.');
                         }
                         break;
                     case 'top':
@@ -980,11 +948,7 @@ export const editorElements: interfaces.EditorElements = {
                             obj[key] = value;
                             container.dataset.objViewClass = value;
                         } else {
-                            showMessageBox({
-                                type: 'warning',
-                                title: 'Notice',
-                                message: 'Only one container per dialog can hold datasets.'
-                            });
+                            showError('Only one container per dialog can hold datasets.');
                         }
                         break;
                     case 'isEnabled':

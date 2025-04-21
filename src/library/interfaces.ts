@@ -181,8 +181,6 @@ export interface Elements {
     containerElement: containerElementType;
 }
 
-
-
 export interface EditorElements {
     nameidRecords: Record<string, number>;
     fontSize: number;
@@ -238,14 +236,6 @@ export interface EditorElements {
     // [propName: string]: any;
 }
 
-export interface HandleStyle {
-    handleshape: 'triangle' | 'circle';
-    direction: 'horizontal' | 'vertical';
-    handlesize: number;
-    handlecolor: string;
-    handlepos: number;
-}
-
 export interface Utils {
     getKeys(obj: Record<string, unknown>): Array<string>;
     isNumeric: (x: string) => boolean;
@@ -288,4 +278,10 @@ export interface Utils {
         widthMax: number
     ) => void;
     objViewClassValid: (currentElement: HTMLElement) => boolean;
+}
+
+export interface ShowMessage {
+    type: 'info' | 'error' | 'question' | 'warning';
+    title: string;
+    message: string;
 }

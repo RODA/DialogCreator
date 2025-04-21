@@ -1,7 +1,7 @@
 import { DialogPropertiesInterface } from './settings';
 import * as interfaces from '../library/interfaces';
 
-import { showMessageBox } from '../communication';
+import { showMessage } from '../communication';
 import { editor } from './editor';
 
 interface DialogContainerInterface {
@@ -96,7 +96,7 @@ export const dialogContainer: DialogContainerInterface = {
         }
 
         if (notFound.length) {
-            showMessageBox({
+            showMessage({
                 type: 'warning',
                 title: 'Notice',
                 message: 'Props "' + notFound.join(',') + '" not found to update!'

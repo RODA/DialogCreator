@@ -1,7 +1,7 @@
 
 import { editor } from "../../editor/editor";
 import * as interfaces from '../../library/interfaces';
-import { showMessageBox } from "../../communication";
+import { showMessage } from "../../communication";
 import { DialogPropertiesInterface } from '../../editor/settings';
 
 // helpers for when enter key is pressed
@@ -161,7 +161,7 @@ const addAvailableElementsToEditor = () => {
         // add available elements to the editor window
         elementsList.appendChild(editor.drawAvailableElements());
     } else {
-        showMessageBox({ type: 'error', title: 'Error', message: 'Cound not find the element list in editor window. Please check the HTML!' })
+        showMessage({ type: 'error', title: 'Error', message: 'Cound not find the element list in editor window. Please check the HTML!' })
     }
 }
 const removeElementFromDialog = () => {

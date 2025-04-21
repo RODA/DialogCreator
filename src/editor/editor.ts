@@ -1,4 +1,4 @@
-import { showMessageBox } from './../communication';
+import { showMessage } from './../communication';
 import { EventEmitter } from 'events';
 import { DialogPropertiesInterface, editorSettings } from './settings';
 import * as interfaces from '../library/interfaces';
@@ -85,7 +85,7 @@ export const editor: EditorInterface = {
             // container.updateProperties(props);
         } else {
             // alert no dialog
-            showMessageBox({ type: "info", message: "Please create a new dialog first.", title: "No dialog" });
+            showMessage({ type: "info", message: "Please create a new dialog first.", title: "No dialog" });
         }
 
     },
@@ -113,7 +113,7 @@ export const editor: EditorInterface = {
             !editorSettings.availableElements.includes(type) ||
             !Object.hasOwn(editorElements, 'add' + type)
         ){
-            showMessageBox({
+            showMessage({
                 type: 'info',
                 title: 'Notice',
                 message: "Element type not available. Probably functionality not added."
@@ -139,7 +139,7 @@ export const editor: EditorInterface = {
         // if (editor.dialog && document.getElementById(editor.dialogId) !== null) {
 
         // } else {
-        //     showMessageBox({ type: 'info', message: "Please create a new dialog first.", title: "No dialog" });
+        //     showMessage({ type: 'info', message: "Please create a new dialog first.", title: "No dialog" });
         // }
     },
     // add listener to the element

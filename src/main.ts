@@ -61,3 +61,12 @@ ipcMain.on('showDialogMessage', (event, args) => {
     message: args.message,
   })
 });
+
+
+ipcMain.on('showError', (event, message) => {
+  dialog.showMessageBox(mainWindow, {
+      type: "error",
+      title: "Error",
+      message: message
+  });
+});
