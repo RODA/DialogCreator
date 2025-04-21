@@ -1,7 +1,7 @@
 
 import { editor } from "../../editor/editor";
-import { ElementsInterface } from '../../editor/elements';
-import { showMessageBox } from "../../FrontToBackCommunication";
+import * as interfaces from '../../library/interfaces';
+import { showMessageBox } from "../../communication";
 import { DialogPropertiesInterface } from '../../editor/settings';
 
 // helpers for when enter key is pressed
@@ -75,7 +75,7 @@ const onElementSelected = () => {
     }
 
     // show element properties
-    editor.editorEvents.on('selectElement', function (element: ElementsInterface[keyof ElementsInterface]) {
+    editor.editorEvents.on('selectElement', function (element: interfaces.Elements[keyof interfaces.Elements]) {
 
         elementSelected = true;
         // update props tab
@@ -89,7 +89,7 @@ const onElementSelected = () => {
                 // show main element
                 item.disabled = false;
                 item.parentElement.classList.remove('hidden-element');
-                item.value = String(element[item.name as keyof ElementsInterface[keyof ElementsInterface]]);
+                item.value = String(element[item.name as keyof interfaces.Elements[keyof interfaces.Elements]]);
 
                 item.removeEventListener('blur', propertyUpdate);
                 item.addEventListener('blur', propertyUpdate);

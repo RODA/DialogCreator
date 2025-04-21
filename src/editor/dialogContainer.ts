@@ -1,11 +1,12 @@
 import { DialogPropertiesInterface } from './settings';
-import { ElementsInterface } from './elements';
-import { showMessageBox } from '../FrontToBackCommunication';
+import * as interfaces from '../library/interfaces';
+
+import { showMessageBox } from '../communication';
 import { editor } from './editor';
 
 interface DialogContainerInterface {
     properties: DialogPropertiesInterface;
-    elements: { [key: string]: ElementsInterface[keyof ElementsInterface] };
+    elements: { [key: string]: interfaces.Elements[keyof interfaces.Elements] };
     syntax: {
         command: string,
         defaultElements: []
@@ -13,9 +14,9 @@ interface DialogContainerInterface {
     initialize: (obj: DialogPropertiesInterface) => void;
     updateDialogProperties: () => void;
     updateProperties: (id: string, payload: { [key: string]: string }) => void;
-    addElement: (element: ElementsInterface[keyof ElementsInterface]) => void;
+    addElement: (element: interfaces.Elements[keyof interfaces.Elements]) => void;
     removeElement: (elId: string) => void;
-    getElement: (elId: string) => ElementsInterface[keyof ElementsInterface] | undefined;
+    getElement: (elId: string) => interfaces.Elements[keyof interfaces.Elements] | undefined;
 }
 
 export const dialogContainer: DialogContainerInterface = {

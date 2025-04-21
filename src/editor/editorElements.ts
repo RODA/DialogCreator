@@ -1,67 +1,13 @@
 import { v4 as uuidv4 } from 'uuid';
-import { ElementsInterface } from './elements';
 import { dialogContainer } from './dialogContainer';
-import { util } from '../utils';
-import { showMessageBox } from '../FrontToBackCommunication';
+import * as interfaces from '../library/interfaces';
+import { utils } from '../library/utils';
+import { showMessageBox } from '../communication';
 import { editor } from './editor';
 export type editorElementsTypes = 'addButton' | 'addCheckbox' | 'addRadio' | 'addLabel' | 'addInput' | 'addSlider' | 'addSeparator' | 'addSelect' | 'addCounter' | 'addContainer';
 
-export interface EditorElementsInterface {
-    nameidRecords: Record<string, number>;
-    fontSize: number;
-    fontFamily: string;
-    maxWidth: number;
-    maxHeight: number;
-    setDefaults: (
-        size: number,
-        family: string,
-        maxWidth: number,
-        maxHeight: number
-    ) => void;
-    addButton: (
-        dialog: HTMLDivElement,
-        data: ElementsInterface["buttonElement"]
-    ) => ElementsInterface["buttonElement"];
-    addCheckbox: (
-        dialog: HTMLDivElement,
-        data: ElementsInterface["checkboxElement"]
-    ) => ElementsInterface["checkboxElement"];
-    addRadio: (
-        dialog: HTMLDivElement,
-        data: ElementsInterface["checkboxElement"]
-    ) => ElementsInterface["checkboxElement"];
-    addInput: (
-        dialog: HTMLDivElement,
-        data: ElementsInterface["inputElement"]
-    ) => ElementsInterface["inputElement"];
-    addLabel: (
-        dialog: HTMLDivElement,
-        data: ElementsInterface["labelElement"]
-    ) => ElementsInterface["labelElement"];
-    addSeparator: (
-        dialog: HTMLDivElement,
-        data: ElementsInterface["separatorElement"]
-    ) => ElementsInterface["separatorElement"];
-    addSelect: (
-        dialog: HTMLDivElement,
-        data: ElementsInterface["selectElement"]
-    ) => ElementsInterface["selectElement"];
-    addSlider: (
-        dialog: HTMLDivElement,
-        data: ElementsInterface["sliderElement"]
-    ) => ElementsInterface["sliderElement"];
-    addCounter: (
-        dialog: HTMLDivElement,
-        data: ElementsInterface["counterElement"]
-    ) => ElementsInterface["counterElement"];
-    addContainer: (
-        dialog: HTMLDivElement,
-        data: ElementsInterface["containerElement"]
-    ) => ElementsInterface["containerElement"];
-    // [propName: string]: any;
-}
 
-export const editorElements: EditorElementsInterface = {
+export const editorElements: interfaces.EditorElements = {
     nameidRecords: {},
 
     // defaults
@@ -79,8 +25,8 @@ export const editorElements: EditorElementsInterface = {
         editorElements.fontFamily = family;
         editorElements.maxWidth = maxWidth;
         editorElements.maxHeight = maxHeight;
-        util.setOnlyNumbers(["width", "height", "size", "space", "left", "top", "handlesize", "handlepos"]);
-        util.setOnlyNumbersWithMinus(["startval", "maxval"]);
+        utils.setOnlyNumbers(["width", "height", "size", "space", "left", "top", "handlesize", "handlepos"]);
+        utils.setOnlyNumbersWithMinus(["startval", "maxval"]);
     },
     // The elements
     // ==============================================
@@ -95,7 +41,7 @@ export const editorElements: EditorElementsInterface = {
 
                 switch (key) {
                     case 'nameid':
-                        if (util.nameidValidChange(value, button)) {
+                        if (utils.nameidValidChange(value, button)) {
                             obj[key] = value;
                             button.dataset.nameid = value;
                         } else {
@@ -108,19 +54,19 @@ export const editorElements: EditorElementsInterface = {
                         break;
                     case 'label':
                         obj[key] = value;
-                        util.updateButton(
+                        utils.updateButton(
                             button as HTMLDivElement,
                             obj["label"],
                             editorElements.fontSize, // obj["fontSize"],
                             obj["lineClamp"],
-                            obj["widthMax"]
+                            obj["maxWidth"]
                         );
                         break;
                     case 'lineClamp':
                     case 'maxWidth':
                     case 'fontSize':
                         obj[key] = value;
-                        util.updateButton(
+                        utils.updateButton(
                             button as HTMLDivElement,
                             obj["label"],
                             editorElements.fontSize, // obj["fontSize"], // ?
@@ -144,13 +90,13 @@ export const editorElements: EditorElementsInterface = {
                         button.style.left = value + 'px';
                         break;
                     case 'color':
-                        if (util.isValidColor(value)) {
+                        if (utils.isValidColor(value)) {
                             obj[key] = value;
                             button.style.backgroundColor = value;
                         }
                         break;
                     case 'fontColor':
-                        if (util.isValidColor(value)) {
+                        if (utils.isValidColor(value)) {
                             obj[key] = value;
                             button.style.color = value;
                         }
@@ -183,9 +129,9 @@ export const editorElements: EditorElementsInterface = {
         })
 
         const uuid = uuidv4();
-        const nameid = util.makeNameID(data.type, editorElements.nameidRecords);
+        const nameid = utils.makeNameID(data.type, editorElements.nameidRecords);
 
-        const button = util.makeElement(
+        const button = utils.makeElement(
             data,
             uuid,
             nameid,
@@ -213,7 +159,7 @@ export const editorElements: EditorElementsInterface = {
 
                 switch (key) {
                     case 'nameid':
-                        if (util.nameidValidChange(value, input)) {
+                        if (utils.nameidValidChange(value, input)) {
                             obj[key] = value;
                             input.dataset.nameid = value;
                         } else {
@@ -278,9 +224,9 @@ export const editorElements: EditorElementsInterface = {
         })
 
         const uuid = uuidv4();
-        const nameid = util.makeNameID(data.type, editorElements.nameidRecords);
+        const nameid = utils.makeNameID(data.type, editorElements.nameidRecords);
 
-        const input = util.makeElement(
+        const input = utils.makeElement(
             data,
             uuid,
             nameid,
@@ -307,7 +253,7 @@ export const editorElements: EditorElementsInterface = {
 
                 switch (key) {
                     case 'nameid':
-                        if (util.nameidValidChange(value, select)) {
+                        if (utils.nameidValidChange(value, select)) {
                             obj[key] = value;
                             select.dataset.nameid = value;
                         } else {
@@ -385,9 +331,9 @@ export const editorElements: EditorElementsInterface = {
         })
 
         const uuid = uuidv4();
-        const nameid = util.makeNameID(data.type, editorElements.nameidRecords);
+        const nameid = utils.makeNameID(data.type, editorElements.nameidRecords);
 
-        const select = util.makeElement(
+        const select = utils.makeElement(
             data,
             uuid,
             nameid,
@@ -414,7 +360,7 @@ export const editorElements: EditorElementsInterface = {
 
                 switch (key) {
                     case 'nameid':
-                        if (util.nameidValidChange(value, checkbox)) {
+                        if (utils.nameidValidChange(value, checkbox)) {
                             obj[key] = value;
                             checkbox.dataset.nameid = value;
                         } else {
@@ -443,9 +389,9 @@ export const editorElements: EditorElementsInterface = {
                         checkbox.style.height = value + 'px';
                         break;
                     case 'color':
-                        if (util.isValidColor(value)) {
+                        if (utils.isValidColor(value)) {
                             obj[key] = value;
-                            util.updateCheckboxColor(uuid, value);
+                            utils.updateCheckboxColor(uuid, value);
                         }
                         break;
                     case 'isVisible':
@@ -480,9 +426,9 @@ export const editorElements: EditorElementsInterface = {
         })
 
         const uuid = uuidv4();
-        const nameid = util.makeNameID(data.type, editorElements.nameidRecords);
+        const nameid = utils.makeNameID(data.type, editorElements.nameidRecords);
 
-        const checkbox = util.makeElement(
+        const checkbox = utils.makeElement(
             data,
             uuid,
             nameid
@@ -509,7 +455,7 @@ export const editorElements: EditorElementsInterface = {
 
                 switch (key) {
                     case 'nameid':
-                        if (util.nameidValidChange(value, radio)) {
+                        if (utils.nameidValidChange(value, radio)) {
                             obj[key] = value;
                             radio.dataset.nameid = value;
                         } else {
@@ -542,7 +488,7 @@ export const editorElements: EditorElementsInterface = {
                         radio.style.height = value + 'px';
                         break;
                     case 'color':
-                        if (util.isValidColor(value)) {
+                        if (utils.isValidColor(value)) {
                             obj[key] = value;
                             rd.style.setProperty('--radio-color', value);
                         }
@@ -563,7 +509,7 @@ export const editorElements: EditorElementsInterface = {
                         break;
                     case 'isSelected':
                         if (value === 'true') {
-                            util.unselectRadioGroup(rd);
+                            utils.unselectRadioGroup(rd);
                         }
                         rd.setAttribute('aria-checked', value);
                         obj[key] = value === 'true';
@@ -582,9 +528,9 @@ export const editorElements: EditorElementsInterface = {
         })
 
         const uuid = uuidv4();
-        const nameid = util.makeNameID(data.type, editorElements.nameidRecords);
+        const nameid = utils.makeNameID(data.type, editorElements.nameidRecords);
 
-        const radio = util.makeElement(
+        const radio = utils.makeElement(
             data,
             uuid,
             nameid
@@ -598,7 +544,7 @@ export const editorElements: EditorElementsInterface = {
         return dataProxy;
     },
 
-    addCounter: function(dialog: HTMLDivElement, data: ElementsInterface["counterElement"]) {
+    addCounter: function(dialog: HTMLDivElement, data: interfaces.Elements["counterElement"]) {
         if (typeof data !== 'object' || Array.isArray(data)) {
             return;
         }
@@ -609,7 +555,7 @@ export const editorElements: EditorElementsInterface = {
 
                 switch (key) {
                     case 'nameid':
-                        if (util.nameidValidChange(value, counter)) {
+                        if (utils.nameidValidChange(value, counter)) {
                             obj[key] = value;
                             counter.dataset.nameid = value;
                         } else {
@@ -633,7 +579,7 @@ export const editorElements: EditorElementsInterface = {
                         counter.style.left = value + 'px';
                         break;
                     case 'color':
-                        if (util.isValidColor(value)) {
+                        if (utils.isValidColor(value)) {
                             obj[key] = value;
                             document.getElementById("counter-decrease-" + uuid).style.color = value;
                             document.getElementById("counter-increase-" + uuid).style.color = value;
@@ -685,9 +631,9 @@ export const editorElements: EditorElementsInterface = {
         })
 
         const uuid = uuidv4();
-        const nameid = util.makeNameID(data.type, editorElements.nameidRecords);
+        const nameid = utils.makeNameID(data.type, editorElements.nameidRecords);
 
-        const counter = util.makeElement(
+        const counter = utils.makeElement(
             data,
             uuid,
             nameid
@@ -712,7 +658,7 @@ export const editorElements: EditorElementsInterface = {
 
                 switch (key) {
                     case 'nameid':
-                        if (util.nameidValidChange(value, slider)) {
+                        if (utils.nameidValidChange(value, slider)) {
                             obj[key] = value;
                             slider.dataset.nameid = value;
                         } else {
@@ -749,7 +695,7 @@ export const editorElements: EditorElementsInterface = {
                         slider.style.height = value + 'px';
                         break;
                     case 'color':
-                        if (util.isValidColor(value)) {
+                        if (utils.isValidColor(value)) {
                             obj[key] = value;
                             slider.style.backgroundColor = value;
                         }
@@ -776,7 +722,7 @@ export const editorElements: EditorElementsInterface = {
                         obj[key] = value;
                         break;
                     case 'handlecolor':
-                        if (util.isValidColor(value)) {
+                        if (utils.isValidColor(value)) {
                             obj[key] = value;
                         }
                         break;
@@ -803,7 +749,7 @@ export const editorElements: EditorElementsInterface = {
                     editor.editorEvents.emit('selectElement', element);
                 }
 
-                util.updateHandleStyle(
+                utils.updateHandleStyle(
                     handle,
                     obj
                 );
@@ -813,9 +759,9 @@ export const editorElements: EditorElementsInterface = {
         })
 
         const uuid = uuidv4();
-        const nameid = util.makeNameID(data.type, editorElements.nameidRecords);
+        const nameid = utils.makeNameID(data.type, editorElements.nameidRecords);
 
-        const slider = util.makeElement(
+        const slider = utils.makeElement(
             data,
             uuid,
             nameid
@@ -866,7 +812,7 @@ export const editorElements: EditorElementsInterface = {
                     //     label.style.fontSize = value + 'px';
                     //     break;
                     case 'fontColor':
-                        if (util.isValidColor(value)) {
+                        if (utils.isValidColor(value)) {
                             obj[key] = value;
                             label.style.color = value;
                         }
@@ -888,7 +834,7 @@ export const editorElements: EditorElementsInterface = {
 
         const uuid = uuidv4();
 
-        const label = util.makeElement(
+        const label = utils.makeElement(
             data,
             uuid,
             void 0,
@@ -939,7 +885,7 @@ export const editorElements: EditorElementsInterface = {
                         separator.style.height = value + 'px';
                         break;
                     case 'color':
-                        if (util.isValidColor(value)) {
+                        if (utils.isValidColor(value)) {
                             obj[key] = value;
                             separator.style.backgroundColor = value;
                         }
@@ -973,7 +919,7 @@ export const editorElements: EditorElementsInterface = {
 
         const uuid = uuidv4();
 
-        const separator = util.makeElement(data, uuid);
+        const separator = utils.makeElement(data, uuid);
 
         dataProxy.id = uuid;
         dataProxy.parentId = dialog.id;
@@ -982,7 +928,7 @@ export const editorElements: EditorElementsInterface = {
         return dataProxy;
     },
 
-    addContainer: function(dialog: HTMLDivElement, data: ElementsInterface["containerElement"]) {
+    addContainer: function(dialog: HTMLDivElement, data: interfaces.Elements["containerElement"]) {
         if (typeof data !== 'object' || Array.isArray(data)) {
             return;
         }
@@ -993,7 +939,7 @@ export const editorElements: EditorElementsInterface = {
 
                 switch (key) {
                     case 'nameid':
-                        if (util.nameidValidChange(value, container)) {
+                        if (utils.nameidValidChange(value, container)) {
                             obj[key] = value;
                             container.dataset.nameid = value;
                         } else {
@@ -1030,7 +976,7 @@ export const editorElements: EditorElementsInterface = {
                         container.style.height = value + 'px';
                         break;
                     case 'objViewClass':
-                        if (util.objViewClassValid(container)) {
+                        if (utils.objViewClassValid(container)) {
                             obj[key] = value;
                             container.dataset.objViewClass = value;
                         } else {
@@ -1069,9 +1015,9 @@ export const editorElements: EditorElementsInterface = {
         })
 
         const uuid = uuidv4();
-        const nameid = util.makeNameID(data.type, editorElements.nameidRecords);
+        const nameid = utils.makeNameID(data.type, editorElements.nameidRecords);
 
-        const container = util.makeElement(
+        const container = utils.makeElement(
             data,
             uuid,
             nameid

@@ -318,7 +318,7 @@ input[type="text"] {
 
     box-sizing: border-box;
 
-    background-image: url(./arrow-down.svg);
+    background-image: url(../assets/arrow-down.svg);
     background-repeat: no-repeat;
     background-position: right 3px center;
     background-size: 10px;

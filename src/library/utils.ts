@@ -1,51 +1,8 @@
-import { dialogContainer } from './editor/dialogContainer';
-import { ElementsInterface } from './editor/elements';
+import { dialogContainer } from '../editor/dialogContainer';
+import * as interfaces from '../library/interfaces';
 
-interface UtilsInterface {
-    getKeys(obj: Record<string, unknown>): Array<string>;
-    isNumeric: (x: string) => boolean;
-    possibleNumeric: (x: string) => boolean;
-    isInteger: (x: number) => boolean;
-    asNumeric(x: string): number;
-    asInteger(x: string): number;
-    isTrue: (x: boolean) => boolean;
-    isFalse: (x: boolean) => boolean;
-    missing: (x: unknown) => boolean;
-    exists: (x: unknown) => boolean;
-    isNull: (x: unknown) => boolean;
-    isElement(x: string, set: string[]): boolean;
-    isNotElement(x: string, set: string[]): boolean;
-    unselectRadioGroup: (element: HTMLElement) => void;
-    updateHandleStyle: (
-        handle: HTMLDivElement,
-        obj: ElementsInterface[keyof ElementsInterface]
-    ) => void;
-    makeNameID: (type: string, nameidRecords: Record<string, number>) => string;
-    nameidValidChange: (newId: string, currentElement: HTMLElement) => boolean;
-    updateCheckboxColor: (uuid: string, color: string) => void;
-    setInputFilter: (textbox: HTMLElement, inputFilter: (value: string) => boolean) => void;
-    setOnlyNumbers: (items: string[]) => void;
-    setOnlyNumbersWithMinus: (items: string[]) => void;
-    setOnlyDouble: (items: string[]) => void;
-    isValidColor: (value: string) => boolean;
-    makeElement: (
-        data: ElementsInterface[keyof ElementsInterface],
-        uuid: string,
-        nameid?: string,
-        fontSize?: number,
-        fontFamily?: string
-    ) => HTMLDivElement | HTMLInputElement | HTMLSelectElement;
-    updateButton: (
-        button: HTMLDivElement,
-        text: string,
-        fontSize: number,
-        lineClamp: number,
-        widthMax: number
-    ) => void;
-    objViewClassValid: (currentElement: HTMLElement) => boolean;
-}
 
-export const util: UtilsInterface = {
+export const utils: interfaces.Utils = {
 
     getKeys: function(obj) {
         if (obj === null) return([]);
@@ -53,23 +10,23 @@ export const util: UtilsInterface = {
     },
 
     isNumeric: function (x) {
-        if (util.missing(x) || x === null || ("" + x).length == 0) {
+        if (utils.missing(x) || x === null || ("" + x).length == 0) {
             return false;
         }
 
         return (
             Object.prototype.toString.call(x) === "[object Number]" &&
             !isNaN(parseFloat("" + x)) &&
-            isFinite(util.asNumeric(x as string))
+            isFinite(utils.asNumeric(x as string))
         )
     },
 
     possibleNumeric: function(x) {
-        if (util.isNumeric(x)) {
+        if (utils.isNumeric(x)) {
             return true;
         }
 
-        if (util.isNumeric("" + util.asNumeric(x))) {
+        if (utils.isNumeric("" + utils.asNumeric(x))) {
             return true;
         }
 
@@ -89,14 +46,14 @@ export const util: UtilsInterface = {
     },
 
     isTrue: function(x) {
-        if (util.missing(x) || util.isNull(x)) {
+        if (utils.missing(x) || utils.isNull(x)) {
             return false;
         }
         return (x === true);
     },
 
     isFalse: function(x) {
-        if (util.missing(x) || util.isNull(x)) {
+        if (utils.missing(x) || utils.isNull(x)) {
             return false;
         }
         return (x === false);
@@ -111,15 +68,15 @@ export const util: UtilsInterface = {
     },
 
     isNull: function(x) {
-        return util.exists(x) && x === null;
+        return utils.exists(x) && x === null;
     },
 
     isElement: function (x, set) {
         if (
-            util.missing(x) ||
-            util.isNull(x) ||
-            util.missing(set) ||
-            util.isNull(set) ||
+            utils.missing(x) ||
+            utils.isNull(x) ||
+            utils.missing(set) ||
+            utils.isNull(set) ||
             set.length === 0
         ) {
             return false;
@@ -130,10 +87,10 @@ export const util: UtilsInterface = {
 
     isNotElement: function (x, set) {
         if (
-            util.missing(x) ||
-            util.isNull(x) ||
-            util.missing(set) ||
-            util.isNull(set) ||
+            utils.missing(x) ||
+            utils.isNull(x) ||
+            utils.missing(set) ||
+            utils.isNull(set) ||
             set.length === 0
         ) {
             return false;
@@ -260,7 +217,7 @@ export const util: UtilsInterface = {
 
 	setOnlyNumbers: function (items) {
         items.forEach((item) => {
-            util.setInputFilter(
+            utils.setInputFilter(
                 document.getElementById('el' + item),
                 function (value: string): boolean { return /^\d*$/.test(value); }
             );
@@ -269,7 +226,7 @@ export const util: UtilsInterface = {
 
 	setOnlyNumbersWithMinus: function (items) {
         items.forEach((item) => {
-            util.setInputFilter(
+            utils.setInputFilter(
                 document.getElementById('el' + item),
                 function (value) { return /^-?\d*$/.test(value);}
             );
@@ -278,7 +235,7 @@ export const util: UtilsInterface = {
 
 	setOnlyDouble: function (items) {
         items.forEach((item) => {
-            util.setInputFilter(
+            utils.setInputFilter(
                 document.getElementById(item),
                 function (value) {
                     if (value.endsWith("..") || value.endsWith(".,")) {
@@ -313,7 +270,7 @@ export const util: UtilsInterface = {
     makeElement: function(data, uuid, nameid, fontSize, fontFamily) {
 
         let eltype: string;
-        if (util.isElement(data.type, ["Input", "Select"])) {
+        if (utils.isElement(data.type, ["Input", "Select"])) {
             eltype = data.type.toLowerCase();
         } else {
             eltype = 'div';
@@ -344,7 +301,7 @@ export const util: UtilsInterface = {
 
             element.appendChild(span);
 
-            util.updateButton(
+            utils.updateButton(
                 element as HTMLDivElement,
                 data.label,
                 fontSize,
@@ -416,7 +373,7 @@ export const util: UtilsInterface = {
             decrease.innerHTML = "&#9654;"; // rotated in the CSS
             decrease.id = "counter-decrease-" + uuid;
 
-            if (util.exists(data.color)) {
+            if (utils.exists(data.color)) {
                 decrease.style.color = data.color;
             }
 
@@ -428,15 +385,15 @@ export const util: UtilsInterface = {
             display.style.padding = '0px ' + data.space + 'px';
             display.dataset.nameid = nameid;
 
-            if (util.exists(fontFamily)) {
+            if (utils.exists(fontFamily)) {
                 display.style.fontFamily = fontFamily;
             }
 
-            if (util.exists(fontSize)) {
+            if (utils.exists(fontSize)) {
                 display.style.fontSize = fontSize + 'px';
             }
 
-            if (util.exists(data.fontColor)) {
+            if (utils.exists(data.fontColor)) {
                 display.style.color = data.fontColor || '#000000';
             }
 
@@ -445,7 +402,7 @@ export const util: UtilsInterface = {
             increase.innerHTML = "&#9654;"; // rotated in the CSS
             increase.id = "counter-increase-" + uuid;
 
-            if (util.exists(data.color)) {
+            if (utils.exists(data.color)) {
                 increase.style.color = data.color;
             }
 
@@ -462,7 +419,7 @@ export const util: UtilsInterface = {
             handle.id = 'slider-handle-' + uuid;
             element.appendChild(handle);
 
-            util.updateHandleStyle(
+            utils.updateHandleStyle(
                 handle,
                 data
             );
@@ -484,27 +441,27 @@ export const util: UtilsInterface = {
             element.dataset.objViewClass = data.objViewClass;
         }
 
-        if (util.isNotElement(data.type, ["Counter", "Label"])) {
+        if (utils.isNotElement(data.type, ["Counter", "Label"])) {
             element.dataset.nameid = nameid;
         }
 
-        if (util.exists(fontFamily)) {
+        if (utils.exists(fontFamily)) {
             element.style.fontFamily = fontFamily;
         }
 
-        if (util.exists(fontSize)) {
+        if (utils.exists(fontSize)) {
             element.style.fontSize = fontSize + 'px';
         }
 
-        if (util.exists(data.fontColor)) {
+        if (utils.exists(data.fontColor)) {
             element.style.color = data.fontColor;
         }
 
-        if (util.isFalse(data.isVisible)) {
+        if (utils.isFalse(data.isVisible)) {
             element.classList.add('design-hidden');
         }
 
-        if (util.isFalse(data.isEnabled)) {
+        if (utils.isFalse(data.isEnabled)) {
             element.classList.add('disabled-div');
         }
 

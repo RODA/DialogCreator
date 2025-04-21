@@ -1,7 +1,8 @@
-import { showMessageBox } from './../FrontToBackCommunication';
+import { showMessageBox } from './../communication';
 import { EventEmitter } from 'events';
 import { DialogPropertiesInterface, editorSettings } from './settings';
-import { elements, ElementsInterface } from './elements';
+import * as interfaces from '../library/interfaces';
+import { elements } from './elements';
 import { v4 as uuidv4 } from 'uuid';
 import { editorElements, editorElementsTypes } from './editorElements';
 import { dialogContainer } from './dialogContainer';
@@ -17,7 +18,7 @@ interface EditorInterface {
     deselectAll: () => void;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     addElementToDialog: (type: string, withData?: any) => void;
-    addElementListeners: <T extends ElementsInterface[keyof ElementsInterface] >(element: T) => void;
+    addElementListeners: <T extends interfaces.Elements[keyof interfaces.Elements] >(element: T) => void;
     addDragAndDrop: (element: HTMLElement) => void;
     updateElement: (payload: { [key: string]: string }) => void;
     removeSelectedElement: () => void;
@@ -121,7 +122,7 @@ export const editor: EditorInterface = {
         }
         // get passed or default element settings
         let dataSettings;
-        const elementType = (type.toLowerCase() + 'Element') as keyof ElementsInterface;
+        const elementType = (type.toLowerCase() + 'Element') as keyof interfaces.Elements;
         if (withData !== null) {
             dataSettings = withData;
         } else {
