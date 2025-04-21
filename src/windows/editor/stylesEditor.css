@@ -322,6 +322,9 @@ input[type="text"] {
     background-repeat: no-repeat;
     background-position: right 3px center;
     background-size: 10px;
+
+    /* height: 22px; */
+    /* padding: 0px 0px 0px 6px !important; */
 }
 
 .input-as-text {

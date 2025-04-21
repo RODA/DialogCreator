@@ -33,7 +33,7 @@ interface UtilsInterface {
         nameid?: string,
         fontSize?: number,
         fontFamily?: string
-    ) => HTMLDivElement | HTMLInputElement;
+    ) => HTMLDivElement | HTMLInputElement | HTMLSelectElement;
     updateButton: (
         button: HTMLDivElement,
         text: string,
@@ -297,14 +297,18 @@ export const util: UtilsInterface = {
     },
 
     makeElement: function(data, uuid, nameid, fontSize, fontFamily) {
-        const eltype = data.type == "Input" ? "input" : "div";
-        const element = document.createElement(eltype);
+
+        let eltype: string;
+        if (data.type == "Input") {
+            eltype = "input";
+        } else if (data.type == "Select") {
+            eltype = "select";
+        } else {
+            eltype = "div";
+        }
+        const element = document.createElement(eltype) as HTMLDivElement | HTMLInputElement | HTMLSelectElement;
+
         element.id = uuid;
-
-        element.style.position = 'absolute';
-        element.style.top = data.top + 'px';
-        element.style.left = data.left + 'px';
-
         element.style.position = 'absolute';
         element.style.top = data.top + 'px';
         element.style.left = data.left + 'px';
@@ -328,7 +332,7 @@ export const util: UtilsInterface = {
             element.appendChild(span);
 
             util.updateButton(
-                element,
+                element as HTMLDivElement,
                 data.label,
                 fontSize,
                 data.lineClamp,

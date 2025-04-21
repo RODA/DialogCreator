@@ -110,7 +110,7 @@ export const editorElements: EditorElementsInterface = {
                     case 'label':
                         obj[key] = value;
                         util.updateButton(
-                            button,
+                            button as HTMLDivElement,
                             obj["label"],
                             editorElements.fontSize, // obj["fontSize"],
                             obj["lineClamp"],
@@ -122,7 +122,7 @@ export const editorElements: EditorElementsInterface = {
                     case 'fontSize':
                         obj[key] = value;
                         util.updateButton(
-                            button,
+                            button as HTMLDivElement,
                             obj["label"],
                             editorElements.fontSize, // obj["fontSize"],
                             obj["lineClamp"],
