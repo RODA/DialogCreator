@@ -13,7 +13,7 @@ body {
     font-size: 0.9rem;
 }
 
-.container {
+.dialogContainer {
     display: flex;
     align-items: stretch;
     justify-content: space-around;
@@ -424,4 +424,10 @@ input {
     text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;
+}
+
+
+.container {
+    border: 1px solid black;
+    border-radius: 2px;
 }
