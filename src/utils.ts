@@ -41,6 +41,7 @@ interface UtilsInterface {
         lineClamp: number,
         widthMax: number
     ) => void;
+    objViewClassValid: (currentElement: HTMLElement) => boolean;
 }
 
 export const util: UtilsInterface = {
@@ -333,6 +334,22 @@ export const util: UtilsInterface = {
                 data.lineClamp,
                 data.widthMax
             )
+        } else if (data.type == "Input") {
+            if (element instanceof HTMLInputElement) {
+                element.type = 'text';
+                element.value = data.value || '';
+            }
+            element.style.width = data.width + 'px';
+            element.style.maxHeight = data.height + 'px';
+            element.style.maxWidth = data.widthMax + 'px';
+            element.style.fontFamily = fontFamily;
+            element.style.fontSize = fontSize + 'px';
+        } else if (data.type == "Select") {
+            element.className = 'custom-select';
+            element.style.width = data.width + 'px';
+            element.style.padding = '3px';
+            element.style.fontFamily = fontFamily;
+            element.style.fontSize = fontSize + 'px';
         } else if (data.type == "Checkbox") {
             element.className = 'element-div';
             element.style.width = data.size + 'px';
@@ -374,47 +391,6 @@ export const util: UtilsInterface = {
             cover.className = 'cover';
             element.appendChild(customRadio);
             element.appendChild(cover);
-        } else if (data.type == "Input") {
-            if (element instanceof HTMLInputElement) {
-                element.type = 'text';
-                element.value = data.value || '';
-            }
-            element.style.width = data.width + 'px';
-            element.style.maxHeight = data.height + 'px';
-            element.style.maxWidth = data.widthMax + 'px';
-            element.style.fontFamily = fontFamily;
-            element.style.fontSize = fontSize + 'px';
-        } else if (data.type == "Label") {
-            element.textContent = data.value;
-            element.style.fontFamily = fontFamily;
-            element.style.fontSize = fontSize + 'px';
-            element.style.color = data.fontColor || '#000000';
-        } else if (data.type == "Separator") {
-            element.className = 'separator';
-            element.style.width = data.width + 'px';
-            element.style.height = data.height + 'px';
-            element.style.backgroundColor = data.color;
-        } else if (data.type == "Select") {
-            element.className = 'custom-select';
-            element.style.width = data.width + 'px';
-            element.style.padding = '3px';
-            element.style.fontFamily = fontFamily;
-            element.style.fontSize = fontSize + 'px';
-        } else if (data.type == "Slider") {
-            element.className = 'separator';
-            element.style.width = data.width + 'px';
-            element.style.height = data.height + 'px';
-
-            const handle = document.createElement('div');
-            handle.className = 'slider-handle';
-            handle.id = 'slider-handle-' + uuid;
-            element.appendChild(handle);
-
-            util.updateHandleStyle(
-                handle,
-                data
-            );
-
         } else if (data.type == "Counter") {
             element.className = "counter-wrapper";
 
@@ -459,6 +435,36 @@ export const util: UtilsInterface = {
             element.appendChild(decrease);
             element.appendChild(display);
             element.appendChild(increase);
+        } else if (data.type == "Slider") {
+            element.className = 'separator';
+            element.style.width = data.width + 'px';
+            element.style.height = data.height + 'px';
+
+            const handle = document.createElement('div');
+            handle.className = 'slider-handle';
+            handle.id = 'slider-handle-' + uuid;
+            element.appendChild(handle);
+
+            util.updateHandleStyle(
+                handle,
+                data
+            );
+
+        } else if (data.type == "Label") {
+            element.textContent = data.value;
+            element.style.fontFamily = fontFamily;
+            element.style.fontSize = fontSize + 'px';
+            element.style.color = data.fontColor || '#000000';
+        } else if (data.type == "Separator") {
+            element.className = 'separator';
+            element.style.width = data.width + 'px';
+            element.style.height = data.height + 'px';
+            element.style.backgroundColor = data.color;
+        } else if (data.type == "Container") {
+            element.className = 'container';
+            element.style.width = data.width + 'px';
+            element.style.height = data.height + 'px';
+            element.dataset.objViewClass = data.objViewClass;
         }
 
         // if (util.isElement(data.type, ["Button", "Checkbox"])) {
@@ -517,6 +523,15 @@ export const util: UtilsInterface = {
         } else {
             button.removeAttribute('title');
         }
+    },
+
+    objViewClassValid: function (currentElement: HTMLElement) {
+        const allobjs = new Set(
+            Array.from(document.querySelectorAll<HTMLElement>('[data-obj-view-class]'))
+            .map(el => el !== currentElement ? el.dataset.objViewClass! : null)
+            .filter(id => id !== null)
+        )
+        return !allobjs.has('dataSet');
     }
 }
 

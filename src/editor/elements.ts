@@ -19,6 +19,38 @@ export type buttonElementType = {
     conditions: string;
     [key: string]: any;
 }
+export type inputElementType = {
+    parentId: string;
+    type: string;
+    id: string;
+    nameid: string;
+    width: number;
+    left: number;
+    top: number;
+    isVisible: boolean;
+    isEnabled: boolean;
+    value: string;
+    elementIds: string[];
+    conditions: string;
+    [key: string]: any;
+}
+export type selectElementType = {
+    parentId: string;
+    type: string;
+    id: string;
+    nameid: string;
+    width: number;
+    left: number;
+    top: number;
+    // dataSource: string; // too R specific
+    // Robjects: string;   // too R specific
+    value: string;
+    isVisible: boolean;
+    isEnabled: boolean;
+    elementIds: string[];
+    conditions: string;
+    [key: string]: any;
+}
 export type checkboxElementType = {
     parentId: string;
     type: string;
@@ -51,23 +83,6 @@ export type radioElementType = {
     conditions: string;
     [key: string]: any;
 }
-export type containerElementType = {
-    parentId: string;
-    type: string;
-    id: string;
-    objViewClass: string;
-    variableType: string;
-    parentContainer: string;
-    width: number;
-    height: number;
-    left: number;
-    top: number;
-    isVisible: boolean;
-    isEnabled: boolean;
-    elementIds: string[];
-    conditions: string;
-    [key: string]: any;
-}
 export type counterElementType = {
     parentId: string;
     type: string;
@@ -85,18 +100,23 @@ export type counterElementType = {
     conditions: string;
     [key: string]: any;
 }
-export type inputElementType = {
+export type sliderElementType = {
     parentId: string;
     type: string;
     id: string;
     nameid: string;
+    handlepos: number;
+    handleshape: string;
+    handlecolor: string;
+    handlesize: number;
     width: number;
+    height: number;
     left: number;
     top: number;
+    direction: string;
+    color: string;
     isVisible: boolean;
     isEnabled: boolean;
-    value: string;
-    elementIds: string[];
     conditions: string;
     [key: string]: any;
 }
@@ -128,40 +148,21 @@ export type separatorElementType = {
     conditions: string;
     [key: string]: any;
 }
-export type selectElementType = {
+export type containerElementType = {
     parentId: string;
     type: string;
     id: string;
     nameid: string;
-    width: number;
-    left: number;
-    top: number;
-    // dataSource: string; // too R specific
-    // Robjects: string;   // too R specific
-    value: string;
-    isVisible: boolean;
-    isEnabled: boolean;
-    elementIds: string[];
-    conditions: string;
-    [key: string]: any;
-}
-export type sliderElementType = {
-    parentId: string;
-    type: string;
-    id: string;
-    nameid: string;
-    handlepos: number;
-    handleshape: string;
-    handlecolor: string;
-    handlesize: number;
+    objViewClass: string;
+    variableType: string;
+    parentContainer: string;
     width: number;
     height: number;
     left: number;
     top: number;
-    direction: string;
-    color: string;
     isVisible: boolean;
     isEnabled: boolean;
+    elementIds: string[];
     conditions: string;
     [key: string]: any;
 }
@@ -170,15 +171,15 @@ export type sliderElementType = {
 
 export interface ElementsInterface {
     buttonElement: buttonElementType;
+    inputElement: inputElementType;
+    selectElement: selectElementType;
     checkboxElement: checkboxElementType;
     radioElement: radioElementType;
-    containerElement: containerElementType;
     counterElement: counterElementType;
-    inputElement: inputElementType;
+    sliderElement: sliderElementType;
     labelElement: labelElementType;
     separatorElement: separatorElementType;
-    selectElement: selectElementType;
-    sliderElement: sliderElementType;
+    containerElement: containerElementType;
 }
 
 export const elements: ElementsInterface = {
@@ -198,6 +199,36 @@ export const elements: ElementsInterface = {
         isVisible: true,
         isEnabled: true,
         onClick: 'run',
+        elementIds: [],
+        conditions: ''
+    },
+    inputElement: {
+        parentId: '',
+        type: 'Input',
+        id: '',
+        nameid: '',
+        width: 120,
+        left: 15,
+        top: 15,
+        isVisible: true,
+        isEnabled: true,
+        value: '',
+        elementIds: [],
+        conditions: ''
+    },
+    selectElement: {
+        parentId: '',
+        type: 'Select',
+        id: '',
+        nameid: '',
+        width: 120,
+        left: 15,
+        top: 15,
+        // dataSource: 'custom', // too R specific
+        // Robjects: 'all',      // too R specific
+        value: '',
+        isVisible: true,
+        isEnabled: true,
         elementIds: [],
         conditions: ''
     },
@@ -231,22 +262,6 @@ export const elements: ElementsInterface = {
         elementIds: [],
         conditions: ''
     },
-    containerElement: {
-        parentId: '',
-        type: 'Container',
-        id: '',
-        objViewClass: 'variable',
-        variableType: '',
-        parentContainer: '',
-        width: 150,
-        height: 200,
-        left: 15,
-        top: 15,
-        isVisible: true,
-        isEnabled: true,
-        elementIds: [],
-        conditions: ''
-    },
     counterElement: {
         parentId: '',
         type: 'Counter',
@@ -263,17 +278,23 @@ export const elements: ElementsInterface = {
         elementIds: [],
         conditions: ''
     },
-    inputElement: {
+    sliderElement: {
         parentId: '',
-        type: 'Input',
+        type: 'Slider',
         id: '',
         nameid: '',
+        handlepos: 50,
+        handleshape: 'triangle',
+        handlecolor: '#4caf50',
+        handlesize: 8,
         width: 120,
+        height: 1,
         left: 15,
         top: 15,
+        direction: "horizontal",
+        color: "#000000",
         isVisible: true,
         isEnabled: true,
-        value: '',
         elementIds: [],
         conditions: ''
     },
@@ -304,37 +325,18 @@ export const elements: ElementsInterface = {
         elementIds: [],
         conditions: ''
     },
-    selectElement: {
+    containerElement: {
         parentId: '',
-        type: 'Select',
+        type: 'Container',
         id: '',
         nameid: '',
-        width: 120,
+        objViewClass: 'variable',
+        variableType: '',
+        parentContainer: '',
+        width: 150,
+        height: 200,
         left: 15,
         top: 15,
-        // dataSource: 'custom', // too R specific
-        // Robjects: 'all',      // too R specific
-        value: '',
-        isVisible: true,
-        isEnabled: true,
-        elementIds: [],
-        conditions: ''
-    },
-    sliderElement: {
-        parentId: '',
-        type: 'Slider',
-        id: '',
-        nameid: '',
-        handlepos: 50,
-        handleshape: 'triangle',
-        handlecolor: '#4caf50',
-        handlesize: 8,
-        width: 120,
-        height: 1,
-        left: 15,
-        top: 15,
-        direction: "horizontal",
-        color: "#000000",
         isVisible: true,
         isEnabled: true,
         elementIds: [],

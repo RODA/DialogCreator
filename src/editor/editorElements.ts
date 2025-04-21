@@ -4,7 +4,7 @@ import { dialogContainer } from './dialogContainer';
 import { util } from '../utils';
 import { showMessageBox } from '../FrontToBackCommunication';
 import { editor } from './editor';
-export type editorElementsTypes = 'addButton' | 'addCheckbox' | 'addRadio' | 'addLabel' | 'addInput' | 'addSlider' | 'addSeparator' | 'addSelect' | 'addCounter' // | 'addContainer';
+export type editorElementsTypes = 'addButton' | 'addCheckbox' | 'addRadio' | 'addLabel' | 'addInput' | 'addSlider' | 'addSeparator' | 'addSelect' | 'addCounter' | 'addContainer';
 
 export interface EditorElementsInterface {
     nameidRecords: Record<string, number>;
@@ -54,7 +54,10 @@ export interface EditorElementsInterface {
         dialog: HTMLDivElement,
         data: ElementsInterface["counterElement"]
     ) => ElementsInterface["counterElement"];
-    // addContainer: (dialog: HTMLDivElement, data: elementsConfig.containerElementType) => void;
+    addContainer: (
+        dialog: HTMLDivElement,
+        data: ElementsInterface["containerElement"]
+    ) => ElementsInterface["containerElement"];
     // [propName: string]: any;
 }
 
@@ -81,7 +84,6 @@ export const editorElements: EditorElementsInterface = {
     },
     // The elements
     // ==============================================
-    // Add button
     addButton: function (dialog, data) {
         if (typeof data !== 'object' || Array.isArray(data)) {
             return;
@@ -201,204 +203,6 @@ export const editorElements: EditorElementsInterface = {
         return dataProxy;
     },
 
-    // Add checkbox
-    addCheckbox: function (dialog, data) {
-        if (typeof data !== 'object' || Array.isArray(data)) {
-            return;
-        }
-
-        const dataProxy = new Proxy({ ...data }, {
-            set(obj, key: string, value) {
-                const objid = obj.id;
-
-                switch (key) {
-                    case 'nameid':
-                        if (util.nameidValidChange(value, checkbox)) {
-                            obj[key] = value;
-                            checkbox.dataset.nameid = value;
-                        } else {
-                            showMessageBox({
-                                type: 'warning',
-                                title: 'Notice',
-                                message: 'Name already exists.'
-                            });
-                        }
-                        break;
-                    case 'top':
-                        if (editorElements.maxHeight >= value) {
-                            obj[key] = parseInt(value);
-                            checkbox.style.top = value + 'px';
-                        } else {
-                            checkbox.style.top = editorElements.maxHeight + 'px';
-                        }
-                        break;
-                    case 'left':
-                        obj[key] = parseInt(value);
-                        checkbox.style.left = value + 'px';
-                        break;
-                    case 'size':
-                        obj[key] = parseInt(value);
-                        checkbox.style.width = value + 'px';
-                        checkbox.style.height = value + 'px';
-                        break;
-                    case 'color':
-                        if (util.isValidColor(value)) {
-                            obj[key] = value;
-                            util.updateCheckboxColor(uuid, value);
-                        }
-                        break;
-                    case 'isVisible':
-                        obj[key] = value === 'true';
-                        checkbox.classList.add("design-hidden");
-                        if (obj[key]) {
-                            checkbox.classList.remove("design-hidden");
-                        }
-                        break;
-                    case 'isEnabled':
-                        obj[key] = value === 'true';
-                        checkbox.classList.add('disabled-div');
-                        if (obj[key]) {
-                            checkbox.classList.remove('disabled-div');
-                        }
-                        break;
-                    case 'isChecked':
-                        obj[key] = value === 'true';
-                        document.getElementById("checkbox-" + uuid).setAttribute("aria-checked", value);
-                        break;
-                    default:
-                        obj[key] = value;
-                }
-
-                const element = dialogContainer.getElement(objid);
-                if (element) {
-                    editor.editorEvents.emit('selectElement', element);
-                }
-
-                return true;
-            }
-        })
-
-        const uuid = uuidv4();
-        const nameid = util.makeNameID(data.type, editorElements.nameidRecords);
-
-        const checkbox = util.makeElement(
-            data,
-            uuid,
-            nameid
-        );
-
-        // in container
-        dataProxy.id = uuid;
-        dataProxy.nameid = nameid;
-        dataProxy.parentId = dialog.id;
-
-        dialog.appendChild(checkbox);
-        return dataProxy;
-    },
-
-    // Add radio button
-    addRadio: function (dialog, data) {
-        if (typeof data !== 'object' || Array.isArray(data)) {
-            return;
-        }
-
-        const dataProxy = new Proxy({ ...data }, {
-            set(obj, key: string, value) {
-                const objid = obj.id;
-                const rd = document.getElementById("radio-" + uuid) as HTMLElement;
-
-                switch (key) {
-                    case 'nameid':
-                        if (util.nameidValidChange(value, radio)) {
-                            obj[key] = value;
-                            radio.dataset.nameid = value;
-                        } else {
-                            showMessageBox({
-                                type: 'warning',
-                                title: 'Notice',
-                                message: 'Name already exists.'
-                            });
-                        }
-                        break;
-                    case 'group':
-                        obj[key] = value;
-                        rd.setAttribute("group", value);
-                        break;
-                    case 'top':
-                        if (editorElements.maxHeight >= value) {
-                            obj[key] = parseInt(value);
-                            radio.style.top = value + 'px';
-                        } else {
-                            radio.style.top = editorElements.maxHeight + 'px';
-                        }
-                        break;
-                    case 'left':
-                        obj[key] = parseInt(value);
-                        radio.style.left = value + 'px';
-                        break;
-                    case 'size':
-                        obj[key] = parseInt(value);
-                        radio.style.width = value + 'px';
-                        radio.style.height = value + 'px';
-                        break;
-                    case 'color':
-                        if (util.isValidColor(value)) {
-                            obj[key] = value;
-                            rd.style.setProperty('--radio-color', value);
-                        }
-                        break;
-                    case 'isVisible':
-                        obj[key] = value === 'true';
-                        radio.classList.add("design-hidden");
-                        if (obj[key]) {
-                            radio.classList.remove("design-hidden");
-                        }
-                        break;
-                    case 'isEnabled':
-                        obj[key] = value === 'true';
-                        radio.classList.add('disabled-div');
-                        if (obj[key]) {
-                            radio.classList.remove('disabled-div');
-                        }
-                        break;
-                    case 'isSelected':
-                        if (value === 'true') {
-                            util.unselectRadioGroup(rd);
-                        }
-                        rd.setAttribute('aria-checked', value);
-                        obj[key] = value === 'true';
-                        break;
-                    default:
-                        obj[key] = value;
-                }
-
-                const element = dialogContainer.getElement(objid);
-                if (element) {
-                    editor.editorEvents.emit('selectElement', element);
-                }
-
-                return true;
-            }
-        })
-
-        const uuid = uuidv4();
-        const nameid = util.makeNameID(data.type, editorElements.nameidRecords);
-
-        const radio = util.makeElement(
-            data,
-            uuid,
-            nameid
-        );
-
-        dataProxy.nameid = nameid;
-        dataProxy.id = uuid;
-        dataProxy.parentId = dialog.id;
-        dialog.appendChild(radio);
-
-        return dataProxy;
-    },
-
-    // Add Input
     addInput: function (dialog, data) {
         if (typeof data !== 'object' || Array.isArray(data)) {
             return;
@@ -493,160 +297,6 @@ export const editorElements: EditorElementsInterface = {
         return dataProxy;
     },
 
-    // Add Label
-    addLabel: function (dialog, data) {
-        if (typeof data !== 'object' || Array.isArray(data)) {
-            return;
-        }
-
-        const dataProxy = new Proxy({ ...data }, {
-            set(obj, key: string, value) {
-
-                switch (key) {
-                    case 'top':
-                        if (value > editorElements.maxHeight) {
-                            value = editorElements.maxHeight;
-                        }
-                        // it cannot be < 0 because the input is set as
-                        // numeric non negative, the minus sign is blocked
-                        obj[key] = parseInt(value);
-                        label.style.top = value + 'px';
-                        break;
-                    case 'left':
-                        obj[key] = parseInt(value);
-                        label.style.left = value + 'px';
-                        break;
-                    case 'width':
-                        obj[key] = parseInt(value);
-                        label.style.width = value + 'px';
-                        break;
-                    case 'value':
-                        obj[key] = value;
-                        label.innerText = value;
-                        break;
-                    // case 'fontSize':
-                    //     obj[key] = value;
-                    //     label.style.fontSize = value + 'px';
-                    //     break;
-                    case 'fontColor':
-                        if (util.isValidColor(value)) {
-                            obj[key] = value;
-                            label.style.color = value;
-                        }
-                        break;
-                    case 'isVisible':
-                        obj[key] = value === 'true';
-                        label.classList.add("design-hidden");
-                        if (obj[key]) {
-                            label.classList.remove("design-hidden");
-                        }
-                        break;
-                    default:
-                        obj[key] = value;
-
-                }
-                return true;
-            }
-        })
-
-        const uuid = uuidv4();
-
-        const label = util.makeElement(
-            data,
-            uuid,
-            void 0,
-            editorElements.fontSize,
-            editorElements.fontFamily
-        );
-
-        dataProxy.id = uuid;
-        dataProxy.parentId = dialog.id;
-
-        dialog.appendChild(label);
-        return dataProxy;
-    },
-
-    // Add Separator
-    addSeparator: function (dialog, data) {
-        if (typeof data !== 'object' || Array.isArray(data)) {
-            return;
-        }
-
-        const dataProxy = new Proxy({ ...data }, {
-            set(obj, key: string, value) {
-                const objid = obj.id;
-
-                switch (key) {
-                    case 'top':
-                        if (value > editorElements.maxHeight) {
-                            value = editorElements.maxHeight;
-                        }
-                        obj[key] = parseInt(value);
-                        separator.style.top = value + 'px';
-                        break;
-                    case 'left':
-                        obj[key] = parseInt(value);
-                        separator.style.left = value + 'px';
-                        break;
-                    case 'width':
-                        if (value > editorElements.maxWidth) {
-                            value = editorElements.maxWidth;
-                        }
-                        obj[key] = parseInt(value);
-                        separator.style.width = value + 'px';
-                        break;
-                    case 'height':
-                        if (value > editorElements.maxHeight) {
-                            value = editorElements.maxHeight;
-                        }
-                        obj[key] = parseInt(value);
-                        separator.style.height = value + 'px';
-                        break;
-                    case 'color':
-                        if (util.isValidColor(value)) {
-                            obj[key] = value;
-                            separator.style.backgroundColor = value;
-                        }
-                        break;
-                    case 'direction':
-                        obj[key] = value;
-                        dialogContainer.updateProperties(
-                            obj.id,
-                            { width: String(obj["height"]), height: String(obj["width"]) }
-                        );
-                        break;
-                    case 'isVisible':
-                        obj[key] = value === 'true';
-                        separator.classList.add("design-hidden");
-                        if (obj[key]) {
-                            separator.classList.remove("design-hidden");
-                        }
-                        break;
-                    default:
-                        obj[key] = value;
-                }
-
-                const element = dialogContainer.getElement(objid);
-                if (element) {
-                    editor.editorEvents.emit('selectElement', element);
-                }
-
-                return true;
-            }
-        })
-
-        const uuid = uuidv4();
-
-        const separator = util.makeElement(data, uuid);
-
-        dataProxy.id = uuid;
-        dataProxy.parentId = dialog.id;
-
-        dialog.appendChild(separator);
-        return dataProxy;
-    },
-
-    // Add Select
     addSelect: function (dialog, data) {
         if (typeof data !== 'object' || Array.isArray(data)) {
             return;
@@ -754,7 +404,304 @@ export const editorElements: EditorElementsInterface = {
         return dataProxy;
     },
 
-    // Add Separator
+    addCheckbox: function (dialog, data) {
+        if (typeof data !== 'object' || Array.isArray(data)) {
+            return;
+        }
+
+        const dataProxy = new Proxy({ ...data }, {
+            set(obj, key: string, value) {
+                const objid = obj.id;
+
+                switch (key) {
+                    case 'nameid':
+                        if (util.nameidValidChange(value, checkbox)) {
+                            obj[key] = value;
+                            checkbox.dataset.nameid = value;
+                        } else {
+                            showMessageBox({
+                                type: 'warning',
+                                title: 'Notice',
+                                message: 'Name already exists.'
+                            });
+                        }
+                        break;
+                    case 'top':
+                        if (editorElements.maxHeight >= value) {
+                            obj[key] = parseInt(value);
+                            checkbox.style.top = value + 'px';
+                        } else {
+                            checkbox.style.top = editorElements.maxHeight + 'px';
+                        }
+                        break;
+                    case 'left':
+                        obj[key] = parseInt(value);
+                        checkbox.style.left = value + 'px';
+                        break;
+                    case 'size':
+                        obj[key] = parseInt(value);
+                        checkbox.style.width = value + 'px';
+                        checkbox.style.height = value + 'px';
+                        break;
+                    case 'color':
+                        if (util.isValidColor(value)) {
+                            obj[key] = value;
+                            util.updateCheckboxColor(uuid, value);
+                        }
+                        break;
+                    case 'isVisible':
+                        obj[key] = value === 'true';
+                        checkbox.classList.add("design-hidden");
+                        if (obj[key]) {
+                            checkbox.classList.remove("design-hidden");
+                        }
+                        break;
+                    case 'isEnabled':
+                        obj[key] = value === 'true';
+                        checkbox.classList.add('disabled-div');
+                        if (obj[key]) {
+                            checkbox.classList.remove('disabled-div');
+                        }
+                        break;
+                    case 'isChecked':
+                        obj[key] = value === 'true';
+                        document.getElementById("checkbox-" + uuid).setAttribute("aria-checked", value);
+                        break;
+                    default:
+                        obj[key] = value;
+                }
+
+                const element = dialogContainer.getElement(objid);
+                if (element) {
+                    editor.editorEvents.emit('selectElement', element);
+                }
+
+                return true;
+            }
+        })
+
+        const uuid = uuidv4();
+        const nameid = util.makeNameID(data.type, editorElements.nameidRecords);
+
+        const checkbox = util.makeElement(
+            data,
+            uuid,
+            nameid
+        );
+
+        // in container
+        dataProxy.id = uuid;
+        dataProxy.nameid = nameid;
+        dataProxy.parentId = dialog.id;
+
+        dialog.appendChild(checkbox);
+        return dataProxy;
+    },
+
+    addRadio: function (dialog, data) {
+        if (typeof data !== 'object' || Array.isArray(data)) {
+            return;
+        }
+
+        const dataProxy = new Proxy({ ...data }, {
+            set(obj, key: string, value) {
+                const objid = obj.id;
+                const rd = document.getElementById("radio-" + uuid) as HTMLElement;
+
+                switch (key) {
+                    case 'nameid':
+                        if (util.nameidValidChange(value, radio)) {
+                            obj[key] = value;
+                            radio.dataset.nameid = value;
+                        } else {
+                            showMessageBox({
+                                type: 'warning',
+                                title: 'Notice',
+                                message: 'Name already exists.'
+                            });
+                        }
+                        break;
+                    case 'group':
+                        obj[key] = value;
+                        rd.setAttribute("group", value);
+                        break;
+                    case 'top':
+                        if (editorElements.maxHeight >= value) {
+                            obj[key] = parseInt(value);
+                            radio.style.top = value + 'px';
+                        } else {
+                            radio.style.top = editorElements.maxHeight + 'px';
+                        }
+                        break;
+                    case 'left':
+                        obj[key] = parseInt(value);
+                        radio.style.left = value + 'px';
+                        break;
+                    case 'size':
+                        obj[key] = parseInt(value);
+                        radio.style.width = value + 'px';
+                        radio.style.height = value + 'px';
+                        break;
+                    case 'color':
+                        if (util.isValidColor(value)) {
+                            obj[key] = value;
+                            rd.style.setProperty('--radio-color', value);
+                        }
+                        break;
+                    case 'isVisible':
+                        obj[key] = value === 'true';
+                        radio.classList.add("design-hidden");
+                        if (obj[key]) {
+                            radio.classList.remove("design-hidden");
+                        }
+                        break;
+                    case 'isEnabled':
+                        obj[key] = value === 'true';
+                        radio.classList.add('disabled-div');
+                        if (obj[key]) {
+                            radio.classList.remove('disabled-div');
+                        }
+                        break;
+                    case 'isSelected':
+                        if (value === 'true') {
+                            util.unselectRadioGroup(rd);
+                        }
+                        rd.setAttribute('aria-checked', value);
+                        obj[key] = value === 'true';
+                        break;
+                    default:
+                        obj[key] = value;
+                }
+
+                const element = dialogContainer.getElement(objid);
+                if (element) {
+                    editor.editorEvents.emit('selectElement', element);
+                }
+
+                return true;
+            }
+        })
+
+        const uuid = uuidv4();
+        const nameid = util.makeNameID(data.type, editorElements.nameidRecords);
+
+        const radio = util.makeElement(
+            data,
+            uuid,
+            nameid
+        );
+
+        dataProxy.nameid = nameid;
+        dataProxy.id = uuid;
+        dataProxy.parentId = dialog.id;
+        dialog.appendChild(radio);
+
+        return dataProxy;
+    },
+
+    addCounter: function(dialog: HTMLDivElement, data: ElementsInterface["counterElement"]) {
+        if (typeof data !== 'object' || Array.isArray(data)) {
+            return;
+        }
+
+        const dataProxy = new Proxy({ ...data }, {
+            set(obj, key: string, value) {
+                const objid = obj.id;
+
+                switch (key) {
+                    case 'nameid':
+                        if (util.nameidValidChange(value, counter)) {
+                            obj[key] = value;
+                            counter.dataset.nameid = value;
+                        } else {
+                            showMessageBox({
+                                type: 'warning',
+                                title: 'Notice',
+                                message: 'Name already exists.'
+                            });
+                        }
+                        break;
+                    case 'top':
+                        if (editorElements.maxHeight >= value) {
+                            obj[key] = parseInt(value);
+                            counter.style.top = value + 'px';
+                        } else {
+                            counter.style.top = editorElements.maxHeight + 'px';
+                        }
+                        break;
+                    case 'left':
+                        obj[key] = parseInt(value);
+                        counter.style.left = value + 'px';
+                        break;
+                    case 'color':
+                        if (util.isValidColor(value)) {
+                            obj[key] = value;
+                            document.getElementById("counter-decrease-" + uuid).style.color = value;
+                            document.getElementById("counter-increase-" + uuid).style.color = value;
+                        }
+                        break;
+                    case 'space':
+                        if (value < 0) {
+                            value = 0;
+                        }
+                        obj[key] = parseInt(value);
+                        document.getElementById("counter-value-" + uuid).style.padding = '0px ' + value + 'px';
+                        break;
+                    case 'startval':
+                        if (value < obj["maxval"]) {
+                            obj[key] = parseInt(value);
+                            document.getElementById("counter-value-" + uuid).textContent = value;
+                        }
+                        break;
+                    case 'maxval':
+                        if (value > obj["startval"]) {
+                            obj[key] = parseInt(value);
+                        }
+                        break;
+                    case 'isVisible':
+                        obj[key] = value === 'true';
+                        counter.classList.add("design-hidden");
+                        if (obj[key]) {
+                            counter.classList.remove("design-hidden");
+                        }
+                        break;
+                    case 'isEnabled':
+                        obj[key] = value === 'true';
+                        counter.classList.add("disabled-div");
+                        if (obj[key]) {
+                            counter.classList.remove("disabled-div");
+                        }
+                        break;
+                    default:
+                        obj[key] = value;
+                }
+
+                const element = dialogContainer.getElement(objid);
+                if (element) {
+                    editor.editorEvents.emit('selectElement', element);
+                }
+
+                return true;
+            }
+        })
+
+        const uuid = uuidv4();
+        const nameid = util.makeNameID(data.type, editorElements.nameidRecords);
+
+        const counter = util.makeElement(
+            data,
+            uuid,
+            nameid
+        );
+
+        dataProxy.id = uuid;
+        dataProxy.nameid = nameid;
+        dataProxy.parentId = dialog.id;
+
+        dialog.appendChild(counter);
+        return dataProxy;
+    },
+
     addSlider: function (dialog, data) {
         if (typeof data !== 'object' || Array.isArray(data)) {
             return;
@@ -885,8 +832,158 @@ export const editorElements: EditorElementsInterface = {
         return dataProxy;
     },
 
-    // Add Counter
-    addCounter: function(dialog: HTMLDivElement, data: ElementsInterface["counterElement"]) {
+    addLabel: function (dialog, data) {
+        if (typeof data !== 'object' || Array.isArray(data)) {
+            return;
+        }
+
+        const dataProxy = new Proxy({ ...data }, {
+            set(obj, key: string, value) {
+
+                switch (key) {
+                    case 'top':
+                        if (value > editorElements.maxHeight) {
+                            value = editorElements.maxHeight;
+                        }
+                        // it cannot be < 0 because the input is set as
+                        // numeric non negative, the minus sign is blocked
+                        obj[key] = parseInt(value);
+                        label.style.top = value + 'px';
+                        break;
+                    case 'left':
+                        obj[key] = parseInt(value);
+                        label.style.left = value + 'px';
+                        break;
+                    case 'width':
+                        obj[key] = parseInt(value);
+                        label.style.width = value + 'px';
+                        break;
+                    case 'value':
+                        obj[key] = value;
+                        label.innerText = value;
+                        break;
+                    // case 'fontSize':
+                    //     obj[key] = value;
+                    //     label.style.fontSize = value + 'px';
+                    //     break;
+                    case 'fontColor':
+                        if (util.isValidColor(value)) {
+                            obj[key] = value;
+                            label.style.color = value;
+                        }
+                        break;
+                    case 'isVisible':
+                        obj[key] = value === 'true';
+                        label.classList.add("design-hidden");
+                        if (obj[key]) {
+                            label.classList.remove("design-hidden");
+                        }
+                        break;
+                    default:
+                        obj[key] = value;
+
+                }
+                return true;
+            }
+        })
+
+        const uuid = uuidv4();
+
+        const label = util.makeElement(
+            data,
+            uuid,
+            void 0,
+            editorElements.fontSize,
+            editorElements.fontFamily
+        );
+
+        dataProxy.id = uuid;
+        dataProxy.parentId = dialog.id;
+
+        dialog.appendChild(label);
+        return dataProxy;
+    },
+
+    addSeparator: function (dialog, data) {
+        if (typeof data !== 'object' || Array.isArray(data)) {
+            return;
+        }
+
+        const dataProxy = new Proxy({ ...data }, {
+            set(obj, key: string, value) {
+                const objid = obj.id;
+
+                switch (key) {
+                    case 'top':
+                        if (value > editorElements.maxHeight) {
+                            value = editorElements.maxHeight;
+                        }
+                        obj[key] = parseInt(value);
+                        separator.style.top = value + 'px';
+                        break;
+                    case 'left':
+                        obj[key] = parseInt(value);
+                        separator.style.left = value + 'px';
+                        break;
+                    case 'width':
+                        if (value > editorElements.maxWidth) {
+                            value = editorElements.maxWidth;
+                        }
+                        obj[key] = parseInt(value);
+                        separator.style.width = value + 'px';
+                        break;
+                    case 'height':
+                        if (value > editorElements.maxHeight) {
+                            value = editorElements.maxHeight;
+                        }
+                        obj[key] = parseInt(value);
+                        separator.style.height = value + 'px';
+                        break;
+                    case 'color':
+                        if (util.isValidColor(value)) {
+                            obj[key] = value;
+                            separator.style.backgroundColor = value;
+                        }
+                        break;
+                    case 'direction':
+                        obj[key] = value;
+                        dialogContainer.updateProperties(
+                            obj.id,
+                            { width: String(obj["height"]), height: String(obj["width"]) }
+                        );
+                        break;
+                    case 'isVisible':
+                        obj[key] = value === 'true';
+                        separator.classList.add("design-hidden");
+                        if (obj[key]) {
+                            separator.classList.remove("design-hidden");
+                        }
+                        break;
+                    default:
+                        obj[key] = value;
+                }
+
+                const element = dialogContainer.getElement(objid);
+                if (element) {
+                    editor.editorEvents.emit('selectElement', element);
+                }
+
+                return true;
+            }
+        })
+
+        const uuid = uuidv4();
+
+        const separator = util.makeElement(data, uuid);
+
+        dataProxy.id = uuid;
+        dataProxy.parentId = dialog.id;
+
+        dialog.appendChild(separator);
+        return dataProxy;
+    },
+
+    addContainer: function(dialog: HTMLDivElement, data: ElementsInterface["containerElement"]) {
         if (typeof data !== 'object' || Array.isArray(data)) {
             return;
         }
@@ -897,9 +994,9 @@ export const editorElements: EditorElementsInterface = {
 
                 switch (key) {
                     case 'nameid':
-                        if (util.nameidValidChange(value, counter)) {
+                        if (util.nameidValidChange(value, container)) {
                             obj[key] = value;
-                            counter.dataset.nameid = value;
+                            container.dataset.nameid = value;
                         } else {
                             showMessageBox({
                                 type: 'warning',
@@ -909,54 +1006,54 @@ export const editorElements: EditorElementsInterface = {
                         }
                         break;
                     case 'top':
-                        if (editorElements.maxHeight >= value) {
-                            obj[key] = parseInt(value);
-                            counter.style.top = value + 'px';
-                        } else {
-                            counter.style.top = editorElements.maxHeight + 'px';
+                        if (value > editorElements.maxHeight) {
+                            value = editorElements.maxHeight;
                         }
+                        obj[key] = parseInt(value);
+                        container.style.top = value + 'px';
                         break;
                     case 'left':
                         obj[key] = parseInt(value);
-                        counter.style.left = value + 'px';
+                        container.style.left = value + 'px';
                         break;
-                    case 'color':
-                        if (util.isValidColor(value)) {
-                            obj[key] = value;
-                            document.getElementById("counter-decrease-" + uuid).style.color = value;
-                            document.getElementById("counter-increase-" + uuid).style.color = value;
-                        }
-                        break;
-                    case 'space':
-                        if (value < 0) {
-                            value = 0;
+                    case 'width':
+                        if (value > editorElements.maxWidth) {
+                            value = editorElements.maxWidth;
                         }
                         obj[key] = parseInt(value);
-                        document.getElementById("counter-value-" + uuid).style.padding = '0px ' + value + 'px';
+                        container.style.width = value + 'px';
                         break;
-                    case 'startval':
-                        if (value < obj["maxval"]) {
-                            obj[key] = parseInt(value);
-                            document.getElementById("counter-value-" + uuid).textContent = value;
+                    case 'height':
+                        if (value > editorElements.maxHeight) {
+                            value = editorElements.maxHeight;
                         }
+                        obj[key] = parseInt(value);
+                        container.style.height = value + 'px';
                         break;
-                    case 'maxval':
-                        if (value > obj["startval"]) {
-                            obj[key] = parseInt(value);
-                        }
-                        break;
-                    case 'isVisible':
-                        obj[key] = value === 'true';
-                        counter.classList.add("design-hidden");
-                        if (obj[key]) {
-                            counter.classList.remove("design-hidden");
+                    case 'objViewClass':
+                        if (util.objViewClassValid(container)) {
+                            obj[key] = value;
+                            container.dataset.objViewClass = value;
+                        } else {
+                            showMessageBox({
+                                type: 'warning',
+                                title: 'Notice',
+                                message: 'Only one container per dialog can hold datasets.'
+                            });
                         }
                         break;
                     case 'isEnabled':
                         obj[key] = value === 'true';
-                        counter.classList.add("disabled-div");
+                        container.classList.add("disabled-div");
                         if (obj[key]) {
-                            counter.classList.remove("disabled-div");
+                            container.classList.remove("disabled-div");
+                        }
+                        break;
+                    case 'isVisible':
+                        obj[key] = value === 'true';
+                        container.classList.add("design-hidden");
+                        if (obj[key]) {
+                            container.classList.remove("design-hidden");
                         }
                         break;
                     default:
@@ -975,7 +1072,7 @@ export const editorElements: EditorElementsInterface = {
         const uuid = uuidv4();
         const nameid = util.makeNameID(data.type, editorElements.nameidRecords);
 
-        const counter = util.makeElement(
+        const container = util.makeElement(
             data,
             uuid,
             nameid
@@ -985,7 +1082,7 @@ export const editorElements: EditorElementsInterface = {
         dataProxy.nameid = nameid;
         dataProxy.parentId = dialog.id;
 
-        dialog.appendChild(counter);
+        dialog.appendChild(container);
         return dataProxy;
     }
 };

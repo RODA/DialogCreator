@@ -28,5 +28,5 @@ export const editorSettings: EditorSettingsInterface = {
     },
 
     // available dialog elements
-    availableElements: ['Button', 'Input', 'Checkbox', 'Radio', 'Label', 'Container', 'Select', 'Slider', 'Counter', 'Separator'],
+    availableElements: ['Button', 'Input', 'Select', 'Checkbox', 'Radio', 'Counter', 'Slider', 'Label', 'Separator', 'Container'],
 }
