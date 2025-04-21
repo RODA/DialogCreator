@@ -1,19 +1,6 @@
-export interface DialogPropertiesInterface {
-    name: string;
-    title: string;
-    width: number;
-    height: number;
-    fontSize: number;
-    background?: string;
-}
-export interface EditorSettingsInterface {
-    fontSize: number;
-    fontFamily: string;
-    dialog: DialogPropertiesInterface;
-    availableElements: string[];
-}
+import * as interfaces from '../library/interfaces';
 
-export const editorSettings: EditorSettingsInterface = {
+export const editorSettings: interfaces.EditorSettings = {
     fontSize: 13,
     fontFamily: 'Arial',
 

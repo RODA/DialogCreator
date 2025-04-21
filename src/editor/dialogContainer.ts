@@ -1,27 +1,11 @@
-import { DialogPropertiesInterface } from './settings';
 import * as interfaces from '../library/interfaces';
 
 import { showMessage } from '../communication';
 import { editor } from './editor';
 
-interface DialogContainerInterface {
-    properties: DialogPropertiesInterface;
-    elements: { [key: string]: interfaces.Elements[keyof interfaces.Elements] };
-    syntax: {
-        command: string,
-        defaultElements: []
-    };
-    initialize: (obj: DialogPropertiesInterface) => void;
-    updateDialogProperties: () => void;
-    updateProperties: (id: string, payload: { [key: string]: string }) => void;
-    addElement: (element: interfaces.Elements[keyof interfaces.Elements]) => void;
-    removeElement: (elId: string) => void;
-    getElement: (elId: string) => interfaces.Elements[keyof interfaces.Elements] | undefined;
-}
+export const dialogContainer: interfaces.DialogContainer = {
 
-export const dialogContainer: DialogContainerInterface = {
-
-    properties: {} as DialogPropertiesInterface,
+    properties: {} as interfaces.DialogProperties,
     elements: {},
     syntax: {
         command: '',

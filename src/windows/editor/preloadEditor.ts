@@ -2,7 +2,6 @@
 import { editor } from "../../editor/editor";
 import * as interfaces from '../../library/interfaces';
 import { showMessage } from "../../communication";
-import { DialogPropertiesInterface } from '../../editor/settings';
 
 // helpers for when enter key is pressed
 let elementSelected = false;
@@ -15,16 +14,18 @@ let elementSelected = false;
 const onInitializeDialogProperties = () => {
     // add dialog props
     const properties: NodeListOf<HTMLInputElement> = document.querySelectorAll('#dialog-properties [id^="dialog"]');
-    editor.editorEvents.on('initializeDialogProperties', function (props) {
+    editor.editorEvents.on('initializeDialogProperties', function (props: interfaces.DialogProperties) {
         for (const el of properties) {
-            const key = el.getAttribute('name');
-            el.value = props[key];
+            const key = el.getAttribute('name') as keyof interfaces.DialogProperties;
+            if (key) {
+            el.value = props[key] as string;
+            }
         }
-    });
+        });
 
     // TODO -- ramas aici
     const getAllProp = (properties: NodeListOf<HTMLInputElement>) => {
-        const obj = {} as DialogPropertiesInterface;
+        const obj = {} as interfaces.DialogProperties;
         properties.forEach((el) => {
             // const key = el.getAttribute('name') as keyof DialogPropertiesInterface;
             // obj[key] = el.value;

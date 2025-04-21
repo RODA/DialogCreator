@@ -1,3 +1,5 @@
+import { EventEmitter } from 'events';
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type buttonElementType = {
     parentId: string;
@@ -181,6 +183,26 @@ export interface Elements {
     containerElement: containerElementType;
 }
 
+
+export interface Editor {
+    dialog: HTMLDivElement;
+    dialogId: string;
+    selectedElementId: string;
+    editorEvents: EventEmitter;
+    make: (dialogContainer: HTMLDivElement) => void;
+    updateDialogProperties: (props: DialogProperties) => void;
+    drawAvailableElements: () => HTMLUListElement;
+    deselectAll: () => void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    addElementToDialog: (type: string, withData?: any) => void;
+    addElementListeners: <T extends Elements[keyof Elements] >(element: T) => void;
+    addDragAndDrop: (element: HTMLElement) => void;
+    updateElement: (payload: { [key: string]: string }) => void;
+    removeSelectedElement: () => void;
+    clearPropsList: () => void;
+}
+
+
 export interface EditorElements {
     nameidRecords: Record<string, number>;
     fontSize: number;
@@ -284,4 +306,34 @@ export interface ShowMessage {
     type: 'info' | 'error' | 'question' | 'warning';
     title: string;
     message: string;
+}
+
+export interface DialogProperties {
+    name: string;
+    title: string;
+    width: number;
+    height: number;
+    fontSize: number;
+    background?: string;
+}
+export interface EditorSettings {
+    fontSize: number;
+    fontFamily: string;
+    dialog: DialogProperties;
+    availableElements: string[];
+}
+
+export interface DialogContainer {
+    properties: DialogProperties;
+    elements: { [key: string]: Elements[keyof Elements] };
+    syntax: {
+        command: string,
+        defaultElements: []
+    };
+    initialize: (obj: DialogProperties) => void;
+    updateDialogProperties: () => void;
+    updateProperties: (id: string, payload: { [key: string]: string }) => void;
+    addElement: (element: Elements[keyof Elements]) => void;
+    removeElement: (elId: string) => void;
+    getElement: (elId: string) => Elements[keyof Elements] | undefined;
 }

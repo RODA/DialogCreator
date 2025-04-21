@@ -1,31 +1,13 @@
 import { showMessage } from './../communication';
 import { EventEmitter } from 'events';
-import { DialogPropertiesInterface, editorSettings } from './settings';
+import { editorSettings } from './settings';
 import * as interfaces from '../library/interfaces';
 import { elements } from './elements';
 import { v4 as uuidv4 } from 'uuid';
 import { editorElements, editorElementsTypes } from './editorElements';
 import { dialogContainer } from './dialogContainer';
 
-interface EditorInterface {
-    dialog: HTMLDivElement;
-    dialogId: string;
-    selectedElementId: string;
-    editorEvents: EventEmitter;
-    make: (dialogContainer: HTMLDivElement) => void;
-    updateDialogProperties: (props: DialogPropertiesInterface) => void;
-    drawAvailableElements: () => HTMLUListElement;
-    deselectAll: () => void;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    addElementToDialog: (type: string, withData?: any) => void;
-    addElementListeners: <T extends interfaces.Elements[keyof interfaces.Elements] >(element: T) => void;
-    addDragAndDrop: (element: HTMLElement) => void;
-    updateElement: (payload: { [key: string]: string }) => void;
-    removeSelectedElement: () => void;
-    clearPropsList: () => void;
-}
-
-export const editor: EditorInterface = {
+export const editor: interfaces.Editor = {
 
     dialog: document.createElement('div'),
     dialogId: '',
