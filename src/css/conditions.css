@@ -4,7 +4,7 @@ html, body{
     padding: 0;
     background-color: #ffffff;
     font-family: Arial, Helvetica, sans-serif;
-    font-size: 0.9rem;
+    font-size: 13px;
 }
 
 rect{
@@ -16,37 +16,18 @@ circle, path {
 .container{
     display: flex;
     flex-direction: column;
+    margin-left: 5px;
 }
 .container div{
     align-items: stretch;
     margin: 5px 0px;
 }
 #conditions{
-    width: 99%;
+    width: 98.3%;
     height: 180px;
     resize: none;
 }
-#saveConditions:focus{
-    outline: none;
-}
-#saveConditions{
-    margin-top: 0px;
-    width: 140px;
-    height: 25px;
-    cursor: pointer;
-    background-color: #f0f0f0;
-    border-top: 2px solid #eaeaea;
-    border-left:2px solid #eaeaea;
-    border-bottom: 2px solid #BBB;
-    border-right: 2px solid #BBB;
-}
-#saveConditions:active{
-    border-left:2px solid #BBB;
-    border-top: 2px solid #BBB;
-    border-right:2px solid #d6d6d6;
-    border-bottom: 2px solid #d6d6d6;
-    transition: all;
-}
+
 #errors span{
     color:red;
     font-weight: 600;
@@ -55,3 +36,4 @@ circle, path {
     margin: 5px 0px;
     line-height: 22px;
 }
+
