@@ -1,4 +1,5 @@
 
+import { ipcRenderer } from "electron";
 import { editor } from "../../editor/editor";
 import { interfaces } from '../../interfaces/editor';
 import { showMessage } from "../../communication";
@@ -60,6 +61,7 @@ const onInitializeDialogProperties = () => {
     }
 
 }
+
 const onElementSelected = () => {
 
     const propertyUpdate = (ev: FocusEvent) => {
@@ -169,6 +171,7 @@ const addAvailableElementsToEditor = () => {
         showMessage({ type: 'error', title: 'Error', message: 'Cound not find the element list in editor window. Please check the HTML!' })
     }
 }
+
 const removeElementFromDialog = () => {
     // remove on button click
     document.getElementById('removeElement').addEventListener('click', editor.removeSelectedElement);
@@ -198,6 +201,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     addAvailableElementsToEditor();
     removeElementFromDialog();
+
+
+    document.getElementById('conditions').addEventListener('click', function () {
+        // const id = (document.getElementById('elparentId') as HTMLInputElement).value;
+        const element = editor.getElementFromContainer();
+
+        ipcRenderer.send(
+            'conditionsData',
+            {
+                'id': element.id,
+                'name': element.nameid,
+                'conditions': element.conditions
+            }
+        );
+    });
 
 })
 

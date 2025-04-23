@@ -3,6 +3,9 @@ import { Elements } from './elements';
 import { DialogProperties } from './dialogContainer';
 
 
+type AnyElement = Elements[keyof Elements];
+type keyofAnyElement = keyof AnyElement;
+
 export interface Editor {
     dialog: HTMLDivElement;
     dialogId: string;
@@ -18,6 +21,7 @@ export interface Editor {
     updateElement: (payload: { [key: string]: string }) => void;
     removeSelectedElement: () => void;
     clearPropsList: () => void;
+    getElementFromContainer: () => AnyElement;
 }
 
 export interface EditorSettings {
@@ -94,9 +98,6 @@ export interface EditorElements {
     ) => Elements["containerElement"];
     // [propName: string]: any;
 }
-
-type AnyElement = Elements[keyof Elements];
-type keyofAnyElement = keyof AnyElement;
 
 export interface interfaces {
     AnyElement: AnyElement;

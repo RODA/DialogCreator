@@ -13,6 +13,7 @@ export const editor: interfaces['Editor'] = {
     dialogId: '',
     selectedElementId: '',
     editorEvents: new EventEmitter(),
+
     make: (dialogContainer: HTMLDivElement) => {
 
         const newDialogID = uuidv4();
@@ -43,7 +44,7 @@ export const editor: interfaces['Editor'] = {
             editorSettings.dialog.height - 25 // - gutter
         )
     },
-    // update paper
+
     // updateDialogProperties: function (props) {
     updateDialogProperties: function () {
 
@@ -124,6 +125,7 @@ export const editor: interfaces['Editor'] = {
         //     showMessage({ type: 'info', message: "Please create a new dialog first.", title: "No dialog" });
         // }
     },
+
     // add listener to the element
     addElementListeners(element) {
         const htmlCreatedElement = document.getElementById(element.id);
@@ -269,5 +271,9 @@ export const editor: interfaces['Editor'] = {
 
         // disable buttons
         (document.getElementById('removeElement') as HTMLButtonElement).disabled = true;
+    },
+
+    getElementFromContainer: function() {
+        return dialogContainer.getElement(editor.selectedElementId);
     },
 }
