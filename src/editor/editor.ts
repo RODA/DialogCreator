@@ -1,13 +1,13 @@
 import { showMessage } from './../communication';
 import { EventEmitter } from 'events';
 import { editorSettings } from './settings';
-import * as interfaces from '../library/interfaces';
+import { interfaces, EditorElementsTypes } from '../interfaces/editor';
 import { elements } from './elements';
 import { v4 as uuidv4 } from 'uuid';
-import { editorElements, editorElementsTypes } from './editorElements';
+import { editorElements } from './editorElements';
 import { dialogContainer } from './dialogContainer';
 
-export const editor: interfaces.Editor = {
+export const editor: interfaces['Editor'] = {
 
     dialog: document.createElement('div'),
     dialogId: '',
@@ -104,14 +104,14 @@ export const editor: interfaces.Editor = {
         }
         // get passed or default element settings
         let dataSettings;
-        const elementType = (type.toLowerCase() + 'Element') as keyof interfaces.Elements;
+        const elementType = (type.toLowerCase() + 'Element') as keyof interfaces['Elements'];
         if (withData !== null) {
             dataSettings = withData;
         } else {
             dataSettings = elements[elementType];
         }
 
-        const createdElement = editorElements['add' + type as editorElementsTypes](
+        const createdElement = editorElements[('add' + type) as EditorElementsTypes](
             editor.dialog,
             dataSettings
         );

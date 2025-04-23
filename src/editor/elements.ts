@@ -1,6 +1,6 @@
-import * as interfaces from '../library/interfaces';
+import { Elements } from '../interfaces/elements';
 
-export const elements: interfaces.Elements = {
+export const elements: Elements = {
     buttonElement: {
         parentId: '',
         id: '',

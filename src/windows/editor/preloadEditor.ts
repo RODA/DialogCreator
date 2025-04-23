@@ -1,7 +1,8 @@
 
 import { editor } from "../../editor/editor";
-import * as interfaces from '../../library/interfaces';
+import { interfaces } from '../../interfaces/editor';
 import { showMessage } from "../../communication";
+import { utils } from "../../library/utils";
 
 // helpers for when enter key is pressed
 let elementSelected = false;
@@ -11,12 +12,13 @@ let elementSelected = false;
 // editor -- the whole window
 // dialogContainer --
 
+
 const onInitializeDialogProperties = () => {
     // add dialog props
     const properties: NodeListOf<HTMLInputElement> = document.querySelectorAll('#dialog-properties [id^="dialog"]');
-    editor.editorEvents.on('initializeDialogProperties', function (props: interfaces.DialogProperties) {
+    editor.editorEvents.on('initializeDialogProperties', function (props: interfaces['DialogProperties']) {
         for (const el of properties) {
-            const key = el.getAttribute('name') as keyof interfaces.DialogProperties;
+            const key = el.getAttribute('name') as keyof interfaces['DialogProperties'];
             if (key) {
             el.value = props[key] as string;
             }
@@ -25,9 +27,9 @@ const onInitializeDialogProperties = () => {
 
     // TODO -- ramas aici
     const getAllProp = (properties: NodeListOf<HTMLInputElement>) => {
-        const obj = {} as interfaces.DialogProperties;
+        const obj = {} as interfaces['DialogProperties'];
         properties.forEach((el) => {
-            // const key = el.getAttribute('name') as keyof DialogPropertiesInterface;
+            // const key = el.getAttribute('name') as keyof interfaces['DialogProperties'];
             // obj[key] = el.value;
             obj.name = el.value;
         });
@@ -76,7 +78,7 @@ const onElementSelected = () => {
     }
 
     // show element properties
-    editor.editorEvents.on('selectElement', function (element: interfaces.Elements[keyof interfaces.Elements]) {
+    editor.editorEvents.on('selectElement', function (element: interfaces['AnyElement']) {
 
         elementSelected = true;
         // update props tab
@@ -90,7 +92,9 @@ const onElementSelected = () => {
                 // show main element
                 item.disabled = false;
                 item.parentElement.classList.remove('hidden-element');
-                item.value = String(element[item.name as keyof interfaces.Elements[keyof interfaces.Elements]]);
+                // item.value = String(element[item.name as keyof ElementsInterface[keyof ElementsInterface]]);
+                // item.value = String(element[item.name as interfaces['keyofAnyElement']]);
+                item.value = utils.getElementValue(element, item.name);
 
                 item.removeEventListener('blur', propertyUpdate);
                 item.addEventListener('blur', propertyUpdate);

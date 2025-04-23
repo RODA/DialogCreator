@@ -1,11 +1,10 @@
-import * as interfaces from '../library/interfaces';
-
+import { interfaces } from '../interfaces/dialogContainer';
 import { showMessage } from '../communication';
 import { editor } from './editor';
 
-export const dialogContainer: interfaces.DialogContainer = {
+export const dialogContainer: interfaces['DialogContainer'] = {
 
-    properties: {} as interfaces.DialogProperties,
+    properties: {} as interfaces['DialogProperties'],
     elements: {},
     syntax: {
         command: '',

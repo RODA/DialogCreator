@@ -1,8 +1,11 @@
 import { dialogContainer } from '../editor/dialogContainer';
-import * as interfaces from '../library/interfaces';
+import { Utils } from '../interfaces/utils';
 
+export const utils: Utils = {
 
-export const utils: interfaces.Utils = {
+    getElementValue: function(element, key) {
+        return String(element[key]);
+    },
 
     getKeys: function(obj) {
         if (obj === null) return([]);

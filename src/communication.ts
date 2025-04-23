@@ -1,10 +1,10 @@
 // encapsulation
 
 import { ipcRenderer } from 'electron';
-import * as interfaces from '../src/library/interfaces';
+import { ShowMessage } from '../src/interfaces/communication';
 
 
-export const showMessage = (obj: interfaces.ShowMessage) => {
+export const showMessage = (obj: ShowMessage) => {
     ipcRenderer.send('showDialogMessage', obj);
 }
 

@@ -1,6 +1,6 @@
-import * as interfaces from '../library/interfaces';
+import { EditorSettings } from '../interfaces/editor';
 
-export const editorSettings: interfaces.EditorSettings = {
+export const editorSettings: EditorSettings = {
     fontSize: 13,
     fontFamily: 'Arial',
 
@@ -15,5 +15,16 @@ export const editorSettings: interfaces.EditorSettings = {
     },
 
     // available dialog elements
-    availableElements: ['Button', 'Input', 'Select', 'Checkbox', 'Radio', 'Counter', 'Slider', 'Label', 'Separator', 'Container'],
+    availableElements: [
+        'Button',
+        'Input',
+        'Select',
+        'Checkbox',
+        'Radio',
+        'Counter',
+        'Slider',
+        'Label',
+        'Separator',
+        'Container',
+    ],
 }

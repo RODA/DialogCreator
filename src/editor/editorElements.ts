@@ -1,13 +1,12 @@
 import { v4 as uuidv4 } from 'uuid';
 import { dialogContainer } from './dialogContainer';
-import * as interfaces from '../library/interfaces';
+import { interfaces } from '../interfaces/editor';
 import { utils } from '../library/utils';
 import { showError } from '../communication';
 import { editor } from './editor';
-export type editorElementsTypes = 'addButton' | 'addCheckbox' | 'addRadio' | 'addLabel' | 'addInput' | 'addSlider' | 'addSeparator' | 'addSelect' | 'addCounter' | 'addContainer';
 
 
-export const editorElements: interfaces.EditorElements = {
+export const editorElements: interfaces['EditorElements'] = {
     nameidRecords: {},
 
     // defaults
@@ -524,7 +523,7 @@ export const editorElements: interfaces.EditorElements = {
         return dataProxy;
     },
 
-    addCounter: function(dialog: HTMLDivElement, data: interfaces.Elements["counterElement"]) {
+    addCounter: function(dialog: HTMLDivElement, data) {
         if (typeof data !== 'object' || Array.isArray(data)) {
             return;
         }
@@ -900,7 +899,7 @@ export const editorElements: interfaces.EditorElements = {
         return dataProxy;
     },
 
-    addContainer: function(dialog: HTMLDivElement, data: interfaces.Elements["containerElement"]) {
+    addContainer: function(dialog: HTMLDivElement, data) {
         if (typeof data !== 'object' || Array.isArray(data)) {
             return;
         }
@@ -995,5 +994,3 @@ export const editorElements: interfaces.EditorElements = {
         return dataProxy;
     }
 };
-
-
