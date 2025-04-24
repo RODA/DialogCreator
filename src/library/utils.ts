@@ -340,6 +340,23 @@ export const utils: Utils = {
             customCheckbox.setAttribute('aria-checked', 'false');
             customCheckbox.style.setProperty('--checkbox-color', data.color);
 
+            const SVG_NS = "http://www.w3.org/2000/svg";
+
+            const svg = document.createElementNS(SVG_NS, 'svg');
+            svg.setAttribute('viewBox', '0 0 100 100');
+            svg.setAttribute('width', '100%');
+            svg.setAttribute('height', '100%');
+            svg.style.overflow = 'visible';
+
+            const path = document.createElementNS(SVG_NS, 'path');
+            path.setAttribute('d', 'M15 35 L48 80 L95 -35');
+            path.setAttribute('stroke', 'black');
+            path.setAttribute('stroke-width', '10');
+            path.setAttribute('fill', 'none');
+            path.setAttribute('class', 'tick-mark');
+            svg.appendChild(path);
+            customCheckbox.appendChild(svg);
+
             customCheckbox.addEventListener('click', () => {
                 const isChecked = customCheckbox.getAttribute('aria-checked') === 'true';
                 customCheckbox.setAttribute('aria-checked', isChecked ? "false" : "true");

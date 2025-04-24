@@ -214,37 +214,41 @@ body {
     display: inline-block;
     width: 100%; /* Matches the container div size */
     height: 100%;
+    position: relative;
     background-color: #fff;
     border: 1px solid #333;
     border-radius: 0.1em;
-    position: relative;
     box-sizing: border-box;
-    transition: background-color 0.2s, border-color 0.2s;
+    overflow: visible;
 }
 
 /* Style the checked state for custom checkbox */
 .custom-checkbox[aria-checked="true"] {
     background-color: var(--checkbox-color, #4caf50);
-    border-color: var(--checkbox-color, #4caf50);
+    border-color: #000;
 }
 
-/* Checkmark (proportional using em units) */
-.custom-checkbox::after {
-    content: '';
+/* SVG styling */
+.checkmark {
     position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    fill: none;
     display: none;
-    left: 28%;
-    /* Increased width to extend more towards upper-right corner */
-    width: 28%;
-    /* Increased height */
-    height: 70%;
-    border: solid white;
-    border-width: 0 0.15em 0.15em 0;
-    transform: rotate(35deg);
+    pointer-events: none;
 }
 
-/* Show checkmark when checked */
-.custom-checkbox[aria-checked="true"]::after {
+.custom-checkbox[aria-checked="true"] .checkmark {
+    display: block;
+}
+
+.tick-mark {
+    display: none;
+}
+
+.custom-checkbox[aria-checked="true"] .tick-mark {
     display: block;
 }
 
