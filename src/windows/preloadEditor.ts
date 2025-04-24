@@ -1,9 +1,10 @@
 
 import { ipcRenderer } from "electron";
-import { editor } from "../../editor/editor";
-import { interfaces } from '../../interfaces/editor';
-import { showMessage } from "../../communication";
-import { utils } from "../../library/utils";
+import { editor } from "../editor/editor";
+import { interfaces } from '../interfaces/editor';
+import { showMessage } from "../communication";
+import { utils } from "../library/utils";
+import { elements } from "../editor/elements";
 
 // helpers for when enter key is pressed
 let elementSelected = false;
@@ -55,11 +56,10 @@ const onInitializeDialogProperties = () => {
     const dialogSyntax = document.getElementById('#dialog-syntax');
     if (dialogSyntax) {
         dialogSyntax.addEventListener('click', function () {
-            // ipcRenderer.send('startSyntaxWindow', editor.getDialogSyntax());
+            // ipcRenderer.send('createSecondWindow', editor.getDialogSyntax());
             alert('click');
         });
     }
-
 }
 
 const onElementSelected = () => {
@@ -167,6 +167,30 @@ const addAvailableElementsToEditor = () => {
         elementsList.innerHTML = '';
         // add available elements to the editor window
         elementsList.appendChild(editor.drawAvailableElements());
+
+        const div = document.createElement('div');
+        div.className = 'mt-1_5';
+        const button = document.createElement('button');
+        button.className = 'custombutton';
+        button.innerText = 'Default values';
+        button.setAttribute('type', 'button');
+        button.style.width = '150px';
+        button.addEventListener('click', function () {
+            // ipcRenderer.send(
+            //     'createSecondWindow',
+            //     {
+            //         width: 640,
+            //         height: 310,
+            //         backgroundColor: '#fff',
+            //         title: 'Default valeus',
+            //         file: 'defaults.html',
+            //         elements: elements,
+            //     }
+            // );
+        });
+        div.appendChild(button);
+        elementsList.appendChild(div);
+
     } else {
         showMessage({ type: 'error', title: 'Error', message: 'Cound not find the element list in editor window. Please check the HTML!' })
     }
@@ -208,14 +232,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const element = editor.getElementFromContainer();
 
         ipcRenderer.send(
-            'conditionsData',
+            'secondWindow',
             {
-                'id': element.id,
-                'name': element.nameid,
-                'conditions': element.conditions
+                width: 640,
+                height: 310,
+                backgroundColor: '#fff',
+                title: 'Conditions for element: ' + element.nameid,
+                file: 'conditions.html',
+                conditions: element.conditions
             }
         );
     });
 
 })
 
+
+ipcRenderer.on('consolog', (event, object: any) => {
+    console.log(object);
+});

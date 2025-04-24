@@ -1,11 +1,17 @@
+import { ipcRenderer } from "electron";
 import { showMessage } from './../communication';
 import { EventEmitter } from 'events';
 import { editorSettings } from './settings';
 import { interfaces, EditorElementsTypes } from '../interfaces/editor';
-import { elements } from './elements';
+import { elements as originals } from './elements';
 import { v4 as uuidv4 } from 'uuid';
 import { editorElements } from './editorElements';
 import { dialogContainer } from './dialogContainer';
+
+let elements = { ...originals };
+ipcRenderer.on('updateElements', (event, updatedElements) => {
+    elements = { ...updatedElements };
+});
 
 export const editor: interfaces['Editor'] = {
 
