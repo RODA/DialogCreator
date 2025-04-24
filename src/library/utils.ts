@@ -333,7 +333,7 @@ export const utils: Utils = {
             element.style.height = data.size + 'px';
 
             const customCheckbox = document.createElement('div');
-            customCheckbox.id = "checkbox-" + data.uuid;
+            customCheckbox.id = "checkbox-" + uuid;
             customCheckbox.className = 'custom-checkbox';
             customCheckbox.setAttribute('role', 'checkbox');
             customCheckbox.setAttribute('tabindex', '0');
@@ -346,7 +346,7 @@ export const utils: Utils = {
             });
 
             const cover = document.createElement('div');
-            cover.id = "cover-" + data.uuid;
+            cover.id = "cover-" + uuid;
             cover.className = 'cover';
             element.appendChild(customCheckbox);
             element.appendChild(cover);
@@ -356,7 +356,7 @@ export const utils: Utils = {
             element.style.height = data.size + 'px';
 
             const customRadio = document.createElement('div');
-            customRadio.id = "radio-" + data.uuid;
+            customRadio.id = "radio-" + uuid;
             customRadio.className = 'custom-radio';
             customRadio.setAttribute('role', 'radio');
             customRadio.setAttribute('tabindex', '0');
@@ -364,7 +364,7 @@ export const utils: Utils = {
             customRadio.setAttribute('group', data.group);
 
             const cover = document.createElement('div');
-            cover.id = "cover-" + data.uuid;
+            cover.id = "cover-" + uuid;
             cover.className = 'cover';
             element.appendChild(customRadio);
             element.appendChild(cover);
@@ -439,6 +439,7 @@ export const utils: Utils = {
             element.style.backgroundColor = data.color;
         } else if (data.type == "Container") {
             element.className = 'container';
+            element.style.backgroundColor = '#ffffff';
             element.style.width = data.width + 'px';
             element.style.height = data.height + 'px';
             element.dataset.objViewClass = data.objViewClass;
