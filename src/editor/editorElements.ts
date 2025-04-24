@@ -448,6 +448,10 @@ export const editorElements: interfaces['EditorElements'] = {
                     case 'group':
                         obj[key] = value;
                         rd.setAttribute("group", value);
+                        if (rd && rd.getAttribute('aria-checked') === 'true') {
+                            utils.unselectRadioGroup(rd);
+                            rd.setAttribute('aria-checked', 'true');
+                        }
                         break;
                     case 'top':
                         if (editorElements.maxHeight >= value) {
