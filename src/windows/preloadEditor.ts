@@ -1,10 +1,10 @@
 
-import { ipcRenderer } from "electron";
+import { BrowserWindow, ipcRenderer } from "electron";
 import { editor } from "../editor/editor";
 import { interfaces } from '../interfaces/editor';
-import { showMessage } from "../communication";
+import { showError } from "../communication";
 import { utils } from "../library/utils";
-import { elements } from "../editor/elements";
+import { elements as originals } from "../editor/elements";
 
 // helpers for when enter key is pressed
 let elementSelected = false;
@@ -14,6 +14,10 @@ let elementSelected = false;
 // editor -- the whole window
 // dialogContainer --
 
+let elements = { ...originals };
+ipcRenderer.on('updateElements', (event, updatedElements) => {
+    elements = { ...updatedElements };
+});
 
 const onInitializeDialogProperties = () => {
     // add dialog props
@@ -176,23 +180,23 @@ const addAvailableElementsToEditor = () => {
         button.setAttribute('type', 'button');
         button.style.width = '150px';
         button.addEventListener('click', function () {
-            // ipcRenderer.send(
-            //     'createSecondWindow',
-            //     {
-            //         width: 640,
-            //         height: 310,
-            //         backgroundColor: '#fff',
-            //         title: 'Default valeus',
-            //         file: 'defaults.html',
-            //         elements: elements,
-            //     }
-            // );
+            ipcRenderer.send(
+                'secondWindow',
+                {
+                    width: 640,
+                    height: 480,
+                    backgroundColor: '#fff',
+                    title: 'Default values',
+                    file: 'defaults.html',
+                    elements: elements,
+                }
+            );
         });
         div.appendChild(button);
         elementsList.appendChild(div);
 
     } else {
-        showMessage({ type: 'error', title: 'Error', message: 'Cound not find the element list in editor window. Please check the HTML!' })
+        showError('Cound not find the element list in editor window. Please check the HTML!')
     }
 }
 
@@ -242,6 +246,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 conditions: element.conditions
             }
         );
+    });
+
+    ipcRenderer.on('conditionsValid', (event, args) => {
+        if (args) {
+            let window = BrowserWindow.getFocusedWindow();
+            window.close();
+        } else {
+            let message = '<p id="errors"><span>The conditions are not valid. Please check and click save again.</span><br/> For more information please consult the documentation</p>';
+
+            document.getElementById('conditions').style.height = '127px';
+            document.getElementById('conditionsInputs').insertAdjacentHTML('beforeend', message);
+        }
     });
 
 })

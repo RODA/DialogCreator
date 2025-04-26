@@ -1,30 +1,20 @@
-import { BrowserWindow, ipcRenderer } from "electron";
+import { contextBridge,  ipcRenderer } from "electron";
+import { showError } from "../communication";
+import { editor } from "../editor/editor";
 
-window.addEventListener("DOMContentLoaded", () => {
-    console.log("Preload conditions script loaded");
+const addElementsToDefaults = () => {
+    const elementsList = document.getElementById('elementsListDefaults');
+    if (elementsList) {
+        elementsList.innerHTML = '';
+        elementsList.appendChild(editor.drawAvailableElements());
+    } else {
+        showError('Cound not find the element list,please check the HTML.')
+    }
+}
 
-    ipcRenderer.on('conditionsData', (event, args) => {
-        // TODO
-    });
-
-    ipcRenderer.on('loadConditions', (event, args) => {
-        console.log("Load conditions data");
-    });
-
-
-    document.getElementById('saveConditions').addEventListener('click', function () {
-        // TODO
-    });
-
-    ipcRenderer.on('conditionsValid', (event, args) => {
-        if(args) {
-            let window = BrowserWindow.getFocusedWindow();
-            window.close();
-        } else {
-            let message = '<p id="errors"><span>The conditions are not valid. Please check and click save again.</span><br/> For more information please consult the documentation</p>';
-
-            document.getElementById('conditions').style.height = '127px';
-            document.getElementById('conditionsInputs').insertAdjacentHTML('beforeend', message);
-        }
-    });
+contextBridge.exposeInMainWorld('electronAPI', {
+    onPopulateDefaults: (callback: (args: any) => void) => {
+        ipcRenderer.on('populateDefaults', (event, args) => callback(args));
+    },
+    addElementsToDefaults
 });

@@ -4,7 +4,7 @@ process.env.NODE_ENV = 'development';
 // process.env.NODE_ENV = 'production';
 
 import { app, BrowserWindow, dialog, ipcMain } from "electron";
-import { Elements } from './interfaces/elements';
+import * as fs from "fs";
 import * as path from "path";
 
 let editorWindow: BrowserWindow = null;
@@ -73,14 +73,13 @@ function createSecondWindow(args: { [key: string]: any }) {
       title: args.title,
       webPreferences: {
           nodeIntegration: true,
-          contextIsolation: process.env.NODE_ENV !== "development" ? true : false,
+          contextIsolation: true,
           sandbox: false,
           preload: path.join(__dirname, "windows/preloadSecond.js"),
       },
       autoHideMenuBar: true,
       resizable: false,
   });
-
 
 
   // and load the index.html of the app.
@@ -101,8 +100,21 @@ function createSecondWindow(args: { [key: string]: any }) {
 
   if (process.env.NODE_ENV === "development") {
       // Open the DevTools.
-      // secondWindow.webContents.openDevTools();
+      secondWindow.webContents.openDevTools();
   }
+
+
+  secondWindow.webContents.on("did-finish-load", () => {
+    switch (args.file) {
+      case 'defaults.html':
+        secondWindow.webContents.send("populateDefaults", args.elements);
+        break;
+      case 'conditions.html':
+        break;
+      default:
+        break;
+    }
+  });
 
 }
 
