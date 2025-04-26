@@ -2,7 +2,7 @@ import { ipcRenderer } from "electron";
 import { showMessage } from './../communication';
 import { EventEmitter } from 'events';
 import { editorSettings } from './settings';
-import { interfaces, EditorElementsTypes } from '../interfaces/editor';
+import { interfaces, AddedElements } from '../interfaces/editor';
 import { elements as originals } from './elements';
 import { v4 as uuidv4 } from 'uuid';
 import { editorElements } from './editorElements';
@@ -81,44 +81,33 @@ export const editor: interfaces['Editor'] = {
 
     // called right after make
     drawAvailableElements: () => {
+        const availableElements = Object.keys(editorElements)
+            .filter(str => str.startsWith("add"))
+            .map(str => str.slice(3));
+
         const ul = document.createElement('ul');
         ul.setAttribute('id', 'paperAvailableElements');
-        for (const element of editorSettings.availableElements) {
+        for (const element of availableElements) {
             const li = document.createElement('li');
             li.setAttribute('id', uuidv4());
             li.innerHTML = element;
             li.addEventListener('click', () => {
-                editor.addElementToDialog(element, null);
-            })
+                const elementType = (element.toLowerCase() + 'Element') as keyof interfaces['Elements'];
+                editor.addElementToDialog(
+                    element,
+                    elements[elementType],
+                );
+            });
             ul.appendChild(li);
         }
         return ul;
     },
 
     // add new element on dialog
-    addElementToDialog: function (type, withData) {
-        // check for method
-        if (
-            !editorSettings.availableElements.includes(type) ||
-            !Object.hasOwn(editorElements, 'add' + type)
-        ){
-            showMessage({
-                type: 'info',
-                title: 'Notice',
-                message: "Element type not available. Probably functionality not added."
-            })
-            return;
-        }
-        // get passed or default element settings
-        let dataSettings;
-        const elementType = (type.toLowerCase() + 'Element') as keyof interfaces['Elements'];
-        if (withData !== null) {
-            dataSettings = withData;
-        } else {
-            dataSettings = elements[elementType];
-        }
-
-        const createdElement = editorElements[('add' + type) as EditorElementsTypes](
+    addElementToDialog: function (element, dataSettings) {
+        const createdElement = editorElements[
+            ('add' + element) as AddedElements<interfaces['EditorElements']>
+        ] (
             editor.dialog,
             dataSettings
         );

@@ -28,20 +28,29 @@ export interface EditorSettings {
     fontSize: number;
     fontFamily: string;
     dialog: DialogProperties;
-    availableElements: string[];
 }
 
-export type EditorElementsTypes =
-    'addButton' |
-    'addInput' |
-    'addSelect' |
-    'addCheckbox' |
-    'addRadio' |
-    'addCounter' |
-    'addSlider' |
-    'addLabel' |
-    'addSeparator' |
-    'addContainer';
+/* -- no longer needed -- */
+// export type EditorElementsTypes =
+//     'addButton' |
+//     'addInput' |
+//     'addSelect' |
+//     'addCheckbox' |
+//     'addRadio' |
+//     'addCounter' |
+//     'addSlider' |
+//     'addLabel' |
+//     'addSeparator' |
+//     'addContainer';
+
+/* -- automatically generate EditorElementsTypes -- */
+export type AddedElements<T> = {
+    [K in keyof T]: K extends `add${string}`
+        ? T[K] extends (...args: any[]) => any
+        ? K
+        : never
+        : never;
+    }[keyof T];
 
 
 export interface EditorElements {
@@ -107,4 +116,3 @@ export interface interfaces {
     EditorElements: EditorElements;
     DialogProperties: DialogProperties;
 }
-

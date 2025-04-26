@@ -13,18 +13,4 @@ export const editorSettings: EditorSettings = {
         fontSize: 13,
         background: '#FFFFFF',
     },
-
-    // available dialog elements
-    availableElements: [
-        'Button',
-        'Input',
-        'Select',
-        'Checkbox',
-        'Radio',
-        'Counter',
-        'Slider',
-        'Label',
-        'Separator',
-        'Container',
-    ],
 }
