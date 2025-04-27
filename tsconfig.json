@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
+    "target": "ES2022",
     "module": "commonjs",
+    "strict": true,
     "noImplicitAny": true,
-    "sourceMap": true,
+    "inlineSourceMap": true,
     "outDir": "dist",
     "baseUrl": ".",
     "paths": {
