@@ -1,56 +1,65 @@
-// Setting ENVIROMENT
+// Setting ENVIRONMENT
 process.env.NODE_ENV = 'development';
-// Need this
 // process.env.NODE_ENV = 'production';
 
-import { app, BrowserWindow, dialog, ipcMain } from "electron";
-import * as fs from "fs";
+const production = process.env.NODE_ENV === 'production';
+const development = process.env.NODE_ENV === 'development';
+const OS_Windows = process.platform == 'win32';
+
+import { app, BrowserWindow, dialog, ipcMain, globalShortcut } from "electron";
 import * as path from "path";
 
-let editorWindow: BrowserWindow = null;
-let conditionsWindow: BrowserWindow = null;
-let secondWindow: BrowserWindow = null;
+let editorWindow: BrowserWindow;
+let secondWindow: BrowserWindow;
 
 function createMainWindow() {
-  // Create the browser window.
-  editorWindow = new BrowserWindow({
-    title: 'Dialog creator',
-    webPreferences: {
-      preload: path.join(__dirname, "windows/preloadEditor.js"),
-      contextIsolation: process.env.NODE_ENV !== "development",
-      // TODO -- use webpack to enable this
-      sandbox: false
+    editorWindow = new BrowserWindow({
+        title: 'Dialog creator',
+        webPreferences: {
+            contextIsolation: true,
+            preload: path.join(__dirname, "preload/preloadEditor.js"),
+            // TODO -- use webpack to enable this
+            sandbox: false
+        },
+        width: 1200,
+        height: 800,
+        minWidth: 1200,
+        minHeight: 800,
+        center: true
+    });
 
-    },
-    width: 1200,
-    height: 800,
-    minWidth: 1200,
-    minHeight: 800,
-    center: true
-  });
+    // and load the index.html of the app.
+    editorWindow.loadFile(getFilePath("editor.html"));
 
-  // and load the index.html of the app.
-  // TODO -- prod/dev
-  editorWindow.loadFile(path.join(__dirname, "../src/windows/editor.html"));
+    // Open the DevTools.
+    if (development) {
+        editorWindow.webContents.openDevTools();
+    }
 
-  // Open the DevTools.
-  if (process.env.NODE_ENV === 'development') {
-    editorWindow.webContents.openDevTools();
-  }
-
-  // Build menu from template
-  // const mainMenu = Menu.buildFromTemplate(mainMenuTemplate);
-  // Insert menu
-  // Menu.setApplicationMenu(mainMenu);
+    // Build menu from template
+    // const mainMenu = Menu.buildFromTemplate(mainMenuTemplate);
+    // Insert menu
+    // Menu.setApplicationMenu(mainMenu);
 
 }
 
 app.whenReady().then(() => {
-  createMainWindow();
+    createMainWindow();
+    setupIPC();
+    const success = globalShortcut.register('CommandOrControl+Q', () => {
+        quitApp();
+    });
+    if (!success) {
+        console.error("Global shortcut registration failed");
+    }
 });
 
 app.on("window-all-closed", () => {
-  app.quit();
+    quitApp()
+});
+
+app.on('will-quit', () => {
+    globalShortcut.unregisterAll();
 });
 
 // In this file you can include the rest of your app"s specific main process
@@ -58,103 +67,116 @@ app.on("window-all-closed", () => {
 
 function createSecondWindow(args: { [key: string]: any }) {
 
-  // let iconPath = path.join(__dirname, "../src/assets/icon.png");
-  // if (process.env.NODE_ENV !== "development") {
-  //     iconPath = path.join(path.resolve(__dirname), "../../assets/icon.png");
-  // }
+    // let iconPath = path.join(__dirname, "../src/assets/icon.png");
+    // if (process.env.NODE_ENV !== "development") {
+    //     iconPath = path.join(path.resolve(__dirname), "../../assets/icon.png");
+    // }
 
-  // Create the browser window.
-  secondWindow = new BrowserWindow({
-      width: args.width,
-      height: args.height,
-      // icon: iconPath,
-      backgroundColor: args.backgroundColor,
-      parent: editorWindow,
-      title: args.title,
-      webPreferences: {
-          nodeIntegration: true,
-          contextIsolation: true,
-          sandbox: false,
-          preload: path.join(__dirname, "windows/preloadSecond.js"),
-      },
-      autoHideMenuBar: true,
-      resizable: false,
-  });
-
-
-  // and load the index.html of the app.
-  secondWindow.loadFile(path.join(__dirname, "../src/windows", args.file));
-
-  if (process.env.NODE_ENV !== "development") {
-      secondWindow.removeMenu();
-  }
-
-  // Garbage collection handle
-  secondWindow.on('closed', function(){
-      secondWindow = null;
-  });
-
-  if (process.env.NODE_ENV !== "development") {
-    secondWindow.removeMenu();
-  }
-
-  if (process.env.NODE_ENV === "development") {
-      // Open the DevTools.
-      secondWindow.webContents.openDevTools();
-  }
+    secondWindow = new BrowserWindow({
+        width: args.width,
+        height: args.height,
+        // icon: iconPath,
+        backgroundColor: args.backgroundColor,
+        parent: editorWindow,
+        title: args.title,
+        webPreferences: {
+            nodeIntegration: true, // allows using import { ipcRenderer } from "electron"; directly in renderer
+            contextIsolation: true, // protects the context of the window, so that preload is needed (if false, preload is not needed)
+            preload: path.join(__dirname, "preload/preloadSecond.js"),
+            sandbox: false,
+        },
+        autoHideMenuBar: development ? false : true,
+        resizable: false,
+    });
 
 
-  secondWindow.webContents.on("did-finish-load", () => {
-    switch (args.file) {
-      case 'defaults.html':
-        secondWindow.webContents.send("populateDefaults", args.elements);
-        break;
-      case 'conditions.html':
-        break;
-      default:
-        break;
+    // and load the index.html of the app.
+    secondWindow.loadFile(path.join(__dirname, "../src/pages", args.file));
+
+    // Garbage collection handle
+    secondWindow.on('closed', function() {
+        if (editorWindow && !editorWindow.isDestroyed()) {
+            editorWindow.webContents.send('removeCover');
+            consolog('secondWindow closed');
+        }
+    });
+
+    if (development) {
+        // Open the DevTools.
+        secondWindow.webContents.openDevTools();
     }
-  });
+
+
+    secondWindow.webContents.on("did-finish-load", () => {
+        switch (args.file) {
+        case 'defaults.html':
+            secondWindow.webContents.send("populateDefaults", args.elements);
+            break;
+        case 'conditions.html':
+            break;
+        default:
+            break;
+        }
+        if (editorWindow && !editorWindow.isDestroyed()) {
+            editorWindow.webContents.send('addCover');
+        }
+    });
 
 }
 
+function setupIPC() {
+    ipcMain.on('test', (event, args) => {
+        consolog(args);
+    });
 
-ipcMain.on('secondWindow', (event, args) => {
-  createSecondWindow(args);
-});
+    ipcMain.on('secondWindow', (event, args) => {
+        createSecondWindow(args);
+    });
 
-// send condition for validation to container
-ipcMain.on('conditionsCheck', (event, args) => {
-  editorWindow.webContents.send('conditionsCheck', args);
-});
+    // send condition for validation to container
+    ipcMain.on('conditionsCheck', (event, args) => {
+        if (editorWindow && !editorWindow.isDestroyed()) {
+            editorWindow.webContents.send('conditionsCheck', args);
+        }
+    });
 
-// send back the response
-ipcMain.on('conditionsValid', (event, args) => {
-    conditionsWindow.webContents.send('conditionsValid', args);
-});
+    ipcMain.on('showDialogMessage', (event, args) => {
+        dialog.showMessageBox(editorWindow, {
+            type: args.type,
+            title: args.title,
+            message: args.message,
+        })
+    });
 
-ipcMain.on('closeConditionsWindow', (event, arg) => {
-  if (conditionsWindow) {
-    conditionsWindow.close();
-  }
-});
+    ipcMain.on('showError', (event, message) => {
+        dialog.showMessageBox(editorWindow, {
+            type: "error",
+            title: "Error",
+            message: message
+        });
+    });
+}
 
-ipcMain.on('showDialogMessage', (event, args) => {
-  dialog.showMessageBox(editorWindow, {
-    type: args.type,
-    title: args.title,
-    message: args.message,
-  })
-});
-
-ipcMain.on('showError', (event, message) => {
-  dialog.showMessageBox(editorWindow, {
-      type: "error",
-      title: "Error",
-      message: message
-  });
-});
 
 function consolog(x: any) {
-  editorWindow.webContents.send("consolog", x);
+    if (editorWindow && !editorWindow.isDestroyed()) {
+        editorWindow.webContents.send("consolog", x);
+    }
+}
+
+async function quitApp() {
+    await Promise.all(
+        BrowserWindow.getAllWindows().map(win => {
+            if (!win.isDestroyed()) win.close();
+        })
+    );
+    app.quit();
+}
+
+function getFilePath(file: string) {
+    if (development) {
+        return path.join(__dirname, "../src/pages", file);
+    } else {
+        return path.join(__dirname, "pages", file);
+    }
 }

@@ -1,5 +1,5 @@
 
-import { BrowserWindow, ipcRenderer } from "electron";
+import { contextBridge, BrowserWindow, ipcRenderer } from "electron";
 import { editor } from "../editor/editor";
 import { interfaces } from '../interfaces/editor';
 import { showError } from "../communication";
@@ -88,7 +88,7 @@ const onElementSelected = () => {
 
         elementSelected = true;
         // update props tab
-        document.getElementById('propertiesList').classList.remove('hidden');
+        document.getElementById('propertiesList')?.classList.remove('hidden');
 
         // disable all elements and hide everything | reseting props tab
         document.querySelectorAll('#propertiesList [id^="el"]').forEach(el => {
@@ -97,7 +97,7 @@ const onElementSelected = () => {
             if (item.name in element) {
                 // show main element
                 item.disabled = false;
-                item.parentElement.classList.remove('hidden-element');
+                item.parentElement?.classList.remove('hidden-element');
                 // item.value = String(element[item.name as keyof ElementsInterface[keyof ElementsInterface]]);
                 // item.value = String(element[item.name as interfaces['keyofAnyElement']]);
                 item.value = utils.getElementValue(element, item.name);
@@ -115,19 +115,22 @@ const onElementSelected = () => {
                 }
             } else {
                 item.disabled = true;
-                item.parentElement.classList.add('hidden-element');
+                item.parentElement?.classList.add('hidden-element');
             }
         });
 
+        const colorlabel = document.getElementById('colorlabel') as HTMLLabelElement;
+
         if (element.type === 'Slider') {
-            document.getElementById('colorlabel').innerText = 'Track color';
-            document.getElementById('sliderHandleProperties').classList.remove('hidden-element');
+            colorlabel.innerText = 'Track color';
+            document.getElementById('sliderHandleProperties')?.classList.remove('hidden-element');
         } else {
-            document.getElementById('colorlabel').innerText = 'Color';
-            document.getElementById('sliderHandleProperties').classList.add('hidden-element');
+            colorlabel.innerText = 'Color';
+            document.getElementById('sliderHandleProperties')?.classList.add('hidden-element');
         }
 
 
+        const valuelabel = document.getElementById('valuelabel') as HTMLLabelElement;
         if (element.type == "Select") {
             /*
             // This works and could be used, but it is very R specific and the
@@ -145,9 +148,9 @@ const onElementSelected = () => {
                 document.getElementById('divalue').style.display = 'none';
             }
             */
-            document.getElementById('valuelabel').innerText = 'Values';
+            valuelabel.innerText = 'Values';
         } else {
-            document.getElementById('valuelabel').innerText = 'Value';
+            valuelabel.innerText = 'Value';
         }
 
 
@@ -170,7 +173,7 @@ const addAvailableElementsToEditor = () => {
     if (elementsList) {
         elementsList.innerHTML = '';
         // add available elements to the editor window
-        elementsList.appendChild(editor.drawAvailableElements());
+        elementsList.appendChild(editor.drawAvailableElements(false));
 
         const div = document.createElement('div');
         div.className = 'mt-1_5';
@@ -202,13 +205,13 @@ const addAvailableElementsToEditor = () => {
 
 const removeElementFromDialog = () => {
     // remove on button click
-    document.getElementById('removeElement').addEventListener('click', editor.removeSelectedElement);
+    document.getElementById('removeElement')?.addEventListener('click', editor.removeSelectedElement);
 
     // remove the element on delete or backspace key
     document.addEventListener('keyup', function (ev) {
         if (ev.code == 'Delete' || ev.code == 'Backspace') {
             if (elementSelected) {
-                if (document.activeElement.tagName === 'BODY') {
+                if (document.activeElement?.tagName === 'BODY') {
                     editor.removeSelectedElement();
                 }
             }
@@ -231,10 +234,13 @@ document.addEventListener('DOMContentLoaded', () => {
     removeElementFromDialog();
 
 
-    document.getElementById('conditions').addEventListener('click', function () {
+    document.getElementById('conditions')?.addEventListener('click', function () {
         // const id = (document.getElementById('elparentId') as HTMLInputElement).value;
         const element = editor.getElementFromContainer();
-
+        if (!element) {
+            showError('Could not find the element. Please check the HTML!');
+            return;
+        }
         ipcRenderer.send(
             'secondWindow',
             {
@@ -250,17 +256,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     ipcRenderer.on('conditionsValid', (event, args) => {
         if (args) {
-            let window = BrowserWindow.getFocusedWindow();
-            window.close();
+            BrowserWindow.getFocusedWindow()?.close();
         } else {
             let message = '<p id="errors"><span>The conditions are not valid. Please check and click save again.</span><br/> For more information please consult the documentation</p>';
 
-            document.getElementById('conditions').style.height = '127px';
-            document.getElementById('conditionsInputs').insertAdjacentHTML('beforeend', message);
+            const conditions = document.getElementById('conditions') as HTMLInputElement;
+            conditions.style.height = '127px';
+
+            const conditionsInputs = document.getElementById('conditionsInputs') as HTMLDivElement;
+            conditionsInputs.insertAdjacentHTML('beforeend', message);
         }
     });
 
 })
+
+ipcRenderer.on('addCover', (event, args) => {
+    document.getElementById('editorcover')?.classList.add('editorcover');
+});
+ipcRenderer.on('removeCover', (event, args) => {
+    document.getElementById('editorcover')?.classList.remove('editorcover');
+});
 
 
 ipcRenderer.on('consolog', (event, object: any) => {

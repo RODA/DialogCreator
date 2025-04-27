@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8" />
+        <title>Dialog creator</title>
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: file:;">
+        <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; img-src 'self' data: file:;">
+        <link rel="stylesheet" href="../css/global.css">
+        <link rel="stylesheet" href="../css/stylesEditor.css">
+    </head>
+
+    <body>
+        <div>
+            <div class="dialogContainer">
+                <!-- List available elements -->
+                <div class="elements" id="elementsList"></div>
+                <!-- <div>
+                    <div class="mt-1_5">
+                        <button class="custombutton" type="button" id="defaults">Default values</button>
+                    </div>
+                </div> -->
+                <!-- Dialog area -->
+                <div class="dialog">
+                    <div id="dialog"></div>
+                    <h3 id="dialog-properties_title">Dialog's properties</h3>
+                    <div id="dialog-properties">
+                        <div>
+                            <div class="dialog-properties_property">
+                                <label for="dialogName">Name</label>
+                                <input name="name" id="dialogName" />
+                            </div>
+                            <div class="dialog-properties_property">
+                                <label for="dialogTitle">Title</label>
+                                <input name="title" id="dialogTitle" />
+                            </div>
+                            <div class="dialog-properties_property">
+                                <label for="dialogWidth">Width</label>
+                                <input name="width" id="dialogWidth" />
+                            </div>
+                            <div class="dialog-properties_property">
+                                <label for="dialogHeight" class="text-center">Height</label>
+                                <input name="height" id="dialogHeight" />
+                            </div>
+                            <div class="dialog-properties_property">
+                                <label for="dialogFont" class="text-center">Font size (px)</label>
+                                <input name="fontSize" id="dialogFont" />
+                            </div>
+                            <!-- <div class="dialog-properties_property">
+                                <label for="dialogDependencies">R packages</label>
+                                <input name="dependencies" id="dialogDependencies" placeholder="semicolon (;) separated" />
+                            </div> -->
+                        </div>
+                        <div class="dialogButtons">
+                            <button id="dialog-syntax" disabled>Syntax</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Dialog elements area -->
+                <div id="properties">
+                    <div id="propertiesList" class="hidden">
+                        <!-- Dialog ID -->
+                        <input type="hidden" name="parentId" id="elparentId" />
+                        <!-- General -->
+                        <div>
+                            <h2>General</h2>
+                            <!-- all -->
+                            <div class="element-property hidden-element">
+                                <label for="eltype">Type</label>
+                                <input type="text" disabled name="type" id="eltype" readonly  class="input-as-text"/>
+                            </div>
+                            <!-- usable -->
+                            <div class="element-property hidden-element">
+                                <label for="elnameid">Name (ID)</label>
+                                <input type="text" name="nameid" id="elnameid" />
+                            </div>
+                            <!-- radio -->
+                            <div class="element-property hidden-element">
+                                <label for="elgroup">Group</label>
+                                <input type="text" name="group" id="elgroup" />
+                            </div>
+                            <!-- text -->
+                            <div class="element-property hidden-element">
+                                <label for="eltext">Text</label>
+                                <input type="text" name="text" id="eltext" />
+                            </div>
+                            <!-- label -->
+                            <div class="element-property hidden-element">
+                                <label for="ellabel">Label</label>
+                                <input type="text" name="label" id="ellabel" />
+                            </div>
+                            <!-- Radio Group -->
+                            <div class="element-property hidden-element">
+                                <label for="elradioGroup">Radio Group</label>
+                                <input type="text" name="radioGroup" id="elradioGroup" />
+                            </div>
+                        </div>
+
+                        <!-- Layout properties -->
+                        <div class="mt-1_5">
+                            <h2>Layout properties</h2>
+                            <div class="element-property hidden-element">
+                                <label for="elleft">Left</label>
+                                <input type="text" name="left" id="elleft" />
+                            </div>
+
+                            <!-- container & select -->
+                            <div class="element-property hidden-element">
+                                <label for="eltop">Top</label>
+                                <input type="text" name="top" id="eltop" />
+                            </div>
+                            <div class="element-property hidden-element">
+                                <label for="elwidth">Width</label>
+                                <input type="text" name="width" id="elwidth" />
+                            </div>
+
+                            <div class="element-property hidden-element"> <!-- button -->
+                                <label for="elmaxWidth">Width (max)</label>
+                                <input type="text" name="maxWidth" id="elmaxWidth" />
+                            </div>
+                            <div class="element-property hidden-element"> <!-- button -->
+                                <label for="ellineClamp">Lines (max)</label>
+                                <input type="text" name="lineClamp" id="ellineClamp" />
+                            </div>
+
+                            <div class="element-property hidden-element"> <!-- checkbox -->
+                                <label for="elsize">Size (px)</label>
+                                <input type="text" name="size" id="elsize" />
+                            </div>
+                            <!-- counter -->
+                            <div class="element-property hidden-element">
+                                <label for="elspace">Space (px)</label>
+                                <input type="text" name="space" id="elspace" />
+                            </div>
+
+                            <div class="element-property hidden-element">
+                                <label for="elheight">Height</label>
+                                <input type="text" name="height" id="elheight" />
+                            </div>
+
+                            <!-- Container Type -->
+                            <div class="element-property hidden-element">
+                                <label for="elobjViewClass">Object class</label>
+                                <select name="objViewClass" id="elobjViewClass">
+                                    <option value="dataSet">Dataset</option>
+                                    <option value="variable">Variable</option>
+                                </select>
+                            </div>
+                            <!-- Parent Container -->
+                            <div class="element-property hidden-element" id="parentContainer">
+                                <label for="elparentContainer">Parent</label>
+                                <input type="text" name="parentContainer" id="elparentContainer" />
+                            </div>
+
+                            <!-- label -->
+                            <div class="element-property hidden-element">
+                                <label for="elfontSize">Font size (px)</label>
+                                <input type="text" name="fontSize" id="elfontSize" />
+                            </div>
+
+                            <!-- separator -->
+                            <div class="element-property hidden-element">
+                                <label for="eldirection">Direction</label>
+                                <select name="direction" id="eldirection">
+                                    <option value="horizontal">Horizontal</option>
+                                    <option value="vertical">Vertical</option>
+                                </select>
+                            </div>
+                            <div class="element-property hidden-element">
+                                <label for="elcolor" id="colorlabel">Color</label>
+                                <input type="text" name="color" id="elcolor" />
+                            </div>
+                            <div class="element-property hidden-element">
+                                <label for="elfontColor">Font color</label>
+                                <input type="text" name="fontColor" id="elfontColor" />
+                            </div>
+
+                            <!-- Counter start val -->
+                            <div class="element-property hidden-element">
+                                <label for="elstartval">Start Val</label>
+                                <input type="text" name="startval" id="elstartval" />
+                            </div>
+                            <!-- Counter max val -->
+                            <div class="element-property hidden-element">
+                                <label for="elmaxval">Max val</label>
+                                <input type="text" name="maxval" id="elmaxval" />
+                            </div>
+
+                            <!-- select -->
+                            <div class="element-property hidden-element">
+                                <label for="eldataSource">Data source</label>
+                                <select name="dataSource" id="eldataSource">
+                                    <option value="custom">Custom</option>
+                                    <option value="fromR">R workspace</option>
+                                </select>
+                            </div>
+
+                            <!--
+                                This works and could be used, but it is very R specific and the
+                                Dialog Creator could theoretically be used for any other language
+                            -->
+                            <!-- <div class="element-property hidden-element" id="divRobjects">
+                                <label for="elRobjects">Objects</label>
+                                <select name="Robjects" id="elRobjects">
+                                    <option value="all">All</option>
+                                    <option value="df">Data frames</option>
+                                    <option value="list">Lists</option>
+                                    <option value="mat">Matrices</option>
+                                    <option value="vec">Vectors</option>
+                                </select>
+                            </div> -->
+
+                            <!-- Input val -->
+                            <div class="element-property hidden-element" id="divalue">
+                                <label for="elvalue" id="valuelabel">Value</label>
+                                <input type="text" name="value" id="elvalue" />
+                            </div>
+                            <!-- checkbox -->
+                            <div class="element-property hidden-element">
+                                <label for="elisChecked">Checked</label>
+                                <select name="isChecked" id="elisChecked">
+                                    <option value="true">Yes</option>
+                                    <option value="false">No</option>
+                                </select>
+                            </div>
+                            <!-- radiobox -->
+                            <div class="element-property hidden-element">
+                                <label for="elisSelected">Selected</label>
+                                <select name="isSelected" id="elisSelected">
+                                    <option value="true">Yes</option>
+                                    <option value="false">No</option>
+                                </select>
+                            </div>
+                        </div>
+                        <!-- isEnabled -->
+                        <div class="element-property hidden-element">
+                            <label for="elisEnabled">Enabled</label>
+                            <select name="isEnabled" id="elisEnabled">
+                                <option value="true">Yes</option>
+                                <option value="false">No</option>
+                            </select>
+                        </div>
+                        <!-- isVisible -->
+                        <div class="element-property hidden-element">
+                            <label for="elisVisible">Visible</label>
+                            <select name="isVisible" id="elisVisible">
+                                <option value="true">Show</option>
+                                <option value="false">Hide</option>
+                            </select>
+                        </div>
+                        <div class="element-property hidden-element">
+                            <label for="elonClick">Click</label>
+                            <select name="onClick" id="elonClick">
+                                <option value="run">Run Command</option>
+                                <option value="reset">Reset Dialog</option>
+                            </select>
+                        </div>
+
+                        <!-- Slider handle properties -->
+                        <div class="mt-1_5 hidden-element" id="sliderHandleProperties">
+                            <h2>Handle properties</h2>
+                            <div class="element-property hidden-element">
+                                <label for="elhandlepos">Position (%)</label>
+                                <input type="text" name="handlepos" id="elhandlepos" />
+                            </div>
+                            <div class="element-property hidden-element">
+                                <label for="elhandleshape">Shape</label>
+                                <select name="handleshape" id="elhandleshape">
+                                    <option value="triangle">Triangle</option>
+                                    <option value="circle">Circle</option>
+                                </select>
+                            </div>
+                            <div class="element-property hidden-element">
+                                <label for="elhandlecolor">Color</label>
+                                <input type="text" name="handlecolor" id="elhandlecolor" />
+                            </div>
+                            <div class="element-property hidden-element">
+                                <label for="elhandlesize">Size (px)</label>
+                                <input type="text" name="handlesize" id="elhandlesize" />
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="mt-1_5">
+                            <h2>Actions</h2>
+                            <div class="text-right">
+                                <button class="custombutton" type="button" id="conditions">Conditions</button>
+                                <button class="custombutton" type="button" disabled id="removeElement">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="editorcover"></div>
+        </div>
+    </body>
+
+</html>
