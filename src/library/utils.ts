@@ -1,5 +1,6 @@
 import { dialogContainer } from '../editor/dialogContainer';
 import { Utils } from '../interfaces/utils';
+import * as path from 'path';
 
 export const utils: Utils = {
 
@@ -201,51 +202,60 @@ export const utils: Utils = {
 	setInputFilter: function (textbox, inputFilter) {
 		// https://stackoverflow.com/questions/469357/html-text-input-allow-only-numeric-input
 		// Restricts input for the given textbox to the given inputFilter function.
-		["input", "keydown", "keyup", "mousedown", "mouseup", "select", "contextmenu", "drop"].forEach(function (event) {
-			textbox.addEventListener(event, function () {
-				if (inputFilter(this.value)) {
-					this.oldValue = this.value;
-					this.oldSelectionStart = this.selectionStart;
-					this.oldSelectionEnd = this.selectionEnd;
-					// TODO -- check next line if it is okay: https://eslint.org/docs/rules/no-prototype-builtins
-				} else if (Object.prototype.hasOwnProperty.call(this, "oldValue")) {
-					this.value = this.oldValue;
-					this.setSelectionRange(this.oldSelectionStart, this.oldSelectionEnd);
-				} else {
-					this.value = "";
-				}
-			});
-		});
+		if (!textbox) return;
+
+        const state = {
+            oldValue: "",
+            oldSelectionStart: 0,
+            oldSelectionEnd: 0
+        };
+
+        const events = ["input", "keydown", "keyup", "mousedown", "mouseup", "select", "contextmenu", "drop"];
+        events.forEach((event) => {
+            textbox.addEventListener(event, function () {
+            if (inputFilter(textbox.value)) {
+                state.oldValue = textbox.value;
+                state.oldSelectionStart = textbox.selectionStart ?? 0;
+                state.oldSelectionEnd = textbox.selectionEnd ?? 0;
+            } else if (state.oldValue !== undefined) {
+                textbox.value = state.oldValue;
+                textbox.setSelectionRange(state.oldSelectionStart, state.oldSelectionEnd);
+            } else {
+                textbox.value = "";
+            }
+            });
+        });
 	},
 
-	setOnlyNumbers: function (items) {
+	setOnlyNumbers: function (items, prefix = 'el') {
         items.forEach((item) => {
             utils.setInputFilter(
-                document.getElementById('el' + item),
+                <HTMLInputElement>document.getElementById(prefix + item),
                 function (value: string): boolean { return /^\d*$/.test(value); }
             );
         })
 	},
 
-	setOnlyNumbersWithMinus: function (items) {
+	setOnlyNumbersWithMinus: function (items, prefix = 'el') {
         items.forEach((item) => {
             utils.setInputFilter(
-                document.getElementById('el' + item),
+                <HTMLInputElement>document.getElementById(prefix + item),
                 function (value) { return /^-?\d*$/.test(value);}
             );
         });
 	},
 
-	setOnlyDouble: function (items) {
+	setOnlyDouble: function (items, prefix = 'el') {
         items.forEach((item) => {
+            const element = document.getElementById(prefix + item) as HTMLInputElement;
             utils.setInputFilter(
-                document.getElementById(item),
+                element,
                 function (value) {
                     if (value.endsWith("..") || value.endsWith(".,")) {
                         const x = value.split("");
                         x.splice(-1);
                         value = x.join("");
-                        (<HTMLInputElement>document.getElementById(item)).value = value;
+                        element.value = value;
                         return false;
                     }
                     if (value.endsWith(",")) {
@@ -253,7 +263,7 @@ export const utils: Utils = {
                         x.splice(-1);
                         x.push(".");
                         value = x.join("");
-                        (<HTMLInputElement>document.getElementById(item)).value = value;
+                        element.value = value;
                     }
                     if (value === "" || value.endsWith(".")) {
                         return true;
@@ -291,14 +301,14 @@ export const utils: Utils = {
             element.style.backgroundColor = data.color;
             element.style.maxWidth = data.maxWidth + 'px';
 
-            const lineHeight = fontSize * 1.2;
+            const lineHeight = (fontSize || 13) * 1.2;
             const paddingY = 3; // px
             const maxHeight = (lineHeight * data.lineClamp) + 3 * paddingY;
             element.style.maxHeight = maxHeight + 'px';
 
             const span = document.createElement('span');
             span.className = 'smart-button-text';
-            span.style.fontFamily = fontFamily;
+            span.style.fontFamily = fontFamily || 'Arial, Helvetica, sans-serif';
             /* --- textContent instead of innerHTML or innerText --- */
             span.textContent = data.label;
 
@@ -307,7 +317,7 @@ export const utils: Utils = {
             utils.updateButton(
                 element as HTMLDivElement,
                 data.label,
-                fontSize,
+                fontSize || 13,
                 data.lineClamp,
                 data.widthMax
             )
@@ -319,13 +329,13 @@ export const utils: Utils = {
             element.style.width = data.width + 'px';
             element.style.maxHeight = data.height + 'px';
             element.style.maxWidth = data.widthMax + 'px';
-            element.style.fontFamily = fontFamily;
+            element.style.fontFamily = fontFamily || 'Arial, Helvetica, sans-serif';
             element.style.fontSize = fontSize + 'px';
         } else if (data.type == "Select") {
             element.className = 'custom-select';
             element.style.width = data.width + 'px';
             element.style.padding = '3px';
-            element.style.fontFamily = fontFamily;
+            element.style.fontFamily = fontFamily || 'Arial, Helvetica, sans-serif';
             element.style.fontSize = fontSize + 'px';
         } else if (data.type == "Checkbox") {
             element.className = 'element-div';
@@ -364,7 +374,7 @@ export const utils: Utils = {
 
             const cover = document.createElement('div');
             cover.id = "cover-" + uuid;
-            cover.className = 'cover';
+            cover.className = 'elementcover';
             element.appendChild(customCheckbox);
             element.appendChild(cover);
         } else if (data.type == "Radio") {
@@ -382,7 +392,7 @@ export const utils: Utils = {
 
             const cover = document.createElement('div');
             cover.id = "cover-" + uuid;
-            cover.className = 'cover';
+            cover.className = 'elementcover';
             element.appendChild(customRadio);
             element.appendChild(cover);
         } else if (data.type == "Counter") {
@@ -406,7 +416,7 @@ export const utils: Utils = {
             display.dataset.nameid = nameid;
 
             if (utils.exists(fontFamily)) {
-                display.style.fontFamily = fontFamily;
+                display.style.fontFamily = fontFamily || 'Arial, Helvetica, sans-serif';
             }
 
             if (utils.exists(fontSize)) {
@@ -446,7 +456,7 @@ export const utils: Utils = {
 
         } else if (data.type == "Label") {
             element.textContent = data.value;
-            element.style.fontFamily = fontFamily;
+            element.style.fontFamily = fontFamily || 'Arial, Helvetica, sans-serif';
             element.style.fontSize = fontSize + 'px';
             element.style.color = data.fontColor || '#000000';
         } else if (data.type == "Separator") {
@@ -467,7 +477,7 @@ export const utils: Utils = {
         }
 
         if (utils.exists(fontFamily)) {
-            element.style.fontFamily = fontFamily;
+            element.style.fontFamily = fontFamily || 'Arial, Helvetica, sans-serif';
         }
 
         if (utils.exists(fontSize)) {
@@ -524,6 +534,31 @@ export const utils: Utils = {
             .filter(id => id !== null)
         )
         return !allobjs.has('dataSet');
-    }
+    },
+
+    async handleEvent(handlers, eventName, ...args) {
+        const handler = handlers[eventName];
+        if (!handler) {
+            console.error(`No handler for event: ${eventName}`);
+            return;
+        }
+        try {
+            let { module, method } = handler;
+            const modulePath = path.join(__dirname, '../modules', module);
+
+            const imported = await import(modulePath);
+
+            const container = imported.defaults ?? imported;
+            const func = container[method];
+
+            if (typeof func === 'function') {
+                return await func(...args);
+            } else {
+                console.error(`Function ${method} not found in module ${module}`);
+            }
+        } catch (error: any) {
+            console.error(`Error handling ${eventName}: ${error.message}`);
+        }
+    },
 }
 

@@ -31,7 +31,7 @@ export const editorElements: interfaces['EditorElements'] = {
     // ==============================================
     addButton: function (dialog, data) {
         if (typeof data !== 'object' || Array.isArray(data)) {
-            return;
+            showError('Invalid data type for this element.');
         }
 
         const dataProxy = new Proxy({ ...data }, {
@@ -145,7 +145,7 @@ export const editorElements: interfaces['EditorElements'] = {
 
     addInput: function (dialog, data) {
         if (typeof data !== 'object' || Array.isArray(data)) {
-            return;
+            showError('Invalid data type for this element.');
         }
 
         const dataProxy = new Proxy({ ...data }, {
@@ -235,7 +235,7 @@ export const editorElements: interfaces['EditorElements'] = {
 
     addSelect: function (dialog, data) {
         if (typeof data !== 'object' || Array.isArray(data)) {
-            return;
+            showError('Invalid data type for this element.');
         }
 
         const dataProxy = new Proxy({ ...data }, {
@@ -338,7 +338,7 @@ export const editorElements: interfaces['EditorElements'] = {
 
     addCheckbox: function (dialog, data) {
         if (typeof data !== 'object' || Array.isArray(data)) {
-            return;
+            showError('Invalid data type for this element.');
         }
 
         const dataProxy = new Proxy({ ...data }, {
@@ -393,7 +393,7 @@ export const editorElements: interfaces['EditorElements'] = {
                         break;
                     case 'isChecked':
                         obj[key] = value === 'true';
-                        document.getElementById("checkbox-" + uuid).setAttribute("aria-checked", value);
+                        document.getElementById("checkbox-" + uuid)?.setAttribute("aria-checked", value);
                         break;
                     default:
                         obj[key] = value;
@@ -428,7 +428,7 @@ export const editorElements: interfaces['EditorElements'] = {
 
     addRadio: function (dialog, data) {
         if (typeof data !== 'object' || Array.isArray(data)) {
-            return;
+            showError('Invalid data type for this element.');
         }
 
         const dataProxy = new Proxy({ ...data }, {
@@ -527,9 +527,9 @@ export const editorElements: interfaces['EditorElements'] = {
         return dataProxy;
     },
 
-    addCounter: function(dialog: HTMLDivElement, data) {
+    addCounter: function(dialog, data) {
         if (typeof data !== 'object' || Array.isArray(data)) {
-            return;
+            showError('Invalid data type for this element.');
         }
 
         const dataProxy = new Proxy({ ...data }, {
@@ -560,8 +560,14 @@ export const editorElements: interfaces['EditorElements'] = {
                     case 'color':
                         if (utils.isValidColor(value)) {
                             obj[key] = value;
-                            document.getElementById("counter-decrease-" + uuid).style.color = value;
-                            document.getElementById("counter-increase-" + uuid).style.color = value;
+                            const decrease = document.getElementById("counter-decrease-" + uuid) as HTMLDivElement;
+                            if (decrease) {
+                                decrease.style.color = value;
+                            }
+                            const increase = document.getElementById("counter-increase-" + uuid) as HTMLDivElement;
+                            if (increase) {
+                                increase.style.color = value;
+                            }
                         }
                         break;
                     case 'space':
@@ -569,12 +575,18 @@ export const editorElements: interfaces['EditorElements'] = {
                             value = 0;
                         }
                         obj[key] = parseInt(value);
-                        document.getElementById("counter-value-" + uuid).style.padding = '0px ' + value + 'px';
+                        const countervalue = document.getElementById("counter-value-" + uuid) as HTMLDivElement;
+                        if (countervalue) {
+                            countervalue.style.padding = '0px ' + value + 'px';
+                        }
                         break;
                     case 'startval':
                         if (value < obj["maxval"]) {
                             obj[key] = parseInt(value);
-                            document.getElementById("counter-value-" + uuid).textContent = value;
+                            const countervalue = document.getElementById("counter-value-" + uuid) as HTMLDivElement;
+                            if (countervalue) {
+                                countervalue.textContent = value;
+                            }
                         }
                         break;
                     case 'maxval':
@@ -628,7 +640,7 @@ export const editorElements: interfaces['EditorElements'] = {
 
     addSlider: function (dialog, data) {
         if (typeof data !== 'object' || Array.isArray(data)) {
-            return;
+            showError('Invalid data type for this element.');
         }
 
         const dataProxy = new Proxy({ ...data }, {
@@ -754,7 +766,7 @@ export const editorElements: interfaces['EditorElements'] = {
 
     addLabel: function (dialog, data) {
         if (typeof data !== 'object' || Array.isArray(data)) {
-            return;
+            showError('Invalid data type for this element.');
         }
 
         const dataProxy = new Proxy({ ...data }, {
@@ -826,7 +838,7 @@ export const editorElements: interfaces['EditorElements'] = {
 
     addSeparator: function (dialog, data) {
         if (typeof data !== 'object' || Array.isArray(data)) {
-            return;
+            showError('Invalid data type for this element.');
         }
 
         const dataProxy = new Proxy({ ...data }, {
@@ -903,9 +915,9 @@ export const editorElements: interfaces['EditorElements'] = {
         return dataProxy;
     },
 
-    addContainer: function(dialog: HTMLDivElement, data) {
+    addContainer: function(dialog, data) {
         if (typeof data !== 'object' || Array.isArray(data)) {
-            return;
+            showError('Invalid data type for this element.');
         }
 
         const dataProxy = new Proxy({ ...data }, {

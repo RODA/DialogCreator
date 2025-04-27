@@ -13,4 +13,19 @@ export const editorSettings: EditorSettings = {
         fontSize: 13,
         background: '#FFFFFF',
     },
+
+    /* -- no longer needed -- */
+    // availableElements: [
+    //     'Button',
+    //     'Input',
+    //     'Select',
+    //     'Checkbox',
+    //     'Radio',
+    //     'Counter',
+    //     'Slider',
+    //     'Label',
+    //     'Separator',
+    //     'Container',
+    // ],
+
 }

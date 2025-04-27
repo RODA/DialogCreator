@@ -29,7 +29,7 @@ export const editor: interfaces['Editor'] = {
         editor.dialog.style.position = 'relative';
         editor.dialog.style.width = editorSettings.dialog.width + 'px';
         editor.dialog.style.height = editorSettings.dialog.height + 'px';
-        editor.dialog.style.backgroundColor = editorSettings.dialog.background;
+        editor.dialog.style.backgroundColor = editorSettings.dialog.background || '#ffffff';
         editor.dialog.style.border = '1px solid gray';
         editor.dialog.addEventListener('click', (event) => {
             if ((event.target as HTMLDivElement).id === editor.dialogId) {
@@ -80,7 +80,7 @@ export const editor: interfaces['Editor'] = {
     },
 
     // called right after make
-    drawAvailableElements: () => {
+    drawAvailableElements: (defaults) => {
         const availableElements = Object.keys(editorElements)
             .filter(str => str.startsWith("add"))
             .map(str => str.slice(3));
@@ -92,11 +92,16 @@ export const editor: interfaces['Editor'] = {
             li.setAttribute('id', uuidv4());
             li.innerHTML = element;
             li.addEventListener('click', () => {
-                const elementType = (element.toLowerCase() + 'Element') as keyof interfaces['Elements'];
-                editor.addElementToDialog(
-                    element,
-                    elements[elementType],
-                );
+                if (defaults) {
+                    // TODO -- show the default properties
+                    console.log('show default properties for element: ', element);
+                } else {
+                    const elementType = (element.toLowerCase() + 'Element') as keyof interfaces['Elements'];
+                    editor.addElementToDialog(
+                        element,
+                        elements[elementType],
+                    );
+                }
             });
             ul.appendChild(li);
         }
@@ -170,8 +175,10 @@ export const editor: interfaces['Editor'] = {
             elementHeight = htmlCreatedElement.getBoundingClientRect().height;
 
             // Get the initial mouse position relative to the element
-            offsetX = htmlCreatedElement.parentElement.getBoundingClientRect().left + Math.floor(elementWidth / 2);
-            offsetY = htmlCreatedElement.parentElement.getBoundingClientRect().top + Math.floor(elementHeight / 2);
+            if (htmlCreatedElement.parentElement) {
+                offsetX = htmlCreatedElement.parentElement.getBoundingClientRect().left + Math.floor(elementWidth / 2);
+                offsetY = htmlCreatedElement.parentElement.getBoundingClientRect().top + Math.floor(elementHeight / 2);
+            }
 
             // Change cursor style while dragging
             htmlCreatedElement.style.cursor = 'grabbing';
@@ -242,7 +249,7 @@ export const editor: interfaces['Editor'] = {
     // remove element form paper and container
     removeSelectedElement() {
         // remove from dialog
-        document.getElementById(editor.selectedElementId).remove();
+        document.getElementById(editor.selectedElementId)?.remove();
         // remove from container
         dialogContainer.removeElement(editor.selectedElementId);
         // clear element properties
@@ -259,7 +266,7 @@ export const editor: interfaces['Editor'] = {
         });
 
         // hide props list
-        document.getElementById('propertiesList').classList.add('hidden');
+        document.getElementById('propertiesList')?.classList.add('hidden');
         document.querySelectorAll('#propertiesList .element-property').forEach(item => {
             item.classList.add('hidden-element');
         });

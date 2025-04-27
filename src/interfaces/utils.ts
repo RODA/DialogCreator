@@ -1,4 +1,5 @@
 import { Elements } from './elements';
+import { EventHandler } from './handlers';
 
 export interface Utils {
     getElementValue: <T extends keyof Elements, K extends keyof Elements[T]>(
@@ -26,10 +27,10 @@ export interface Utils {
     makeNameID: (type: string, nameidRecords: Record<string, number>) => string;
     nameidValidChange: (newId: string, currentElement: HTMLElement) => boolean;
     updateCheckboxColor: (uuid: string, color: string) => void;
-    setInputFilter: (textbox: HTMLElement, inputFilter: (value: string) => boolean) => void;
-    setOnlyNumbers: (items: string[]) => void;
-    setOnlyNumbersWithMinus: (items: string[]) => void;
-    setOnlyDouble: (items: string[]) => void;
+    setInputFilter: (textbox: HTMLInputElement | null, inputFilter: (value: string) => boolean) => void;
+    setOnlyNumbers: (items: string[], prefix?: string) => void;
+    setOnlyNumbersWithMinus: (items: string[], prefix?: string) => void;
+    setOnlyDouble: (items: string[], prefix?: string) => void;
     isValidColor: (value: string) => boolean;
     makeElement: (
         data: Elements[keyof Elements],
@@ -46,4 +47,9 @@ export interface Utils {
         widthMax: number
     ) => void;
     objViewClassValid: (currentElement: HTMLElement) => boolean;
+    handleEvent(
+        handlers: Record<string, EventHandler>,
+        eventName: string,
+        ...args: any[]
+    ): Promise<void>;
 }

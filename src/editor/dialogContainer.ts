@@ -18,7 +18,7 @@ export const dialogContainer: interfaces['DialogContainer'] = {
     },
 
     updateDialogProperties: () => {
-
+        // TODO
     },
 
 
@@ -35,16 +35,16 @@ export const dialogContainer: interfaces['DialogContainer'] = {
         for (let i = 0; i < keys.length; i++) {
             if (Object.hasOwn(dialogContainer.elements[id], keys[i])) {
                 if (keys[i] == 'left') {
-                    const elementWidth = document.getElementById(id).getBoundingClientRect().width;
-                    if (Number(payload[keys[i]]) + elementWidth + 10 > dialogW) {
+                    const elementWidth = document.getElementById(id)?.getBoundingClientRect().width;
+                    if (elementWidth && Number(payload[keys[i]]) + elementWidth + 10 > dialogW) {
                         payload[keys[i]] = String(Math.round(dialogW - elementWidth - 10));
                     }
                     if (Number(payload[keys[i]]) < 10) { payload[keys[i]] = '10'; }
                     const elleft = document.getElementById('elleft') as HTMLInputElement;
                     elleft.value = payload[keys[i]];
                 } else if (keys[i] == 'top') {
-                    const elementHeight = document.getElementById(id).getBoundingClientRect().height;
-                    if (Number(payload[keys[i]]) + elementHeight + 10 > dialogH) {
+                    const elementHeight = document.getElementById(id)?.getBoundingClientRect().height;
+                    if (elementHeight && Number(payload[keys[i]]) + elementHeight + 10 > dialogH) {
                         payload[keys[i]] = String(Math.round(dialogH - elementHeight - 10));
                     }
                     if (Number(payload[keys[i]]) < 10) { payload[keys[i]] = '10'; }
@@ -56,9 +56,9 @@ export const dialogContainer: interfaces['DialogContainer'] = {
                 dialogContainer.elements[id][keys[i]] = payload[keys[i]];
 
                 if (keys[i] == 'label' || keys[i] == 'width') {
-                    const elementWidth = document.getElementById(id).getBoundingClientRect().width;
+                    const elementWidth = document.getElementById(id)?.getBoundingClientRect().width;
                     const elleft = document.getElementById('elleft') as HTMLInputElement;
-                    if (Number(elleft.value) + elementWidth + 10 > dialogW) {
+                    if (elementWidth && Number(elleft.value) + elementWidth + 10 > dialogW) {
                         const newleft = String(Math.round(dialogW - elementWidth - 10));
                         elleft.value = newleft;
                         // why does it requires a number, here ??
@@ -66,8 +66,8 @@ export const dialogContainer: interfaces['DialogContainer'] = {
                     }
                 } else if (keys[i] == 'height') {
                     const eltop = document.getElementById('eltop') as HTMLInputElement;
-                    const elementHeight = document.getElementById(id).getBoundingClientRect().height;
-                    if (Number(eltop.value) + elementHeight + 10 > dialogH) {
+                    const elementHeight = document.getElementById(id)?.getBoundingClientRect().height;
+                    if (elementHeight && Number(eltop.value) + elementHeight + 10 > dialogH) {
                         const newtop = String(Math.round(dialogH - elementHeight - 10));
                         eltop.value = newtop;
                         dialogContainer.elements[id]['top'] = Number(newtop);

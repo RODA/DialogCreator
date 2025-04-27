@@ -13,7 +13,7 @@ export interface Editor {
     editorEvents: EventEmitter;
     make: (dialogContainer: HTMLDivElement) => void;
     updateDialogProperties: (props: DialogProperties) => void;
-    drawAvailableElements: () => HTMLUListElement;
+    drawAvailableElements: (defaults: boolean) => HTMLUListElement;
     deselectAll: () => void;
     addElementToDialog: (type: string, withData?: any) => void;
     addElementListeners: <T extends Elements[keyof Elements] >(element: T) => void;
@@ -21,7 +21,7 @@ export interface Editor {
     updateElement: (payload: { [key: string]: string }) => void;
     removeSelectedElement: () => void;
     clearPropsList: () => void;
-    getElementFromContainer: () => AnyElement;
+    getElementFromContainer: () => AnyElement | undefined;
 }
 
 export interface EditorSettings {
