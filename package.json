@@ -59,16 +59,5 @@
   },
   "dependencies": {
     "uuid": "^11.1.0"
-  },
-  "compilerOptions": {
-    "module": "ESNext",
-    "target": "ES2020",
-    "outDir": "dist",
-    "moduleResolution": "Node",
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "strict": true,
-    "noEmitOnError": false
-  },
-  "include": ["src/**/*.ts"]
+  }
 }
