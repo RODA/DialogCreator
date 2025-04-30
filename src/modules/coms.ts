@@ -1,7 +1,7 @@
 // encapsulation
 
 import { ipcRenderer } from 'electron';
-import { ShowMessage } from '../src/interfaces/communication';
+import { ShowMessage } from '../interfaces/coms';
 
 
 export const showMessage = (obj: ShowMessage) => {

@@ -124,6 +124,7 @@ export const elements: Elements = {
         // fontSize: 13,
         left: 15,
         top: 15,
+        maxWidth: 200,
         isVisible: true,
         value: 'Label',
         elementIds: [],

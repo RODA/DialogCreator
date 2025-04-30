@@ -1,11 +1,8 @@
-import { Elements } from './elements';
+import { AnyElement } from './elements';
+import { Storage } from './editor';
 import { EventHandler } from './handlers';
 
 export interface Utils {
-    getElementValue: <T extends keyof Elements, K extends keyof Elements[T]>(
-        element: Elements[T],
-        key: K
-    ) => string;
     getKeys(obj: Record<string, unknown>): Array<string>;
     isNumeric: (x: string) => boolean;
     possibleNumeric: (x: string) => boolean;
@@ -20,25 +17,15 @@ export interface Utils {
     isElement(x: string, set: string[]): boolean;
     isNotElement(x: string, set: string[]): boolean;
     unselectRadioGroup: (element: HTMLElement) => void;
-    updateHandleStyle: (
-        handle: HTMLDivElement,
-        obj: Elements[keyof Elements]
-    ) => void;
     makeNameID: (type: string, nameidRecords: Record<string, number>) => string;
     nameidValidChange: (newId: string, currentElement: HTMLElement) => boolean;
-    updateCheckboxColor: (uuid: string, color: string) => void;
     setInputFilter: (textbox: HTMLInputElement | null, inputFilter: (value: string) => boolean) => void;
     setOnlyNumbers: (items: string[], prefix?: string) => void;
     setOnlyNumbersWithMinus: (items: string[], prefix?: string) => void;
     setOnlyDouble: (items: string[], prefix?: string) => void;
     isValidColor: (value: string) => boolean;
-    makeElement: (
-        data: Elements[keyof Elements],
-        uuid: string,
-        nameid?: string,
-        fontSize?: number,
-        fontFamily?: string
-    ) => HTMLDivElement | HTMLInputElement | HTMLSelectElement;
+    makeElement: (settings: AnyElement, storage: Storage) => HTMLElement;
+    updateElement: (element: HTMLElement, properties?: AnyElement) => void;
     updateButton: (
         button: HTMLDivElement,
         text: string,
@@ -46,10 +33,15 @@ export interface Utils {
         lineClamp: number,
         widthMax: number
     ) => void;
-    objViewClassValid: (currentElement: HTMLElement) => boolean;
+    updateHandleStyle: (
+        handle: HTMLDivElement,
+        obj: { [key: string]: string },
+    ) => void;
+    updateCheckboxColor: (uuid: string, color: string) => void;
     handleEvent(
         handlers: Record<string, EventHandler>,
         eventName: string,
         ...args: any[]
     ): Promise<void>;
+    objViewClassValid: (currentElement: HTMLElement) => boolean;
 }

@@ -62,9 +62,6 @@ app.on('will-quit', () => {
     globalShortcut.unregisterAll();
 });
 
-// In this file you can include the rest of your app"s specific main process
-// code. You can also put them in separate files and require them here.
-
 function createSecondWindow(args: { [key: string]: any }) {
 
     // let iconPath = path.join(__dirname, "../src/assets/icon.png");
@@ -125,9 +122,6 @@ function createSecondWindow(args: { [key: string]: any }) {
 }
 
 function setupIPC() {
-    ipcMain.on('test', (event, args) => {
-        consolog(args);
-    });
 
     ipcMain.on('secondWindow', (event, args) => {
         createSecondWindow(args);
@@ -154,6 +148,11 @@ function setupIPC() {
             title: "Error",
             message: message
         });
+    });
+
+
+    ipcMain.on('resize-editorWindow', (event, { width, height }) => {
+        editorWindow.setSize(Math.max(width + 560, 1200), Math.max(height + 320, 800));
     });
 }
 

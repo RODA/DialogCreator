@@ -1,17 +1,17 @@
-import { Elements } from './elements';
+
 
 export interface DialogProperties {
     name: string;
     title: string;
-    width: number;
-    height: number;
-    fontSize: number;
+    width: string;
+    height: string;
+    fontSize: string;
     background?: string;
 }
 
 export interface DialogContainer {
     properties: DialogProperties;
-    elements: { [key: string]: Elements[keyof Elements] };
+    elements: { [key: string]: HTMLElement };
     syntax: {
         command: string,
         defaultElements: []
@@ -19,12 +19,7 @@ export interface DialogContainer {
     initialize: (obj: DialogProperties) => void;
     updateDialogProperties: () => void;
     updateProperties: (id: string, payload: { [key: string]: string }) => void;
-    addElement: (element: Elements[keyof Elements]) => void;
+    addElement: (element: HTMLElement) => void;
     removeElement: (elId: string) => void;
-    getElement: (elId: string) => Elements[keyof Elements] | undefined;
-}
-
-export interface interfaces {
-    DialogProperties: DialogProperties;
-    DialogContainer: DialogContainer;
+    getElement: (elId: string) => HTMLElement | undefined;
 }

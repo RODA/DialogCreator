@@ -1,10 +1,13 @@
 
-import { contextBridge, BrowserWindow, ipcRenderer } from "electron";
-import { editor } from "../editor/editor";
-import { interfaces } from '../interfaces/editor';
-import { showError } from "../communication";
+import { ipcRenderer, BrowserWindow } from "electron";
+import { showError } from "../modules/coms";
+import { editor } from "../modules/editor";
 import { utils } from "../library/utils";
-import { elements as originals } from "../editor/elements";
+import { editorSettings } from "../modules/settings";
+import { elements as defaults } from "../modules/elements";
+import { AnyElement } from "../interfaces/elements";
+import { DialogProperties } from "../interfaces/dialog";
+import { dialog } from "../modules/dialog";
 
 // helpers for when enter key is pressed
 let elementSelected = false;
@@ -14,30 +17,34 @@ let elementSelected = false;
 // editor -- the whole window
 // dialogContainer --
 
-let elements = { ...originals };
-ipcRenderer.on('updateElements', (event, updatedElements) => {
-    elements = { ...updatedElements };
+let elements = { ...defaults };
+ipcRenderer.on('updateDefaults', (event, updatedDefaults) => {
+    elements = { ...updatedDefaults };
 });
 
 const onInitializeDialogProperties = () => {
     // add dialog props
     const properties: NodeListOf<HTMLInputElement> = document.querySelectorAll('#dialog-properties [id^="dialog"]');
-    editor.editorEvents.on('initializeDialogProperties', function (props: interfaces['DialogProperties']) {
-        for (const el of properties) {
-            const key = el.getAttribute('name') as keyof interfaces['DialogProperties'];
+
+    editor.editorEvents.on('initializeDialogProperties', function () {
+        properties.forEach((item) => {
+            const key = item.getAttribute('name') as keyof DialogProperties;
             if (key) {
-            el.value = props[key] as string;
+                item.value = editorSettings.dialog[key] || '';
             }
-        }
         });
+
+        dialog.properties = editorSettings.dialog;
+    });
 
     // TODO -- ramas aici
     const getAllProp = (properties: NodeListOf<HTMLInputElement>) => {
-        const obj = {} as interfaces['DialogProperties'];
-        properties.forEach((el) => {
-            // const key = el.getAttribute('name') as keyof interfaces['DialogProperties'];
-            // obj[key] = el.value;
-            obj.name = el.value;
+        const obj = {} as DialogProperties;
+        properties.forEach((item) => {
+            const key = item.getAttribute('name') as keyof DialogProperties;
+            if (key) {
+                obj[key] = item.value;
+            }
         });
         return obj;
     }
@@ -46,12 +53,19 @@ const onInitializeDialogProperties = () => {
     for (const element of properties) {
         element.addEventListener('keyup', (ev: KeyboardEvent) => {
             if (ev.key == 'Enter') {
-                editor.updateDialogProperties(getAllProp(properties));
+                const el = ev.target as HTMLInputElement;
+                el.blur();
             }
         });
         // save on blur
         element.addEventListener('blur', () => {
-            editor.updateDialogProperties(getAllProp(properties));
+            const dialogprops = getAllProp(properties);
+            editor.updateDialogProperties(dialogprops);
+            const wh = {
+                width: Number(dialogprops.width),
+                height: Number(dialogprops.height)
+            }
+            ipcRenderer.send('resize-editorWindow', wh)
         });
     }
 
@@ -66,41 +80,68 @@ const onInitializeDialogProperties = () => {
     }
 }
 
-const onElementSelected = () => {
 
-    const propertyUpdate = (ev: FocusEvent) => {
-        const el = ev.target as HTMLInputElement;
-        editor.updateElement({ [el.name]: el.value });
+const propertyUpdate = (ev: FocusEvent) => {
+    const el = ev.target as HTMLInputElement;
+    // console.log(el);
+    // editor.updateElement({ [el.name]: el.value });
+
+    const id = el.id.slice(2);
+    let value = el.value;
+    const element = dialog.getElement(editor.selectedElementId);
+
+    if (element) {
+        const dataset = element.dataset;
+        let props = { [id]: value };
+        if (id === "size" && (dataset.type === "Checkbox" || dataset.type === "Radio")) {
+            const dialogW = editor.dialog.getBoundingClientRect().width;
+            const dialogH = editor.dialog.getBoundingClientRect().height;
+            if (Number(value) > Math.min(dialogW, dialogH) - 20) {
+                value = String(Math.round(Math.min(dialogW, dialogH) - 20));
+                el.value = value;
+            }
+            props = {
+                width: value,
+                height: value
+            };
+        }
+        utils.updateElement(element, props as AnyElement);
+        // utils.updateElement(element, { [id]: value } as AnyElement);
+
+    } else {
+        showError('Element not found.');
     }
 
-    // On Enter blur element so it triggers update
-    const propertyUpdateOnEnter = (ev: KeyboardEvent) => {
-        if (ev.key == 'Enter') {
-            if (elementSelected) {
-                const el = ev.target as HTMLInputElement
-                el.blur();
-            }
+
+}
+
+// On Enter blur element so it triggers update
+const propertyUpdateOnEnter = (ev: KeyboardEvent) => {
+    if (ev.key == 'Enter') {
+        if (elementSelected) {
+            const el = ev.target as HTMLInputElement;
+            el.blur();
         }
     }
+}
 
+const onElementSelected = () => {
     // show element properties
-    editor.editorEvents.on('selectElement', function (element: interfaces['AnyElement']) {
-
+    editor.editorEvents.on('selectElement', function (element: HTMLElement) {
         elementSelected = true;
         // update props tab
         document.getElementById('propertiesList')?.classList.remove('hidden');
+        const dataset = element.dataset;
 
+        const ellist = document.querySelectorAll('#propertiesList [id^="el"]');
         // disable all elements and hide everything | reseting props tab
-        document.querySelectorAll('#propertiesList [id^="el"]').forEach(el => {
-
+        ellist.forEach(el => {
             const item = el as HTMLInputElement;
-            if (item.name in element) {
+            if (item.name in dataset) {
                 // show main element
                 item.disabled = false;
                 item.parentElement?.classList.remove('hidden-element');
-                // item.value = String(element[item.name as keyof ElementsInterface[keyof ElementsInterface]]);
-                // item.value = String(element[item.name as interfaces['keyofAnyElement']]);
-                item.value = utils.getElementValue(element, item.name);
+                item.value = dataset[item.name] || '';
 
                 item.removeEventListener('blur', propertyUpdate);
                 item.addEventListener('blur', propertyUpdate);
@@ -121,7 +162,7 @@ const onElementSelected = () => {
 
         const colorlabel = document.getElementById('colorlabel') as HTMLLabelElement;
 
-        if (element.type === 'Slider') {
+        if (dataset.type === 'Slider') {
             colorlabel.innerText = 'Track color';
             document.getElementById('sliderHandleProperties')?.classList.remove('hidden-element');
         } else {
@@ -131,7 +172,7 @@ const onElementSelected = () => {
 
 
         const valuelabel = document.getElementById('valuelabel') as HTMLLabelElement;
-        if (element.type == "Select") {
+        if (dataset.type == "Select") {
             /*
             // This works and could be used, but it is very R specific and the
             // Dialog Creator could theoretically be used for any other language
@@ -173,7 +214,7 @@ const addAvailableElementsToEditor = () => {
     if (elementsList) {
         elementsList.innerHTML = '';
         // add available elements to the editor window
-        elementsList.appendChild(editor.drawAvailableElements(false));
+        elementsList.appendChild(editor.drawAvailableElements("editor"));
 
         const div = document.createElement('div');
         div.className = 'mt-1_5';
@@ -221,6 +262,9 @@ const removeElementFromDialog = () => {
 
 document.addEventListener('DOMContentLoaded', () => {
 
+    utils.setOnlyNumbers(["width", "height", "size", "space", "left", "top", "handlesize", "handlepos", "lineClamp"]);
+    utils.setOnlyNumbersWithMinus(["startval", "maxval"]);
+
     // Events - must be first ====
     onInitializeDialogProperties();
     onElementSelected();
@@ -247,9 +291,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 width: 640,
                 height: 310,
                 backgroundColor: '#fff',
-                title: 'Conditions for element: ' + element.nameid,
+                title: 'Conditions for element: ' + element.dataset.nameid,
                 file: 'conditions.html',
-                conditions: element.conditions
+                conditions: element.dataset.conditions
             }
         );
     });

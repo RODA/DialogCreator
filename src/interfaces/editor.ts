@@ -1,118 +1,40 @@
 import { EventEmitter } from 'events';
-import { Elements } from './elements';
-import { DialogProperties } from './dialogContainer';
+import { AnyElement } from './elements';
+import { DialogProperties } from './dialog';
 
+export interface Storage {
+    nameidRecords: Record<string, number>;
 
-type AnyElement = Elements[keyof Elements];
-type keyofAnyElement = keyof AnyElement;
+    // defaults
+    fontSize: number;
+    fontFamily: string;
+    maxWidth: number;
+    maxHeight: number;
+}
 
 export interface Editor {
     dialog: HTMLDivElement;
     dialogId: string;
     selectedElementId: string;
     editorEvents: EventEmitter;
-    make: (dialogContainer: HTMLDivElement) => void;
+    storage: Storage;
+    make: (dialog: HTMLDivElement) => void;
     updateDialogProperties: (props: DialogProperties) => void;
-    drawAvailableElements: (defaults: boolean) => HTMLUListElement;
+    drawAvailableElements: (window?: string) => HTMLUListElement;
     deselectAll: () => void;
-    addElementToDialog: (type: string, withData?: any) => void;
-    addElementListeners: <T extends Elements[keyof Elements] >(element: T) => void;
+    addElementToDialog: (name: string, data?: AnyElement) => void;
+    addElementListeners: (element: HTMLElement) => void;
     addDragAndDrop: (element: HTMLElement) => void;
-    updateElement: (payload: { [key: string]: string }) => void;
+    // updateElement: (data: { [key: string]: string }) => void;
     removeSelectedElement: () => void;
     clearPropsList: () => void;
-    getElementFromContainer: () => AnyElement | undefined;
+    getElementFromContainer: () => HTMLElement | undefined;
 }
 
 export interface EditorSettings {
     fontSize: number;
     fontFamily: string;
-    dialog: DialogProperties;
-}
-
-/* -- no longer needed -- */
-// export type EditorElementsTypes =
-//     'addButton' |
-//     'addInput' |
-//     'addSelect' |
-//     'addCheckbox' |
-//     'addRadio' |
-//     'addCounter' |
-//     'addSlider' |
-//     'addLabel' |
-//     'addSeparator' |
-//     'addContainer';
-
-/* -- automatically generate EditorElementsTypes -- */
-export type AddedElements<T> = {
-    [K in keyof T]: K extends `add${string}`
-        ? T[K] extends (...args: any[]) => any
-        ? K
-        : never
-        : never;
-    }[keyof T];
-
-
-export interface EditorElements {
-    nameidRecords: Record<string, number>;
-    fontSize: number;
-    fontFamily: string;
     maxWidth: number;
     maxHeight: number;
-    setDefaults: (
-        size: number,
-        family: string,
-        maxWidth: number,
-        maxHeight: number
-    ) => void;
-    addButton: (
-        dialog: HTMLDivElement,
-        data: Elements["buttonElement"]
-    ) => Elements["buttonElement"];
-    addInput: (
-        dialog: HTMLDivElement,
-        data: Elements["inputElement"]
-    ) => Elements["inputElement"];
-    addSelect: (
-        dialog: HTMLDivElement,
-        data: Elements["selectElement"]
-    ) => Elements["selectElement"];
-    addCheckbox: (
-        dialog: HTMLDivElement,
-        data: Elements["checkboxElement"]
-    ) => Elements["checkboxElement"];
-    addRadio: (
-        dialog: HTMLDivElement,
-        data: Elements["checkboxElement"]
-    ) => Elements["checkboxElement"];
-    addCounter: (
-        dialog: HTMLDivElement,
-        data: Elements["counterElement"]
-    ) => Elements["counterElement"];
-    addSlider: (
-        dialog: HTMLDivElement,
-        data: Elements["sliderElement"]
-    ) => Elements["sliderElement"];
-    addLabel: (
-        dialog: HTMLDivElement,
-        data: Elements["labelElement"]
-    ) => Elements["labelElement"];
-    addSeparator: (
-        dialog: HTMLDivElement,
-        data: Elements["separatorElement"]
-    ) => Elements["separatorElement"];
-    addContainer: (
-        dialog: HTMLDivElement,
-        data: Elements["containerElement"]
-    ) => Elements["containerElement"];
-    // [propName: string]: any;
-}
-
-export interface interfaces {
-    AnyElement: AnyElement;
-    keyofAnyElement: keyofAnyElement;
-    Elements: Elements;
-    Editor: Editor;
-    EditorElements: EditorElements;
-    DialogProperties: DialogProperties;
+    dialog: DialogProperties;
 }
