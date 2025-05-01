@@ -1,6 +1,7 @@
 import { AnyElement } from './elements';
 import { Storage } from './editor';
 import { EventHandler } from './handlers';
+import { DialogProperties } from "../interfaces/dialog";
 
 export interface Utils {
     getKeys(obj: Record<string, unknown>): Array<string>;
@@ -44,4 +45,5 @@ export interface Utils {
         ...args: any[]
     ): Promise<void>;
     objViewClassValid: (currentElement: HTMLElement) => boolean;
+    collectDialogProperties: () => DialogProperties;
 }

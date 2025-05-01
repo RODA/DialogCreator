@@ -1,6 +1,7 @@
 import { dialog } from '../modules/dialog';
 import { editor } from '../modules/editor';
 import { Utils } from '../interfaces/utils';
+import { DialogProperties } from "../interfaces/dialog";
 import { showError } from '../modules/coms';
 import { v4 as uuidv4 } from 'uuid';
 import * as path from "path";
@@ -839,5 +840,17 @@ export const utils: Utils = {
         )
         return !allobjs.has('dataSet');
     },
+
+    collectDialogProperties: function() {
+        const properties: NodeListOf<HTMLInputElement> = document.querySelectorAll('#dialog-properties [id^="dialog"]');
+        const obj = {} as DialogProperties;
+        properties.forEach((item) => {
+            const key = item.getAttribute('name') as keyof DialogProperties;
+            if (key) {
+                obj[key] = item.value;
+            }
+        });
+        return obj;
+    }
 }
 
