@@ -106,13 +106,14 @@ function createSecondWindow(args: { [key: string]: any }) {
 
     secondWindow.webContents.on("did-finish-load", () => {
         switch (args.file) {
-        case 'defaults.html':
-            secondWindow.webContents.send("populateDefaults", args.elements);
-            break;
-        case 'conditions.html':
-            break;
-        default:
-            break;
+            case 'defaults.html':
+                secondWindow.webContents.send("populateDefaults");
+                break;
+            case 'conditions.html':
+                // secondWindow.webContents.send("conditions", args.conditions);
+                break;
+            default:
+                break;
         }
         if (editorWindow && !editorWindow.isDestroyed()) {
             editorWindow.webContents.send('addCover');
