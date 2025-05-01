@@ -25,27 +25,6 @@ const onInitializeDialogProperties = () => {
     // add dialog props
     const properties: NodeListOf<HTMLInputElement> = document.querySelectorAll('#dialog-properties [id^="dialog"]');
 
-    global.emitter.on('initializeDialogProperties', function () {
-        properties.forEach((item) => {
-            const key = item.getAttribute('name') as keyof DialogProperties;
-            if (key) {
-                item.value = editorSettings.dialog[key] || '';
-            }
-        });
-        dialog.properties = editorSettings.dialog;
-    });
-
-    const getAllProp = (properties: NodeListOf<HTMLInputElement>) => {
-        const obj = {} as DialogProperties;
-        properties.forEach((item) => {
-            const key = item.getAttribute('name') as keyof DialogProperties;
-            if (key) {
-                obj[key] = item.value;
-            }
-        });
-        return obj;
-    }
-
     // update dialog properties
     for (const element of properties) {
         element.addEventListener('keyup', (ev: KeyboardEvent) => {
@@ -56,8 +35,8 @@ const onInitializeDialogProperties = () => {
         });
         // save on blur
         element.addEventListener('blur', () => {
-            const dialogprops = getAllProp(properties);
-            editor.updateDialogProperties(dialogprops);
+            const dialogprops = utils.collectDialogProperties();
+            editor.updateDialogArea(dialogprops);
             const wh = {
                 width: Number(dialogprops.width),
                 height: Number(dialogprops.height)

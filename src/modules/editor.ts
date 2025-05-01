@@ -4,8 +4,9 @@ import { editorSettings } from './settings';
 import { elements as defaults } from './elements';
 import { Editor } from '../interfaces/editor';
 import { Elements } from '../interfaces/elements';
+import { DialogProperties } from "../interfaces/dialog";
 import { v4 as uuidv4 } from 'uuid';
-import { dialog} from './dialog';
+import { dialog } from './dialog';
 import { utils } from '../library/utils';
 
 let elements = { ...defaults };
@@ -50,11 +51,21 @@ export const editor: Editor = {
         });
 
         dialogdiv.append(editor.dialog);
-        global.emitter.emit('initializeDialogProperties');
+
+        const properties: NodeListOf<HTMLInputElement> = document.querySelectorAll('#dialog-properties [id^="dialog"]');
+
+        properties.forEach((item) => {
+            const key = item.getAttribute('name') as keyof DialogProperties;
+            if (key) {
+                item.value = editorSettings.dialog[key] || '';
+            }
+        });
+
+        dialog.properties = editorSettings.dialog;
 
     },
 
-    updateDialogProperties: function (properties) {
+    updateDialogArea: function (properties) {
 
         // check for valid paper
         if (editor.dialogId !== '') {
@@ -214,7 +225,7 @@ export const editor: Editor = {
                 element.dataset.left = String(left);
                 element.dataset.top = String(top);
 
-                dialog.updateProperties(
+                dialog.updateElementProperties(
                     element.id,
                     { top: String(top), left: String(left) }
                 );
@@ -239,7 +250,7 @@ export const editor: Editor = {
 
     // updateElement(data) {
     //     if (editor.selectedElementId !== '') {
-    //         dialog.updateProperties(editor.selectedElementId, data);
+    //         dialog.updateElementProperties(editor.selectedElementId, data);
     //     }
     // },
 
