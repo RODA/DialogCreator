@@ -1,19 +1,12 @@
 import { ipcRenderer } from "electron";
 import { showMessage, global } from "./coms";
 import { editorSettings } from './settings';
-import { elements as defaults } from './elements';
 import { Editor } from '../interfaces/editor';
 import { Elements } from '../interfaces/elements';
 import { DialogProperties } from "../interfaces/dialog";
 import { v4 as uuidv4 } from 'uuid';
 import { dialog } from './dialog';
 import { utils } from '../library/utils';
-
-let elements = { ...defaults };
-ipcRenderer.on('updateDefaults', (event, updatedDefaults) => {
-    elements = { ...updatedDefaults };
-});
-
 
 export const editor: Editor = {
 
@@ -94,7 +87,7 @@ export const editor: Editor = {
 
     // called right after make
     drawAvailableElements: (window) => {
-        const availableElements = Object.keys(elements);
+        const availableElements = Object.keys(global.elements);
             // .filter(str => str.startsWith("add"))
             // .map(str => str.slice(3));
 
@@ -113,7 +106,7 @@ export const editor: Editor = {
                     const elementType = name as keyof Elements;
                     editor.addElementToDialog(
                         String(li.textContent),
-                        elements[elementType],
+                        global.elements[elementType],
                     );
                 }
             });
@@ -169,10 +162,8 @@ export const editor: Editor = {
                 editor.selectedElementId = element.id;
                 const type = dialog.getElement(element.id)?.dataset.type;
                 if (!type) return;
-                const elementType = (type.toLowerCase() + 'Element') as keyof Elements;
-                global.emitter.emit(
+                global.messenger.emit(
                     'selectElement',
-                    // elements[elementType]
                     element
                 );
             }
