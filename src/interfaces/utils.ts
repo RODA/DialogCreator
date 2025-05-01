@@ -27,6 +27,8 @@ export interface Utils {
     isValidColor: (value: string) => boolean;
     makeElement: (settings: AnyElement, storage: Storage) => HTMLElement;
     updateElement: (element: HTMLElement, properties?: AnyElement) => void;
+    addAvailableElementsTo: (name: string) => void;
+    addDefaultsButton: () => void;
     updateButton: (
         button: HTMLDivElement,
         text: string,
@@ -40,7 +42,6 @@ export interface Utils {
     ) => void;
     updateCheckboxColor: (uuid: string, color: string) => void;
     handleEvent(
-        handlers: Record<string, EventHandler>,
         eventName: string,
         ...args: any[]
     ): Promise<void>;

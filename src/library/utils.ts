@@ -1,8 +1,9 @@
+import { ipcRenderer } from "electron";
 import { dialog } from '../modules/dialog';
 import { editor } from '../modules/editor';
 import { Utils } from '../interfaces/utils';
 import { DialogProperties } from "../interfaces/dialog";
-import { showError } from '../modules/coms';
+import { showError, global } from '../modules/coms';
 import { v4 as uuidv4 } from 'uuid';
 import * as path from "path";
 
@@ -722,6 +723,46 @@ export const utils: Utils = {
 
     },
 
+    addAvailableElementsTo: function(name) {
+        const elementsList = document.getElementById(name);
+        if (elementsList) {
+            elementsList.innerHTML = '';
+            // add available elements to the editor window
+            elementsList.appendChild(editor.drawAvailableElements("editor"));
+
+        } else {
+            showError('Cound not find the element list in editor window. Please check the HTML!')
+        }
+    },
+
+    addDefaultsButton: function() {
+        const elementsList = document.getElementById('elementsList');
+        if (elementsList) {
+            const div = document.createElement('div');
+            div.className = 'mt-1_5';
+            const button = document.createElement('button');
+            button.className = 'custombutton';
+            button.innerText = 'Default values';
+            button.setAttribute('type', 'button');
+            button.style.width = '150px';
+            button.addEventListener('click', function () {
+                ipcRenderer.send(
+                    'secondWindow',
+                    {
+                        width: 640,
+                        height: 480,
+                        backgroundColor: '#fff',
+                        title: 'Default values',
+                        file: 'defaults.html',
+                        elements: global.elements,
+                    }
+                );
+            });
+            div.appendChild(button);
+            elementsList.appendChild(div);
+        }
+    },
+
     updateButton: function(
         button,
         text,
@@ -807,25 +848,25 @@ export const utils: Utils = {
         }
     },
 
-    async handleEvent(handlers, eventName, ...args) {
-        const handler = handlers[eventName];
+    async handleEvent(eventName, ...args) {
+        const handler = global.handlers[eventName];
         if (!handler) {
             console.error(`No handler for event: ${eventName}`);
             return;
         }
         try {
-            let { module, method } = handler;
+            let { module, functioname } = handler;
             const modulePath = path.join(__dirname, '../modules', module);
 
             const imported = await import(modulePath);
 
             const container = imported.defaults ?? imported;
-            const func = container[method];
+            const func = container[functioname];
 
             if (typeof func === 'function') {
                 return await func(...args);
             } else {
-                console.error(`Function ${method} not found in module ${module}`);
+                console.error(`Function ${functioname} not found in module ${module}`);
             }
         } catch (error: any) {
             console.error(`Error handling ${eventName}: ${error.message}`);
