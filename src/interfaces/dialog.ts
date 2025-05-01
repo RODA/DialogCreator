@@ -9,7 +9,7 @@ export interface DialogProperties {
     background?: string;
 }
 
-export interface DialogContainer {
+export interface Dialog {
     properties: DialogProperties;
     elements: { [key: string]: HTMLElement };
     syntax: {

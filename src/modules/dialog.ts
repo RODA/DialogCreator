@@ -1,7 +1,7 @@
-import { DialogContainer, DialogProperties } from '../interfaces/dialog';
+import { Dialog, DialogProperties } from '../interfaces/dialog';
 import { editor } from './editor';
 
-export const dialog: DialogContainer = {
+export const dialog: Dialog = {
 
     properties: {} as DialogProperties,
     elements: {},
@@ -61,7 +61,7 @@ export const dialog: DialogContainer = {
                     const eltop = document.getElementById('eltop') as HTMLInputElement;
                     eltop.value = payload[keys[i]];
                 }
-                // dialogContainer.elements[id] is a proxy
+                // dialog.elements[id] is a proxy
                 // proxy['top'] calls the set() method of the proxy
                 // (defined when the proxy is created)
                 // dialog.elements[id][keys[i]] = payload[keys[i]];

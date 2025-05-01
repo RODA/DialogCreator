@@ -13,7 +13,7 @@ body {
     font-size: 0.9rem;
 }
 
-.dialogContainer {
+.editor-area {
     display: flex;
     align-items: stretch;
     justify-content: space-around;
@@ -40,7 +40,7 @@ body {
 }
 
 /* Dialog properties ===================== */
-.dialog {
+.dialog-section {
     padding: 0px;
     flex-grow: 3;
     display: flex;
@@ -48,7 +48,7 @@ body {
     text-align: center;
 }
 
-.dialog #dialog {
+.dialog-section #dialog {
     border: 1px solid #7f7f7f;
     background-color: var(--main-bg-color);
     height: calc(100vh - 200px);
@@ -57,7 +57,7 @@ body {
     justify-content: center;
 }
 
-.dialog #dialogProperties {
+.dialog-section #dialogProperties {
     padding: 0px 0px 5px 0px;
     background-color: #f0f0f0;
     display: flex;
@@ -429,7 +429,7 @@ input {
 }
 
 
-.editorcover {
+.editor-cover {
     top: 0;
     display: block;
     position: fixed;
