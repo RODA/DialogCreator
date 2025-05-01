@@ -1,12 +1,11 @@
 import { ipcRenderer } from "electron";
-import { showMessage } from "./coms";
-import { EventEmitter } from 'events';
+import { showMessage, global } from "./coms";
 import { editorSettings } from './settings';
 import { elements as defaults } from './elements';
 import { Editor } from '../interfaces/editor';
 import { Elements } from '../interfaces/elements';
 import { v4 as uuidv4 } from 'uuid';
-import { dialog } from './dialog';
+import { dialog} from './dialog';
 import { utils } from '../library/utils';
 
 let elements = { ...defaults };
@@ -20,7 +19,6 @@ export const editor: Editor = {
     dialog: document.createElement('div'),
     dialogId: '',
     selectedElementId: '',
-    editorEvents: new EventEmitter(),
     storage: {
         nameidRecords: {},
 
@@ -31,7 +29,7 @@ export const editor: Editor = {
         maxHeight: 455,
     },
 
-    make: (dialog: HTMLDivElement) => {
+    make: (dialogdiv: HTMLDivElement) => {
 
         const newDialogID = uuidv4();
         editor.dialog.id = newDialogID;
@@ -51,8 +49,9 @@ export const editor: Editor = {
             event.preventDefault();
         });
 
-        dialog.append(editor.dialog)
-        editor.editorEvents.emit('initializeDialogProperties', editorSettings.dialog);
+        dialogdiv.append(editor.dialog);
+        global.emitter.emit('initializeDialogProperties');
+
     },
 
     updateDialogProperties: function (properties) {
@@ -160,7 +159,7 @@ export const editor: Editor = {
                 const type = dialog.getElement(element.id)?.dataset.type;
                 if (!type) return;
                 const elementType = (type.toLowerCase() + 'Element') as keyof Elements;
-                editor.editorEvents.emit(
+                global.emitter.emit(
                     'selectElement',
                     // elements[elementType]
                     element

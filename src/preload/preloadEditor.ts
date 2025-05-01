@@ -1,6 +1,6 @@
 
 import { ipcRenderer, BrowserWindow } from "electron";
-import { showError } from "../modules/coms";
+import { showError, global } from "../modules/coms";
 import { editor } from "../modules/editor";
 import { utils } from "../library/utils";
 import { editorSettings } from "../modules/settings";
@@ -15,7 +15,6 @@ let elementSelected = false;
 
 // dialog -- the white part
 // editor -- the whole window
-// dialogContainer --
 
 let elements = { ...defaults };
 ipcRenderer.on('updateDefaults', (event, updatedDefaults) => {
@@ -26,18 +25,16 @@ const onInitializeDialogProperties = () => {
     // add dialog props
     const properties: NodeListOf<HTMLInputElement> = document.querySelectorAll('#dialog-properties [id^="dialog"]');
 
-    editor.editorEvents.on('initializeDialogProperties', function () {
+    global.emitter.on('initializeDialogProperties', function () {
         properties.forEach((item) => {
             const key = item.getAttribute('name') as keyof DialogProperties;
             if (key) {
                 item.value = editorSettings.dialog[key] || '';
             }
         });
-
         dialog.properties = editorSettings.dialog;
     });
 
-    // TODO -- ramas aici
     const getAllProp = (properties: NodeListOf<HTMLInputElement>) => {
         const obj = {} as DialogProperties;
         properties.forEach((item) => {
@@ -127,7 +124,7 @@ const propertyUpdateOnEnter = (ev: KeyboardEvent) => {
 
 const onElementSelected = () => {
     // show element properties
-    editor.editorEvents.on('selectElement', function (element: HTMLElement) {
+    global.emitter.on('selectElement', function (element: HTMLElement) {
         elementSelected = true;
         // update props tab
         document.getElementById('propertiesList')?.classList.remove('hidden');
@@ -270,9 +267,9 @@ document.addEventListener('DOMContentLoaded', () => {
     onElementSelected();
 
     // create new dialog when first opened and trigger events
-    const dialogContainer = document.getElementById('dialog');
-    if (dialogContainer) {
-        editor.make(dialogContainer as HTMLDivElement);
+    const dialogdiv = document.getElementById('dialog');
+    if (dialogdiv) {
+        editor.make(dialogdiv as HTMLDivElement);
     }
     addAvailableElementsToEditor();
     removeElementFromDialog();
@@ -315,10 +312,10 @@ document.addEventListener('DOMContentLoaded', () => {
 })
 
 ipcRenderer.on('addCover', (event, args) => {
-    document.getElementById('editorcover')?.classList.add('editorcover');
+    document.getElementById('editor-cover')?.classList.add('editor-cover');
 });
 ipcRenderer.on('removeCover', (event, args) => {
-    document.getElementById('editorcover')?.classList.remove('editorcover');
+    document.getElementById('editor-cover')?.classList.remove('editor-cover');
 });
 
 

@@ -16,7 +16,6 @@ export interface Editor {
     dialog: HTMLDivElement;
     dialogId: string;
     selectedElementId: string;
-    editorEvents: EventEmitter;
     storage: Storage;
     make: (dialog: HTMLDivElement) => void;
     updateDialogProperties: (props: DialogProperties) => void;
