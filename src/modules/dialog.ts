@@ -16,12 +16,8 @@ export const dialog: Dialog = {
         this.properties = { ...obj };
     },
 
-    updateDialogProperties: () => {
-        // TODO
-    },
-
     // update dialog element props !!!!!!
-    updateProperties: function (id, payload) {
+    updateElementProperties: function (id, payload) {
         // TODO: move these into some sort of global variables?
         const dialogW = editor.dialog.getBoundingClientRect().width;
         const dialogH = editor.dialog.getBoundingClientRect().height;

@@ -18,7 +18,7 @@ export interface Editor {
     selectedElementId: string;
     storage: Storage;
     make: (dialog: HTMLDivElement) => void;
-    updateDialogProperties: (props: DialogProperties) => void;
+    updateDialogArea: (props: DialogProperties) => void;
     drawAvailableElements: (window?: string) => HTMLUListElement;
     deselectAll: () => void;
     addElementToDialog: (name: string, data?: AnyElement) => void;

@@ -17,8 +17,7 @@ export interface Dialog {
         defaultElements: []
     };
     initialize: (obj: DialogProperties) => void;
-    updateDialogProperties: () => void;
-    updateProperties: (id: string, payload: { [key: string]: string }) => void;
+    updateElementProperties: (id: string, payload: { [key: string]: string }) => void;
     addElement: (element: HTMLElement) => void;
     removeElement: (elId: string) => void;
     getElement: (elId: string) => HTMLElement | undefined;
