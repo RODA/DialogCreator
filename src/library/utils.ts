@@ -892,6 +892,41 @@ export const utils: Utils = {
             }
         });
         return obj;
-    }
+    },
+
+    updateFont: function (fontSize, fontFamily) {
+        for (const key in dialog.elements) {
+            const element = dialog.elements[key] as HTMLDivElement;
+            const dataset = element.dataset;
+            switch (dataset.type) {
+                case "Input":
+                case "Select":
+                case "Label":
+                    element.style.fontSize = fontSize + 'px';
+                    if (fontFamily) {
+                        element.style.fontFamily = fontFamily;
+                    }
+                    break;
+                case "Button":
+                    utils.updateButton(
+                        element,
+                        dataset.label || '',
+                        fontSize,
+                        Number(dataset.lineClamp) || 1,
+                        Number(dataset.maxWidth) || 100
+                    );
+                    break;
+                case "Counter":
+                    const countervalue = document.querySelector(`#counter-value-${element.id}`) as HTMLDivElement;
+                    countervalue.style.fontSize = fontSize + 'px';
+                    if (fontFamily) {
+                        countervalue.style.fontFamily = fontFamily;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+    },
 }
 

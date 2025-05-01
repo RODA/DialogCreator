@@ -26,13 +26,25 @@ const onInitializeDialogProperties = () => {
         });
         // save on blur
         element.addEventListener('blur', () => {
-            const dialogprops = utils.collectDialogProperties();
-            editor.updateDialogArea(dialogprops);
-            const wh = {
-                width: Number(dialogprops.width),
-                height: Number(dialogprops.height)
+            const id = element.id;
+            if (id === 'dialogwidth' || id === 'dialogheight') {
+                const value = element.value;
+                if (value) {
+                    const dialogprops = utils.collectDialogProperties();
+                    editor.updateDialogArea(dialogprops);
+                    const wh = {
+                        width: Number(dialog.properties.width),
+                        height: Number(dialog.properties.height)
+                    }
+                    ipcRenderer.send('resize-editorWindow', wh);
+                }
             }
-            ipcRenderer.send('resize-editorWindow', wh)
+            if (id === 'dialogFontSize') {
+                const value = element.value;
+                if (value) {
+                    utils.updateFont(Number(value));
+                }
+            }
         });
     }
 

@@ -47,4 +47,5 @@ export interface Utils {
     ): Promise<void>;
     objViewClassValid: (currentElement: HTMLElement) => boolean;
     collectDialogProperties: () => DialogProperties;
+    updateFont: (fontSize: number, fontFamily?: string) => void;
 }

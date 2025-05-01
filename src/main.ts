@@ -94,7 +94,6 @@ function createSecondWindow(args: { [key: string]: any }) {
     secondWindow.on('closed', function() {
         if (editorWindow && !editorWindow.isDestroyed()) {
             editorWindow.webContents.send('removeCover');
-            consolog('secondWindow closed');
         }
     });
 
@@ -119,7 +118,6 @@ function createSecondWindow(args: { [key: string]: any }) {
             editorWindow.webContents.send('addCover');
         }
     });
-
 }
 
 function setupIPC() {
