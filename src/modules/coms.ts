@@ -5,7 +5,7 @@ import { ShowMessage, Global } from '../interfaces/coms';
 import { EventEmitter } from 'events';
 import { Elements } from '../interfaces/elements';
 import { elements } from '../modules/elements';
-// import { utils } from '../library/utils';
+import { utils } from '../library/utils';
 
 export const global: Global = {
     messenger: new EventEmitter(),
@@ -18,23 +18,32 @@ export const global: Global = {
     dialog: document.createElement('div'),
     dialogId: '',
     selectedElementId: '',
+
+    // IPC dispatcher
     handlers: {
         populateDefaults: {
-            module: 'defaults', // the handler auto-finds the module in the modules/ folder
+            module: 'defaults', // the handler finds the module in the modules/ folder
             functioname: 'addElementsToDefaults'
         },
-        // add more events here
     }
 }
 
+// automatically dispatch all events to their respective handlers
+for (const eventName in global.handlers) {
+    ipcRenderer.on(eventName, async (_event, ...args) => {
+        // assume the event returns something
+        const result = await utils.handleEvent(eventName, ...args);
+        if (utils.exists(result)) {
+            global.messenger.emit(eventName + 'Result', result);
+        }
+    });
+}
+
 global.elements = { ...elements };
-global.messenger.on('updateDefaults', (event, updatedDefaults) => {
-    global.elements = { ...updatedDefaults };
+global.messenger.on('updateDefaults', (event, updatedElements) => {
+    global.elements = { ...updatedElements };
 });
 
-// for (const eventName in global.handlers) {
-//     ipcRenderer.on(eventName, async () => utils.handleEvent(eventName));
-// }
 
 export const showMessage = (obj: ShowMessage) => {
     ipcRenderer.send('showDialogMessage', obj);

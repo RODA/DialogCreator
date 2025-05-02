@@ -6,6 +6,7 @@ import { DialogProperties } from "../interfaces/dialog";
 import { showError, global } from '../modules/coms';
 import { v4 as uuidv4 } from 'uuid';
 import * as path from "path";
+import * as fs from "fs";
 
 export const utils: Utils = {
     getKeys: function(obj) {
@@ -855,18 +856,24 @@ export const utils: Utils = {
             let { module, functioname } = handler;
             const modulePath = path.join(__dirname, '../modules', module);
 
-            const imported = await import(modulePath);
+            if (fs.existsSync(modulePath + '.js')) {
+                const imported = await import(modulePath);
+                // the object of interest is the first exported one from that module
+                const key = Object.keys(imported)[0];
 
-            const container = imported.defaults ?? imported;
-            const func = container[functioname];
+                // then extract the function from that object
+                const func = imported[key][functioname];
 
-            if (typeof func === 'function') {
-                return await func(...args);
+                if (typeof func === 'function') {
+                    return await func(...args);
+                } else {
+                    console.error(`Function ${functioname} not found in module ${module}`);
+                }
             } else {
-                console.error(`Function ${functioname} not found in module ${module}`);
+                showError(`Module "${module}" not found in the modules/ directory.`);
             }
         } catch (error: any) {
-            console.error(`Error handling ${eventName}: ${error.message}`);
+            showError(`Error handling ${eventName}: ${error.message}`);
         }
     },
 
