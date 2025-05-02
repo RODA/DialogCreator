@@ -1,4 +1,3 @@
-import { ipcRenderer } from "electron";
 import { showMessage, global } from "./coms";
 import { editorSettings } from './settings';
 import { Editor } from '../interfaces/editor';
@@ -13,15 +12,6 @@ export const editor: Editor = {
     dialog: document.createElement('div'),
     dialogId: '',
     selectedElementId: '',
-    storage: {
-        nameidRecords: {},
-
-        // defaults
-        fontSize: 12,
-        fontFamily: 'Arial, Helvetica, sans-serif',
-        maxWidth: 615,
-        maxHeight: 455,
-    },
 
     make: (dialogdiv: HTMLDivElement) => {
 
@@ -118,7 +108,7 @@ export const editor: Editor = {
     // add new element on dialog
     addElementToDialog: function (name, data) {
         if (data) {
-            const element = utils.makeElement(data, editor.storage);
+            const element = utils.makeElement(data);
             element.dataset.type = name;
             element.dataset.parentId = editor.dialog.id;
             editor.dialog.appendChild(element);

@@ -11,6 +11,10 @@ export const global: Global = {
     messenger: new EventEmitter(),
     elements: {} as Elements,
     elementSelected: false,
+    fontSize: 12,
+    fontFamily: 'Arial, Helvetica, sans-serif',
+    maxWidth: 615,
+    maxHeight: 455,
     handlers: {
         populateDefaults: {
             module: 'defaults', // the handler auto-finds the module in the modules/ folder

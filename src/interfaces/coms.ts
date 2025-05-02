@@ -11,6 +11,10 @@ export interface Global {
     messenger: EventEmitter;
     elements: Elements;
     elementSelected: boolean;
+    fontSize: number;
+    fontFamily: string;
+    maxWidth: number;
+    maxHeight: number;
     handlers: {
         [key: string]: {
             module: string;

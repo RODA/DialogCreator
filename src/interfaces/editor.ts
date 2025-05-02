@@ -1,22 +1,10 @@
-import { EventEmitter } from 'events';
 import { AnyElement } from './elements';
 import { DialogProperties } from './dialog';
-
-export interface Storage {
-    nameidRecords: Record<string, number>;
-
-    // defaults
-    fontSize: number;
-    fontFamily: string;
-    maxWidth: number;
-    maxHeight: number;
-}
 
 export interface Editor {
     dialog: HTMLDivElement;
     dialogId: string;
     selectedElementId: string;
-    storage: Storage;
     make: (dialog: HTMLDivElement) => void;
     updateDialogArea: (props: DialogProperties) => void;
     drawAvailableElements: (window?: string) => HTMLUListElement;
