@@ -1,5 +1,5 @@
 import { Dialog, DialogProperties } from '../interfaces/dialog';
-import { editor } from './editor';
+import { global } from './coms';
 
 export const dialog: Dialog = {
 
@@ -19,8 +19,8 @@ export const dialog: Dialog = {
     // update dialog element props !!!!!!
     updateElementProperties: function (id, payload) {
         // TODO: move these into some sort of global variables?
-        const dialogW = editor.dialog.getBoundingClientRect().width;
-        const dialogH = editor.dialog.getBoundingClientRect().height;
+        const dialogW = global.dialog.getBoundingClientRect().width;
+        const dialogH = global.dialog.getBoundingClientRect().height;
         //----
 
         const notFound: string[] = [];

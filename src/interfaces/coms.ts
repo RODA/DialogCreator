@@ -15,6 +15,9 @@ export interface Global {
     fontFamily: string;
     maxWidth: number;
     maxHeight: number;
+    dialog: HTMLDivElement;
+    dialogId: string;
+    selectedElementId: string;
     handlers: {
         [key: string]: {
             module: string;

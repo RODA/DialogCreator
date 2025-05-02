@@ -447,8 +447,8 @@ export const utils: Utils = {
 
         let elementWidth = element.getBoundingClientRect().width;
         const elementHeight = element.getBoundingClientRect().height;
-        const dialogW = editor.dialog.getBoundingClientRect().width;
-        const dialogH = editor.dialog.getBoundingClientRect().height;
+        const dialogW = global.dialog.getBoundingClientRect().width;
+        const dialogH = global.dialog.getBoundingClientRect().height;
 
         // const all: Record<string, any> = {... element.dataset, ... properties};
         const all: Record<string, any> = {... properties};

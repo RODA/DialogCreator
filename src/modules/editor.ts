@@ -9,31 +9,27 @@ import { utils } from '../library/utils';
 
 export const editor: Editor = {
 
-    dialog: document.createElement('div'),
-    dialogId: '',
-    selectedElementId: '',
-
     make: (dialogdiv: HTMLDivElement) => {
 
         const newDialogID = uuidv4();
-        editor.dialog.id = newDialogID;
-        editor.dialogId = newDialogID;
+        global.dialog.id = newDialogID;
+        global.dialogId = newDialogID;
 
-        editor.dialog.style.position = 'relative';
-        editor.dialog.style.width = editorSettings.dialog.width + 'px';
-        editor.dialog.style.height = editorSettings.dialog.height + 'px';
-        editor.dialog.style.backgroundColor = editorSettings.dialog.background || '#ffffff';
-        editor.dialog.style.border = '1px solid gray';
-        editor.dialog.addEventListener('click', (event: MouseEvent) => {
-            if ((event.target as HTMLDivElement).id === editor.dialogId) {
+        global.dialog.style.position = 'relative';
+        global.dialog.style.width = editorSettings.dialog.width + 'px';
+        global.dialog.style.height = editorSettings.dialog.height + 'px';
+        global.dialog.style.backgroundColor = editorSettings.dialog.background || '#ffffff';
+        global.dialog.style.border = '1px solid gray';
+        global.dialog.addEventListener('click', (event: MouseEvent) => {
+            if ((event.target as HTMLDivElement).id === global.dialogId) {
                 editor.deselectAll();
             }
         });
-        editor.dialog.addEventListener("drop", (event: MouseEvent) => {
+        global.dialog.addEventListener("drop", (event: MouseEvent) => {
             event.preventDefault();
         });
 
-        dialogdiv.append(editor.dialog);
+        dialogdiv.append(global.dialog);
 
         const properties: NodeListOf<HTMLInputElement> = document.querySelectorAll('#dialog-properties [id^="dialog"]');
 
@@ -51,14 +47,14 @@ export const editor: Editor = {
     updateDialogArea: function (properties) {
 
         // check for valid paper
-        if (editor.dialogId !== '') {
+        if (global.dialogId !== '') {
 
             if (properties.width != dialog.properties.width) {
-                editor.dialog.style.width =  properties.width + 'px';
+                global.dialog.style.width =  properties.width + 'px';
             }
 
             if (properties.height != dialog.properties.height) {
-                editor.dialog.style.height =  properties.height + 'px';
+                global.dialog.style.height =  properties.height + 'px';
             }
 
             if (properties.fontSize != dialog.properties.fontSize) {
@@ -110,8 +106,8 @@ export const editor: Editor = {
         if (data) {
             const element = utils.makeElement(data);
             element.dataset.type = name;
-            element.dataset.parentId = editor.dialog.id;
-            editor.dialog.appendChild(element);
+            element.dataset.parentId = global.dialog.id;
+            global.dialog.appendChild(element);
             editor.addElementListeners(element);
             dialog.addElement(element);
         }
@@ -121,7 +117,7 @@ export const editor: Editor = {
     addElementListeners(element) {
         element.addEventListener('click', (event) => {
             event.stopPropagation();
-            editor.selectedElementId = element.id;
+            global.selectedElementId = element.id;
             if (!element.classList.contains('selectedElement')) {
                 editor.deselectAll();
                 element.classList.add('selectedElement');
@@ -134,8 +130,8 @@ export const editor: Editor = {
     },
 
     addDragAndDrop(element) {
-        const dialogW = editor.dialog.getBoundingClientRect().width;
-        const dialogH = editor.dialog.getBoundingClientRect().height;
+        const dialogW = global.dialog.getBoundingClientRect().width;
+        const dialogH = global.dialog.getBoundingClientRect().height;
         let top = 0;
         let left = 0;
         let elementWidth = 0;
@@ -149,7 +145,7 @@ export const editor: Editor = {
             if (!element.classList.contains('selectedElement')) {
                 editor.deselectAll();
                 element.classList.add('selectedElement');
-                editor.selectedElementId = element.id;
+                global.selectedElementId = element.id;
                 const type = dialog.getElement(element.id)?.dataset.type;
                 if (!type) return;
                 global.messenger.emit(
@@ -221,26 +217,26 @@ export const editor: Editor = {
     },
 
     deselectAll: function () {
-        for (const element of editor.dialog.children) {
+        for (const element of global.dialog.children) {
             // last element in the set should be the cover
             element.classList.remove('selectedElement')
         }
-        editor.selectedElementId = '';
+        global.selectedElementId = '';
         editor.clearPropsList();
     },
 
     // updateElement(data) {
-    //     if (editor.selectedElementId !== '') {
-    //         dialog.updateElementProperties(editor.selectedElementId, data);
+    //     if (global.selectedElementId !== '') {
+    //         dialog.updateElementProperties(global.selectedElementId, data);
     //     }
     // },
 
     // remove element form paper and container
     removeSelectedElement() {
         // remove from dialog
-        document.getElementById(editor.selectedElementId)?.remove();
+        document.getElementById(global.selectedElementId)?.remove();
         // remove from container
-        dialog.removeElement(editor.selectedElementId);
+        dialog.removeElement(global.selectedElementId);
         // clear element properties
         editor.clearPropsList();
     },
@@ -265,6 +261,6 @@ export const editor: Editor = {
     },
 
     getElementFromContainer: function() {
-        return dialog.getElement(editor.selectedElementId);
+        return dialog.getElement(global.selectedElementId);
     },
 }

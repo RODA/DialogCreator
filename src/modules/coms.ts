@@ -15,6 +15,9 @@ export const global: Global = {
     fontFamily: 'Arial, Helvetica, sans-serif',
     maxWidth: 615,
     maxHeight: 455,
+    dialog: document.createElement('div'),
+    dialogId: '',
+    selectedElementId: '',
     handlers: {
         populateDefaults: {
             module: 'defaults', // the handler auto-finds the module in the modules/ folder

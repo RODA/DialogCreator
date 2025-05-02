@@ -67,14 +67,14 @@ const propertyUpdate = (ev: FocusEvent) => {
 
     const id = el.id.slice(2);
     let value = el.value;
-    const element = dialog.getElement(editor.selectedElementId);
+    const element = dialog.getElement(global.selectedElementId);
 
     if (element) {
         const dataset = element.dataset;
         let props = { [id]: value };
         if (id === "size" && (dataset.type === "Checkbox" || dataset.type === "Radio")) {
-            const dialogW = editor.dialog.getBoundingClientRect().width;
-            const dialogH = editor.dialog.getBoundingClientRect().height;
+            const dialogW = global.dialog.getBoundingClientRect().width;
+            const dialogH = global.dialog.getBoundingClientRect().height;
             if (Number(value) > Math.min(dialogW, dialogH) - 20) {
                 value = String(Math.round(Math.min(dialogW, dialogH) - 20));
                 el.value = value;
