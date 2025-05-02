@@ -17,18 +17,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
     utils.setOnlyNumbersWithMinus(["startvalDefaults", "maxvalDefaults"]);
 });
-
-
-ipcRenderer.on('populateDefaults', async () => {
-    utils.addAvailableElementsTo('elementsListDefaults');
-});
-
-
-// ipcRenderer.on('populateDefaults', async (_event, ...args) => {
-//     utils.handleEvent('populateDefaults', ...args);
-// });
-
-// if the function should return something:
-// ipcRenderer.on('populateDefaults', async (_event, ...args) => {
-//     const result = await utils.handleEvent('populateDefaults', ...args);
-// });
