@@ -1,6 +1,4 @@
 import { AnyElement } from './elements';
-import { Storage } from './editor';
-import { EventHandler } from './handlers';
 import { DialogProperties } from "../interfaces/dialog";
 
 export interface Utils {
@@ -18,14 +16,14 @@ export interface Utils {
     isElement(x: string, set: string[]): boolean;
     isNotElement(x: string, set: string[]): boolean;
     unselectRadioGroup: (element: HTMLElement) => void;
-    makeNameID: (type: string, nameidRecords: Record<string, number>) => string;
+    makeNameID: (type: string) => string;
     nameidValidChange: (newId: string, currentElement: HTMLElement) => boolean;
     setInputFilter: (textbox: HTMLInputElement | null, inputFilter: (value: string) => boolean) => void;
     setOnlyNumbers: (items: string[], prefix?: string) => void;
     setOnlyNumbersWithMinus: (items: string[], prefix?: string) => void;
     setOnlyDouble: (items: string[], prefix?: string) => void;
     isValidColor: (value: string) => boolean;
-    makeElement: (settings: AnyElement, storage: Storage) => HTMLElement;
+    makeElement: (settings: AnyElement) => HTMLElement;
     updateElement: (element: HTMLElement, properties?: AnyElement) => void;
     addAvailableElementsTo: (name: string) => void;
     addDefaultsButton: () => void;

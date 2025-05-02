@@ -113,7 +113,7 @@ export const utils: Utils = {
         );
     },
 
-    makeNameID: function(type, nameidRecords) {
+    makeNameID: function(type) {
         const existingIds = new Set(
             Array.from(document.querySelectorAll<HTMLElement>('[data-nameid]'))
                 .map(el => el.dataset.nameid!)
@@ -121,13 +121,10 @@ export const utils: Utils = {
 
         type = type.toLowerCase();
 
-        if (!(type in nameidRecords)) {
-            nameidRecords[type] = 1;
-        }
-
         let candidate: string;
+        let number = 1;
         do {
-            candidate = `${type}${nameidRecords[type]++}`;
+            candidate = `${type}${number++}`;
         } while (existingIds.has(candidate));
 
         return candidate;
@@ -224,13 +221,13 @@ export const utils: Utils = {
         return x.color !== '';
     },
 
-    makeElement: function(data, storage) {
+    makeElement: function(data) {
         if (typeof data !== 'object' || Array.isArray(data)) {
             showError('Invalid settings for this element.');
         }
 
         const uuid = uuidv4();
-        const nameid = utils.makeNameID(data.type, storage.nameidRecords);
+        const nameid = utils.makeNameID(data.type);
 
         let eltype = 'div';
         if (utils.isElement(data.type, ["Input", "Select"])) {
@@ -250,14 +247,14 @@ export const utils: Utils = {
             element.style.backgroundColor = data.color;
             element.style.maxWidth = data.maxWidth + 'px';
 
-            const lineHeight = storage.fontSize * 1.2;
+            const lineHeight = global.fontSize * 1.2;
             const paddingY = 3; // px
             const maxHeight = (lineHeight * data.lineClamp) + 3 * paddingY;
             element.style.maxHeight = maxHeight + 'px';
 
             const span = document.createElement('span');
             span.className = 'smart-button-text';
-            span.style.fontFamily = storage.fontFamily;
+            span.style.fontFamily = global.fontFamily;
             /* --- textContent instead of innerHTML or innerText --- */
             span.textContent = data.label;
 
@@ -266,7 +263,7 @@ export const utils: Utils = {
             utils.updateButton(
                 element as HTMLDivElement,
                 data.label,
-                storage.fontSize,
+                global.fontSize,
                 data.lineClamp,
                 data.maxWidth
             )
@@ -366,8 +363,8 @@ export const utils: Utils = {
             display.style.padding = '0px ' + data.space + 'px';
             display.dataset.nameid = nameid;
 
-            display.style.fontFamily = storage.fontFamily;
-            display.style.fontSize = storage.fontSize + 'px';
+            display.style.fontFamily = global.fontFamily;
+            display.style.fontSize = global.fontSize + 'px';
             display.style.color = data.fontColor || '#000000';
 
             const increase = document.createElement("div");
@@ -416,8 +413,8 @@ export const utils: Utils = {
         if (utils.isNotElement(data.type, ["Counter", "Label"])) {
             data.nameid = nameid;
         }
-        element.style.fontFamily = storage.fontFamily;
-        element.style.fontSize = storage.fontSize + 'px';
+        element.style.fontFamily = global.fontFamily;
+        element.style.fontSize = global.fontSize + 'px';
 
         if (utils.exists(data.fontColor)) {
             element.style.color = data.fontColor;
