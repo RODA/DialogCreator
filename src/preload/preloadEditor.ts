@@ -12,7 +12,7 @@ global.elementSelected = false;
 // dialog -- the white part
 // editor -- the whole window
 
-const onInitializeDialogProperties = () => {
+const initializeDialogProperties = () => {
     // add dialog props
     const properties: NodeListOf<HTMLInputElement> = document.querySelectorAll('#dialog-properties [id^="dialog"]');
 
@@ -58,7 +58,6 @@ const onInitializeDialogProperties = () => {
         });
     }
 }
-
 
 const propertyUpdate = (ev: FocusEvent) => {
     const el = ev.target as HTMLInputElement;
@@ -189,18 +188,14 @@ global.on('selectElement', (id) => {
 
 document.addEventListener('DOMContentLoaded', () => {
 
-
     utils.setOnlyNumbers(["width", "height", "size", "space", "left", "top", "handlesize", "handlepos", "lineClamp"]);
     utils.setOnlyNumbersWithMinus(["startval", "maxval"]);
 
     // Events - must be first ====
-    onInitializeDialogProperties();
+    initializeDialogProperties();
 
     // create new dialog when first opened and trigger events
-    const dialogdiv = document.getElementById('dialog');
-    if (dialogdiv) {
-        editor.make(dialogdiv as HTMLDivElement);
-    }
+    editor.newDialog();
 
     utils.addAvailableElementsTo('elementsList');
     utils.addDefaultsButton();
@@ -243,7 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 })
 
-
+// TODO: this does not belong to this window. Move to conditions module.
 ipcRenderer.on('conditionsValid', (event, args) => {
     if (args) {
         BrowserWindow.getFocusedWindow()?.close();

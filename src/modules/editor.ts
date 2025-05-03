@@ -9,7 +9,7 @@ import { utils } from '../library/utils';
 
 export const editor: Editor = {
 
-    make: (dialogdiv: HTMLDivElement) => {
+    newDialog: () => {
 
         const newDialogID = uuidv4();
         global.dialog.id = newDialogID;
@@ -29,7 +29,10 @@ export const editor: Editor = {
             event.preventDefault();
         });
 
-        dialogdiv.append(global.dialog);
+        const dialogdiv = document.getElementById('dialog') as HTMLDivElement;
+        if (dialogdiv) {
+            dialogdiv.append(global.dialog);
+        }
 
         const properties: NodeListOf<HTMLInputElement> = document.querySelectorAll('#dialog-properties [id^="dialog"]');
 

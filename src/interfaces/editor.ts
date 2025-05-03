@@ -2,7 +2,7 @@ import { AnyElement } from './elements';
 import { DialogProperties } from './dialog';
 
 export interface Editor {
-    make: (dialog: HTMLDivElement) => void;
+    newDialog: () => void;
     updateDialogArea: (props: DialogProperties) => void;
     drawAvailableElements: (window?: string) => HTMLUListElement;
     deselectAll: () => void;

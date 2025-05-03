@@ -1,4 +1,3 @@
-import { EventEmitter } from 'events';
 import { Elements } from './elements';
 
 export interface ShowMessage {
