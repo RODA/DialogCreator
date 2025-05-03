@@ -8,7 +8,11 @@ export interface ShowMessage {
 }
 
 export interface Global {
-    messenger: EventEmitter;
+    emit(channel: string, ...args: unknown[]): void;
+    send(channel: string, ...args: unknown[]): void;
+    sendTo(window: string, channel: string, ...args: unknown[]): void;
+    on(channel: string, listener: (...args: unknown[]) => void): void;
+    handlers: { [key: string]: string };
     elements: Elements;
     elementSelected: boolean;
     fontSize: number;
@@ -18,10 +22,4 @@ export interface Global {
     dialog: HTMLDivElement;
     dialogId: string;
     selectedElementId: string;
-    handlers: {
-        [key: string]: {
-            module: string;
-            functioname: string;
-        }
-    }
 }

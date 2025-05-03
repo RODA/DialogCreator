@@ -853,21 +853,21 @@ export const utils: Utils = {
             return;
         }
         try {
-            let { module, functioname } = handler;
-            const modulePath = path.join(__dirname, '../modules', module);
+            const modulePath = path.join(__dirname, handler);
 
             if (fs.existsSync(modulePath + '.js')) {
                 const imported = await import(modulePath);
                 // the object of interest is the first exported one from that module
                 const key = Object.keys(imported)[0];
+                // (there really should be only one export per module)
 
                 // then extract the function from that object
-                const func = imported[key][functioname];
+                const func = imported[key][eventName];
 
                 if (typeof func === 'function') {
                     return await func(...args);
                 } else {
-                    console.error(`Function ${functioname} not found in module ${module}`);
+                    console.error(`Function ${eventName} not found in module ${module}`);
                 }
             } else {
                 showError(`Module "${module}" not found in the modules/ directory.`);

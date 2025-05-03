@@ -1,4 +1,3 @@
-import { ipcRenderer } from "electron";
 import { utils } from "../library/utils";
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -15,5 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
         "lineClampDefaults"
     ]);
 
-    utils.setOnlyNumbersWithMinus(["startvalDefaults", "maxvalDefaults"]);
+    utils.setOnlyNumbersWithMinus([
+        "startvalDefaults",
+        "maxvalDefaults"
+    ]);
 });

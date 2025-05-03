@@ -148,9 +148,9 @@ export const editor: Editor = {
                 global.selectedElementId = element.id;
                 const type = dialog.getElement(element.id)?.dataset.type;
                 if (!type) return;
-                global.messenger.emit(
+                global.emit( // only to the current window / process
                     'selectElement',
-                    element
+                    element.id
                 );
             }
 

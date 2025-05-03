@@ -12,13 +12,17 @@ import * as path from "path";
 let editorWindow: BrowserWindow;
 let secondWindow: BrowserWindow;
 
+const windowid: { [key: string]: number } = {
+    editorWindow: 1,
+    secondWindow: 2
+}
+
 function createMainWindow() {
     editorWindow = new BrowserWindow({
         title: 'Dialog creator',
         webPreferences: {
             contextIsolation: true,
             preload: path.join(__dirname, "preload/preloadEditor.js"),
-            // TODO -- use webpack to enable this
             sandbox: false
         },
         width: 1200,
@@ -92,7 +96,12 @@ function createSecondWindow(args: { [key: string]: any }) {
 
     // Garbage collection handle
     secondWindow.on('closed', function() {
-        if (editorWindow && !editorWindow.isDestroyed()) {
+        if (
+            editorWindow &&
+            !editorWindow.isDestroyed() &&
+            editorWindow.webContents &&
+            !editorWindow.webContents.isDestroyed()
+        ) {
             editorWindow.webContents.send('removeCover');
         }
     });
@@ -106,7 +115,7 @@ function createSecondWindow(args: { [key: string]: any }) {
     secondWindow.webContents.on("did-finish-load", () => {
         switch (args.file) {
             case 'defaults.html':
-                secondWindow.webContents.send("populateDefaults");
+                secondWindow.webContents.send("addElementsToDefaults");
                 break;
             case 'conditions.html':
                 // secondWindow.webContents.send("conditions", args.conditions);
@@ -114,26 +123,29 @@ function createSecondWindow(args: { [key: string]: any }) {
             default:
                 break;
         }
-        if (editorWindow && !editorWindow.isDestroyed()) {
-            editorWindow.webContents.send('addCover');
-        }
+        editorWindow.webContents.send('addCover');
     });
+
+    windowid.secondWindow = secondWindow.id;
 }
 
 function setupIPC() {
 
-    ipcMain.on('secondWindow', (event, args) => {
+    // "_event" means that I know the event exists but I don't need it
+    // using "event" might trigger linter warnings, for instance
+    // 'event' is declared but its value is never read
+    ipcMain.on('secondWindow', (_event, args) => {
         createSecondWindow(args);
     });
 
     // send condition for validation to container
-    ipcMain.on('conditionsCheck', (event, args) => {
+    ipcMain.on('conditionsCheck', (_event, args) => {
         if (editorWindow && !editorWindow.isDestroyed()) {
             editorWindow.webContents.send('conditionsCheck', args);
         }
     });
 
-    ipcMain.on('showDialogMessage', (event, args) => {
+    ipcMain.on('showDialogMessage', (_event, args) => {
         dialog.showMessageBox(editorWindow, {
             type: args.type,
             title: args.title,
@@ -141,7 +153,7 @@ function setupIPC() {
         })
     });
 
-    ipcMain.on('showError', (event, message) => {
+    ipcMain.on('showError', (_event, message) => {
         dialog.showMessageBox(editorWindow, {
             type: "error",
             title: "Error",
@@ -149,9 +161,21 @@ function setupIPC() {
         });
     });
 
-
-    ipcMain.on('resize-editorWindow', (event, { width, height }) => {
+    ipcMain.on('resize-editorWindow', (_event, { width, height }) => {
         editorWindow.setSize(Math.max(width + 560, 1200), Math.max(height + 320, 800));
+    });
+
+    ipcMain.on("send-to-window", (_event, window, channel, ...args) => {
+        if (window == "all") { // forward to all windows
+            BrowserWindow.getAllWindows().forEach((win) => {
+                win.webContents.send(`response-from-main${channel}`, ...args);
+            });
+        } else {
+            const win = BrowserWindow.fromId(windowid[window]);
+            if (win && !win.isDestroyed() && !win.webContents.isDestroyed()) {
+                win.webContents.send(`response-from-main${channel}`, ...args);
+            }
+        }
     });
 }
 

@@ -104,10 +104,11 @@ const propertyUpdateOnEnter = (ev: KeyboardEvent) => {
     }
 }
 
-global.messenger.on('selectElement', function (element: HTMLElement) {
+global.on('selectElement', (id) => {
     global.elementSelected = true;
     // update props tab
     document.getElementById('propertiesList')?.classList.remove('hidden');
+    const element = document.getElementById(id as string) as HTMLElement;
     const dataset = element.dataset;
 
     const ellist = document.querySelectorAll('#propertiesList [id^="el"]');
@@ -186,8 +187,8 @@ global.messenger.on('selectElement', function (element: HTMLElement) {
 });
 
 
-
 document.addEventListener('DOMContentLoaded', () => {
+
 
     utils.setOnlyNumbers(["width", "height", "size", "space", "left", "top", "handlesize", "handlepos", "lineClamp"]);
     utils.setOnlyNumbersWithMinus(["startval", "maxval"]);
@@ -255,12 +256,4 @@ ipcRenderer.on('conditionsValid', (event, args) => {
         const conditionsInputs = document.getElementById('conditionsInputs') as HTMLDivElement;
         conditionsInputs.insertAdjacentHTML('beforeend', message);
     }
-});
-
-ipcRenderer.on('addCover', (event, args) => {
-    document.getElementById('editor-cover')?.classList.add('editor-cover');
-});
-
-ipcRenderer.on('removeCover', (event, args) => {
-    document.getElementById('editor-cover')?.classList.remove('editor-cover');
 });

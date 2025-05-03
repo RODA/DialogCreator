@@ -39,10 +39,7 @@ export interface Utils {
         obj: { [key: string]: string },
     ) => void;
     updateCheckboxColor: (uuid: string, color: string) => void;
-    handleEvent(
-        eventName: string,
-        ...args: any[]
-    ): Promise<void>;
+    handleEvent(eventName: string, ...args: unknown[]): Promise<void>;
     objViewClassValid: (currentElement: HTMLElement) => boolean;
     collectDialogProperties: () => DialogProperties;
     updateFont: (fontSize: number, fontFamily?: string) => void;

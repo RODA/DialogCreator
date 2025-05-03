@@ -7,8 +7,30 @@ import { Elements } from '../interfaces/elements';
 import { elements } from '../modules/elements';
 import { utils } from '../library/utils';
 
+
+const messenger = new EventEmitter();
+
 export const global: Global = {
-    messenger: new EventEmitter(),
+    emit(channel, ...args) { messenger.emit(channel, ...args); },
+    // send to all listeners from all processed, via ipcMain
+    send(channel, ...args) { ipcRenderer.send("send-to-window", "all", channel, ...args); },
+    sendTo(window, channel, ...args) {
+        ipcRenderer.send("send-to-window", window, channel, ...args);
+    },
+    on(channel, listener) {
+        ipcRenderer.on(`response-from-main${channel}`, (_event, ...args) => {
+            messenger.emit(channel, ...args);
+        });
+        messenger.on(channel, listener);
+    },
+
+    // IPC dispatcher
+    handlers: {
+        addCover: '../modules/cover',
+        removeCover: '../modules/cover',
+        addElementsToDefaults: '../modules/defaults',
+    },
+
     elements: {} as Elements,
     elementSelected: false,
     fontSize: 12,
@@ -17,15 +39,7 @@ export const global: Global = {
     maxHeight: 455,
     dialog: document.createElement('div'),
     dialogId: '',
-    selectedElementId: '',
-
-    // IPC dispatcher
-    handlers: {
-        populateDefaults: {
-            module: 'defaults', // the handler finds the module in the modules/ folder
-            functioname: 'addElementsToDefaults'
-        },
-    }
+    selectedElementId: ''
 }
 
 // automatically dispatch all events to their respective handlers
@@ -34,14 +48,13 @@ for (const eventName in global.handlers) {
         // assume the event returns something
         const result = await utils.handleEvent(eventName, ...args);
         if (utils.exists(result)) {
-            global.messenger.emit(eventName + 'Result', result);
+            messenger.emit(eventName + '-result', result);
         }
     });
 }
 
-global.elements = { ...elements };
-global.messenger.on('updateDefaults', (event, updatedElements) => {
-    global.elements = { ...updatedElements };
+ipcRenderer.on('consolog', (event, object: any) => {
+    console.log(object);
 });
 
 
@@ -53,6 +66,14 @@ export const showError = (message: string) => {
     ipcRenderer.send('showError', message);
 }
 
-ipcRenderer.on('consolog', (event, object: any) => {
-    console.log(object);
+
+global.elements = { ...elements };
+global.on('updateDefaults', (args) => {
+    const updatedElements = args as Elements;
+    global.elements = { ...updatedElements };
 });
+
+// global.on('updateDefaults', (...args) => {
+//     const [updatedElements] = args as [Elements];
+//     global.elements = { ...updatedElements };
+// });
