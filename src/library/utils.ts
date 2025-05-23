@@ -64,6 +64,10 @@ export const utils: Utils = {
         return (x === false || (typeof x === 'string' && (x === 'false' || x === 'False')));
     },
 
+    isNull: function(x) {
+        return utils.exists(x) && x === null;
+    },
+
     missing: function (x) {
         return x === void 0 || x === undefined;
     },
@@ -72,11 +76,7 @@ export const utils: Utils = {
         return x !== void 0 && x !== undefined;
     },
 
-    isNull: function(x) {
-        return utils.exists(x) && x === null;
-    },
-
-    isElement: function (x, set) {
+    isElementOf: function (x, set) {
         if (
             utils.missing(x) ||
             utils.isNull(x) ||
@@ -90,7 +90,7 @@ export const utils: Utils = {
         return set.indexOf(x) >= 0;
     },
 
-    isNotElement: function (x, set) {
+    isNotElementOf: function (x, set) {
         if (
             utils.missing(x) ||
             utils.isNull(x) ||
@@ -231,7 +231,7 @@ export const utils: Utils = {
         const nameid = utils.makeNameID(data.type);
 
         let eltype = 'div';
-        if (utils.isElement(data.type, ["Input", "Select"])) {
+        if (utils.isElementOf(data.type, ["Input", "Select"])) {
             eltype = data.type.toLowerCase();
         }
 
@@ -411,7 +411,7 @@ export const utils: Utils = {
 
         }
 
-        if (utils.isNotElement(data.type, ["Counter", "Label"])) {
+        if (utils.isNotElementOf(data.type, ["Counter", "Label"])) {
             data.nameid = nameid;
         }
         element.style.fontFamily = global.fontFamily;

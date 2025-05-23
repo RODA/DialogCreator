@@ -8,13 +8,13 @@ export interface Utils {
     isInteger: (x: number) => boolean;
     asNumeric(x: string): number;
     asInteger(x: string): number;
-    isTrue: (x: boolean) => boolean;
-    isFalse: (x: boolean) => boolean;
+    isTrue: (x: unknown) => boolean;
+    isFalse: (x: unknown) => boolean;
+    isNull: (x: unknown) => boolean;
     missing: (x: unknown) => boolean;
     exists: (x: unknown) => boolean;
-    isNull: (x: unknown) => boolean;
-    isElement(x: string, set: string[]): boolean;
-    isNotElement(x: string, set: string[]): boolean;
+    isElementOf<T>(x: T, set: T[]): boolean;
+    isNotElementOf<T>(x: T, set: T[]): boolean;
     unselectRadioGroup: (element: HTMLElement) => void;
     makeNameID: (type: string) => string;
     nameidValidChange: (newId: string, currentElement: HTMLElement) => boolean;
