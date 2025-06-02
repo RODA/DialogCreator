@@ -114,18 +114,16 @@ export const utils: Utils = {
         );
     },
 
-    makeNameID: function(type) {
+    makeUniqueNameID: function(nameid) {
         const existingIds = new Set(
             Array.from(document.querySelectorAll<HTMLElement>('[data-nameid]'))
                 .map(el => el.dataset.nameid!)
         );
 
-        type = type.toLowerCase();
-
         let candidate: string;
         let number = 1;
         do {
-            candidate = `${type}${number++}`;
+            candidate = `${nameid}${number++}`;
         } while (existingIds.has(candidate));
 
         return candidate;
@@ -228,7 +226,7 @@ export const utils: Utils = {
         }
 
         const uuid = uuidv4();
-        const nameid = utils.makeNameID(data.type);
+        const nameid = utils.makeUniqueNameID(data.nameid);
 
         let eltype = 'div';
         if (utils.isElementOf(data.type, ["Input", "Select"])) {
@@ -733,34 +731,6 @@ export const utils: Utils = {
         }
     },
 
-    addDefaultsButton: function() {
-        const elementsList = document.getElementById('elementsList');
-        if (elementsList) {
-            const div = document.createElement('div');
-            div.className = 'mt-1_5';
-            const button = document.createElement('button');
-            button.className = 'custombutton';
-            button.innerText = 'Default values';
-            button.setAttribute('type', 'button');
-            button.style.width = '150px';
-            button.addEventListener('click', function () {
-                ipcRenderer.send(
-                    'secondWindow',
-                    {
-                        width: 640,
-                        height: 480,
-                        backgroundColor: '#fff',
-                        title: 'Default values',
-                        file: 'defaults.html',
-                        elements: global.elements,
-                    }
-                );
-            });
-            div.appendChild(button);
-            elementsList.appendChild(div);
-        }
-    },
-
     updateButton: function(
         button,
         text,
@@ -932,5 +902,11 @@ export const utils: Utils = {
             }
         }
     },
+
+    capitalize: capitalize
+}
+
+export function capitalize(str: string) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
 }
 

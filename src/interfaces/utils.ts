@@ -16,7 +16,7 @@ export interface Utils {
     isElementOf<T>(x: T, set: T[]): boolean;
     isNotElementOf<T>(x: T, set: T[]): boolean;
     unselectRadioGroup: (element: HTMLElement) => void;
-    makeNameID: (type: string) => string;
+    makeUniqueNameID: (type: string) => string;
     nameidValidChange: (newId: string, currentElement: HTMLElement) => boolean;
     setInputFilter: (textbox: HTMLInputElement | null, inputFilter: (value: string) => boolean) => void;
     setOnlyNumbers: (items: string[], prefix?: string) => void;
@@ -26,7 +26,6 @@ export interface Utils {
     makeElement: (settings: AnyElement) => HTMLElement;
     updateElement: (element: HTMLElement, properties?: AnyElement) => void;
     addAvailableElementsTo: (name: string) => void;
-    addDefaultsButton: () => void;
     updateButton: (
         button: HTMLDivElement,
         text: string,
@@ -43,4 +42,5 @@ export interface Utils {
     objViewClassValid: (currentElement: HTMLElement) => boolean;
     collectDialogProperties: () => DialogProperties;
     updateFont: (fontSize: number, fontFamily?: string) => void;
+    capitalize: (str: string) => string;
 }
