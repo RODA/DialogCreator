@@ -2,7 +2,7 @@
 import { ipcRenderer, BrowserWindow } from "electron";
 import { showError, global } from "../modules/coms";
 import { editor } from "../modules/editor";
-import { utils } from "../library/utils";
+import { specifics } from "../library/specifics";
 import { AnyElement } from "../interfaces/elements";
 import { dialog } from "../modules/dialog";
 
@@ -30,7 +30,7 @@ const initializeDialogProperties = () => {
             if (id === 'dialogwidth' || id === 'dialogheight') {
                 const value = element.value;
                 if (value) {
-                    const dialogprops = utils.collectDialogProperties();
+                    const dialogprops = specifics.collectDialogProperties();
                     editor.updateDialogArea(dialogprops);
                     const wh = {
                         width: Number(dialog.properties.width),
@@ -42,7 +42,7 @@ const initializeDialogProperties = () => {
             if (id === 'dialogFontSize') {
                 const value = element.value;
                 if (value) {
-                    utils.updateFont(Number(value));
+                    specifics.updateFont(Number(value));
                 }
             }
         });
@@ -83,8 +83,8 @@ const propertyUpdate = (ev: FocusEvent) => {
                 height: value
             };
         }
-        utils.updateElement(element, props as AnyElement);
-        // utils.updateElement(element, { [id]: value } as AnyElement);
+        specifics.updateElement(element, props as AnyElement);
+        // specifics.updateElement(element, { [id]: value } as AnyElement);
 
     } else {
         showError('Element not found.');
@@ -188,7 +188,7 @@ global.on('elementSelected', (id) => {
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    utils.setOnlyNumbers([
+    specifics.setOnlyNumbers([
         "width",
         "height",
         "size",
@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
         "handlepos",
         "lineClamp"
     ]);
-    utils.setOnlyNumbersWithMinus([
+    specifics.setOnlyNumbersWithMinus([
         "startval",
         "maxval"
     ]);
@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // create new dialog when first opened and trigger events
     editor.newDialog();
 
-    utils.addAvailableElementsTo('elementsList');
+    specifics.addAvailableElementsTo('elementsList');
     addDefaultsButton();
 
     document.getElementById('removeElement')?.addEventListener(

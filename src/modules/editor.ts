@@ -5,7 +5,7 @@ import { Elements } from '../interfaces/elements';
 import { DialogProperties } from "../interfaces/dialog";
 import { v4 as uuidv4 } from 'uuid';
 import { dialog } from './dialog';
-import { utils } from '../library/utils';
+import { specifics } from '../library/specifics';
 
 export const editor: Editor = {
 
@@ -106,7 +106,7 @@ export const editor: Editor = {
     // add new element on dialog
     addElementToDialog: function (name, data) {
         if (data) {
-            const element = utils.makeElement(data);
+            const element = specifics.makeElement(data);
             element.dataset.type = name;
             element.dataset.parentId = global.dialog.id;
             global.dialog.appendChild(element);

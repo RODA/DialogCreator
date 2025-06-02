@@ -6,6 +6,7 @@ import { EventEmitter } from 'events';
 import { Elements } from '../interfaces/elements';
 import { elements } from '../modules/elements';
 import { utils } from '../library/utils';
+import { specifics } from '../library/specifics';
 
 
 const messenger = new EventEmitter();
@@ -49,7 +50,7 @@ export const global: Global = {
 for (const eventName in global.handlers) {
     ipcRenderer.on(eventName, async (_event, ...args) => {
         // assume the event returns something
-        const result = await utils.handleEvent(eventName, ...args);
+        const result = await specifics.handleEvent(eventName, ...args);
         if (utils.exists(result)) {
             messenger.emit(eventName + '-result', result);
         }

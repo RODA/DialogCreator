@@ -7,7 +7,7 @@ const development = process.env.NODE_ENV === 'development';
 const OS_Windows = process.platform == 'win32';
 
 import { app, BrowserWindow, dialog, ipcMain, globalShortcut } from "electron";
-import { capitalize } from "./library/utils";
+import { utils } from "./library/utils";
 import * as path from "path";
 
 let editorWindow: BrowserWindow;
@@ -89,7 +89,7 @@ function createSecondWindow(args: { [key: string]: any }) {
             // (if false, preload is not needed)
             contextIsolation: true,
 
-            preload: path.join(__dirname, `preload/preload${capitalize(args.file)}.js`),
+            preload: path.join(__dirname, `preload/preload${utils.capitalize(args.file)}.js`),
             sandbox: false,
         },
         autoHideMenuBar: development ? false : true,
