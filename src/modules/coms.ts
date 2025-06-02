@@ -13,7 +13,10 @@ const messenger = new EventEmitter();
 export const global: Global = {
     emit(channel, ...args) { messenger.emit(channel, ...args); },
     // send to all listeners from all processed, via ipcMain
-    send(channel, ...args) { ipcRenderer.send("send-to-window", "all", channel, ...args); },
+    send(channel, ...args) {
+        global.sendTo('all', channel, ...args);
+        // ipcRenderer.send("send-to-window", "all", channel, ...args);
+    },
     sendTo(window, channel, ...args) {
         ipcRenderer.send("send-to-window", window, channel, ...args);
     },
