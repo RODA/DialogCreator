@@ -7,6 +7,7 @@ const development = process.env.NODE_ENV === 'development';
 const OS_Windows = process.platform == 'win32';
 
 import { app, BrowserWindow, dialog, ipcMain, globalShortcut } from "electron";
+import { capitalize } from "./library/utils";
 import * as path from "path";
 
 let editorWindow: BrowserWindow;
@@ -81,18 +82,22 @@ function createSecondWindow(args: { [key: string]: any }) {
         parent: editorWindow,
         title: args.title,
         webPreferences: {
-            nodeIntegration: true, // allows using import { ipcRenderer } from "electron"; directly in renderer
-            contextIsolation: true, // protects the context of the window, so that preload is needed (if false, preload is not needed)
-            preload: path.join(__dirname, "preload/preloadSecond.js"),
+            // allows using import { ipcRenderer } from "electron"; directly in renderer
+            nodeIntegration: true,
+
+            // protects the context of the window, so that preload is needed
+            // (if false, preload is not needed)
+            contextIsolation: true,
+
+            preload: path.join(__dirname, `preload/preload${capitalize(args.file)}.js`),
             sandbox: false,
         },
         autoHideMenuBar: development ? false : true,
         resizable: false,
     });
 
-
     // and load the index.html of the app.
-    secondWindow.loadFile(path.join(__dirname, "../src/pages", args.file));
+    secondWindow.loadFile(getFilePath(args.file + ".html"));
 
     // Garbage collection handle
     secondWindow.on('closed', function() {
@@ -114,10 +119,10 @@ function createSecondWindow(args: { [key: string]: any }) {
 
     secondWindow.webContents.on("did-finish-load", () => {
         switch (args.file) {
-            case 'defaults.html':
+            case 'defaults':
                 secondWindow.webContents.send("addElementsToDefaults");
                 break;
-            case 'conditions.html':
+            case 'conditions':
                 // secondWindow.webContents.send("conditions", args.conditions);
                 break;
             default:
@@ -186,12 +191,16 @@ function consolog(x: any) {
     }
 }
 
-async function quitApp() {
-    await Promise.all(
-        BrowserWindow.getAllWindows().map(win => {
-            if (!win.isDestroyed()) win.close();
-        })
-    );
+// async function quitApp() {
+//     await Promise.all(
+//         BrowserWindow.getAllWindows().map(win => {
+//             if (!win.isDestroyed()) win.close();
+//         })
+//     );
+//     app.quit();
+// }
+
+function quitApp() {
     app.quit();
 }
 
