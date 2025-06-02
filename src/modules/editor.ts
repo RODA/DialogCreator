@@ -86,12 +86,11 @@ export const editor: Editor = {
             const li = document.createElement('li');
             li.setAttribute('id', uuidv4());
             li.textContent = name.charAt(0).toUpperCase() + name.substring(1, name.length - 7);
-            // li.innerHTML = name;
+
             li.addEventListener('click', () => {
                 if (window === "defaults") {
-                    // TODO -- show the default properties
-                    console.log('show default properties for name: ', name);
-                } else if (window === "editor"){
+                    global.emit('defaultSelected', name);
+                } else if (window === "editor") {
                     const elementType = name as keyof Elements;
                     editor.addElementToDialog(
                         String(li.textContent),
@@ -125,8 +124,6 @@ export const editor: Editor = {
                 editor.deselectAll();
                 element.classList.add('selectedElement');
             }
-            // there is another emit on the "mousedown" event, this does it twice
-            // editor.editorEvents.emit('selectElement', dialog.getElement(element.id));
         })
 
         editor.addDragAndDrop(element);
@@ -152,7 +149,7 @@ export const editor: Editor = {
                 const type = dialog.getElement(element.id)?.dataset.type;
                 if (!type) return;
                 global.emit( // only to the current window / process
-                    'selectElement',
+                    'elementSelected',
                     element.id
                 );
             }

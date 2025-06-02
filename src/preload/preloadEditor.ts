@@ -103,7 +103,7 @@ const propertyUpdateOnEnter = (ev: KeyboardEvent) => {
     }
 }
 
-global.on('selectElement', (id) => {
+global.on('elementSelected', (id) => {
     global.elementSelected = true;
     // update props tab
     document.getElementById('propertiesList')?.classList.remove('hidden');
@@ -188,8 +188,21 @@ global.on('selectElement', (id) => {
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    utils.setOnlyNumbers(["width", "height", "size", "space", "left", "top", "handlesize", "handlepos", "lineClamp"]);
-    utils.setOnlyNumbersWithMinus(["startval", "maxval"]);
+    utils.setOnlyNumbers([
+        "width",
+        "height",
+        "size",
+        "space",
+        "left",
+        "top",
+        "handlesize",
+        "handlepos",
+        "lineClamp"
+    ]);
+    utils.setOnlyNumbersWithMinus([
+        "startval",
+        "maxval"
+    ]);
 
     // Events - must be first ====
     initializeDialogProperties();
@@ -198,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
     editor.newDialog();
 
     utils.addAvailableElementsTo('elementsList');
-    utils.addDefaultsButton();
+    addDefaultsButton();
 
     document.getElementById('removeElement')?.addEventListener(
         'click',
@@ -216,7 +229,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-
     document.getElementById('conditions')?.addEventListener('click', function () {
         // const id = (document.getElementById('elparentId') as HTMLInputElement).value;
         const element = editor.getElementFromContainer();
@@ -231,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 height: 310,
                 backgroundColor: '#fff',
                 title: 'Conditions for element: ' + element.dataset.nameid,
-                file: 'conditions.html',
+                file: 'conditions',
                 conditions: element.dataset.conditions
             }
         );
@@ -252,3 +264,31 @@ ipcRenderer.on('conditionsValid', (event, args) => {
         conditionsInputs.insertAdjacentHTML('beforeend', message);
     }
 });
+
+function addDefaultsButton() {
+    const elementsList = document.getElementById('elementsList');
+    if (elementsList) {
+        const div = document.createElement('div');
+        div.className = 'mt-1_5';
+        const button = document.createElement('button');
+        button.className = 'custombutton';
+        button.innerText = 'Default values';
+        button.setAttribute('type', 'button');
+        button.style.width = '150px';
+        button.addEventListener('click', function () {
+            ipcRenderer.send(
+                'secondWindow',
+                {
+                    width: 640,
+                    height: 480,
+                    backgroundColor: '#fff',
+                    title: 'Default values',
+                    file: 'defaults',
+                    elements: global.elements,
+                }
+            );
+        });
+        div.appendChild(button);
+        elementsList.appendChild(div);
+    }
+}
