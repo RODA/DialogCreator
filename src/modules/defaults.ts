@@ -3,7 +3,7 @@ import { editor } from "./editor";
 
 export const defaults = {
     addElementsToDefaults: () => {
-        const elementsList = document.getElementById('elementsListDefaults');
+        const elementsList = document.getElementById('elementsList');
         if (elementsList) {
             elementsList.innerHTML = '';
             elementsList.appendChild(editor.drawAvailableElements("defaults"));
