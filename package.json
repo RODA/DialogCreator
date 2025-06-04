@@ -27,6 +27,16 @@
     "directories": {
       "output": "build/output"
     },
+    "extraResources": [
+      {
+        "from": "src/database/uzbek.duckdb",
+        "to": "uzbek.duckdb"
+      },
+      {
+        "from": "src/assets/",
+        "to": "assets"
+      }
+    ],
     "win": {
       "icon": "build/DialogCreator.ico",
       "legalTrademarks": "MIT Licence",
@@ -58,6 +68,7 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
+    "duckdb": "^1.2.1",
     "uuid": "^11.1.0"
   }
 }
