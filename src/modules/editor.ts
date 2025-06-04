@@ -6,6 +6,7 @@ import { DialogProperties } from "../interfaces/dialog";
 import { v4 as uuidv4 } from 'uuid';
 import { dialog } from './dialog';
 import { specifics } from '../library/specifics';
+import { utils } from '../library/utils';
 
 export const editor: Editor = {
 
@@ -85,7 +86,7 @@ export const editor: Editor = {
         for (const name of availableElements) {
             const li = document.createElement('li');
             li.setAttribute('id', uuidv4());
-            li.textContent = name.charAt(0).toUpperCase() + name.substring(1, name.length - 7);
+            li.textContent = utils.capitalize(name.substring(0, name.length - 7));
 
             li.addEventListener('click', () => {
                 if (window === "defaults") {
