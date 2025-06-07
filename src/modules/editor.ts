@@ -1,12 +1,38 @@
+import { ipcRenderer } from "electron";
 import { showMessage, global } from "./coms";
 import { editorSettings } from './settings';
 import { Editor } from '../interfaces/editor';
 import { Elements } from '../interfaces/elements';
+import { elements as els } from './elements';
 import { DialogProperties } from "../interfaces/dialog";
 import { v4 as uuidv4 } from 'uuid';
 import { dialog } from './dialog';
 import { specifics } from '../library/specifics';
 import { utils } from '../library/utils';
+
+let elements = { ...els } as Elements;
+Object.keys(elements).forEach((element) => {
+    ipcRenderer.send('getProperties', element);
+});
+
+
+document.addEventListener('DOMContentLoaded', () => {
+
+    global.on("propertiesFromDB", (...args: unknown[]) => {
+        const name = args[0] as string;
+        const properties = args[1] as Record<string, string>;
+        const pkeys = Object.keys(properties);
+        if (pkeys.length > 0) {
+            for (const pkey of pkeys) {
+                let value = properties[pkey] as string | number;
+                if (utils.isNumeric(String(value))) {
+                    value = utils.asNumeric(String(value));
+                }
+                elements[name][pkey] = value;
+            }
+        }
+    });
+});
 
 export const editor: Editor = {
 
@@ -77,9 +103,7 @@ export const editor: Editor = {
 
     // called right after make
     drawAvailableElements: (window) => {
-        const availableElements = Object.keys(global.elements);
-            // .filter(str => str.startsWith("add"))
-            // .map(str => str.slice(3));
+        const availableElements = Object.keys(elements);
 
         const ul = document.createElement('ul');
         ul.setAttribute('id', 'paperAvailableElements');
@@ -89,13 +113,23 @@ export const editor: Editor = {
             li.textContent = utils.capitalize(name.substring(0, name.length - 7));
 
             li.addEventListener('click', () => {
+
                 if (window === "defaults") {
-                    global.emit('defaultSelected', name);
+                    // Remove highlight from all siblings
+                    ul.querySelectorAll('li').forEach((el) => {
+                        el.classList.remove('selected-available-element');
+                    });
+                    // Highlight this one
+                    li.classList.add('selected-available-element');
+
+                    global.emit('defaultElementSelected', name);
+                    ipcRenderer.send('getProperties', name);
+
                 } else if (window === "editor") {
                     const elementType = name as keyof Elements;
                     editor.addElementToDialog(
                         String(li.textContent),
-                        global.elements[elementType],
+                        elements[elementType],
                     );
                 }
             });
