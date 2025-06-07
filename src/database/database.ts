@@ -1,6 +1,7 @@
 import * as path from "path";
 import * as DuckDB from "duckdb";
-import { DBElements } from "../interfaces/database";
+import { Database, DBElementsProps } from "../interfaces/database";
+import { elements } from "../modules/elements";
 
 
 const duckdbOptions: {
@@ -31,41 +32,67 @@ export const db = new DuckDB.Database(dbFile, duckdbOptions,
     }
 );
 
-export const database = {
-    getProperties: async <K extends keyof DBElements>(element: K): Promise<Partial<DBElements[K]>> => {
-        return new Promise<Partial<DBElements[K]>>((resolve) => {
+export const database: Database = {
+    getProperties: async (element) => {
+        return new Promise<Record<string, string>>((resolve) => {
             db.all(
                 "SELECT property, value FROM elements WHERE element = ?",
                 [element],
                 (error, rows) => {
                     if (error) {
                         console.log(error);
-                        resolve({} as Partial<DBElements[K]>);
+                        resolve({});
                     } else {
-                        const result: any = {};
+                        const result: Record<string, string> = {};
                         for (const row of rows) {
                             result[row.property] = row.value;
                         }
-                        resolve(result as Partial<DBElements[K]>);
+                        resolve(result);
                     }
                 }
             );
         });
     },
-    updateProperty: async <K extends keyof DBElements>(element: K, property: string, value: string): Promise<void> => {
-        return new Promise<void>((resolve, reject) => {
+
+    updateProperty: async (element, property, value) => {
+        return new Promise<boolean>((resolve, reject) => {
             db.run(
-                "UPDATE elements SET value = ? WHERE element = ? AND property = ?",
-                [value, element, property],
+                "UPDATE elements SET value = '" + value + "' WHERE element = '" + element + "' AND property = '" + property + "'",
                 (error) => {
                     if (error) {
                         console.log(error);
-                        reject(error);
+                        resolve(false);
                     } else {
-                        resolve();
+                        resolve(true);
                     }
                 }
             );
         });
+    },
+
+    resetProperties: async (element: string) => {
+        // Only update properties that exist for the element type in DBElementsProps
+        const properties = elements[element as keyof typeof elements];
+
+        const allowedProps = DBElementsProps[element] || [];
+        const updates = Object.entries(properties)
+            .filter(([property]) => allowedProps.includes(property));
+
+        if (updates.length === 0) return false;
+
+        let success = true;
+        for (const [property, value] of updates) {
+            db.run(
+                "UPDATE elements SET value = '" + value + "' WHERE element = '" + element + "' AND property = '" + property + "'",
+                (error) => {
+                    if (error) {
+                        console.log(error);
+                        success = false;
+                    }
+                }
+            );
+        }
+
+        return success ? Object.fromEntries(updates) : false;
     }
 };

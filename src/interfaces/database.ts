@@ -128,3 +128,44 @@ export type DBElements = {
     Separator: Separator;
     Container: Container;
 };
+
+export type AnyDBElement = DBElements[keyof DBElements];
+
+export interface Database {
+    getProperties: (element: string) => Promise<Record<string, string>>;
+    updateProperty: (element: string, property: string, value: string) => Promise<boolean>;
+    resetProperties: (element: string) => Promise<false | Record<string, string>>;
+}
+
+export const DBElementsProps: Record<string, string[]> = {
+    buttonElement: [
+        'nameid', 'label', 'left', 'top', 'maxWidth', 'lineClamp', 'color', 'fontColor', 'isEnabled', 'isVisible'
+    ],
+    inputElement: [
+        'nameid', 'left', 'top', 'width', 'value', 'isEnabled', 'isVisible'
+    ],
+    selectElement: [
+        'nameid', 'left', 'top', 'width', 'value', 'isEnabled', 'isVisible'
+    ],
+    checkboxElement: [
+        'nameid', 'left', 'top', 'size', 'color', 'isChecked', 'isEnabled', 'isVisible'
+    ],
+    radioElement: [
+        'nameid', 'group', 'left', 'top', 'size', 'color', 'isSelected', 'isEnabled', 'isVisible'
+    ],
+    counterElement: [
+        'nameid', 'left', 'top', 'space', 'color', 'startval', 'maxval', 'isEnabled', 'isVisible'
+    ],
+    sliderElement: [
+        'nameid', 'left', 'top', 'width', 'height', 'direction', 'color', 'isEnabled', 'isVisible', 'handlepos', 'handleshape', 'handlecolor', 'handlesize'
+    ],
+    labelElement: [
+        'left', 'top', 'maxWidth', 'value', 'isEnabled', 'isVisible'
+    ],
+    separatorElement: [
+        'left', 'top', 'width', 'height', 'direction', 'color', 'isEnabled', 'isVisible'
+    ],
+    containerElement: [
+        'nameid', 'left', 'top', 'width', 'height', 'objViewClass', 'variableType', 'parentContainer', 'isEnabled', 'isVisible'
+    ]
+};
