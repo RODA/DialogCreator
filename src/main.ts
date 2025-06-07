@@ -9,6 +9,8 @@ const OS_Windows = process.platform == 'win32';
 import { app, BrowserWindow, dialog, ipcMain, globalShortcut } from "electron";
 import { utils } from "./library/utils";
 import * as path from "path";
+import { database } from "./database/database";
+import { DBElements } from "./interfaces/database";
 
 let editorWindow: BrowserWindow;
 let secondWindow: BrowserWindow;
@@ -180,6 +182,38 @@ function setupIPC() {
             if (win && !win.isDestroyed() && !win.webContents.isDestroyed()) {
                 win.webContents.send(`response-from-main${channel}`, ...args);
             }
+        }
+    });
+
+    ipcMain.on("getProperties", async (_event, name) => {
+        const properties = await database.getProperties(name as keyof DBElements);
+        BrowserWindow.getAllWindows().forEach((win) => {
+            win.webContents.send("response-from-mainpropertiesFromDB", name, properties);
+        });
+    });
+
+    ipcMain.on("updateProperty", async (_event, obj) => {
+
+        const ok = await database.updateProperty(obj.name as keyof DBElements, obj.property, obj.value);
+        if (ok) {
+            const properties = await database.getProperties(obj.name as keyof DBElements);
+            BrowserWindow.getAllWindows().forEach((win) => {
+                win.webContents.send("response-from-mainpropertiesFromDB", obj.name, properties);
+            });
+        }
+        else {
+            dialog.showErrorBox("Error", `Failed to update property ${obj.property} of ${obj.name}`);
+        }
+    });
+
+    ipcMain.on("resetProperties", async (_event, element) => {
+        const ok = await database.resetProperties(element);
+        if (utils.isFalse(ok)) {
+            dialog.showErrorBox("Error", `Failed to reset properties of ${element}`);
+        } else {
+            BrowserWindow.getAllWindows().forEach((win) => {
+                win.webContents.send("response-from-mainresetOK", ok);
+            });
         }
     });
 }
