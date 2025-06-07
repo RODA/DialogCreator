@@ -5,9 +5,10 @@ import { editor } from "../modules/editor";
 import { specifics } from "../library/specifics";
 import { AnyElement } from "../interfaces/elements";
 import { dialog } from "../modules/dialog";
+import { utils } from "../library/utils";
 
 // helpers for when enter key is pressed
-global.elementSelected = false;
+let elementSelected = false;
 
 // dialog -- the white part
 // editor -- the whole window
@@ -59,6 +60,10 @@ const initializeDialogProperties = () => {
     }
 }
 
+// specifics.elementsFromDB().then((items) => {
+//     global.elements = items;
+// });
+
 const propertyUpdate = (ev: FocusEvent) => {
     const el = ev.target as HTMLInputElement;
     // console.log(el);
@@ -96,7 +101,7 @@ const propertyUpdate = (ev: FocusEvent) => {
 // On Enter blur element so it triggers update
 const propertyUpdateOnEnter = (ev: KeyboardEvent) => {
     if (ev.key == 'Enter') {
-        if (global.elementSelected) {
+        if (utils.isTrue(elementSelected)) {
             const el = ev.target as HTMLInputElement;
             el.blur();
         }
@@ -104,7 +109,7 @@ const propertyUpdateOnEnter = (ev: KeyboardEvent) => {
 }
 
 global.on('elementSelected', (id) => {
-    global.elementSelected = true;
+    elementSelected = true;
     // update props tab
     document.getElementById('propertiesList')?.classList.remove('hidden');
     const element = document.getElementById(id as string) as HTMLElement;
@@ -221,7 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // remove the element on delete or backspace key
     document.addEventListener('keyup', function (ev) {
         if (ev.code == 'Delete' || ev.code == 'Backspace') {
-            if (global.elementSelected) {
+            if (utils.isTrue(elementSelected)) {
                 if (document.activeElement?.tagName === 'BODY') {
                     editor.removeSelectedElement();
                 }
@@ -283,8 +288,7 @@ function addDefaultsButton() {
                     height: 480,
                     backgroundColor: '#fff',
                     title: 'Default values',
-                    file: 'defaults',
-                    elements: global.elements,
+                    file: 'defaults'
                 }
             );
         });

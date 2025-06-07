@@ -3,8 +3,6 @@
 import { ipcRenderer } from 'electron';
 import { ShowMessage, Global } from '../interfaces/coms';
 import { EventEmitter } from 'events';
-import { Elements } from '../interfaces/elements';
-import { elements } from '../modules/elements';
 import { utils } from '../library/utils';
 import { specifics } from '../library/specifics';
 
@@ -35,8 +33,6 @@ export const global: Global = {
         addElementsToDefaults: '../modules/defaults',
     },
 
-    elements: {} as Elements,
-    elementSelected: false,
     fontSize: 12,
     fontFamily: 'Arial, Helvetica, sans-serif',
     maxWidth: 615,
@@ -70,14 +66,3 @@ export const showError = (message: string) => {
     ipcRenderer.send('showError', message);
 }
 
-
-global.elements = { ...elements };
-global.on('updateDefaults', (args) => {
-    const updatedElements = args as Elements;
-    global.elements = { ...updatedElements };
-});
-
-// global.on('updateDefaults', (...args) => {
-//     const [updatedElements] = args as [Elements];
-//     global.elements = { ...updatedElements };
-// });

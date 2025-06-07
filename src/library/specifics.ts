@@ -3,7 +3,6 @@
 
 import { Specifics } from '../interfaces/specifics';
 import { utils } from '../library/utils';
-import { ipcRenderer } from "electron";
 import { dialog } from '../modules/dialog';
 import { editor } from '../modules/editor';
 import { DialogProperties } from "../interfaces/dialog";
@@ -807,6 +806,3 @@ export const specifics: Specifics = {
         }
     }
 }
-
-
-
