@@ -27,8 +27,10 @@ export const utils: Utils = {
         if (utils.isNumeric(x)) {
             return true;
         }
-
-        if (utils.isNumeric("" + utils.asNumeric(x))) {
+        if (
+            utils.isNumeric("" + utils.asNumeric(x)) ||
+            utils.isInteger(utils.asInteger(x))
+        ) {
             return true;
         }
 
