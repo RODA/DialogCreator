@@ -1,0 +1,154 @@
+:root {
+    --main-bg-color: #a6a6a6;
+    --main-blue-color: dodgerblue;
+}
+
+html,
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: #f0f0f0;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.9rem;
+    overflow-y: hidden;
+    overflow-x: hidden; /* Prevent horizontal scroll on the whole page */
+}
+
+.editor-area {
+    display: flex;
+    align-items: stretch;
+    justify-content: flex-start;
+    width: 100%;
+    max-width: 700px;
+    margin: 0 auto;
+    box-sizing: border-box;
+    overflow-y: hidden;
+    overflow-x: hidden; /* Prevent horizontal scroll on the main flex container */
+}
+
+.elements {
+    flex-grow: 1;
+    padding: 20px 20px 0px 40px; /* Move 20px more to the right (total 40px left padding) */
+    background-color: #f0f0f0;
+    max-width: 200px;
+    min-width: 160px;
+    box-sizing: border-box;
+}
+
+#paperAvailableElements {
+    margin: 0px;
+    padding: 0px;
+    list-style-type: none;
+}
+
+#paperAvailableElements li {
+    cursor: pointer;
+    padding: 10px 10px; /* Reduce left/right padding */
+    border-bottom: 1px solid #FFF;
+}
+
+#middle-space {
+    width: 30px;
+    min-width: 30px;
+    max-width: 30px;
+    flex-shrink: 0;
+    flex-grow: 0;
+    background: transparent;
+}
+
+#properties {
+    padding: 0px 0px 50px 20px; /* Move 20px to the right */
+    background-color: #f0f0f0;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-width: 260px;
+    max-width: 320px;
+    width: 320px;
+    box-sizing: border-box;
+    align-items: stretch;
+}
+
+#propertiesList {
+    padding: 0;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow-y: hidden;
+    overflow-x: hidden; /* Prevent horizontal scroll in the properties list */
+    scrollbar-gutter: stable both-edges;
+    background-clip: padding-box;
+}
+
+#propertiesList h2 {
+    font-size: 0.9rem;
+    border-bottom: 2px solid #FFF;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
+    color: #323232;
+}
+
+#propertiesList .element-property {
+    display: grid;
+    grid-template-columns: 40% 60%;
+    gap: 8px;
+    margin-bottom: 0.5rem;
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#propertiesList .element-property label {
+    color: #323232;
+    font-size: 0.8rem;
+}
+
+#propertiesList .element-property input,
+#propertiesList .element-property select {
+    border-radius: 0px;
+    border: 1px solid #e6e5e5;
+    padding: 3px 3px;
+    color: #323232;
+    font-size: 0.8rem;
+}
+
+#propertiesList .element-property input:focus-visible,
+#propertiesList .element-property select:focus-visible {
+    outline: var(--main-blue-color) auto 1px;
+    outline-style: solid;
+}
+
+#propertiesList .element-property input {
+    padding: 3px 5px;
+}
+
+#properties .hidden-element {
+    display: none;
+}
+
+/* =====================*/
+.selectedElement {
+    outline: 1px dotted var(--main-blue-color);
+    outline-offset: 3px;
+}
+
+.selected-available-element {
+    background: #cccccc;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+/* Optional: Style the scrollbar for a more modern look */
+#propertiesList::-webkit-scrollbar {
+    width: 10px;
+}
+#propertiesList::-webkit-scrollbar-thumb {
+    background: #e0e0e0;
+    border-radius: 5px;
+}
+#propertiesList::-webkit-scrollbar-track {
+    background: #f0f0f0;
+}
+
