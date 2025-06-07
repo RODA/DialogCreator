@@ -12,8 +12,6 @@ export interface Global {
     sendTo(window: string, channel: string, ...args: unknown[]): void;
     on(channel: string, listener: (...args: unknown[]) => void): void;
     handlers: { [key: string]: string };
-    elements: Elements;
-    elementSelected: boolean;
     fontSize: number;
     fontFamily: string;
     maxWidth: number;

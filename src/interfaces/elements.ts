@@ -181,6 +181,7 @@ export interface Elements {
     labelElement: labelElementType;
     separatorElement: separatorElementType;
     containerElement: containerElementType;
+    [key: string]: Elements[keyof Elements];
 }
 
 
