@@ -630,7 +630,7 @@ export const specifics: Specifics = {
             elementsList.appendChild(editor.drawAvailableElements("editor"));
 
         } else {
-            showError('Cound not find the element list in editor window. Please check the HTML!')
+            showError('Could not find the element list in editor window. Please check the HTML!')
         }
     },
 

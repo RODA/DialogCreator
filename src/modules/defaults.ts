@@ -8,7 +8,7 @@ export const defaults = {
             elementsList.innerHTML = '';
             elementsList.appendChild(editor.drawAvailableElements("defaults"));
         } else {
-            showError('Cound not find the element list, please check the HTML.')
+            showError('Could not find the element list, please check the HTML.')
         }
     }
 }
