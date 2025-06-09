@@ -131,7 +131,7 @@ export type DBElements = {
 
 export type AnyDBElement = DBElements[keyof DBElements];
 
-export interface Database {
+export interface DBInterface {
     getProperties: (element: string) => Promise<Record<string, string>>;
     updateProperty: (element: string, property: string, value: string) => Promise<boolean>;
     resetProperties: (element: string) => Promise<false | Record<string, string>>;

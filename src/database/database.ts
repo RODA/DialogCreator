@@ -1,98 +1,73 @@
 import * as path from "path";
-import * as DuckDB from "duckdb";
-import { Database, DBElementsProps } from "../interfaces/database";
+import * as sqlite3 from "sqlite3";
+import { DBInterface, DBElementsProps } from "../interfaces/database";
 import { elements } from "../modules/elements";
+const sqlite = sqlite3.verbose();
 
-
-const duckdbOptions: {
-    access_mode: 'READ_WRITE' | 'READ_ONLY',
-    max_memory?: string,
-} = {
-    'access_mode': 'READ_WRITE',
-    'max_memory': '4096MB',
-};
-
-let dbDir = path.resolve("./src/database/");
-
-
-if (process.env.NODE_ENV == 'production') {
-    dbDir = path.join(path.resolve(__dirname), '../../../');
-    duckdbOptions['access_mode'] = 'READ_WRITE';
-    delete duckdbOptions.max_memory;
+let dbFile = '';
+if (process.env.NODE_ENV == 'development') {
+    dbFile = path.join(path.resolve('./src/database/DialogCreator.sqlite'));
+} else {
+    dbFile = path.join(path.resolve(__dirname, '../../../', 'DialogCreator.sqlite'));
+    // dbFile = path.join(path.resolve(__dirname, '../src/database/DialogCreator.sqlite'));
 }
 
-const dbFile = path.join(dbDir, "DialogCreator.duckdb");
+export const db = new sqlite.Database(dbFile);
 
-export const db = new DuckDB.Database(dbFile, duckdbOptions,
-    (error) => {
-        if (error) {
-            console.log('DB failed to open');
-            console.log(error);
-        }
-    }
-);
-
-export const database: Database = {
+export const database: DBInterface = {
     getProperties: async (element) => {
-        return new Promise<Record<string, string>>((resolve) => {
-            db.all(
-                "SELECT property, value FROM elements WHERE element = ?",
-                [element],
-                (error, rows) => {
-                    if (error) {
-                        console.log(error);
-                        resolve({});
-                    } else {
-                        const result: Record<string, string> = {};
-                        for (const row of rows) {
-                            result[row.property] = row.value;
-                        }
-                        resolve(result);
+        const sql = "SELECT property, value FROM elements WHERE element = ?";
+        return new Promise<Record<string, string>>((resolve, reject) => {
+            db.all(sql, [element], (err, rows) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    const result: Record<string, string> = {};
+                    for (const row of rows as { property: string; value: string }[]) {
+                        result[row.property] = row.value;
                     }
+                    resolve(result);
                 }
-            );
+            });
         });
     },
 
     updateProperty: async (element, property, value) => {
-        return new Promise<boolean>((resolve, reject) => {
-            db.run(
-                "UPDATE elements SET value = '" + value + "' WHERE element = '" + element + "' AND property = '" + property + "'",
-                (error) => {
-                    if (error) {
-                        console.log(error);
-                        resolve(false);
-                    } else {
-                        resolve(true);
-                    }
+        const sql = "UPDATE elements SET value = ? WHERE element = ? AND property = ?";
+        return new Promise<boolean>((resolve) => {
+            db.run(sql, [value, element, property], function (err) {
+                if (err) {
+                    console.error("Error updating property:", err);
+                    resolve(false);
+                } else {
+                    resolve(this.changes > 0);
                 }
-            );
+            });
         });
     },
 
     resetProperties: async (element: string) => {
-        // Only update properties that exist for the element type in DBElementsProps
         const properties = elements[element as keyof typeof elements];
-
         const allowedProps = DBElementsProps[element] || [];
         const updates = Object.entries(properties)
             .filter(([property]) => allowedProps.includes(property));
-
         if (updates.length === 0) return false;
-
         let success = true;
         for (const [property, value] of updates) {
-            db.run(
-                "UPDATE elements SET value = '" + value + "' WHERE element = '" + element + "' AND property = '" + property + "'",
-                (error) => {
-                    if (error) {
-                        console.log(error);
-                        success = false;
+            await new Promise<void>((resolve) => {
+                db.run(
+                    "UPDATE elements SET value = ? WHERE element = ? AND property = ?",
+                    [value, element, property],
+                    function (err) {
+                        if (err) {
+                            console.log(err);
+                            success = false;
+                        }
+                        resolve();
                     }
-                }
-            );
+                );
+            });
         }
-
         return success ? Object.fromEntries(updates) : false;
     }
 };

@@ -29,8 +29,8 @@
     },
     "extraResources": [
       {
-        "from": "src/database/uzbek.duckdb",
-        "to": "uzbek.duckdb"
+        "from": "src/database/DialogCreator.sqlite",
+        "to": "DialogCreator.sqlite"
       },
       {
         "from": "src/assets/",
@@ -59,6 +59,8 @@
     }
   },
   "devDependencies": {
+    "@types/emscripten": "^1.40.1",
+    "@types/sqlite3": "^3.1.11",
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^8.31.0",
     "@typescript-eslint/parser": "^8.31.0",
@@ -68,7 +70,7 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
-    "duckdb": "^1.2.1",
+    "sqlite3": "^5.1.7",
     "uuid": "^11.1.0"
   }
 }
