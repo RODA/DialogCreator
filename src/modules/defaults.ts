@@ -1,14 +1,8 @@
 import { showError } from "./coms";
-import { editor } from "./editor";
+import { rendererutils } from "../library/rendererutils";
 
 export const defaults = {
     addElementsToDefaults: () => {
-        const elementsList = document.getElementById('elementsList');
-        if (elementsList) {
-            elementsList.innerHTML = '';
-            elementsList.appendChild(editor.drawAvailableElements("defaults"));
-        } else {
-            showError('Could not find the element list, please check the HTML.')
-        }
+        rendererutils.addAvailableElementsTo("defaults")
     }
 }
