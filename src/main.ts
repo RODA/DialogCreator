@@ -6,7 +6,7 @@ const production = process.env.NODE_ENV === 'production';
 const development = process.env.NODE_ENV === 'development';
 const OS_Windows = process.platform == 'win32';
 
-import { app, BrowserWindow, dialog, ipcMain, globalShortcut } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, globalShortcut, Menu } from "electron";
 import { utils } from "./library/utils";
 import * as path from "path";
 import { database } from "./database/database";
@@ -19,6 +19,13 @@ const windowid: { [key: string]: number } = {
     editorWindow: 1,
     secondWindow: 2
 }
+
+function consolog(x: any) {
+    if (editorWindow && !editorWindow.isDestroyed()) {
+        editorWindow.webContents.send("consolog", x);
+    }
+}
+
 
 function createMainWindow() {
     editorWindow = new BrowserWindow({
@@ -36,29 +43,33 @@ function createMainWindow() {
     });
 
     // and load the index.html of the app.
-    editorWindow.loadFile(getFilePath("editor.html"));
+    editorWindow.loadFile(path.join(__dirname, "../src/pages/editor.html"));
+
+    // // Set the application menu
+    const mainMenu = Menu.buildFromTemplate(mainMenuTemplate);
+    Menu.setApplicationMenu(mainMenu);
 
     // Open the DevTools.
     if (development) {
         editorWindow.webContents.openDevTools();
     }
-
-    // Build menu from template
-    // const mainMenu = Menu.buildFromTemplate(mainMenuTemplate);
-    // Insert menu
-    // Menu.setApplicationMenu(mainMenu);
-
 }
 
 app.whenReady().then(() => {
     createMainWindow();
     setupIPC();
+
     const success = globalShortcut.register('CommandOrControl+Q', () => {
         quitApp();
     });
+
     if (!success) {
         console.error("Global shortcut registration failed");
     }
+
+    editorWindow.webContents.on("did-finish-load", () => {
+        // consolog(path.join(__dirname, "../src/pages/editor.html"));
+    });
 });
 
 app.on("window-all-closed", () => {
@@ -99,7 +110,7 @@ function createSecondWindow(args: { [key: string]: any }) {
     });
 
     // and load the index.html of the app.
-    secondWindow.loadFile(getFilePath(args.file + ".html"));
+    secondWindow.loadFile(path.join(__dirname, "../src/pages", args.file + ".html"));
 
     // Garbage collection handle
     secondWindow.on('closed', function() {
@@ -219,29 +230,111 @@ function setupIPC() {
 }
 
 
-function consolog(x: any) {
-    if (editorWindow && !editorWindow.isDestroyed()) {
-        editorWindow.webContents.send("consolog", x);
-    }
-}
-
-// async function quitApp() {
-//     await Promise.all(
-//         BrowserWindow.getAllWindows().map(win => {
-//             if (!win.isDestroyed()) win.close();
-//         })
-//     );
-//     app.quit();
-// }
-
 function quitApp() {
     app.quit();
 }
 
-function getFilePath(file: string) {
-    if (development) {
-        return path.join(__dirname, "../src/pages", file);
-    } else {
-        return path.join(__dirname, "pages", file);
-    }
-}
+
+// Create menu template
+import type { MenuItemConstructorOptions } from "electron";
+
+const mainMenuTemplate: MenuItemConstructorOptions[] = [
+    {
+        label: 'File',
+        submenu:[
+            {
+                label: 'New',
+                accelerator: "CommandOrControl+N",
+                click: () => {
+                    // editorWindow.webContents.send('newWindow');
+                }
+            },
+            {
+                label: 'Preview',
+                accelerator: "CommandOrControl+P",
+                click: () => {
+                    editorWindow.webContents.send('previewDialog');
+                    ipcMain.once('containerData', (event, arg) => {
+                        if (utils.isTrue(arg)) {
+                            // createObjectsWindow(arg);
+                        }
+                    });
+                }
+            },
+            { type: "separator" as const },
+            {
+                label: 'Load dialog',
+                accelerator: "CommandOrControl+O",
+                click: () => {
+
+                }
+            },
+            {
+                label: 'Save dialog',
+                accelerator: "CommandOrControl+S",
+                click: () => {
+                    editorWindow.webContents.send('previewDialog');
+                    ipcMain.once('containerData', (event, arg) => {
+                        if(utils.isTrue(arg)) {
+                            // saveDataToFile(arg);
+                        }
+                    });
+                }
+            },
+        ]
+    },
+    {
+        label: 'Edit',
+        submenu: [
+            {
+                label: "Undo",
+                accelerator: "CmdOrCtrl+Z",
+                click: () => {}
+            },
+            {
+                label: "Redo",
+                accelerator: "Shift+CmdOrCtrl+Z",
+                click: () => {}
+            },
+            { type: "separator" as const },
+            {
+                label: "Cut",
+                accelerator: "CmdOrCtrl+X",
+                click: () => {}
+            },
+            {
+                label: "Copy",
+                accelerator: "CmdOrCtrl+C",
+                click: () => {}
+            },
+            {
+                label: "Paste",
+                accelerator: "CmdOrCtrl+V",
+                click: () => {}
+            },
+            {
+                label: "Select All",
+                accelerator: "CmdOrCtrl+A",
+                click: () => {}
+            }
+        ]
+    },
+    {
+        label: 'Info',
+        submenu:[
+            {
+                label: 'About',
+                click() {
+                    // createAboutWindow();
+                }
+            },
+            {
+                label: 'User manual',
+                click() {
+                    // createUserManualWindow();
+                }
+            }
+        ]
+    },
+];
+
