@@ -1,8 +1,8 @@
 
 // Specific utilities for various (renderer) modules
 
-import { Specifics } from '../interfaces/specifics';
-import { utils } from '../library/utils';
+import { RendererUtils } from '../interfaces/rendererutils';
+import { utils } from './utils';
 import { dialog } from '../modules/dialog';
 import { editor } from '../modules/editor';
 import { DialogProperties } from "../interfaces/dialog";
@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 import * as path from "path";
 import * as fs from "fs";
 
-export const specifics: Specifics = {
+export const rendererutils: RendererUtils = {
 
     unselectRadioGroup: function(element) {
         document.querySelectorAll(`[group="${element.getAttribute("group")}"]`).forEach(
@@ -78,7 +78,7 @@ export const specifics: Specifics = {
 
 	setOnlyNumbers: function (items, prefix = 'el') {
         items.forEach((item) => {
-            specifics.setInputFilter(
+            rendererutils.setInputFilter(
                 <HTMLInputElement>document.getElementById(prefix + item),
                 function (value: string): boolean { return /^\d*$/.test(value); }
             );
@@ -87,7 +87,7 @@ export const specifics: Specifics = {
 
 	setOnlyNumbersWithMinus: function (items, prefix = 'el') {
         items.forEach((item) => {
-            specifics.setInputFilter(
+            rendererutils.setInputFilter(
                 <HTMLInputElement>document.getElementById(prefix + item),
                 function (value) { return /^-?\d*$/.test(value);}
             );
@@ -97,7 +97,7 @@ export const specifics: Specifics = {
 	setOnlyDouble: function (items, prefix = 'el') {
         items.forEach((item) => {
             const element = document.getElementById(prefix + item) as HTMLInputElement;
-            specifics.setInputFilter(
+            rendererutils.setInputFilter(
                 element,
                 function (value) {
                     if (value.endsWith("..") || value.endsWith(".,")) {
@@ -129,7 +129,7 @@ export const specifics: Specifics = {
         }
 
         const uuid = uuidv4();
-        const nameid = specifics.makeUniqueNameID(data.nameid);
+        const nameid = rendererutils.makeUniqueNameID(data.nameid);
 
         let eltype = 'div';
         if (utils.isElementOf(data.type, ["Input", "Select"])) {
@@ -162,7 +162,7 @@ export const specifics: Specifics = {
 
             element.appendChild(span);
 
-            specifics.updateButton(
+            rendererutils.updateButton(
                 element as HTMLDivElement,
                 data.label,
                 global.fontSize,
@@ -289,7 +289,7 @@ export const specifics: Specifics = {
             handle.id = 'slider-handle-' + uuid;
             element.appendChild(handle);
 
-            specifics.updateHandleStyle(handle, data);
+            rendererutils.updateHandleStyle(handle, data);
 
         } else if (data.type == "Label") {
 
@@ -380,7 +380,7 @@ export const specifics: Specifics = {
 
             switch (key) {
                 case 'nameid':
-                    if (!specifics.nameidValidChange(value, element)) {
+                    if (!rendererutils.nameidValidChange(value, element)) {
                         value = element.dataset.nameid || '';
                         showError('Name already exists.');
                     }
@@ -616,18 +616,18 @@ export const specifics: Specifics = {
             }
 
             if (slider && handle) {
-                specifics.updateHandleStyle(handle, {...all, ...dataset});
+                rendererutils.updateHandleStyle(handle, {...all, ...dataset});
             }
         });
 
     },
 
-    addAvailableElementsTo: function(name) {
-        const elementsList = document.getElementById(name);
+    addAvailableElementsTo: function(window) {
+        const elementsList = document.getElementById('elementsList');
         if (elementsList) {
             elementsList.innerHTML = '';
             // add available elements to the editor window
-            elementsList.appendChild(editor.drawAvailableElements("editor"));
+            elementsList.appendChild(editor.drawAvailableElements(window));
 
         } else {
             showError('Could not find the element list in editor window. Please check the HTML!')
@@ -785,7 +785,7 @@ export const specifics: Specifics = {
                     }
                     break;
                 case "Button":
-                    specifics.updateButton(
+                    rendererutils.updateButton(
                         element,
                         dataset.label || '',
                         fontSize,

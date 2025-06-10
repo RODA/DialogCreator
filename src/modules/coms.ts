@@ -4,7 +4,7 @@ import { ipcRenderer } from 'electron';
 import { ShowMessage, Global } from '../interfaces/coms';
 import { EventEmitter } from 'events';
 import { utils } from '../library/utils';
-import { specifics } from '../library/specifics';
+import { rendererutils } from '../library/rendererutils';
 
 
 const messenger = new EventEmitter();
@@ -46,7 +46,7 @@ export const global: Global = {
 for (const eventName in global.handlers) {
     ipcRenderer.on(eventName, async (_event, ...args) => {
         // assume the event returns something
-        const result = await specifics.handleEvent(eventName, ...args);
+        const result = await rendererutils.handleEvent(eventName, ...args);
         if (utils.exists(result)) {
             messenger.emit(eventName + '-result', result);
         }
