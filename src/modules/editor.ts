@@ -1,13 +1,13 @@
 import { ipcRenderer } from "electron";
-import { showMessage, global } from "./coms";
+import { showMessage, showError, global } from "./coms";
 import { editorSettings } from './settings';
 import { Editor } from '../interfaces/editor';
-import { Elements } from '../interfaces/elements';
+import { Elements, AnyElement } from '../interfaces/elements';
 import { elements as els } from './elements';
 import { DialogProperties } from "../interfaces/dialog";
 import { v4 as uuidv4 } from 'uuid';
 import { dialog } from './dialog';
-import { specifics } from '../library/specifics';
+import { rendererutils } from '../library/rendererutils';
 import { utils } from '../library/utils';
 
 let elements = { ...els } as Elements;
@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 export const editor: Editor = {
 
-    newDialog: () => {
+    makeDialog: () => {
 
         const newDialogID = uuidv4();
         global.dialog.id = newDialogID;
@@ -141,7 +141,7 @@ export const editor: Editor = {
     // add new element on dialog
     addElementToDialog: function (name, data) {
         if (data) {
-            const element = specifics.makeElement(data);
+            const element = rendererutils.makeElement(data);
             element.dataset.type = name;
             element.dataset.parentId = global.dialog.id;
             global.dialog.appendChild(element);
@@ -247,7 +247,7 @@ export const editor: Editor = {
         });
 
         document.addEventListener('dragend', () => {
-            console.log('dragend');
+            // console.log('dragend');
         });
     },
 
@@ -298,4 +298,100 @@ export const editor: Editor = {
     getElementFromContainer: function() {
         return dialog.getElement(global.selectedElementId);
     },
+
+    addDefaultsButton: function() {
+        const elementsList = document.getElementById('elementsList');
+        if (elementsList) {
+            const div = document.createElement('div');
+            div.className = 'mt-1_5';
+            const button = document.createElement('button');
+            button.className = 'custombutton';
+            button.innerText = 'Default values';
+            button.setAttribute('type', 'button');
+            button.style.width = '150px';
+            button.addEventListener('click', function () {
+                ipcRenderer.send(
+                    'secondWindow',
+                    {
+                        width: 640,
+                        height: 480,
+                        backgroundColor: '#fff',
+                        title: 'Default values',
+                        file: 'defaults'
+                    }
+                );
+            });
+            div.appendChild(button);
+            elementsList.appendChild(div);
+        }
+    },
+
+    propertyUpdate: function(ev) {
+        const el = ev.target as HTMLInputElement;
+            // console.log(el);
+            // editor.updateElement({ [el.name]: el.value });
+
+            const id = el.id.slice(2);
+            let value = el.value;
+            const element = dialog.getElement(global.selectedElementId);
+
+            if (element) {
+                const dataset = element.dataset;
+                let props = { [id]: value };
+                if (id === "size" && (dataset.type === "Checkbox" || dataset.type === "Radio")) {
+                    const dialogW = global.dialog.getBoundingClientRect().width;
+                    const dialogH = global.dialog.getBoundingClientRect().height;
+                    if (Number(value) > Math.min(dialogW, dialogH) - 20) {
+                        value = String(Math.round(Math.min(dialogW, dialogH) - 20));
+                        el.value = value;
+                    }
+                    props = {
+                        width: value,
+                        height: value
+                    };
+                }
+                rendererutils.updateElement(element, props as AnyElement);
+                // rendererutils.updateElement(element, { [id]: value } as AnyElement);
+
+            } else {
+                showError('Element not found.');
+            }
+    },
+
+    initializeDialogProperties: function() {
+        // add dialog props
+        const properties: NodeListOf<HTMLInputElement> = document.querySelectorAll('#dialog-properties [id^="dialog"]');
+
+        // update dialog properties
+        for (const element of properties) {
+            element.addEventListener('keyup', (ev: KeyboardEvent) => {
+                if (ev.key == 'Enter') {
+                    const el = ev.target as HTMLInputElement;
+                    el.blur();
+                }
+            });
+            // save on blur
+            element.addEventListener('blur', () => {
+                const id = element.id;
+                if (id === 'dialogwidth' || id === 'dialogheight') {
+                    const value = element.value;
+                    if (value) {
+                        const dialogprops = rendererutils.collectDialogProperties();
+                        editor.updateDialogArea(dialogprops);
+                        const wh = {
+                            width: Number(dialog.properties.width),
+                            height: Number(dialog.properties.height)
+                        }
+                        ipcRenderer.send('resize-editorWindow', wh);
+                    }
+                }
+                if (id === 'dialogFontSize') {
+                    const value = element.value;
+                    if (value) {
+                        rendererutils.updateFont(Number(value));
+                    }
+                }
+            });
+        }
+    }
 }

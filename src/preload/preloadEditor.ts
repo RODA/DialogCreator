@@ -1,10 +1,6 @@
-
 import { ipcRenderer, BrowserWindow } from "electron";
 import { showError, global } from "../modules/coms";
-import { editor } from "../modules/editor";
-import { specifics } from "../library/specifics";
-import { AnyElement } from "../interfaces/elements";
-import { dialog } from "../modules/dialog";
+import { rendererutils } from "../library/rendererutils";
 import { utils } from "../library/utils";
 
 // helpers for when enter key is pressed
@@ -13,92 +9,13 @@ let elementSelected = false;
 // dialog -- the white part
 // editor -- the whole window
 
-const initializeDialogProperties = () => {
-    // add dialog props
-    const properties: NodeListOf<HTMLInputElement> = document.querySelectorAll('#dialog-properties [id^="dialog"]');
-
-    // update dialog properties
-    for (const element of properties) {
-        element.addEventListener('keyup', (ev: KeyboardEvent) => {
-            if (ev.key == 'Enter') {
-                const el = ev.target as HTMLInputElement;
-                el.blur();
-            }
-        });
-        // save on blur
-        element.addEventListener('blur', () => {
-            const id = element.id;
-            if (id === 'dialogwidth' || id === 'dialogheight') {
-                const value = element.value;
-                if (value) {
-                    const dialogprops = specifics.collectDialogProperties();
-                    editor.updateDialogArea(dialogprops);
-                    const wh = {
-                        width: Number(dialog.properties.width),
-                        height: Number(dialog.properties.height)
-                    }
-                    ipcRenderer.send('resize-editorWindow', wh);
-                }
-            }
-            if (id === 'dialogFontSize') {
-                const value = element.value;
-                if (value) {
-                    specifics.updateFont(Number(value));
-                }
-            }
-        });
-    }
-
-    // add dialog syntax
-    // TODO
-    const dialogSyntax = document.getElementById('#dialog-syntax');
-    if (dialogSyntax) {
-        dialogSyntax.addEventListener('click', function () {
-            // ipcRenderer.send('createSecondWindow', editor.getDialogSyntax());
-            alert('click');
-        });
-    }
-}
-
-// specifics.elementsFromDB().then((items) => {
+// rendererutils.elementsFromDB().then((items) => {
 //     global.elements = items;
 // });
 
-const propertyUpdate = (ev: FocusEvent) => {
-    const el = ev.target as HTMLInputElement;
-    // console.log(el);
-    // editor.updateElement({ [el.name]: el.value });
-
-    const id = el.id.slice(2);
-    let value = el.value;
-    const element = dialog.getElement(global.selectedElementId);
-
-    if (element) {
-        const dataset = element.dataset;
-        let props = { [id]: value };
-        if (id === "size" && (dataset.type === "Checkbox" || dataset.type === "Radio")) {
-            const dialogW = global.dialog.getBoundingClientRect().width;
-            const dialogH = global.dialog.getBoundingClientRect().height;
-            if (Number(value) > Math.min(dialogW, dialogH) - 20) {
-                value = String(Math.round(Math.min(dialogW, dialogH) - 20));
-                el.value = value;
-            }
-            props = {
-                width: value,
-                height: value
-            };
-        }
-        specifics.updateElement(element, props as AnyElement);
-        // specifics.updateElement(element, { [id]: value } as AnyElement);
-
-    } else {
-        showError('Element not found.');
-    }
-
-
-}
 
 // On Enter blur element so it triggers update
+let propertyUpdate = function(ev: FocusEvent) {}; // overwritten once the editor module is loaded
 const propertyUpdateOnEnter = (ev: KeyboardEvent) => {
     if (ev.key == 'Enter') {
         if (utils.isTrue(elementSelected)) {
@@ -108,7 +25,24 @@ const propertyUpdateOnEnter = (ev: KeyboardEvent) => {
     }
 }
 
+
+// TODO: this does not belong to this window. Move to conditions module.
+global.on('conditionsValid', (event, args) => {
+    if (args) {
+        BrowserWindow.getFocusedWindow()?.close();
+    } else {
+        let message = '<p id="errors"><span>The conditions are not valid. Please check and click save again.</span><br/> For more information please consult the documentation</p>';
+
+        const conditions = document.getElementById('conditions') as HTMLInputElement;
+        conditions.style.height = '127px';
+
+        const conditionsInputs = document.getElementById('conditionsInputs') as HTMLDivElement;
+        conditionsInputs.insertAdjacentHTML('beforeend', message);
+    }
+});
+
 global.on('elementSelected', (id) => {
+
     elementSelected = true;
     // update props tab
     document.getElementById('propertiesList')?.classList.remove('hidden');
@@ -188,12 +122,20 @@ global.on('elementSelected', (id) => {
 
     // disable update and remove button | force reselection
     (document.getElementById('removeElement') as HTMLButtonElement).disabled = false;
+
+
 });
 
+window.addEventListener("DOMContentLoaded", async () => {
 
-document.addEventListener('DOMContentLoaded', () => {
+    // Dynamically import the editor module and run its setup
+    const { editor } = await import("../modules/editor");
 
-    specifics.setOnlyNumbers([
+    propertyUpdate = editor.propertyUpdate;
+
+    // Run the main setup logic for the editor window
+    // (mimics the previous top-level code in this file)
+    rendererutils.setOnlyNumbers([
         "width",
         "height",
         "size",
@@ -204,26 +146,19 @@ document.addEventListener('DOMContentLoaded', () => {
         "handlepos",
         "lineClamp"
     ]);
-    specifics.setOnlyNumbersWithMinus([
+
+    rendererutils.setOnlyNumbersWithMinus([
         "startval",
         "maxval"
     ]);
 
-    // Events - must be first ====
-    initializeDialogProperties();
+    editor.initializeDialogProperties();
+    editor.makeDialog();
+    rendererutils.addAvailableElementsTo("editor");
+    editor.addDefaultsButton();
 
-    // create new dialog when first opened and trigger events
-    editor.newDialog();
+    document.getElementById('removeElement')?.addEventListener('click', editor.removeSelectedElement);
 
-    specifics.addAvailableElementsTo('elementsList');
-    addDefaultsButton();
-
-    document.getElementById('removeElement')?.addEventListener(
-        'click',
-        editor.removeSelectedElement
-    );
-
-    // remove the element on delete or backspace key
     document.addEventListener('keyup', function (ev) {
         if (ev.code == 'Delete' || ev.code == 'Backspace') {
             if (utils.isTrue(elementSelected)) {
@@ -235,64 +170,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('conditions')?.addEventListener('click', function () {
-        // const id = (document.getElementById('elparentId') as HTMLInputElement).value;
         const element = editor.getElementFromContainer();
         if (!element) {
             showError('Could not find the element. Please check the HTML!');
             return;
         }
-        ipcRenderer.send(
-            'secondWindow',
-            {
-                width: 640,
-                height: 310,
-                backgroundColor: '#fff',
-                title: 'Conditions for element: ' + element.dataset.nameid,
-                file: 'conditions',
-                conditions: element.dataset.conditions
-            }
-        );
-    });
-})
-
-// TODO: this does not belong to this window. Move to conditions module.
-ipcRenderer.on('conditionsValid', (event, args) => {
-    if (args) {
-        BrowserWindow.getFocusedWindow()?.close();
-    } else {
-        let message = '<p id="errors"><span>The conditions are not valid. Please check and click save again.</span><br/> For more information please consult the documentation</p>';
-
-        const conditions = document.getElementById('conditions') as HTMLInputElement;
-        conditions.style.height = '127px';
-
-        const conditionsInputs = document.getElementById('conditionsInputs') as HTMLDivElement;
-        conditionsInputs.insertAdjacentHTML('beforeend', message);
-    }
-});
-
-function addDefaultsButton() {
-    const elementsList = document.getElementById('elementsList');
-    if (elementsList) {
-        const div = document.createElement('div');
-        div.className = 'mt-1_5';
-        const button = document.createElement('button');
-        button.className = 'custombutton';
-        button.innerText = 'Default values';
-        button.setAttribute('type', 'button');
-        button.style.width = '150px';
-        button.addEventListener('click', function () {
-            ipcRenderer.send(
-                'secondWindow',
-                {
-                    width: 640,
-                    height: 480,
-                    backgroundColor: '#fff',
-                    title: 'Default values',
-                    file: 'defaults'
-                }
-            );
+        ipcRenderer.send('secondWindow', {
+            width: 640,
+            height: 310,
+            backgroundColor: '#fff',
+            title: 'Conditions for element: ' + element.dataset.nameid,
+            file: 'conditions',
+            conditions: element.dataset.conditions
         });
-        div.appendChild(button);
-        elementsList.appendChild(div);
-    }
-}
+    });
+});

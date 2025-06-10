@@ -2,7 +2,7 @@ import { AnyElement } from './elements';
 import { DialogProperties } from './dialog';
 
 export interface Editor {
-    newDialog: () => void;
+    makeDialog: () => void;
     updateDialogArea: (props: DialogProperties) => void;
     drawAvailableElements: (window?: string) => HTMLUListElement;
     deselectAll: () => void;
@@ -13,6 +13,9 @@ export interface Editor {
     removeSelectedElement: () => void;
     clearPropsList: () => void;
     getElementFromContainer: () => HTMLElement | undefined;
+    addDefaultsButton: () => void;
+    propertyUpdate: (ev: FocusEvent) => void;
+    initializeDialogProperties: () => void;
 }
 
 export interface EditorSettings {
