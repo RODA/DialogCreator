@@ -1,6 +1,6 @@
 import { ipcRenderer } from 'electron';
 import { showError, global } from "../modules/coms";
-import { rendererutils } from "../library/rendererutils";
+import { renderutils } from "../library/renderutils";
 import { utils } from "../library/utils";
 import { DBElements } from "../interfaces/database";
 
@@ -8,7 +8,7 @@ let defaultElementSelected = "";
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    rendererutils.setOnlyNumbers([
+    renderutils.setOnlyNumbers([
         "width",
         "height",
         "size",
@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
         "lineClamp"
     ]);
 
-    rendererutils.setOnlyNumbersWithMinus([
+    renderutils.setOnlyNumbersWithMinus([
         "startval",
         "maxval"
     ]);

@@ -67,9 +67,9 @@ app.whenReady().then(() => {
         console.error("Global shortcut registration failed");
     }
 
-    editorWindow.webContents.on("did-finish-load", () => {
-        // consolog(path.join(__dirname, "../src/pages/editor.html"));
-    });
+    // editorWindow.webContents.on("did-finish-load", () => {
+    //     consolog(path.join(__dirname, "../src/pages/editor.html"));
+    // });
 });
 
 app.on("window-all-closed", () => {
@@ -102,7 +102,7 @@ function createSecondWindow(args: { [key: string]: any }) {
             // (if false, preload is not needed)
             contextIsolation: true,
 
-            preload: path.join(__dirname, `preload/preload${utils.capitalize(args.file)}.js`),
+            preload: path.join(__dirname, 'preload', args.preload),
             sandbox: false,
         },
         autoHideMenuBar: development ? false : true,
@@ -110,7 +110,7 @@ function createSecondWindow(args: { [key: string]: any }) {
     });
 
     // and load the index.html of the app.
-    secondWindow.loadFile(path.join(__dirname, "../src/pages", args.file + ".html"));
+    secondWindow.loadFile(path.join(__dirname, "../src/pages", args.html));
 
     // Garbage collection handle
     secondWindow.on('closed', function() {
@@ -131,11 +131,11 @@ function createSecondWindow(args: { [key: string]: any }) {
 
 
     secondWindow.webContents.on("did-finish-load", () => {
-        switch (args.file) {
-            case 'defaults':
-                secondWindow.webContents.send("addElementsToDefaults");
+        switch (args.html) {
+            case 'defaults.html':
+                secondWindow.webContents.send("addAvailableElementsTo", "defaults");
                 break;
-            case 'conditions':
+            case 'conditions.html':
                 // secondWindow.webContents.send("conditions", args.conditions);
                 break;
             default:

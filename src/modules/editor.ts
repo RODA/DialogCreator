@@ -7,7 +7,7 @@ import { elements as els } from './elements';
 import { DialogProperties } from "../interfaces/dialog";
 import { v4 as uuidv4 } from 'uuid';
 import { dialog } from './dialog';
-import { rendererutils } from '../library/rendererutils';
+import { renderutils } from '../library/renderutils';
 import { utils } from '../library/utils';
 
 let elements = { ...els } as Elements;
@@ -101,47 +101,57 @@ export const editor: Editor = {
 
     },
 
-    // called right after make
-    drawAvailableElements: (window) => {
-        const availableElements = Object.keys(elements);
+    addAvailableElementsTo: function(window) {
+        const elementsList = document.getElementById('elementsList');
+        if (elementsList) {
+            elementsList.innerHTML = '';
 
-        const ul = document.createElement('ul');
-        ul.setAttribute('id', 'paperAvailableElements');
-        for (const name of availableElements) {
-            const li = document.createElement('li');
-            li.setAttribute('id', uuidv4());
-            li.textContent = utils.capitalize(name.substring(0, name.length - 7));
+            const availableElements = Object.keys(elements);
 
-            li.addEventListener('click', () => {
+            const ul = document.createElement('ul');
+            ul.setAttribute('id', 'paperAvailableElements');
+            for (const name of availableElements) {
+                const li = document.createElement('li');
+                li.setAttribute('id', uuidv4());
 
-                if (window === "defaults") {
-                    // Remove highlight from all siblings
-                    ul.querySelectorAll('li').forEach((el) => {
-                        el.classList.remove('selected-available-element');
-                    });
-                    // Highlight this one
-                    li.classList.add('selected-available-element');
+                // Remove the sufix "Element" from the name of the element
+                li.textContent = utils.capitalize(name.substring(0, name.length - 7));
 
-                    global.emit('defaultElementSelected', name);
-                    ipcRenderer.send('getProperties', name);
+                li.addEventListener('click', () => {
 
-                } else if (window === "editor") {
-                    const elementType = name as keyof Elements;
-                    editor.addElementToDialog(
-                        String(li.textContent),
-                        elements[elementType],
-                    );
-                }
-            });
-            ul.appendChild(li);
+                    if (window === "defaults") {
+                        // Remove highlight from all siblings
+                        ul.querySelectorAll('li').forEach((el) => {
+                            el.classList.remove('selected-available-element');
+                        });
+                        // Highlight this one
+                        li.classList.add('selected-available-element');
+
+                        global.emit('defaultElementSelected', name);
+                        ipcRenderer.send('getProperties', name);
+
+                    } else if (window === "editor") {
+                        const elementType = name as keyof Elements;
+                        editor.addElementToDialog(
+                            String(li.textContent),
+                            elements[elementType],
+                        );
+                    }
+                });
+                ul.appendChild(li);
+            }
+
+            elementsList.appendChild(ul);
+
+        } else {
+            showError('Could not find the element list in editor window. Please check the HTML!')
         }
-        return ul;
     },
 
     // add new element on dialog
     addElementToDialog: function (name, data) {
         if (data) {
-            const element = rendererutils.makeElement(data);
+            const element = renderutils.makeElement(data);
             element.dataset.type = name;
             element.dataset.parentId = global.dialog.id;
             global.dialog.appendChild(element);
@@ -310,16 +320,14 @@ export const editor: Editor = {
             button.setAttribute('type', 'button');
             button.style.width = '150px';
             button.addEventListener('click', function () {
-                ipcRenderer.send(
-                    'secondWindow',
-                    {
-                        width: 640,
-                        height: 480,
-                        backgroundColor: '#fff',
-                        title: 'Default values',
-                        file: 'defaults'
-                    }
-                );
+                ipcRenderer.send('secondWindow', {
+                    width: 640,
+                    height: 480,
+                    backgroundColor: '#fff',
+                    title: 'Default values',
+                    preload: 'preloadDefaults.js',
+                    html: 'defaults.html'
+                });
             });
             div.appendChild(button);
             elementsList.appendChild(div);
@@ -350,8 +358,8 @@ export const editor: Editor = {
                         height: value
                     };
                 }
-                rendererutils.updateElement(element, props as AnyElement);
-                // rendererutils.updateElement(element, { [id]: value } as AnyElement);
+                renderutils.updateElement(element, props as AnyElement);
+                // renderutils.updateElement(element, { [id]: value } as AnyElement);
 
             } else {
                 showError('Element not found.');
@@ -376,7 +384,7 @@ export const editor: Editor = {
                 if (id === 'dialogwidth' || id === 'dialogheight') {
                     const value = element.value;
                     if (value) {
-                        const dialogprops = rendererutils.collectDialogProperties();
+                        const dialogprops = renderutils.collectDialogProperties();
                         editor.updateDialogArea(dialogprops);
                         const wh = {
                             width: Number(dialog.properties.width),
@@ -388,7 +396,7 @@ export const editor: Editor = {
                 if (id === 'dialogFontSize') {
                     const value = element.value;
                     if (value) {
-                        rendererutils.updateFont(Number(value));
+                        renderutils.updateFont(Number(value));
                     }
                 }
             });

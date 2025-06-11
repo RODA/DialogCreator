@@ -4,7 +4,7 @@ import { DialogProperties } from './dialog';
 export interface Editor {
     makeDialog: () => void;
     updateDialogArea: (props: DialogProperties) => void;
-    drawAvailableElements: (window?: string) => HTMLUListElement;
+    addAvailableElementsTo: (window: string) => void;
     deselectAll: () => void;
     addElementToDialog: (name: string, data?: AnyElement) => void;
     addElementListeners: (element: HTMLElement) => void;

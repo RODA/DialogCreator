@@ -1,7 +1,7 @@
 import { AnyElement } from './elements';
 import { DialogProperties } from "./dialog";
 
-export interface RendererUtils {
+export interface RenderUtils {
     unselectRadioGroup: (element: HTMLElement) => void;
     makeUniqueNameID: (type: string) => string;
     nameidValidChange: (newId: string, currentElement: HTMLElement) => boolean;
@@ -11,7 +11,6 @@ export interface RendererUtils {
     setOnlyDouble: (items: string[], prefix?: string) => void;
     makeElement: (settings: AnyElement) => HTMLElement;
     updateElement: (element: HTMLElement, properties?: AnyElement) => void;
-    addAvailableElementsTo: (window: string) => void;
     updateButton: (
         button: HTMLDivElement,
         text: string,

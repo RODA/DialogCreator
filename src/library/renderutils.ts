@@ -1,7 +1,7 @@
 
 // Specific utilities for various (renderer) modules
 
-import { RendererUtils } from '../interfaces/rendererutils';
+import { RenderUtils } from '../interfaces/renderutils';
 import { utils } from './utils';
 import { dialog } from '../modules/dialog';
 import { editor } from '../modules/editor';
@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 import * as path from "path";
 import * as fs from "fs";
 
-export const rendererutils: RendererUtils = {
+export const renderutils: RenderUtils = {
 
     unselectRadioGroup: function(element) {
         document.querySelectorAll(`[group="${element.getAttribute("group")}"]`).forEach(
@@ -78,7 +78,7 @@ export const rendererutils: RendererUtils = {
 
 	setOnlyNumbers: function (items, prefix = 'el') {
         items.forEach((item) => {
-            rendererutils.setInputFilter(
+            renderutils.setInputFilter(
                 <HTMLInputElement>document.getElementById(prefix + item),
                 function (value: string): boolean { return /^\d*$/.test(value); }
             );
@@ -87,7 +87,7 @@ export const rendererutils: RendererUtils = {
 
 	setOnlyNumbersWithMinus: function (items, prefix = 'el') {
         items.forEach((item) => {
-            rendererutils.setInputFilter(
+            renderutils.setInputFilter(
                 <HTMLInputElement>document.getElementById(prefix + item),
                 function (value) { return /^-?\d*$/.test(value);}
             );
@@ -97,7 +97,7 @@ export const rendererutils: RendererUtils = {
 	setOnlyDouble: function (items, prefix = 'el') {
         items.forEach((item) => {
             const element = document.getElementById(prefix + item) as HTMLInputElement;
-            rendererutils.setInputFilter(
+            renderutils.setInputFilter(
                 element,
                 function (value) {
                     if (value.endsWith("..") || value.endsWith(".,")) {
@@ -129,7 +129,7 @@ export const rendererutils: RendererUtils = {
         }
 
         const uuid = uuidv4();
-        const nameid = rendererutils.makeUniqueNameID(data.nameid);
+        const nameid = renderutils.makeUniqueNameID(data.nameid);
 
         let eltype = 'div';
         if (utils.isElementOf(data.type, ["Input", "Select"])) {
@@ -162,7 +162,7 @@ export const rendererutils: RendererUtils = {
 
             element.appendChild(span);
 
-            rendererutils.updateButton(
+            renderutils.updateButton(
                 element as HTMLDivElement,
                 data.label,
                 global.fontSize,
@@ -289,7 +289,7 @@ export const rendererutils: RendererUtils = {
             handle.id = 'slider-handle-' + uuid;
             element.appendChild(handle);
 
-            rendererutils.updateHandleStyle(handle, data);
+            renderutils.updateHandleStyle(handle, data);
 
         } else if (data.type == "Label") {
 
@@ -380,7 +380,7 @@ export const rendererutils: RendererUtils = {
 
             switch (key) {
                 case 'nameid':
-                    if (!rendererutils.nameidValidChange(value, element)) {
+                    if (!renderutils.nameidValidChange(value, element)) {
                         value = element.dataset.nameid || '';
                         showError('Name already exists.');
                     }
@@ -616,22 +616,10 @@ export const rendererutils: RendererUtils = {
             }
 
             if (slider && handle) {
-                rendererutils.updateHandleStyle(handle, {...all, ...dataset});
+                renderutils.updateHandleStyle(handle, {...all, ...dataset});
             }
         });
 
-    },
-
-    addAvailableElementsTo: function(window) {
-        const elementsList = document.getElementById('elementsList');
-        if (elementsList) {
-            elementsList.innerHTML = '';
-            // add available elements to the editor window
-            elementsList.appendChild(editor.drawAvailableElements(window));
-
-        } else {
-            showError('Could not find the element list in editor window. Please check the HTML!')
-        }
     },
 
     updateButton: function(
@@ -785,7 +773,7 @@ export const rendererutils: RendererUtils = {
                     }
                     break;
                 case "Button":
-                    rendererutils.updateButton(
+                    renderutils.updateButton(
                         element,
                         dataset.label || '',
                         fontSize,

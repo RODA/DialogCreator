@@ -1,6 +1,6 @@
 import { ipcRenderer, BrowserWindow } from "electron";
 import { showError, global } from "../modules/coms";
-import { rendererutils } from "../library/rendererutils";
+import { renderutils } from "../library/renderutils";
 import { utils } from "../library/utils";
 
 // helpers for when enter key is pressed
@@ -9,7 +9,7 @@ let elementSelected = false;
 // dialog -- the white part
 // editor -- the whole window
 
-// rendererutils.elementsFromDB().then((items) => {
+// renderutils.elementsFromDB().then((items) => {
 //     global.elements = items;
 // });
 
@@ -135,7 +135,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     // Run the main setup logic for the editor window
     // (mimics the previous top-level code in this file)
-    rendererutils.setOnlyNumbers([
+    renderutils.setOnlyNumbers([
         "width",
         "height",
         "size",
@@ -147,14 +147,14 @@ window.addEventListener("DOMContentLoaded", async () => {
         "lineClamp"
     ]);
 
-    rendererutils.setOnlyNumbersWithMinus([
+    renderutils.setOnlyNumbersWithMinus([
         "startval",
         "maxval"
     ]);
 
     editor.initializeDialogProperties();
     editor.makeDialog();
-    rendererutils.addAvailableElementsTo("editor");
+    editor.addAvailableElementsTo("editor");
     editor.addDefaultsButton();
 
     document.getElementById('removeElement')?.addEventListener('click', editor.removeSelectedElement);
@@ -180,7 +180,8 @@ window.addEventListener("DOMContentLoaded", async () => {
             height: 310,
             backgroundColor: '#fff',
             title: 'Conditions for element: ' + element.dataset.nameid,
-            file: 'conditions',
+            preload: 'preloadConditions.js',
+            html: 'conditions.html',
             conditions: element.dataset.conditions
         });
     });
