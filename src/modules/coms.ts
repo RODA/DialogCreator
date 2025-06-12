@@ -20,7 +20,7 @@ export const global: Global = {
         ipcRenderer.send("send-to-window", window, channel, ...args);
     },
     on(channel, listener) {
-        ipcRenderer.on(`response-from-main${channel}`, (_event, ...args) => {
+        ipcRenderer.on(`response-from-main-${channel}`, (_event, ...args) => {
             messenger.emit(channel, ...args);
         });
         messenger.on(channel, listener);

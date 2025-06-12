@@ -186,12 +186,12 @@ function setupIPC() {
     ipcMain.on("send-to-window", (_event, window, channel, ...args) => {
         if (window == "all") { // forward to all windows
             BrowserWindow.getAllWindows().forEach((win) => {
-                win.webContents.send(`response-from-main${channel}`, ...args);
+                win.webContents.send(`response-from-main-${channel}`, ...args);
             });
         } else {
             const win = BrowserWindow.fromId(windowid[window]);
             if (win && !win.isDestroyed() && !win.webContents.isDestroyed()) {
-                win.webContents.send(`response-from-main${channel}`, ...args);
+                win.webContents.send(`response-from-main-${channel}`, ...args);
             }
         }
     });
@@ -199,7 +199,7 @@ function setupIPC() {
     ipcMain.on("getProperties", async (_event, name) => {
         const properties = await database.getProperties(name as keyof DBElements);
         BrowserWindow.getAllWindows().forEach((win) => {
-            win.webContents.send("response-from-mainpropertiesFromDB", name, properties);
+            win.webContents.send("response-from-main-propertiesFromDB", name, properties);
         });
     });
 
@@ -209,7 +209,7 @@ function setupIPC() {
         if (ok) {
             const properties = await database.getProperties(obj.name as keyof DBElements);
             BrowserWindow.getAllWindows().forEach((win) => {
-                win.webContents.send("response-from-mainpropertiesFromDB", obj.name, properties);
+                win.webContents.send("response-from-main-propertiesFromDB", obj.name, properties);
             });
         }
         else {
@@ -223,7 +223,7 @@ function setupIPC() {
             dialog.showErrorBox("Error", `Failed to reset properties of ${element}`);
         } else {
             BrowserWindow.getAllWindows().forEach((win) => {
-                win.webContents.send("response-from-mainresetOK", ok);
+                win.webContents.send("response-from-main-resetOK", ok);
             });
         }
     });
