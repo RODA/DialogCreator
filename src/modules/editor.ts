@@ -3,36 +3,12 @@ import { showMessage, showError, global } from "./coms";
 import { editorSettings } from './settings';
 import { Editor } from '../interfaces/editor';
 import { Elements, AnyElement } from '../interfaces/elements';
-import { elements as els } from './elements';
+import { elements } from './elements';
 import { DialogProperties } from "../interfaces/dialog";
 import { v4 as uuidv4 } from 'uuid';
 import { dialog } from './dialog';
 import { renderutils } from '../library/renderutils';
 import { utils } from '../library/utils';
-
-let elements = { ...els } as Elements;
-Object.keys(elements).forEach((element) => {
-    ipcRenderer.send('getProperties', element);
-});
-
-
-document.addEventListener('DOMContentLoaded', () => {
-
-    global.on("propertiesFromDB", (...args: unknown[]) => {
-        const name = args[0] as string;
-        const properties = args[1] as Record<string, string>;
-        const pkeys = Object.keys(properties);
-        if (pkeys.length > 0) {
-            for (const pkey of pkeys) {
-                let value = properties[pkey] as string | number;
-                if (utils.isNumeric(String(value))) {
-                    value = utils.asNumeric(String(value));
-                }
-                elements[name][pkey] = value;
-            }
-        }
-    });
-});
 
 export const editor: Editor = {
 

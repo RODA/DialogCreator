@@ -2,6 +2,14 @@ import { ipcRenderer, BrowserWindow } from "electron";
 import { showError, global } from "../modules/coms";
 import { renderutils } from "../library/renderutils";
 import { utils } from "../library/utils";
+import { Elements } from '../interfaces/elements';
+import { elements as els } from '../modules/elements';
+
+let elements = { ...els } as Elements;
+Object.keys(elements).forEach((element) => {
+    ipcRenderer.send('getProperties', element);
+});
+
 
 // helpers for when enter key is pressed
 let elementSelected = false;
@@ -126,6 +134,7 @@ global.on('elementSelected', (id) => {
 
 });
 
+
 window.addEventListener("DOMContentLoaded", async () => {
 
     // Dynamically import the editor module and run its setup
@@ -184,5 +193,23 @@ window.addEventListener("DOMContentLoaded", async () => {
             html: 'conditions.html',
             conditions: element.dataset.conditions
         });
+    });
+
+    global.on("propertiesFromDB", (...args: unknown[]) => {
+        // TODO: properties do not return from the DB...
+        // the channel does not behaves properly: message is sent from main
+        // but not properly handled in coms.ts
+        const name = args[0] as string;
+        const properties = args[1] as Record<string, string>;
+        const pkeys = Object.keys(properties);
+        if (pkeys.length > 0) {
+            for (const pkey of pkeys) {
+                let value = properties[pkey] as string | number;
+                if (utils.possibleNumeric(String(value))) {
+                    value = utils.asNumeric(String(value));
+                }
+                elements[name][pkey] = value;
+            }
+        }
     });
 });
