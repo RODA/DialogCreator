@@ -24,8 +24,8 @@ INSERT INTO elements (element, property, value) VALUES
 ('buttonElement', 'lineClamp', '1'),
 ('buttonElement', 'color', '#efefef'),
 ('buttonElement', 'fontColor', '#000000'),
-('buttonElement', 'isEnabled', '1'),
-('buttonElement', 'isVisible', '1'),
+('buttonElement', 'isEnabled', 'true'),
+('buttonElement', 'isVisible', 'true'),
 
 -- input
 ('inputElement', 'nameid', 'input'),
@@ -33,8 +33,8 @@ INSERT INTO elements (element, property, value) VALUES
 ('inputElement', 'top', '15'),
 ('inputElement', 'width', '120'),
 ('inputElement', 'value', ''),
-('inputElement', 'isEnabled', '1'),
-('inputElement', 'isVisible', '1'),
+('inputElement', 'isEnabled', 'true'),
+('inputElement', 'isVisible', 'true'),
 
 -- select
 ('selectElement', 'nameid', 'select'),
@@ -42,8 +42,8 @@ INSERT INTO elements (element, property, value) VALUES
 ('selectElement', 'top', '15'),
 ('selectElement', 'width', '120'),
 ('selectElement', 'value', ''),
-('selectElement', 'isEnabled', '1'),
-('selectElement', 'isVisible', '1'),
+('selectElement', 'isEnabled', 'true'),
+('selectElement', 'isVisible', 'true'),
 
 -- checkbox
 ('checkboxElement', 'nameid', 'checkbox'),
@@ -52,8 +52,8 @@ INSERT INTO elements (element, property, value) VALUES
 ('checkboxElement', 'size', '14'),
 ('checkboxElement', 'color', '#4caf50'),
 ('checkboxElement', 'isChecked', '0'),
-('checkboxElement', 'isEnabled', '1'),
-('checkboxElement', 'isVisible', '1'),
+('checkboxElement', 'isEnabled', 'true'),
+('checkboxElement', 'isVisible', 'true'),
 
 -- radio
 ('radioElement', 'nameid', 'radio'),
@@ -63,8 +63,8 @@ INSERT INTO elements (element, property, value) VALUES
 ('radioElement', 'size', '14'),
 ('radioElement', 'color', '#4caf50'),
 ('radioElement', 'isSelected', '0'),
-('radioElement', 'isEnabled', '1'),
-('radioElement', 'isVisible', '1'),
+('radioElement', 'isEnabled', 'true'),
+('radioElement', 'isVisible', 'true'),
 
 -- counter
 ('counterElement', 'nameid', 'counter'),
@@ -74,8 +74,8 @@ INSERT INTO elements (element, property, value) VALUES
 ('counterElement', 'color', '#4caf50'),
 ('counterElement', 'startval', '1'),
 ('counterElement', 'maxval', '5'),
-('counterElement', 'isEnabled', '1'),
-('counterElement', 'isVisible', '1'),
+('counterElement', 'isEnabled', 'true'),
+('counterElement', 'isVisible', 'true'),
 
 -- slider
 ('sliderElement', 'nameid', 'slider'),
@@ -85,8 +85,8 @@ INSERT INTO elements (element, property, value) VALUES
 ('sliderElement', 'height', '1'),
 ('sliderElement', 'direction', 'horizontal'),
 ('sliderElement', 'color', '#000000'),
-('sliderElement', 'isEnabled', '1'),
-('sliderElement', 'isVisible', '1'),
+('sliderElement', 'isEnabled', 'true'),
+('sliderElement', 'isVisible', 'true'),
 ('sliderElement', 'handlepos', '50'),
 ('sliderElement', 'handleshape', 'triangle'),
 ('sliderElement', 'handlecolor', '#4caf50'),
@@ -97,8 +97,8 @@ INSERT INTO elements (element, property, value) VALUES
 ('labelElement', 'top', '15'),
 ('labelElement', 'maxWidth', '200'),
 ('labelElement', 'value', 'Label'),
-('labelElement', 'isEnabled', '1'),
-('labelElement', 'isVisible', '1'),
+('labelElement', 'isEnabled', 'true'),
+('labelElement', 'isVisible', 'true'),
 
 -- separator
 ('separatorElement', 'left', '15'),
@@ -107,8 +107,8 @@ INSERT INTO elements (element, property, value) VALUES
 ('separatorElement', 'height', '1'),
 ('separatorElement', 'direction', 'horizontal'),
 ('separatorElement', 'color', '#000000'),
-('separatorElement', 'isEnabled', '1'),
-('separatorElement', 'isVisible', '1'),
+('separatorElement', 'isEnabled', 'true'),
+('separatorElement', 'isVisible', 'true'),
 
 -- container
 ('containerElement', 'nameid', 'container'),
@@ -119,5 +119,5 @@ INSERT INTO elements (element, property, value) VALUES
 ('containerElement', 'objViewClass', 'variable'),
 ('containerElement', 'variableType', ''),
 ('containerElement', 'parentContainer', ''),
-('containerElement', 'isEnabled', '1'),
-('containerElement', 'isVisible', '1');
+('containerElement', 'isEnabled', 'true'),
+('containerElement', 'isVisible', 'true');
