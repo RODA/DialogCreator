@@ -20,6 +20,11 @@ const windowid: { [key: string]: number } = {
     secondWindow: 2
 }
 
+
+// const appSession = {
+//     language: "en"
+// };
+
 function consolog(x: any) {
     if (editorWindow && !editorWindow.isDestroyed()) {
         editorWindow.webContents.send("consolog", x);
@@ -150,41 +155,81 @@ function createSecondWindow(args: { [key: string]: any }) {
 function setupIPC() {
 
     // "_event" means that I know the event exists but I don't need it
-    // using "event" might trigger linter warnings, for instance
-    // 'event' is declared but its value is never read
-    ipcMain.on('secondWindow', (_event, args) => {
-        createSecondWindow(args);
-    });
+    // using "event" might trigger linter warnings, for instance"
+    // "'event' is declared but its value is never read"
 
-    // send condition for validation to container
-    ipcMain.on('conditionsCheck', (_event, args) => {
-        if (editorWindow && !editorWindow.isDestroyed()) {
-            editorWindow.webContents.send('conditionsCheck', args);
-        }
-    });
+    ipcMain.on("send-to", async (_event, window, channel, ...args) => {
+        if (window == "main") {
+            switch (channel) {
+                case 'showError':
+                    dialog.showMessageBox(editorWindow, {
+                        type: "error",
+                        title: "Error",
+                        message: args[0]
+                    });
+                    break;
+                case 'showDialogMessage':
+                    dialog.showMessageBox(editorWindow, {
+                        type: args[0],
+                        title: args[1],
+                        message: args[2]
+                    });
+                    break;
+                case 'secondWindow':
+                    createSecondWindow(args[0]);
+                    break;
+                case 'resize-editorWindow':
+                    editorWindow.setSize(
+                        Math.max(args[0] + 560, 1200),
+                        Math.max(args[1] + 320, 800)
+                    );
+                    break;
+                case 'getProperties':
+                    {
+                        const properties = await database.getProperties(args[0] as keyof DBElements);
+                        BrowserWindow.getAllWindows().forEach((win) => {
+                            win.webContents.send("response-from-main-propertiesFromDB", args[0], properties);
+                        });
+                    }
+                    break;
+                case 'resetProperties':
+                    {
+                        const properties = await database.resetProperties(args[0]);
+                        if (utils.isFalse(properties)) {
+                            dialog.showErrorBox("Error", `Failed to reset properties of ${args[0]}`);
+                        } else {
+                            secondWindow.webContents.send("response-from-main-resetOK", properties);
+                            editorWindow.webContents.send("response-from-main-propertiesFromDB", args[0], properties);
+                        }
+                    }
+                    break;
+                case 'updateProperty':
+                    {
+                        const ok = await database.updateProperty(args[0] as keyof DBElements, args[1], args[2]);
+                        if (ok) {
+                            const properties = await database.getProperties(args[0] as keyof DBElements);
+                            editorWindow.webContents.send("response-from-main-propertiesFromDB", args[0], properties);
+                        }
+                        else {
+                            dialog.showErrorBox("Error", `Failed to update property ${args[1]} of ${args[0]}`);
+                        }
+                    }
+                    break;
+                case 'conditionsCheck':
+                    {
+                        editorWindow.webContents.send('conditionsCheck', args);
+                        // Close the sender window (the conditions window)
+                        const win = BrowserWindow.fromWebContents(_event.sender);
+                        if (win && !win.isDestroyed()) {
+                            win.close();
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
 
-    ipcMain.on('showDialogMessage', (_event, args) => {
-        dialog.showMessageBox(editorWindow, {
-            type: args.type,
-            title: args.title,
-            message: args.message,
-        })
-    });
-
-    ipcMain.on('showError', (_event, message) => {
-        dialog.showMessageBox(editorWindow, {
-            type: "error",
-            title: "Error",
-            message: message
-        });
-    });
-
-    ipcMain.on('resize-editorWindow', (_event, { width, height }) => {
-        editorWindow.setSize(Math.max(width + 560, 1200), Math.max(height + 320, 800));
-    });
-
-    ipcMain.on("send-to-window", (_event, window, channel, ...args) => {
-        if (window == "all") { // forward to all windows
+        } else if (window == "all") { // forward to all windows
             BrowserWindow.getAllWindows().forEach((win) => {
                 win.webContents.send(`response-from-main-${channel}`, ...args);
             });
@@ -193,38 +238,6 @@ function setupIPC() {
             if (win && !win.isDestroyed() && !win.webContents.isDestroyed()) {
                 win.webContents.send(`response-from-main-${channel}`, ...args);
             }
-        }
-    });
-
-    ipcMain.on("getProperties", async (_event, name) => {
-        const properties = await database.getProperties(name as keyof DBElements);
-        BrowserWindow.getAllWindows().forEach((win) => {
-            win.webContents.send("response-from-main-propertiesFromDB", name, properties);
-        });
-    });
-
-    ipcMain.on("updateProperty", async (_event, obj) => {
-
-        const ok = await database.updateProperty(obj.name as keyof DBElements, obj.property, obj.value);
-        if (ok) {
-            const properties = await database.getProperties(obj.name as keyof DBElements);
-            BrowserWindow.getAllWindows().forEach((win) => {
-                win.webContents.send("response-from-main-propertiesFromDB", obj.name, properties);
-            });
-        }
-        else {
-            dialog.showErrorBox("Error", `Failed to update property ${obj.property} of ${obj.name}`);
-        }
-    });
-
-    ipcMain.on("resetProperties", async (_event, element) => {
-        const ok = await database.resetProperties(element);
-        if (utils.isFalse(ok)) {
-            dialog.showErrorBox("Error", `Failed to reset properties of ${element}`);
-        } else {
-            BrowserWindow.getAllWindows().forEach((win) => {
-                win.webContents.send("response-from-main-resetOK", ok);
-            });
         }
     });
 }
@@ -286,37 +299,13 @@ const mainMenuTemplate: MenuItemConstructorOptions[] = [
     {
         label: 'Edit',
         submenu: [
-            {
-                label: "Undo",
-                accelerator: "CmdOrCtrl+Z",
-                click: () => {}
-            },
-            {
-                label: "Redo",
-                accelerator: "Shift+CmdOrCtrl+Z",
-                click: () => {}
-            },
-            { type: "separator" as const },
-            {
-                label: "Cut",
-                accelerator: "CmdOrCtrl+X",
-                click: () => {}
-            },
-            {
-                label: "Copy",
-                accelerator: "CmdOrCtrl+C",
-                click: () => {}
-            },
-            {
-                label: "Paste",
-                accelerator: "CmdOrCtrl+V",
-                click: () => {}
-            },
-            {
-                label: "Select All",
-                accelerator: "CmdOrCtrl+A",
-                click: () => {}
-            }
+            { role: 'undo' },
+            { role: 'redo' },
+            { type: 'separator' },
+            { role: 'cut' },
+            { role: 'copy' },
+            { role: 'paste' },
+            { role: 'selectAll' }
         ]
     },
     {
