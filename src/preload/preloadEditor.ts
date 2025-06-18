@@ -7,7 +7,7 @@ import { elements as els } from '../modules/elements';
 
 let elements = { ...els } as Elements;
 Object.keys(elements).forEach((element) => {
-    ipcRenderer.send('getProperties', element);
+    global.sendTo('main', 'getProperties', element);
 });
 
 
@@ -184,15 +184,19 @@ window.addEventListener("DOMContentLoaded", async () => {
             showError('Could not find the element. Please check the HTML!');
             return;
         }
-        ipcRenderer.send('secondWindow', {
-            width: 640,
-            height: 310,
-            backgroundColor: '#fff',
-            title: 'Conditions for element: ' + element.dataset.nameid,
-            preload: 'preloadConditions.js',
-            html: 'conditions.html',
-            conditions: element.dataset.conditions
-        });
+        global.sendTo(
+            'main',
+            'secondWindow',
+            {
+                width: 640,
+                height: 310,
+                backgroundColor: '#fff',
+                title: 'Conditions for element: ' + element.dataset.nameid,
+                preload: 'preloadConditions.js',
+                html: 'conditions.html',
+                conditions: element.dataset.conditions
+            }
+        );
     });
 
     global.on("propertiesFromDB", (...args: unknown[]) => {

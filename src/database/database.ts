@@ -51,7 +51,9 @@ export const database: DBInterface = {
         const allowedProps = DBElementsProps[element] || [];
         const updates = Object.entries(properties)
             .filter(([property]) => allowedProps.includes(property));
+
         if (updates.length === 0) return false;
+
         let success = true;
         for (const [property, value] of updates) {
             await new Promise<void>((resolve) => {

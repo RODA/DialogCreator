@@ -50,17 +50,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     item.disabled = false;
                     item.parentElement?.classList.remove('hidden-element');
                     let value = properties[item.name as keyof DBElements[keyof DBElements]];
-                    if (utils.isElementOf(item.name, ['isEnabled', 'isVisible', 'isSelected', 'isChecked'])) {
-                        value = (value === '1') ? 'true' : 'false';
-                    }
                     item.value = value || '';
                     item.addEventListener("change", async () => {
                         item.blur();
-                        ipcRenderer.send('updateProperty', {
-                            name: name,
-                            property: item.name,
-                            value: item.value
-                        });
+                        global.sendTo(
+                            'main',
+                            'updateProperty',
+                            name,
+                            item.name,
+                            item.value
+                        );
                     });
                 } else {
                     item.disabled = true;
@@ -91,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('reset')?.addEventListener('click', () => {
         if (defaultElementSelected) {
-            ipcRenderer.send('resetProperties', defaultElementSelected);
+            global.sendTo('main', 'resetProperties', defaultElementSelected);
         } else {
             showError("No default element selected to reset properties.");
         }
@@ -102,19 +101,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!updatedProperties) return;
         // Update the UI fields in the defaults window with the new values
         const ellist = document.querySelectorAll('#propertiesList [id^="el"]');
-        ellist.forEach(el => {
+        ellist.forEach((el) => {
             const item = el as HTMLInputElement;
             if (item.name in updatedProperties) {
-                let value = updatedProperties[item.name];
-                if (utils.isElementOf(item.name, ['isEnabled', 'isVisible', 'isSelected', 'isChecked'])) {
-                    value = (value === '1') ? 'true' : 'false';
-                }
-                item.value = value || '';
+                item.value = updatedProperties[item.name];
             }
         });
     });
-
-
 
 });
 

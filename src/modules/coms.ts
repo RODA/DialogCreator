@@ -1,7 +1,7 @@
 // encapsulation
 
 import { ipcRenderer } from 'electron';
-import { ShowMessage, Global } from '../interfaces/coms';
+import { Global } from '../interfaces/coms';
 import { EventEmitter } from 'events';
 import { utils } from '../library/utils';
 import { renderutils } from '../library/renderutils';
@@ -9,21 +9,49 @@ import { renderutils } from '../library/renderutils';
 
 const messenger = new EventEmitter();
 
+// Track which channels have been hooked into ipcRenderer
+const registeredChannels = new Set<string>();
+
 export const global: Global = {
-    emit(channel, ...args) { messenger.emit(channel, ...args); },
-    // send to all listeners from all processed, via ipcMain
+    emit(channel, ...args) {
+        messenger.emit(channel, ...args);
+    },
+
+    // send to all listeners from all processes, via ipcMain
     send(channel, ...args) {
         global.sendTo('all', channel, ...args);
-        // ipcRenderer.send("send-to-window", "all", channel, ...args);
+        // ipcRenderer.send("send-to", "all", channel, ...args);
     },
+
     sendTo(window, channel, ...args) {
-        ipcRenderer.send("send-to-window", window, channel, ...args);
+        ipcRenderer.send("send-to", window, channel, ...args);
     },
+
     on(channel, listener) {
-        ipcRenderer.on(`response-from-main-${channel}`, (_event, ...args) => {
-            messenger.emit(channel, ...args);
-        });
+        // Ensure ipcRenderer is listening only once per logical channel
+        const responseChannel = `response-from-main-${channel}`;
+
+        if (!registeredChannels.has(channel)) {
+            ipcRenderer.on(responseChannel, (_event, ...args) => {
+                messenger.emit(channel, ...args);
+            });
+            registeredChannels.add(channel);
+        }
+
         messenger.on(channel, listener);
+    },
+
+    once(channel, listener) {
+        const responseChannel = `response-from-main-${channel}`;
+
+        if (!registeredChannels.has(channel)) {
+            ipcRenderer.on(responseChannel, (_event, ...args) => {
+                messenger.emit(channel, ...args);
+            });
+            registeredChannels.add(channel);
+        }
+
+        messenger.once(channel, listener);
     },
 
     // IPC dispatcher
@@ -53,16 +81,20 @@ for (const eventName in global.handlers) {
     });
 }
 
-ipcRenderer.on('consolog', (event, object: any) => {
-    console.log(object);
+global.on('consolog', (...args: unknown[]) => {
+    console.log(args[0]);
 });
 
 
-export const showMessage = (obj: ShowMessage) => {
-    ipcRenderer.send('showDialogMessage', obj);
+export const showMessage = (
+    type: 'info' | 'error' | 'question' | 'warning',
+    title: string,
+    message: string
+) => {
+    global.sendTo('main', 'showDialogMessage', type, title, message);
 }
 
 export const showError = (message: string) => {
-    ipcRenderer.send('showError', message);
+    global.sendTo('main', 'showError', message);
 }
 

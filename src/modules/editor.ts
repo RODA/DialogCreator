@@ -72,7 +72,11 @@ export const editor: Editor = {
 
         } else {
             // alert no dialog
-            showMessage({ type: "info", message: "Please create a new dialog first.", title: "No dialog" });
+            showMessage(
+                "info",
+                "No dialog",
+                "Please create a new dialog first."
+            );
         }
 
     },
@@ -104,7 +108,7 @@ export const editor: Editor = {
                         li.classList.add('selected-available-element');
 
                         global.emit('defaultElementSelected', name);
-                        ipcRenderer.send('getProperties', name);
+                        global.sendTo('main', 'getProperties', name);
 
                     } else if (window === "editor") {
                         const elementType = name as keyof Elements;
@@ -296,14 +300,18 @@ export const editor: Editor = {
             button.setAttribute('type', 'button');
             button.style.width = '150px';
             button.addEventListener('click', function () {
-                ipcRenderer.send('secondWindow', {
-                    width: 640,
-                    height: 480,
-                    backgroundColor: '#fff',
-                    title: 'Default values',
-                    preload: 'preloadDefaults.js',
-                    html: 'defaults.html'
-                });
+                global.sendTo(
+                    'main',
+                    'secondWindow',
+                    {
+                        width: 640,
+                        height: 480,
+                        backgroundColor: '#fff',
+                        title: 'Default values',
+                        preload: 'preloadDefaults.js',
+                        html: 'defaults.html'
+                    }
+                );
             });
             div.appendChild(button);
             elementsList.appendChild(div);
@@ -366,7 +374,12 @@ export const editor: Editor = {
                             width: Number(dialog.properties.width),
                             height: Number(dialog.properties.height)
                         }
-                        ipcRenderer.send('resize-editorWindow', wh);
+                        global.sendTo(
+                            'main',
+                            'resize-editorWindow',
+                            Number(dialog.properties.width),
+                            Number(dialog.properties.height)
+                        );
                     }
                 }
                 if (id === 'dialogFontSize') {
