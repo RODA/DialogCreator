@@ -58,7 +58,10 @@ export const conditions: Conditions = {
             }
             const m = line.match(/^(\w+)\s+if\s+(.+);$/);
             if (!m) {
-                return ('Expression must be in the format: <action> if <condition>;')
+                if (/^\w+\s+of\s+.+;$/.test(line)) {
+                    return "Did you mean to use 'if' instead of 'of'? Use: &lt;action&gt; if &lt;condition&gt;;";
+                }
+                return "Expression must be in the format: &lt;action&gt; if &lt;condition&gt;; (e.g., enable if checkbox1 == checked;)";
             }
             const action = m[1];
             if (!conditions.allowedActions.includes(action)) {
