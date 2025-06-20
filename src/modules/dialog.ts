@@ -3,6 +3,9 @@ import { global } from './coms';
 
 export const dialog: Dialog = {
 
+    canvas: document.createElement('div'),
+    id: '',
+    selectedElement: '', // id of the selected element in the dialog
     properties: {} as DialogProperties,
     elements: {},
     syntax: {
@@ -19,8 +22,8 @@ export const dialog: Dialog = {
     // update dialog element props !!!!!!
     updateElementProperties: function (id, payload) {
         // TODO: move these into some sort of global variables?
-        const dialogW = global.dialog.getBoundingClientRect().width;
-        const dialogH = global.dialog.getBoundingClientRect().height;
+        const dialogW = dialog.canvas.getBoundingClientRect().width;
+        const dialogH = dialog.canvas.getBoundingClientRect().height;
         //----
 
         const notFound: string[] = [];

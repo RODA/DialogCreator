@@ -59,15 +59,13 @@ export const global: Global = {
         addCover: '../modules/cover',
         removeCover: '../modules/cover',
         addAvailableElementsTo: '../modules/editor',
+        populateConditions: '../modules/conditions',
     },
 
     fontSize: 12,
     fontFamily: 'Arial, Helvetica, sans-serif',
     maxWidth: 615,
     maxHeight: 455,
-    dialog: document.createElement('div'),
-    dialogId: '',
-    selectedElementId: ''
 }
 
 // automatically dispatch all events to their respective handlers

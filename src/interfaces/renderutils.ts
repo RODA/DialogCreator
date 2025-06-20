@@ -5,10 +5,11 @@ export interface RenderUtils {
     unselectRadioGroup: (element: HTMLElement) => void;
     makeUniqueNameID: (type: string) => string;
     nameidValidChange: (newId: string, currentElement: HTMLElement) => boolean;
-    setInputFilter: (textbox: HTMLInputElement | null, inputFilter: (value: string) => boolean) => void;
+    setInputFilter: (textbox: HTMLInputElement | undefined, inputFilter: (value: string) => boolean) => void;
     setOnlyNumbers: (items: string[], prefix?: string) => void;
     setOnlyNumbersWithMinus: (items: string[], prefix?: string) => void;
     setOnlyDouble: (items: string[], prefix?: string) => void;
+    getDialogInfo: () => { elements: string[]; selected: HTMLElement | undefined };
     makeElement: (settings: AnyElement) => HTMLElement;
     updateElement: (element: HTMLElement, properties?: AnyElement) => void;
     updateButton: (

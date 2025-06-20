@@ -12,7 +12,6 @@ export interface Editor {
     // updateElement: (data: { [key: string]: string }) => void;
     removeSelectedElement: () => void;
     clearPropsList: () => void;
-    getElementFromContainer: () => HTMLElement | undefined;
     addDefaultsButton: () => void;
     propertyUpdate: (ev: FocusEvent) => void;
     initializeDialogProperties: () => void;

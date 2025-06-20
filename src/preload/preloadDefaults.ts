@@ -1,7 +1,5 @@
-import { ipcRenderer } from 'electron';
 import { showError, global } from "../modules/coms";
 import { renderutils } from "../library/renderutils";
-import { utils } from "../library/utils";
 import { DBElements } from "../interfaces/database";
 
 let defaultElementSelected = "";

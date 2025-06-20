@@ -10,6 +10,9 @@ export interface DialogProperties {
 }
 
 export interface Dialog {
+    canvas: HTMLDivElement;
+    id: string;
+    selectedElement: string; // id of the selected element in the dialog
     properties: DialogProperties;
     elements: { [key: string]: HTMLElement };
     syntax: {

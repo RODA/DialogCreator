@@ -1,10 +1,8 @@
-
 // Specific utilities for various (renderer) modules
 
 import { RenderUtils } from '../interfaces/renderutils';
 import { utils } from './utils';
 import { dialog } from '../modules/dialog';
-import { editor } from '../modules/editor';
 import { DialogProperties } from "../interfaces/dialog";
 import { showError, global } from '../modules/coms';
 import { v4 as uuidv4 } from 'uuid';
@@ -24,16 +22,13 @@ export const renderutils: RenderUtils = {
     },
 
     makeUniqueNameID: function(nameid) {
-        const existingIds = new Set(
-            Array.from(document.querySelectorAll<HTMLElement>('[data-nameid]'))
-                .map(el => el.dataset.nameid!)
-        );
+        const existingIds = renderutils.getDialogInfo().elements;
 
         let candidate: string;
         let number = 1;
         do {
             candidate = `${nameid}${number++}`;
-        } while (existingIds.has(candidate));
+        } while (utils.isElementOf(candidate, existingIds));
 
         return candidate;
     },
@@ -54,7 +49,7 @@ export const renderutils: RenderUtils = {
 		if (!textbox) return;
 
         const state = {
-            oldValue: "",
+            oldValue: '',
             oldSelectionStart: 0,
             oldSelectionEnd: 0
         };
@@ -122,6 +117,16 @@ export const renderutils: RenderUtils = {
             );
         })
 	},
+
+    getDialogInfo: function() {
+
+        // instead of el.dataset.nameid ?? '', we can use el.dataset.nameid!
+        // this tells Typescript to trust the element is not null or undefined
+        return ({
+            elements: Array.from(Object.values(dialog.elements)).map((el) => el.dataset.nameid!),
+            selected: dialog.getElement(dialog.selectedElement)
+        });
+    },
 
     makeElement: function(data) {
         if (typeof data !== 'object' || Array.isArray(data)) {
@@ -349,8 +354,8 @@ export const renderutils: RenderUtils = {
 
         let elementWidth = element.getBoundingClientRect().width;
         const elementHeight = element.getBoundingClientRect().height;
-        const dialogW = global.dialog.getBoundingClientRect().width;
-        const dialogH = global.dialog.getBoundingClientRect().height;
+        const dialogW = dialog.canvas.getBoundingClientRect().width;
+        const dialogH = dialog.canvas.getBoundingClientRect().height;
 
         // const all: Record<string, any> = {... element.dataset, ... properties};
         const all: Record<string, any> = {... properties};

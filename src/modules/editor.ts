@@ -1,4 +1,3 @@
-import { ipcRenderer } from "electron";
 import { showMessage, showError, global } from "./coms";
 import { editorSettings } from './settings';
 import { Editor } from '../interfaces/editor';
@@ -15,26 +14,26 @@ export const editor: Editor = {
     makeDialog: () => {
 
         const newDialogID = uuidv4();
-        global.dialog.id = newDialogID;
-        global.dialogId = newDialogID;
+        dialog.canvas.id = newDialogID;
+        dialog.id = newDialogID;
 
-        global.dialog.style.position = 'relative';
-        global.dialog.style.width = editorSettings.dialog.width + 'px';
-        global.dialog.style.height = editorSettings.dialog.height + 'px';
-        global.dialog.style.backgroundColor = editorSettings.dialog.background || '#ffffff';
-        global.dialog.style.border = '1px solid gray';
-        global.dialog.addEventListener('click', (event: MouseEvent) => {
-            if ((event.target as HTMLDivElement).id === global.dialogId) {
+        dialog.canvas.style.position = 'relative';
+        dialog.canvas.style.width = editorSettings.dialog.width + 'px';
+        dialog.canvas.style.height = editorSettings.dialog.height + 'px';
+        dialog.canvas.style.backgroundColor = editorSettings.dialog.background || '#ffffff';
+        dialog.canvas.style.border = '1px solid gray';
+        dialog.canvas.addEventListener('click', (event: MouseEvent) => {
+            if ((event.target as HTMLDivElement).id === dialog.id) {
                 editor.deselectAll();
             }
         });
-        global.dialog.addEventListener("drop", (event: MouseEvent) => {
+        dialog.canvas.addEventListener("drop", (event: MouseEvent) => {
             event.preventDefault();
         });
 
         const dialogdiv = document.getElementById('dialog') as HTMLDivElement;
         if (dialogdiv) {
-            dialogdiv.append(global.dialog);
+            dialogdiv.append(dialog.canvas);
         }
 
         const properties: NodeListOf<HTMLInputElement> = document.querySelectorAll('#dialog-properties [id^="dialog"]');
@@ -53,14 +52,14 @@ export const editor: Editor = {
     updateDialogArea: function (properties) {
 
         // check for valid paper
-        if (global.dialogId !== '') {
+        if (dialog.id !== '') {
 
             if (properties.width != dialog.properties.width) {
-                global.dialog.style.width =  properties.width + 'px';
+                dialog.canvas.style.width =  properties.width + 'px';
             }
 
             if (properties.height != dialog.properties.height) {
-                global.dialog.style.height =  properties.height + 'px';
+                dialog.canvas.style.height =  properties.height + 'px';
             }
 
             if (properties.fontSize != dialog.properties.fontSize) {
@@ -131,10 +130,10 @@ export const editor: Editor = {
     // add new element on dialog
     addElementToDialog: function (name, data) {
         if (data) {
-            const element = renderutils.makeElement(data);
+            const element = renderutils.makeElement({ ...data });
             element.dataset.type = name;
-            element.dataset.parentId = global.dialog.id;
-            global.dialog.appendChild(element);
+            element.dataset.parentId = dialog.id;
+            dialog.canvas.appendChild(element);
             editor.addElementListeners(element);
             dialog.addElement(element);
         }
@@ -144,7 +143,7 @@ export const editor: Editor = {
     addElementListeners(element) {
         element.addEventListener('click', (event) => {
             event.stopPropagation();
-            global.selectedElementId = element.id;
+            dialog.selectedElement = element.id;
             if (!element.classList.contains('selectedElement')) {
                 editor.deselectAll();
                 element.classList.add('selectedElement');
@@ -155,8 +154,8 @@ export const editor: Editor = {
     },
 
     addDragAndDrop(element) {
-        const dialogW = global.dialog.getBoundingClientRect().width;
-        const dialogH = global.dialog.getBoundingClientRect().height;
+        const dialogW = dialog.canvas.getBoundingClientRect().width;
+        const dialogH = dialog.canvas.getBoundingClientRect().height;
         let top = 0;
         let left = 0;
         let elementWidth = 0;
@@ -170,7 +169,7 @@ export const editor: Editor = {
             if (!element.classList.contains('selectedElement')) {
                 editor.deselectAll();
                 element.classList.add('selectedElement');
-                global.selectedElementId = element.id;
+                dialog.selectedElement = element.id;
                 const type = dialog.getElement(element.id)?.dataset.type;
                 if (!type) return;
                 global.emit( // only to the current window / process
@@ -242,26 +241,26 @@ export const editor: Editor = {
     },
 
     deselectAll: function () {
-        for (const element of global.dialog.children) {
+        for (const element of dialog.canvas.children) {
             // last element in the set should be the cover
             element.classList.remove('selectedElement')
         }
-        global.selectedElementId = '';
+        dialog.selectedElement = '';
         editor.clearPropsList();
     },
 
     // updateElement(data) {
-    //     if (global.selectedElementId !== '') {
-    //         dialog.updateElementProperties(global.selectedElementId, data);
+    //     if (dialog.selectedElement !== '') {
+    //         dialog.updateElementProperties(dialog.selectedElement, data);
     //     }
     // },
 
     // remove element form paper and container
     removeSelectedElement() {
         // remove from dialog
-        document.getElementById(global.selectedElementId)?.remove();
+        document.getElementById(dialog.selectedElement)?.remove();
         // remove from container
-        dialog.removeElement(global.selectedElementId);
+        dialog.removeElement(dialog.selectedElement);
         // clear element properties
         editor.clearPropsList();
     },
@@ -283,10 +282,6 @@ export const editor: Editor = {
 
         // disable buttons
         (document.getElementById('removeElement') as HTMLButtonElement).disabled = true;
-    },
-
-    getElementFromContainer: function() {
-        return dialog.getElement(global.selectedElementId);
     },
 
     addDefaultsButton: function() {
@@ -325,14 +320,14 @@ export const editor: Editor = {
 
             const id = el.id.slice(2);
             let value = el.value;
-            const element = dialog.getElement(global.selectedElementId);
+            const element = dialog.getElement(dialog.selectedElement);
 
             if (element) {
                 const dataset = element.dataset;
                 let props = { [id]: value };
                 if (id === "size" && (dataset.type === "Checkbox" || dataset.type === "Radio")) {
-                    const dialogW = global.dialog.getBoundingClientRect().width;
-                    const dialogH = global.dialog.getBoundingClientRect().height;
+                    const dialogW = dialog.canvas.getBoundingClientRect().width;
+                    const dialogH = dialog.canvas.getBoundingClientRect().height;
                     if (Number(value) > Math.min(dialogW, dialogH) - 20) {
                         value = String(Math.round(Math.min(dialogW, dialogH) - 20));
                         el.value = value;
@@ -370,10 +365,6 @@ export const editor: Editor = {
                     if (value) {
                         const dialogprops = renderutils.collectDialogProperties();
                         editor.updateDialogArea(dialogprops);
-                        const wh = {
-                            width: Number(dialog.properties.width),
-                            height: Number(dialog.properties.height)
-                        }
                         global.sendTo(
                             'main',
                             'resize-editorWindow',
