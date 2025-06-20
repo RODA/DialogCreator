@@ -1,7 +1,6 @@
 import { global } from "../modules/coms";
 import { conditions } from "../modules/conditions";
 
-
 document.addEventListener('DOMContentLoaded', () => {
 
     let resized = false;
@@ -14,10 +13,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const valid = conditions.validate(str);
 
         if (valid === '') {
-            const conditionsId = document.getElementById("conditionsId") as HTMLInputElement;
-            // this works, but I should really use globel.sendTo('editor'...)
-            global.send('setElementConditions', conditionsId.value, str);
 
+            const conditionsId = document.getElementById("conditionsId") as HTMLInputElement;
+            global.sendTo('editorWindow', 'setElementConditions', conditionsId.value, str);
             global.sendTo('main', 'close-conditionsWindow');
 
         } else {
