@@ -37,4 +37,11 @@ circle, path {
     margin: 5px 0px;
     line-height: 22px;
 }
+.condition-error {
+    color: red;
+    font-weight: bold;
+    padding-top: 10px;
+    padding-left: 3px;
+    margin-bottom: 6px;
+}
 

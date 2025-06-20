@@ -1,4 +1,3 @@
-import { ipcRenderer, BrowserWindow } from "electron";
 import { showError, global } from "../modules/coms";
 import { renderutils } from "../library/renderutils";
 import { utils } from "../library/utils";
@@ -33,24 +32,7 @@ const propertyUpdateOnEnter = (ev: KeyboardEvent) => {
     }
 }
 
-
-// TODO: this does not belong to this window. Move to conditions module.
-global.on('conditionsValid', (event, args) => {
-    if (args) {
-        BrowserWindow.getFocusedWindow()?.close();
-    } else {
-        let message = '<p id="errors"><span>The conditions are not valid. Please check and click save again.</span><br/> For more information please consult the documentation</p>';
-
-        const conditions = document.getElementById('conditions') as HTMLInputElement;
-        conditions.style.height = '127px';
-
-        const conditionsInputs = document.getElementById('conditionsInputs') as HTMLDivElement;
-        conditionsInputs.insertAdjacentHTML('beforeend', message);
-    }
-});
-
 global.on('elementSelected', (id) => {
-
     elementSelected = true;
     // update props tab
     document.getElementById('propertiesList')?.classList.remove('hidden');
@@ -179,11 +161,15 @@ window.addEventListener("DOMContentLoaded", async () => {
     });
 
     document.getElementById('conditions')?.addEventListener('click', function () {
-        const element = editor.getElementFromContainer();
-        if (!element) {
-            showError('Could not find the element. Please check the HTML!');
+        const info = renderutils.getDialogInfo();
+
+        if (!info.selected) {
+            showError('Could not find the selected element. Please check the HTML!');
             return;
         }
+
+        const dataset = info.selected.dataset;
+
         global.sendTo(
             'main',
             'secondWindow',
@@ -191,10 +177,13 @@ window.addEventListener("DOMContentLoaded", async () => {
                 width: 640,
                 height: 310,
                 backgroundColor: '#fff',
-                title: 'Conditions for element: ' + element.dataset.nameid,
+                title: 'Conditions for element: ' + dataset.nameid,
                 preload: 'preloadConditions.js',
                 html: 'conditions.html',
-                conditions: element.dataset.conditions
+                name: dataset.nameid,
+                conditions: dataset.conditions,
+                elements: info.elements,
+                selected: dataset.id // the id of the selected element
             }
         );
     });
@@ -215,5 +204,12 @@ window.addEventListener("DOMContentLoaded", async () => {
                 elements[name][pkey] = value;
             }
         }
+    });
+
+
+    global.on('setElementConditions', (...args: unknown[]) => {
+        const element = document.getElementById(args[0] as string) as HTMLElement;
+        const dataset = element.dataset;
+        dataset.conditions = args[1] as string;
     });
 });

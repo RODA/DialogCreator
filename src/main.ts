@@ -141,7 +141,12 @@ function createSecondWindow(args: { [key: string]: any }) {
                 secondWindow.webContents.send("addAvailableElementsTo", "defaults");
                 break;
             case 'conditions.html':
-                // secondWindow.webContents.send("conditions", args.conditions);
+                secondWindow.webContents.send("populateConditions", {
+                    name: args.name,
+                    conditions: args.conditions,
+                    elements: args.elements,
+                    selected: args.selected
+                });
                 break;
             default:
                 break;
@@ -180,9 +185,15 @@ function setupIPC() {
                     break;
                 case 'resize-editorWindow':
                     editorWindow.setSize(
-                        Math.max(args[0] + 560, 1200),
-                        Math.max(args[1] + 320, 800)
+                        Math.max(args[0] + 560, 1200), // width
+                        Math.max(args[1] + 320, 800) // height
                     );
+                    break;
+                case 'resize-conditionsWindow':
+                    {
+                        const size = secondWindow.getSize();
+                        secondWindow.setSize(size[0], size[1] + 33);
+                    }
                     break;
                 case 'getProperties':
                     {
@@ -215,15 +226,8 @@ function setupIPC() {
                         }
                     }
                     break;
-                case 'conditionsCheck':
-                    {
-                        editorWindow.webContents.send('conditionsCheck', args);
-                        // Close the sender window (the conditions window)
-                        const win = BrowserWindow.fromWebContents(_event.sender);
-                        if (win && !win.isDestroyed()) {
-                            win.close();
-                        }
-                    }
+                case 'close-conditionsWindow':
+                    secondWindow.close();
                     break;
                 default:
                     break;
