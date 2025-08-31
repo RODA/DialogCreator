@@ -1,4 +1,6 @@
 
+// https://blog.logrocket.com/electron-ipc-response-request-architecture-with-typescript/
+
 export interface Global {
     emit(channel: string, ...args: unknown[]): void;
     send(channel: string, ...args: unknown[]): void;
