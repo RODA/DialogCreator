@@ -94,10 +94,15 @@ export const conditions: Conditions = {
 
             // Parse the expression and collect all element names
             const elementsSet = new Set<string>();
+            let result;
             try {
-                conditions.parseExpression([...tokens], elementsSet);
+                result = conditions.parseExpression([...tokens], elementsSet);
             } catch (e) {
                 return ('Error parsing condition expression.');
+            }
+
+            if (typeof result === 'string') {
+                return(result);
             }
             // Check for missing elements
             const missing = Array.from(elementsSet).filter(el => !conditions.elements.includes(el));
@@ -133,17 +138,22 @@ export const conditions: Conditions = {
     parseAtomic: function(tokens) {
         const [element, op, value] = tokens.splice(0, 3);
         // Restrict operator to allowed
+        if (utils.missing(op)) {
+            return(`Condition without an operator (${this.allowedOperators.join(", ")}).`);
+        }
         if (!conditions.allowedOperators.includes(op)) {
-            showError(`Invalid operator: ${op}`);
-            // return (null as unknown) as string[];
-            // return (null);
+            return(`Invalid operator: ${op}`);
+        }
+
+        if (utils.missing(value)) {
+            return(`Condition without a value.`);
         }
         // Restrict property (value) to allowed
         if (
             !conditions.allowedProperties.includes(value) &&
             !utils.possibleNumeric(value)
         ) {
-            showError(`Invalid property: ${value}`);
+            return(`Invalid property: ${value}`);
         }
         return [element, op, value];
     },
@@ -174,6 +184,9 @@ export const conditions: Conditions = {
             //     }
             } else if (/^[a-zA-Z0-9_]+$/.test(token)) {
                 const atomic = conditions.parseAtomic(tokens);
+                if (!Array.isArray(atomic)) {
+                    return(atomic);
+                }
                 stack.push(atomic);
                 elements.add(atomic[0]);
             } else {
@@ -195,6 +208,9 @@ export const conditions: Conditions = {
                 const [_, action, condExpr] = m;
                 const tokens = conditions.tokenize(condExpr.replace(/;$/, ''));
                 const parsed = conditions.parseExpression(tokens, elements);
+                if (typeof parsed === 'string') {
+                    return(parsed);
+                }
                 result[action] = parsed;
             }
         }

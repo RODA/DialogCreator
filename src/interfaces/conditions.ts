@@ -6,9 +6,9 @@ export interface Conditions {
     populateConditions: (obj: ConditionsInfo) => void;
     validate: (input: string) => string;
     tokenize: (expr: string) => string[];
-    parseAtomic: (tokens: string[]) => string[];
-    parseExpression: (tokens: string[], elements: Set<string>) => ConditionExpression;
-    parseConditions: (input: string) => Response;
+    parseAtomic: (tokens: string[]) => string | string[];
+    parseExpression: (tokens: string[], elements: Set<string>) => string | ConditionExpression;
+    parseConditions: (input: string) => string | Response;
 }
 
 export type ConditionExpression = string[] | (string | ConditionExpression)[];
