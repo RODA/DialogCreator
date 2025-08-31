@@ -213,3 +213,42 @@ window.addEventListener("DOMContentLoaded", async () => {
         dataset.conditions = args[1] as string;
     });
 });
+
+
+
+
+
+    // global.on('resetOK', (...args: unknown[]) => {
+    //     const updatedProperties = args[0] as Record<string, string>;
+    //     if (!updatedProperties) return;
+    //     // Update the UI fields in the defaults window with the new values
+    //     const ellist = document.querySelectorAll('#propertiesList [id^="el"]');
+    //     ellist.forEach((el) => {
+    //         const tag = el.tagName;
+    //         const name = (el as HTMLInputElement).name;
+    //         if (name in updatedProperties) {
+    //             let value = updatedProperties[name];
+    //             if (utils.isElementOf(name, ['isEnabled', 'isVisible', 'isSelected', 'isChecked'])) {
+    //                 value = (value === '1' || utils.isTrue(value)) ? 'true' : 'false';
+    //             }
+    //             if (tag === 'SELECT') {
+    //                 const select = el as HTMLSelectElement;
+    //                 let v = (value || '').toString().trim().toLowerCase();
+    //                 // Find the actual option value (in case of case/whitespace mismatch)
+    //                 const realValue = Array.from(select.options).find(opt => opt.value.trim().toLowerCase() === v)?.value;
+    //                 if (realValue) {
+    //                     select.value = realValue;
+    //                     setTimeout(() => {
+    //                         select.selectedIndex = Array.from(select.options).findIndex(opt => opt.value === realValue);
+    //                         select.dispatchEvent(new Event('change', { bubbles: true }));
+    //                         console.log('After setTimeout, select.value:', select.value, 'selectedIndex:', select.selectedIndex, 'selected text:', select.options[select.selectedIndex]?.text);
+    //                     }, 100);
+    //                 } else {
+    //                     select.value = 'false';
+    //                 }
+    //             } else {
+    //                 (el as HTMLInputElement).value = value || '';
+    //             }
+    //         }
+    //     });
+    // });

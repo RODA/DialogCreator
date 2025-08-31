@@ -106,7 +106,11 @@ export const editor: Editor = {
                         // Highlight this one
                         li.classList.add('selected-available-element');
 
+                        // this sends a message within the same ("defaults", second) window
+                        // useful when the click event is created in a different module, like here
+                        // basically a "note to self"
                         global.emit('defaultElementSelected', name);
+
                         global.sendTo('main', 'getProperties', name);
 
                     } else if (window === "editor") {
