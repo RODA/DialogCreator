@@ -251,6 +251,8 @@ export const editor: Editor = {
         }
         dialog.selectedElement = '';
         editor.clearPropsList();
+        // notify UI that selection has been cleared
+        global.emit('elementDeselected');
     },
 
     // updateElement(data) {
@@ -267,6 +269,8 @@ export const editor: Editor = {
         dialog.removeElement(dialog.selectedElement);
         // clear element properties
         editor.clearPropsList();
+        // notify UI that selection has been cleared
+        global.emit('elementDeselected');
     },
 
     // clear element props
@@ -286,6 +290,10 @@ export const editor: Editor = {
 
         // disable buttons
         (document.getElementById('removeElement') as HTMLButtonElement).disabled = true;
+        (document.getElementById('bringToFront') as HTMLButtonElement).disabled = true;
+        (document.getElementById('sendToBack') as HTMLButtonElement).disabled = true;
+        (document.getElementById('bringForward') as HTMLButtonElement).disabled = true;
+        (document.getElementById('sendBackward') as HTMLButtonElement).disabled = true;
     },
 
     addDefaultsButton: function() {
@@ -384,6 +392,43 @@ export const editor: Editor = {
                     }
                 }
             });
+        }
+    },
+
+    // Arrange/Z-order actions ======================================
+    bringSelectedToFront: function() {
+        const el = dialog.getElement(dialog.selectedElement);
+        if (el && el.parentElement) {
+            el.parentElement.appendChild(el);
+        }
+    },
+
+    sendSelectedToBack: function() {
+        const el = dialog.getElement(dialog.selectedElement);
+        if (el && el.parentElement) {
+            el.parentElement.insertBefore(el, el.parentElement.firstElementChild);
+        }
+    },
+
+    bringSelectedForward: function() {
+        const el = dialog.getElement(dialog.selectedElement);
+        if (el && el.parentElement) {
+            const next = el.nextElementSibling as HTMLElement | null;
+            if (next) {
+                // swap with next sibling
+                el.parentElement.insertBefore(next, el);
+            }
+        }
+    },
+
+    sendSelectedBackward: function() {
+        const el = dialog.getElement(dialog.selectedElement);
+        if (el && el.parentElement) {
+            const prev = el.previousElementSibling as HTMLElement | null;
+            if (prev) {
+                // move before previous sibling
+                el.parentElement.insertBefore(el, prev);
+            }
         }
     }
 }

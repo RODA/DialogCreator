@@ -15,6 +15,11 @@ export interface Editor {
     addDefaultsButton: () => void;
     propertyUpdate: (ev: FocusEvent) => void;
     initializeDialogProperties: () => void;
+    // arrange/z-order actions
+    bringSelectedToFront: () => void;
+    sendSelectedToBack: () => void;
+    bringSelectedForward: () => void;
+    sendSelectedBackward: () => void;
 }
 
 export interface EditorSettings {

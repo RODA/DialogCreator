@@ -34,6 +34,12 @@ const propertyUpdateOnEnter = (ev: KeyboardEvent) => {
 
 global.on('elementSelected', (id) => {
     elementSelected = true;
+    // enable arrange toolbar buttons
+    (document.getElementById('bringToFront') as HTMLButtonElement).disabled = false;
+    (document.getElementById('sendToBack') as HTMLButtonElement).disabled = false;
+    (document.getElementById('bringForward') as HTMLButtonElement).disabled = false;
+    (document.getElementById('sendBackward') as HTMLButtonElement).disabled = false;
+
     // update props tab
     document.getElementById('propertiesList')?.classList.remove('hidden');
     const element = document.getElementById(id as string) as HTMLElement;
@@ -148,7 +154,39 @@ window.addEventListener("DOMContentLoaded", async () => {
     editor.addAvailableElementsTo("editor");
     editor.addDefaultsButton();
 
+    // Ensure the editor (grey) area shrinks by the height of the toolbar to keep total app height constant
+    const updateToolbarHeightVar = () => {
+        const toolbar = document.getElementById('editor-toolbar');
+        if (!toolbar) return;
+        const styles = window.getComputedStyle(toolbar);
+        const marginTop = parseFloat(styles.marginTop || '0') || 0;
+        const marginBottom = parseFloat(styles.marginBottom || '0') || 0;
+        const total = Math.round(toolbar.offsetHeight + marginTop + marginBottom);
+        document.documentElement.style.setProperty('--editor-toolbar-height', `${total}px`);
+    };
+
+    updateToolbarHeightVar();
+    window.addEventListener('resize', updateToolbarHeightVar);
+
+    // Observe toolbar size changes (safer if styles/fonts change)
+    try {
+        const RO = (window as unknown as { ResizeObserver?: new (cb: () => void) => { observe: (el: Element) => void } }).ResizeObserver;
+        const toolbar = document.getElementById('editor-toolbar');
+        if (RO && toolbar) {
+            const ro = new RO(() => updateToolbarHeightVar());
+            ro.observe(toolbar);
+        }
+    } catch {
+        // no-op if ResizeObserver is unavailable
+    }
+
     document.getElementById('removeElement')?.addEventListener('click', editor.removeSelectedElement);
+
+    // Arrange buttons
+    document.getElementById('bringToFront')?.addEventListener('click', editor.bringSelectedToFront);
+    document.getElementById('sendToBack')?.addEventListener('click', editor.sendSelectedToBack);
+    document.getElementById('bringForward')?.addEventListener('click', editor.bringSelectedForward);
+    document.getElementById('sendBackward')?.addEventListener('click', editor.sendSelectedBackward);
 
     document.addEventListener('keyup', function (ev) {
         if (ev.code == 'Delete' || ev.code == 'Backspace') {
@@ -157,6 +195,41 @@ window.addEventListener("DOMContentLoaded", async () => {
                     editor.removeSelectedElement();
                 }
             }
+        }
+    });
+
+    // Keyboard shortcuts for arrange actions (Cmd/Ctrl + Arrow keys)
+    document.addEventListener('keydown', function (ev) {
+        if (!utils.isTrue(elementSelected)) return;
+        const activeTag = document.activeElement?.tagName;
+        if (activeTag && activeTag !== 'BODY') return;
+
+        const metaOrCtrl = ev.metaKey || ev.ctrlKey;
+        if (!metaOrCtrl) return;
+
+        // Robust arrow detection across layouts: check code, key, and legacy keyCode
+        const keyCode = (ev as unknown as { keyCode?: number }).keyCode;
+        const isArrowUp =
+            ev.code === 'ArrowUp' ||
+            ev.key === 'ArrowUp' ||
+            keyCode === 38;
+        const isArrowDown =
+            ev.code === 'ArrowDown' ||
+            ev.key === 'ArrowDown' ||
+            keyCode === 40;
+
+        if (isArrowUp && ev.shiftKey) {
+            ev.preventDefault();
+            editor.bringSelectedToFront();
+        } else if (isArrowDown && ev.shiftKey) {
+            ev.preventDefault();
+            editor.sendSelectedToBack();
+        } else if (isArrowUp) {
+            ev.preventDefault();
+            editor.bringSelectedForward();
+        } else if (isArrowDown) {
+            ev.preventDefault();
+            editor.sendSelectedBackward();
         }
     });
 
@@ -183,7 +256,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 name: dataset.nameid,
                 conditions: dataset.conditions,
                 elements: info.elements,
-                selected: dataset.id // the id of the selected element
+                selected: info.selected.id // the id of the selected element
             }
         );
     });
@@ -211,6 +284,16 @@ window.addEventListener("DOMContentLoaded", async () => {
         const element = document.getElementById(args[0] as string) as HTMLElement;
         const dataset = element.dataset;
         dataset.conditions = args[1] as string;
+    });
+
+    // When element gets deselected from editor logic
+    global.on('elementDeselected', () => {
+        elementSelected = false;
+        (document.getElementById('removeElement') as HTMLButtonElement).disabled = true;
+        (document.getElementById('bringToFront') as HTMLButtonElement).disabled = true;
+        (document.getElementById('sendToBack') as HTMLButtonElement).disabled = true;
+        (document.getElementById('bringForward') as HTMLButtonElement).disabled = true;
+        (document.getElementById('sendBackward') as HTMLButtonElement).disabled = true;
     });
 });
 
