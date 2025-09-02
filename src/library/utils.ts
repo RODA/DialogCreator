@@ -5,6 +5,10 @@
 
 import { Utils } from '../interfaces/utils';
 
+const TRUE_SET = new Set(['true', 't', '1']); // , 'yes', 'y', 'on'
+const FALSE_SET = new Set(['false', 'f', '0']); // , 'no', 'n', 'off'
+
+
 export const utils: Utils = {
     getKeys: function(obj) {
         if (obj === null) return([]);
@@ -58,14 +62,29 @@ export const utils: Utils = {
         if (utils.missing(x) || utils.isNull(x)) {
             return false;
         }
-        return (x === true || (typeof x === 'string' && (x === 'true' || x === 'True')));
+        // return (x === true || (typeof x === 'string' && (x === 'true' || x === 'True')));
+        if (typeof x === 'boolean') return x === true;
+        if (typeof x === 'number') return x === 1;
+        if (typeof x === 'string') {
+            const s = x.trim().toLowerCase();
+            if (TRUE_SET.has(s)) return true;
+            if (FALSE_SET.has(s)) return false; // explicit false tokens remain false
+        }
+        return false;
     },
 
     isFalse: function(x) {
         if (utils.missing(x) || utils.isNull(x)) {
             return false;
         }
-        return (x === false || (typeof x === 'string' && (x === 'false' || x === 'False')));
+        // return (x === false || (typeof x === 'string' && (x === 'false' || x === 'False')));
+        if (typeof x === 'boolean') return x === false;
+        if (typeof x === 'number') return x === 0;
+        if (typeof x === 'string') {
+            const s = x.trim().toLowerCase();
+            return FALSE_SET.has(s);
+        }
+        return false;
     },
 
     isNull: function(x) {
