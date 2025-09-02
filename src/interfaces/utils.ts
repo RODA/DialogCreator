@@ -4,6 +4,7 @@ export interface Utils {
     possibleNumeric: (x: string) => boolean;
     isInteger: (x: number) => boolean;
     asNumeric(x: string): number;
+    ensureNumber(x: unknown, fallback: number): number;
     asInteger(x: string): number;
     isTrue: (x: unknown) => boolean;
     isFalse: (x: unknown) => boolean;

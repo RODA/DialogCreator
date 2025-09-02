@@ -45,6 +45,11 @@ export const utils: Utils = {
         return parseFloat("" + x);
     },
 
+    ensureNumber: function(x, fallback) {
+        const n = Number(x);
+        return Number.isFinite(n) ? n : fallback;
+    },
+
     asInteger: function(x) {
         return parseInt("" + x);
     },

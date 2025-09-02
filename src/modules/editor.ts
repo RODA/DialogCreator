@@ -431,5 +431,53 @@ export const editor: Editor = {
                 el.parentElement.insertBefore(el, prev);
             }
         }
+    },
+
+    stringifyDialog: function() {
+        const elements = Array.from(dialog.canvas.children).map((child) => {
+            const el = child as HTMLElement;
+            const obj: Record<string, unknown> = { id: el.id };
+            // Coerce dataset string values to booleans/numbers where appropriate
+            for (const [key, raw] of Object.entries(el.dataset)) {
+                let value: unknown = raw;
+                if (raw === 'true' || raw === 'false') {
+                    value = raw === 'true';
+                } else if (typeof raw === 'string' && utils.possibleNumeric(raw)) {
+                    value = utils.asNumeric(raw);
+                }
+                obj[key] = value as unknown;
+            }
+            return obj;
+        });
+
+        const result = {
+            id: dialog.id,
+            properties: { ...dialog.properties },
+            syntax: { ...dialog.syntax },
+            elements
+        };
+        return JSON.stringify(result);
+    },
+
+    previewDialog: function() {
+        const json = editor.stringifyDialog();
+        // Open a dedicated preview window via the main process
+        const width = Math.max(Number(dialog.properties.width) || 640, 200);
+        const height = Math.max(Number(dialog.properties.height) || 480, 200);
+        global.sendTo(
+            'main',
+            'secondWindow',
+            {
+                width: width,
+                height: height,
+                useContentSize: true,
+                autoHideMenuBar: true,
+                backgroundColor: '#ffffff',
+                title: 'Preview',
+                preload: 'preloadPreview.js',
+                html: 'preview.html',
+                data: json
+            }
+        );
     }
 }

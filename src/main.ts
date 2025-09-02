@@ -95,6 +95,7 @@ function createSecondWindow(args: { [key: string]: any }) {
     secondWindow = new BrowserWindow({
         width: args.width,
         height: args.height,
+        useContentSize: !!args.useContentSize,
         // icon: iconPath,
         backgroundColor: args.backgroundColor,
         parent: editorWindow,
@@ -110,7 +111,7 @@ function createSecondWindow(args: { [key: string]: any }) {
             preload: path.join(__dirname, 'preload', args.preload),
             sandbox: false,
         },
-        autoHideMenuBar: development ? false : true,
+        autoHideMenuBar: typeof args.autoHideMenuBar === 'boolean' ? args.autoHideMenuBar : (development ? false : true),
         resizable: false,
     });
 
@@ -129,7 +130,7 @@ function createSecondWindow(args: { [key: string]: any }) {
         }
     });
 
-    if (development) {
+    if (development && args.html !== 'preview.html') {
         // Open the DevTools.
         secondWindow.webContents.openDevTools();
     }
@@ -147,6 +148,9 @@ function createSecondWindow(args: { [key: string]: any }) {
                     elements: args.elements,
                     selected: args.selected
                 });
+                break;
+            case 'preview.html':
+                secondWindow.webContents.send("response-from-main-renderPreview", args.data);
                 break;
             default:
                 break;

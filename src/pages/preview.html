@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Preview</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+    <link rel="stylesheet" href="../css/global.css">
+    <style>
+      html, body { margin: 0; padding: 0; overflow: hidden; background: #ffffff; }
+      #preview-root { margin: 0; padding: 0; }
+      .preview-canvas { position: relative; background: #fff; border: none; }
+      .preview-canvas * { box-sizing: border-box; }
+      .preview-button { padding: 4px 8px; border: 1px solid #888; border-radius: 3px; cursor: pointer; }
+      .preview-input, .preview-select { padding: 2px 4px; }
+      .preview-separator { background: #000; }
+      .no-select { user-select: none; }
+    </style>
+  </head>
+  <body>
+    <div id="preview-root"></div>
+  </body>
+</html>
+

@@ -15,6 +15,8 @@ export interface Editor {
     addDefaultsButton: () => void;
     propertyUpdate: (ev: FocusEvent) => void;
     initializeDialogProperties: () => void;
+    stringifyDialog: () => string;
+    previewDialog: () => void;
     // arrange/z-order actions
     bringSelectedToFront: () => void;
     sendSelectedToBack: () => void;
