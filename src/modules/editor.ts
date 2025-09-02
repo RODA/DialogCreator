@@ -151,6 +151,7 @@ export const editor: Editor = {
             if (!element.classList.contains('selectedElement')) {
                 editor.deselectAll();
                 element.classList.add('selectedElement');
+                global.emit('elementSelected', element.id);
             }
         })
 
