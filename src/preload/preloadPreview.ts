@@ -47,6 +47,12 @@ function renderPreview(dialog: {
     if ((data as any).id) element.id = String((data as any).id);
     if ((data as any).nameid) (element.dataset as any).nameid = String((data as any).nameid);
 
+    // Remove the drag-protection overlay used in the editor so interactions work in preview
+    const cover = element.querySelector('.elementcover');
+    if (cover && cover.parentElement) {
+      cover.parentElement.removeChild(cover);
+    }
+
     // Ensure left/top are applied (makeElement already does this when provided)
     if ((data as any).left !== undefined) {
       element.style.left = String((data as any).left) + 'px';
@@ -84,17 +90,66 @@ function renderPreview(dialog: {
         const checked = utils.isTrue((data as any).isChecked);
         custom.setAttribute('aria-checked', String(checked));
         if (checked) custom.classList.add('checked'); else custom.classList.remove('checked');
+        // Keyboard accessibility in preview (space/enter)
+        custom.addEventListener('keydown', (e: KeyboardEvent) => {
+          if (e.key === ' ' || e.key === 'Enter') {
+            e.preventDefault();
+            custom.click();
+          }
+        });
       }
     }
 
-    // Radio: reflect isSelected
+    // Radio: reflect isSelected and make it interactive in preview
     if ((element.dataset?.type || '') === 'Radio') {
       const custom = element.querySelector('.custom-radio') as HTMLElement | null;
       if (custom) {
         const selected = utils.isTrue((data as any).isSelected);
         custom.setAttribute('aria-checked', String(selected));
         if (selected) custom.classList.add('selected'); else custom.classList.remove('selected');
+
+        const selectThis = () => {
+          const group = custom.getAttribute('group') || '';
+          if (group) {
+            document.querySelectorAll(`.custom-radio[group="${group}"]`).forEach((el) => {
+              const r = el as HTMLElement;
+              r.setAttribute('aria-checked', 'false');
+              r.classList.remove('selected');
+            });
+          }
+          custom.setAttribute('aria-checked', 'true');
+          custom.classList.add('selected');
+        };
+
+        custom.addEventListener('click', selectThis);
+        custom.addEventListener('keydown', (e: KeyboardEvent) => {
+          if (e.key === ' ' || e.key === 'Enter') {
+            e.preventDefault();
+            selectThis();
+          }
+        });
       }
+    }
+
+    // Counter: wire increase/decrease within [startval, maxval]
+    if ((element.dataset?.type || '') === 'Counter') {
+      const display = element.querySelector('.counter-value') as HTMLDivElement | null;
+      const inc = element.querySelector('.counter-arrow.up') as HTMLDivElement | null;
+      const dec = element.querySelector('.counter-arrow.down') as HTMLDivElement | null;
+      const min = Number((data as any).startval ?? 0);
+      const max = Number((data as any).maxval ?? min);
+
+      const getValue = () => Number(display?.textContent ?? min);
+      const setValue = (v: number) => { if (display) display.textContent = String(v); };
+
+      inc?.addEventListener('click', () => {
+        const curr = getValue();
+        if (curr < max) setValue(curr + 1);
+      });
+      dec?.addEventListener('click', () => {
+        const curr = getValue();
+        if (curr > min) setValue(curr - 1);
+      });
     }
 
     // Visibility / Enabled

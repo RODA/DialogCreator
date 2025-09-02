@@ -22,7 +22,8 @@ let elementSelected = false;
 
 
 // On Enter blur element so it triggers update
-let propertyUpdate = function(ev: FocusEvent) {}; // overwritten once the editor module is loaded
+// Use a generic EventListener type to satisfy addEventListener/removeEventListener.
+let propertyUpdate: EventListener = function (_ev: Event) {}; // overwritten once the editor module is loaded
 const propertyUpdateOnEnter = (ev: KeyboardEvent) => {
     if (ev.key == 'Enter') {
         if (utils.isTrue(elementSelected)) {
@@ -135,7 +136,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     // Dynamically import the editor module and run its setup
     const { editor } = await import("../modules/editor");
 
-    propertyUpdate = editor.propertyUpdate;
+    propertyUpdate = editor.propertyUpdate as unknown as EventListener;
 
     // Run the main setup logic for the editor window
     // (mimics the previous top-level code in this file)
