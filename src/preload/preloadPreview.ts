@@ -1,7 +1,8 @@
 import { global } from "../modules/coms";
 import { utils } from "../library/utils";
+import { renderutils } from "../library/renderutils";
 
-// Minimal, read-only preview renderer based on the serialized dialog
+// Render a snapshot of the dialog using the exact same element factory as the editor
 window.addEventListener("DOMContentLoaded", () => {
   global.on("renderPreview", (data: unknown) => {
     try {
@@ -33,187 +34,80 @@ function renderPreview(dialog: {
   canvas.style.height = height + "px";
   canvas.style.backgroundColor = String(background);
 
-  for (const el of dialog.elements || []) {
-    const node = createPreviewElement(el);
-    if (node) {
-      canvas.appendChild(node);
+  // Align typography with editor
+  const fs = Number((dialog.properties as any).fontSize);
+  if (Number.isFinite(fs) && fs > 0) {
+    (global as any).fontSize = fs;
+  }
+
+  for (const data of dialog.elements || []) {
+    const element = renderutils.makeElement({ ...(data as any) } as any);
+
+    // Restore original id and nameid to avoid factory renaming for preview
+    if ((data as any).id) element.id = String((data as any).id);
+    if ((data as any).nameid) (element.dataset as any).nameid = String((data as any).nameid);
+
+    // Ensure left/top are applied (makeElement already does this when provided)
+    if ((data as any).left !== undefined) {
+      element.style.left = String((data as any).left) + 'px';
     }
+    if ((data as any).top !== undefined) {
+      element.style.top = String((data as any).top) + 'px';
+    }
+
+    // Select: populate options from value (comma/semicolon separated)
+    if (element instanceof HTMLSelectElement) {
+      const raw = (data as any).value ?? '';
+      const text = String(raw);
+      const tokens = text.split(/[;,]/).map(s => s.trim()).filter(s => s.length > 0);
+      element.innerHTML = '';
+      if (tokens.length === 0) {
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = '';
+        element.appendChild(opt);
+      } else {
+        for (const t of tokens) {
+          const opt = document.createElement('option');
+          opt.value = t;
+          opt.textContent = t;
+          element.appendChild(opt);
+        }
+        // If a single value should also be the selected value, keep first by default
+      }
+    }
+
+    // Checkbox: reflect isChecked
+    if ((element.dataset?.type || '') === 'Checkbox') {
+      const custom = element.querySelector('.custom-checkbox') as HTMLElement | null;
+      if (custom) {
+        const checked = utils.isTrue((data as any).isChecked);
+        custom.setAttribute('aria-checked', String(checked));
+        if (checked) custom.classList.add('checked'); else custom.classList.remove('checked');
+      }
+    }
+
+    // Radio: reflect isSelected
+    if ((element.dataset?.type || '') === 'Radio') {
+      const custom = element.querySelector('.custom-radio') as HTMLElement | null;
+      if (custom) {
+        const selected = utils.isTrue((data as any).isSelected);
+        custom.setAttribute('aria-checked', String(selected));
+        if (selected) custom.classList.add('selected'); else custom.classList.remove('selected');
+      }
+    }
+
+    // Visibility / Enabled
+    if (!utils.isTrue((data as any).isVisible)) {
+      element.classList.add('design-hidden');
+    }
+    if (!utils.isTrue((data as any).isEnabled)) {
+      element.classList.add('disabled-div');
+    }
+
+    canvas.appendChild(element);
   }
 
   root.appendChild(canvas);
 }
 
-function createPreviewElement(el: Record<string, any>): HTMLElement | null {
-  const type = String(el.type || "");
-  const left = utils.ensureNumber(el.left, 10);
-  const top = utils.ensureNumber(el.top, 10);
-
-  let node: HTMLElement | null = null;
-
-  switch (type) {
-    case "Button": {
-      const btn = document.createElement("button");
-      btn.className = "preview-button";
-      btn.textContent = String(el.label ?? "Button");
-      if (el.color && utils.isValidColor(el.color)) btn.style.backgroundColor = String(el.color);
-      node = btn;
-      break;
-    }
-    case "Input": {
-      const input = document.createElement("input");
-      input.className = "preview-input";
-      input.type = "text";
-      input.value = String(el.value ?? "");
-      if (utils.possibleNumeric(String(el.width))) input.style.width = Number(el.width) + "px";
-      node = input;
-      break;
-    }
-    case "Select": {
-      const select = document.createElement("select");
-      select.className = "preview-select";
-      // If value is comma-separated, split into options; otherwise single option
-      const val = String(el.value ?? "");
-      const values = val.includes(",") ? val.split(",").map((v) => v.trim()) : (val ? [val] : []);
-      if (values.length === 0) {
-        const opt = document.createElement("option");
-        opt.value = "";
-        opt.textContent = "(empty)";
-        select.appendChild(opt);
-      } else {
-        for (const v of values) {
-          const opt = document.createElement("option");
-          opt.value = v;
-          opt.textContent = v;
-          select.appendChild(opt);
-        }
-      }
-      if (utils.possibleNumeric(String(el.width))) select.style.width = Number(el.width) + "px";
-      node = select;
-      break;
-    }
-    case "Checkbox": {
-      const wrap = document.createElement("label");
-      const cb = document.createElement("input");
-      cb.type = "checkbox";
-      cb.checked = utils.isTrue(el.isChecked);
-      wrap.appendChild(cb);
-      if (el.label) {
-        wrap.appendChild(document.createTextNode(" " + String(el.label)));
-      }
-      node = wrap;
-      break;
-    }
-    case "Radio": {
-      const wrap = document.createElement("label");
-      const rb = document.createElement("input");
-      rb.type = "radio";
-      rb.name = String(el.group || "group");
-      rb.checked = utils.isTrue(el.isSelected);
-      wrap.appendChild(rb);
-      if (el.label) {
-        wrap.appendChild(document.createTextNode(" " + String(el.label)));
-      }
-      node = wrap;
-      break;
-    }
-    case "Counter": {
-      const wrap = document.createElement("div");
-      const down = document.createElement("button");
-      const up = document.createElement("button");
-      const display = document.createElement("span");
-      wrap.className = "no-select";
-      down.textContent = "-";
-      up.textContent = "+";
-      const min = utils.ensureNumber(el.startval, 0);
-      const max = utils.ensureNumber(el.maxval, min);
-      let current = min;
-      display.textContent = String(current);
-      down.onclick = () => { current = Math.max(min, current - 1); display.textContent = String(current); };
-      up.onclick = () => { current = Math.min(max, current + 1); display.textContent = String(current); };
-      wrap.appendChild(down);
-      wrap.appendChild(display);
-      wrap.appendChild(up);
-      node = wrap;
-      break;
-    }
-    case "Slider": {
-      const track = document.createElement("div");
-      track.style.background = el.color && utils.isValidColor(el.color) ? String(el.color) : "#000";
-      track.style.position = "absolute";
-      const w = utils.ensureNumber(el.width, 120);
-      const h = utils.ensureNumber(el.height, 1);
-      const dir = String(el.direction || "horizontal");
-      if (dir === "horizontal") {
-        track.style.width = w + "px";
-        track.style.height = h + "px";
-      } else {
-        track.style.width = h + "px";
-        track.style.height = w + "px";
-      }
-      const handle = document.createElement("div");
-      handle.style.position = "absolute";
-      handle.style.background = el.handlecolor && utils.isValidColor(el.handlecolor) ? String(el.handlecolor) : "#4caf50";
-      const hp = utils.ensureNumber(el.handlepos, 50);
-      const hs = utils.ensureNumber(el.handlesize, 8) * 1.5;
-      handle.style.width = hs + "px";
-      handle.style.height = hs + "px";
-      handle.style.borderRadius = "50%";
-      if (dir === "horizontal") {
-        handle.style.left = Math.round((w - hs) * (hp / 100)) + "px";
-        handle.style.top = Math.round(-(hs / 2) + h / 2) + "px";
-      } else {
-        handle.style.left = Math.round(-(hs / 2) + h / 2) + "px";
-        handle.style.top = Math.round((w - hs) * (1 - hp / 100)) + "px";
-      }
-      track.appendChild(handle);
-      node = track;
-      break;
-    }
-    case "Label": {
-      const span = document.createElement("div");
-      span.textContent = String(el.value ?? "Label");
-      if (el.fontColor && utils.isValidColor(el.fontColor)) span.style.color = String(el.fontColor);
-      node = span;
-      break;
-    }
-    case "Separator": {
-      const sep = document.createElement("div");
-      sep.className = "preview-separator";
-      sep.style.backgroundColor = String(el.color || "#000");
-      const w = utils.ensureNumber(el.width, 200);
-      const h = utils.ensureNumber(el.height, 1);
-      sep.style.width = w + "px";
-      sep.style.height = h + "px";
-      node = sep;
-      break;
-    }
-    case "Container": {
-      const div = document.createElement("div");
-      div.style.background = "#ffffff";
-      const w = utils.ensureNumber(el.width, 150);
-      const h = utils.ensureNumber(el.height, 200);
-      div.style.width = w + "px";
-      div.style.height = h + "px";
-      div.style.border = "1px solid #ddd";
-      node = div;
-      break;
-    }
-    default:
-      node = document.createElement("div");
-      node.textContent = `[${type}]`;
-      node.style.padding = "2px 4px";
-      node.style.border = "1px dashed #aaa";
-      break;
-  }
-
-  if (!node) return null;
-
-  // Common positioning and states
-  node.style.position = "absolute";
-  node.style.left = left + "px";
-  node.style.top = top + "px";
-  if (!utils.isTrue(el.isVisible)) node.style.visibility = "hidden";
-  if (!utils.isTrue(el.isEnabled)) (node as HTMLInputElement | HTMLButtonElement).disabled = true;
-
-  return node;
-}
