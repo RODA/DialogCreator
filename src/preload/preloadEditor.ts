@@ -198,6 +198,49 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
     });
 
+    // Nudge movement with Arrow keys (no modifier)
+    document.addEventListener('keydown', function (ev) {
+        if (!utils.isTrue(elementSelected)) return;
+        const activeTag = document.activeElement?.tagName;
+        if (activeTag && activeTag !== 'BODY') return;
+        // Skip if using Cmd/Ctrl — those are reserved for arrange actions
+        if (ev.metaKey || ev.ctrlKey) return;
+
+        const keyCode = (ev as unknown as { keyCode?: number }).keyCode;
+        const isArrowUp = ev.code === 'ArrowUp' || ev.key === 'ArrowUp' || keyCode === 38;
+        const isArrowDown = ev.code === 'ArrowDown' || ev.key === 'ArrowDown' || keyCode === 40;
+        const isArrowLeft = ev.code === 'ArrowLeft' || ev.key === 'ArrowLeft' || keyCode === 37;
+        const isArrowRight = ev.code === 'ArrowRight' || ev.key === 'ArrowRight' || keyCode === 39;
+        if (!(isArrowUp || isArrowDown || isArrowLeft || isArrowRight)) return;
+
+        const step = ev.shiftKey ? 10 : 1;
+
+        const info = renderutils.getDialogInfo();
+        const el = info.selected as HTMLElement | null;
+        if (!el) return;
+
+        const currentLeft = Number(el.dataset.left ?? (parseInt(el.style.left || '0', 10) || 0));
+        const currentTop = Number(el.dataset.top ?? (parseInt(el.style.top || '0', 10) || 0));
+        let newLeft = currentLeft;
+        let newTop = currentTop;
+
+        if (isArrowUp) newTop = currentTop - step;
+        if (isArrowDown) newTop = currentTop + step;
+        if (isArrowLeft) newLeft = currentLeft - step;
+        if (isArrowRight) newLeft = currentLeft + step;
+
+        const props: Record<string, string | number> = {};
+        if (newLeft !== currentLeft) props.left = newLeft;
+        if (newTop !== currentTop) props.top = newTop;
+        if (Object.keys(props).length) {
+            renderutils.updateElement(el, props as any);
+            if (props.left !== undefined) el.dataset.left = String(props.left);
+            if (props.top !== undefined) el.dataset.top = String(props.top);
+        }
+
+        ev.preventDefault();
+    });
+
     // Keyboard shortcuts for arrange actions (Cmd/Ctrl + Arrow keys)
     document.addEventListener('keydown', function (ev) {
         if (!utils.isTrue(elementSelected)) return;
