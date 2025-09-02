@@ -48,19 +48,26 @@ global.on('elementSelected', (id) => {
     const ellist = document.querySelectorAll('#propertiesList [id^="el"]');
     // disable all elements and hide everything | reseting props tab
     ellist.forEach(el => {
-        const item = el as HTMLInputElement;
+        const item = el as HTMLInputElement | HTMLSelectElement;
         if (item.name in dataset) {
             // show main element
             item.disabled = false;
             item.parentElement?.classList.remove('hidden-element');
-            item.value = dataset[item.name] || '';
 
-            item.removeEventListener('blur', propertyUpdate);
-            item.addEventListener('blur', propertyUpdate);
+            // Normalize boolean select values to 'true'/'false' strings
+            const booleanProps = new Set(['isEnabled', 'isVisible', 'isSelected', 'isChecked']);
+            let valueToSet = dataset[item.name] || '';
+            if (item.tagName === 'SELECT' && booleanProps.has(item.name)) {
+                valueToSet = utils.isTrue(valueToSet) ? 'true' : 'false';
+            }
+            (item as HTMLInputElement | HTMLSelectElement).value = valueToSet as string;
+
+            item.removeEventListener('blur', propertyUpdate as EventListener);
+            item.addEventListener('blur', propertyUpdate as EventListener);
 
             if (item.tagName !== "SELECT") {
-                item.removeEventListener('keyup', propertyUpdateOnEnter);
-                item.addEventListener('keyup', propertyUpdateOnEnter);
+                item.removeEventListener('keyup', propertyUpdateOnEnter as EventListener);
+                item.addEventListener('keyup', propertyUpdateOnEnter as EventListener);
             } else {
                 item.addEventListener("change", () => {
                     item.blur();
