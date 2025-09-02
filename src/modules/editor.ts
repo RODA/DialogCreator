@@ -359,6 +359,11 @@ export const editor: Editor = {
     },
 
     initializeDialogProperties: function() {
+        // numeric filters for dialog fields
+        try {
+            renderutils.setOnlyNumbers(['Width', 'Height', 'FontSize'], 'dialog');
+        } catch {}
+
         // add dialog props
         const properties: NodeListOf<HTMLInputElement> = document.querySelectorAll('#dialog-properties [id^="dialog"]');
 
@@ -373,7 +378,8 @@ export const editor: Editor = {
             // save on blur
             element.addEventListener('blur', () => {
                 const id = element.id;
-                if (id === 'dialogwidth' || id === 'dialogheight') {
+                const idLower = id.toLowerCase();
+                if (idLower === 'dialogwidth' || idLower === 'dialogheight') {
                     const value = element.value;
                     if (value) {
                         const dialogprops = renderutils.collectDialogProperties();
@@ -386,7 +392,7 @@ export const editor: Editor = {
                         );
                     }
                 }
-                if (id === 'dialogFontSize') {
+                if (idLower === 'dialogfontsize') {
                     const value = element.value;
                     if (value) {
                         renderutils.updateFont(Number(value));
