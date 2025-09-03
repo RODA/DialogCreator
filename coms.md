@@ -1,6 +1,6 @@
 # Communication Procedure in DialogCreator
 
-## Actual System (Custom Dispatcher)
+## The Current System (Custom Dispatcher)
 
 This project uses a custom communication system built on top of Electron's IPC and Node's EventEmitter. The main features are:
 
@@ -28,14 +28,16 @@ This project uses a custom communication system built on top of Electron's IPC a
 
 - **Unified API:**
   - The `on` method is used for both local and IPC events, keeping the API simple and unified.
-  - The system is encapsulated in the `coms` object (renamed for clarity).
+  - The system is encapsulated in the `coms` object.
 
 - **Handlers and Automatic Dispatch:**
   - Some channels are automatically dispatched to handler modules via the `handlers` property and a loop that registers IPC listeners.
 
 ---
 
-## LogRocket-Style IPC (Alternative / Would/Could Be)
+## LogRocket-Style IPC Potential Alternative
+
+https://blog.logrocket.com/electron-ipc-response-request-architecture-with-typescript/
 
 The LogRocket-style IPC system is an alternative architecture that emphasizes:
 
