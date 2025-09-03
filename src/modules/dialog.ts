@@ -1,5 +1,5 @@
 import { Dialog, DialogProperties } from '../interfaces/dialog';
-import { global } from './coms';
+// import { coms } from './coms';
 
 export const dialog: Dialog = {
 

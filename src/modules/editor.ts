@@ -1,4 +1,4 @@
-import { showMessage, showError, global } from "./coms";
+import { showMessage, showError, coms } from "./coms";
 import { editorSettings } from './settings';
 import { Editor } from '../interfaces/editor';
 import { Elements, AnyElement } from '../interfaces/elements';
@@ -109,9 +109,9 @@ export const editor: Editor = {
                         // this sends a message within the same ("defaults", second) window
                         // useful when the click event is created in a different module, like here
                         // basically a "note to self"
-                        global.emit('defaultElementSelected', name);
+                        coms.emit('defaultElementSelected', name);
 
-                        global.sendTo('main', 'getProperties', name);
+                        coms.sendTo('main', 'getProperties', name);
 
                     } else if (window === "editor") {
                         const elementType = name as keyof Elements;
@@ -151,7 +151,7 @@ export const editor: Editor = {
             if (!element.classList.contains('selectedElement')) {
                 editor.deselectAll();
                 element.classList.add('selectedElement');
-                global.emit('elementSelected', element.id);
+                coms.emit('elementSelected', element.id);
             }
         })
 
@@ -177,7 +177,7 @@ export const editor: Editor = {
                 dialog.selectedElement = element.id;
                 const type = dialog.getElement(element.id)?.dataset.type;
                 if (!type) return;
-                global.emit( // only to the current window / process
+                coms.emit( // only to the current window / process
                     'elementSelected',
                     element.id
                 );
@@ -253,7 +253,7 @@ export const editor: Editor = {
         dialog.selectedElement = '';
         editor.clearPropsList();
         // notify UI that selection has been cleared
-        global.emit('elementDeselected');
+        coms.emit('elementDeselected');
     },
 
     // updateElement(data) {
@@ -271,7 +271,7 @@ export const editor: Editor = {
         // clear element properties
         editor.clearPropsList();
         // notify UI that selection has been cleared
-        global.emit('elementDeselected');
+        coms.emit('elementDeselected');
     },
 
     // clear element props
@@ -308,7 +308,7 @@ export const editor: Editor = {
             button.setAttribute('type', 'button');
             button.style.width = '150px';
             button.addEventListener('click', function () {
-                global.sendTo(
+                coms.sendTo(
                     'main',
                     'secondWindow',
                     {
@@ -384,7 +384,7 @@ export const editor: Editor = {
                     if (value) {
                         const dialogprops = renderutils.collectDialogProperties();
                         editor.updateDialogArea(dialogprops);
-                        global.sendTo(
+                        coms.sendTo(
                             'main',
                             'resize-editorWindow',
                             Number(dialog.properties.width),
@@ -470,7 +470,7 @@ export const editor: Editor = {
         // Open a dedicated preview window via the main process
         const width = Math.max(Number(dialog.properties.width) || 640, 200);
         const height = Math.max(Number(dialog.properties.height) || 480, 200);
-        global.sendTo(
+        coms.sendTo(
             'main',
             'secondWindow',
             {

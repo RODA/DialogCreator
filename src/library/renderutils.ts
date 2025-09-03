@@ -4,7 +4,7 @@ import { RenderUtils } from '../interfaces/renderutils';
 import { utils } from './utils';
 import { dialog } from '../modules/dialog';
 import { DialogProperties } from "../interfaces/dialog";
-import { showError, global } from '../modules/coms';
+import { showError, coms } from '../modules/coms';
 import { v4 as uuidv4 } from 'uuid';
 import * as path from "path";
 import * as fs from "fs";
@@ -154,14 +154,14 @@ export const renderutils: RenderUtils = {
             element.style.backgroundColor = data.color;
             element.style.maxWidth = data.maxWidth + 'px';
 
-            const lineHeight = global.fontSize * 1.2;
+            const lineHeight = coms.fontSize * 1.2;
             const paddingY = 3; // px
             const maxHeight = (lineHeight * data.lineClamp) + 3 * paddingY;
             element.style.maxHeight = maxHeight + 'px';
 
             const span = document.createElement('span');
             span.className = 'smart-button-text';
-            span.style.fontFamily = global.fontFamily;
+            span.style.fontFamily = coms.fontFamily;
             /* --- textContent instead of innerHTML or innerText --- */
             span.textContent = data.label;
 
@@ -170,7 +170,7 @@ export const renderutils: RenderUtils = {
             renderutils.updateButton(
                 element as HTMLDivElement,
                 data.label,
-                global.fontSize,
+                coms.fontSize,
                 data.lineClamp,
                 data.maxWidth
             )
@@ -270,8 +270,8 @@ export const renderutils: RenderUtils = {
             display.style.padding = '0px ' + data.space + 'px';
             display.dataset.nameid = nameid;
 
-            display.style.fontFamily = global.fontFamily;
-            display.style.fontSize = global.fontSize + 'px';
+            display.style.fontFamily = coms.fontFamily;
+            display.style.fontSize = coms.fontSize + 'px';
             display.style.color = data.fontColor || '#000000';
 
             const increase = document.createElement("div");
@@ -320,8 +320,8 @@ export const renderutils: RenderUtils = {
         if (utils.isNotElementOf(data.type, ["Counter", "Label"])) {
             data.nameid = nameid;
         }
-        element.style.fontFamily = global.fontFamily;
-        element.style.fontSize = global.fontSize + 'px';
+        element.style.fontFamily = coms.fontFamily;
+        element.style.fontSize = coms.fontSize + 'px';
 
         if (utils.exists(data.fontColor)) {
             element.style.color = data.fontColor;
@@ -713,7 +713,7 @@ export const renderutils: RenderUtils = {
     },
 
     async handleEvent(eventName, ...args) {
-        const handler = global.handlers[eventName];
+        const handler = coms.handlers[eventName];
         if (!handler) {
             console.error(`No handler for event: ${eventName}`);
             return;

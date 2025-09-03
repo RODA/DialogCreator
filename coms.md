@@ -1,4 +1,54 @@
-# LogRocket-Style IPC Abstraction for Electron
+# Communication Procedure in DialogCreator
+
+## Actual System (Custom Dispatcher)
+
+This project uses a custom communication system built on top of Electron's IPC and Node's EventEmitter. The main features are:
+
+- **Local (intra-window) events:**
+  - Uses a local EventEmitter (`messenger`) for communication within a single renderer process (window).
+  - Methods: `coms.emit(channel, ...args)` and `coms.on(channel, listener)`.
+  - Example:
+    ```typescript
+    coms.emit('myEvent', data);
+    coms.on('myEvent', handler);
+    ```
+
+- **IPC (inter-window) events:**
+  - Uses Electron's `ipcRenderer` and `ipcMain` to send messages between windows and the main process.
+  - Methods:
+    - `coms.send(channel, ...args)`: Broadcasts to all windows.
+    - `coms.sendTo(window, channel, ...args)`: Sends to a specific window or main process.
+    - `coms.on(channel, listener)`: Registers a listener for IPC events (and also for local events).
+  - Example:
+    ```typescript
+    coms.send('someChannel', arg1, arg2); // Broadcast
+    coms.sendTo('editorWindow', 'someChannel', arg1, arg2); // Targeted
+    coms.on('someChannel', handler); // Handles both local and IPC
+    ```
+
+- **Unified API:**
+  - The `on` method is used for both local and IPC events, keeping the API simple and unified.
+  - The system is encapsulated in the `coms` object (renamed for clarity).
+
+- **Handlers and Automatic Dispatch:**
+  - Some channels are automatically dispatched to handler modules via the `handlers` property and a loop that registers IPC listeners.
+
+---
+
+## LogRocket-Style IPC (Alternative / Would/Could Be)
+
+The LogRocket-style IPC system is an alternative architecture that emphasizes:
+
+- **Request/response pattern with Promises**
+- **Channel encapsulation (per-channel handler classes)**
+- **Explicit response channels for each request**
+- **Promise-based API for async/await usage**
+- **Renderer-to-renderer forwarding via main process**
+
+This system is not currently used in DialogCreator, but could be implemented if desired. See below for an example implementation:
+
+```typescript
+# If a LogRocket style IPC abstraction would be used
 
 This architecture supports:
 - Request/response with Promises
@@ -168,7 +218,7 @@ If you use `ipcService.send('system-info').then(res => { ... })` without the gen
 
 ## Local Event Emitter (Intra-window Communication)
 
-Your `coms.ts` system supports local (intra-window) event emission using an `EventEmitter` (e.g., `global.emit('event', ...)` and `global.on('event', ...)`). This allows decoupled communication between modules within the same renderer process (window), without IPC.
+Your `coms.ts` system supports local (intra-window) event emission using an `EventEmitter` (e.g., `coms.emit('event', ...)` and `coms.on('event', ...)`). This allows decoupled communication between modules within the same renderer process (window), without IPC.
 
 ### Can this be replicated in the LogRocket-style system?
 Yes! You can add a local event emitter to your IPC abstraction for intra-window communication. This is useful for modularity and decoupling, and does not require IPC.
@@ -257,7 +307,5 @@ export class IpcService {
 ---
 
 **Summary:**
-- All IPC is encapsulated in `IpcService`.
-- Renderer-to-renderer is supported via a `forward-message` channel in main.
-- No direct use of `ipcRenderer` in your app code.
-- Request/response and fire-and-forget are both supported.
+- The current system is custom, flexible, and unified for both local and IPC events.
+- LogRocket-style is an alternative that could be adopted for more modular, Promise-based, and type-safe IPC.

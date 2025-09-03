@@ -1,4 +1,4 @@
-import { showError, global } from "../modules/coms";
+import { showError, coms } from "../modules/coms";
 import { renderutils } from "../library/renderutils";
 import { DBElements } from "../interfaces/database";
 
@@ -23,13 +23,13 @@ document.addEventListener('DOMContentLoaded', () => {
         "maxval"
     ]);
 
-    global.on('defaultElementSelected', (...args: unknown[]) => {
+    coms.on('defaultElementSelected', (...args: unknown[]) => {
         console.log('receiver: defaultElementSelected', args);
         const name = typeof args[0] === 'string' ? args[0] : '';
         defaultElementSelected = name;
     });
 
-    global.on('propertiesFromDB', (...args: unknown[]) => {
+    coms.on('propertiesFromDB', (...args: unknown[]) => {
         // Defensive: get the name from args[0] and ensure it's a string
         const name = typeof args[0] === 'string' ? args[0] : '';
 
@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     item.value = value || '';
                     item.addEventListener("change", async () => {
                         item.blur();
-                        global.sendTo(
+                        coms.sendTo(
                             'main',
                             'updateProperty',
                             name,
@@ -89,13 +89,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('reset')?.addEventListener('click', () => {
         if (defaultElementSelected) {
-            global.sendTo('main', 'resetProperties', defaultElementSelected);
+            coms.sendTo('main', 'resetProperties', defaultElementSelected);
         } else {
             showError("No default element selected to reset properties.");
         }
     });
 
-    global.on('resetOK', (...args: unknown[]) => {
+    coms.on('resetOK', (...args: unknown[]) => {
         const updatedProperties = args[0] as Record<string, string>;
         if (!updatedProperties) return;
         // Update the UI fields in the defaults window with the new values

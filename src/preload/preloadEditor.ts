@@ -1,4 +1,4 @@
-import { showError, global } from "../modules/coms";
+import { showError, coms } from "../modules/coms";
 import { renderutils } from "../library/renderutils";
 import { utils } from "../library/utils";
 import { Elements } from '../interfaces/elements';
@@ -6,7 +6,7 @@ import { elements as els } from '../modules/elements';
 
 let elements = { ...els } as Elements;
 Object.keys(elements).forEach((element) => {
-    global.sendTo('main', 'getProperties', element);
+    coms.sendTo('main', 'getProperties', element);
 });
 
 
@@ -17,7 +17,7 @@ let elementSelected = false;
 // editor -- the whole window
 
 // renderutils.elementsFromDB().then((items) => {
-//     global.elements = items;
+//     coms.elements = items;
 // });
 
 
@@ -33,7 +33,7 @@ const propertyUpdateOnEnter = (ev: KeyboardEvent) => {
     }
 }
 
-global.on('elementSelected', (id) => {
+coms.on('elementSelected', (id) => {
     elementSelected = true;
     // enable arrange toolbar buttons
     (document.getElementById('bringToFront') as HTMLButtonElement).disabled = false;
@@ -294,7 +294,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         const dataset = info.selected.dataset;
 
-        global.sendTo(
+        coms.sendTo(
             'main',
             'secondWindow',
             {
@@ -312,7 +312,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         );
     });
 
-    global.on("propertiesFromDB", (...args: unknown[]) => {
+    coms.on("propertiesFromDB", (...args: unknown[]) => {
         // TODO: properties do not return from the DB...
         // the channel does not behaves properly: message is sent from main
         // but not properly handled in coms.ts
@@ -331,14 +331,14 @@ window.addEventListener("DOMContentLoaded", async () => {
     });
 
 
-    global.on('setElementConditions', (...args: unknown[]) => {
+    coms.on('setElementConditions', (...args: unknown[]) => {
         const element = document.getElementById(args[0] as string) as HTMLElement;
         const dataset = element.dataset;
         dataset.conditions = args[1] as string;
     });
 
     // When element gets deselected from editor logic
-    global.on('elementDeselected', () => {
+    coms.on('elementDeselected', () => {
         elementSelected = false;
         (document.getElementById('removeElement') as HTMLButtonElement).disabled = true;
         (document.getElementById('bringToFront') as HTMLButtonElement).disabled = true;
@@ -352,7 +352,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
 
 
-    // global.on('resetOK', (...args: unknown[]) => {
+    // coms.on('resetOK', (...args: unknown[]) => {
     //     const updatedProperties = args[0] as Record<string, string>;
     //     if (!updatedProperties) return;
     //     // Update the UI fields in the defaults window with the new values

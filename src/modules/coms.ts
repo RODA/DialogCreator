@@ -1,7 +1,7 @@
 // encapsulation
 
 import { ipcRenderer } from 'electron';
-import { Global } from '../interfaces/coms';
+import { Communications } from '../interfaces/coms';
 import { EventEmitter } from 'events';
 import { utils } from '../library/utils';
 import { renderutils } from '../library/renderutils';
@@ -12,14 +12,14 @@ const messenger = new EventEmitter();
 // Track which channels have been hooked into ipcRenderer
 const registeredChannels = new Set<string>();
 
-export const global: Global = {
+export const coms: Communications = {
     emit(channel, ...args) {
         messenger.emit(channel, ...args);
     },
 
     // send to all listeners from all processes, via ipcMain
     send(channel, ...args) {
-        global.sendTo('all', channel, ...args);
+        coms.sendTo('all', channel, ...args);
         // ipcRenderer.send("send-to", "all", channel, ...args);
     },
 
@@ -70,7 +70,7 @@ export const global: Global = {
 }
 
 // automatically dispatch all events to their respective handlers
-for (const eventName in global.handlers) {
+for (const eventName in coms.handlers) {
     ipcRenderer.on(eventName, async (_event, ...args) => {
         // assume the event returns something
         const result = await renderutils.handleEvent(eventName, ...args);
@@ -80,7 +80,7 @@ for (const eventName in global.handlers) {
     });
 }
 
-global.on('consolog', (...args: unknown[]) => {
+coms.on('consolog', (...args: unknown[]) => {
     console.log(args[0]);
 });
 
@@ -90,10 +90,10 @@ export const showMessage = (
     title: string,
     message: string
 ) => {
-    global.sendTo('main', 'showDialogMessage', type, title, message);
+    coms.sendTo('main', 'showDialogMessage', type, title, message);
 }
 
 export const showError = (message: string) => {
-    global.sendTo('main', 'showError', message);
+    coms.sendTo('main', 'showError', message);
 }
 

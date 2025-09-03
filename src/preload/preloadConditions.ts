@@ -1,4 +1,4 @@
-import { global } from "../modules/coms";
+import { coms } from "../modules/coms";
 import { conditions } from "../modules/conditions";
 
 const test = `
@@ -27,14 +27,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (valid === '') {
 
             const conditionsId = document.getElementById("conditionsId") as HTMLInputElement;
-            global.sendTo('editorWindow', 'setElementConditions', conditionsId.value, str);
-            global.sendTo('main', 'close-conditionsWindow');
+            coms.sendTo('editorWindow', 'setElementConditions', conditionsId.value, str);
+            coms.sendTo('main', 'close-conditionsWindow');
 
         } else {
 
             if (!resized) {
                 resized = true;
-                global.sendTo('main', "resize-conditionsWindow");
+                coms.sendTo('main', "resize-conditionsWindow");
             }
 
             const conditionsInputs = document.getElementById('conditionsInputs') as HTMLDivElement;
