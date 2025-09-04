@@ -63,6 +63,8 @@ coms.on('elementSelected', (id) => {
         console.warn('propertiesList element not found in DOM');
     } else {
         propsList.classList.remove('hidden');
+        // Store the currently selected element id so property updates can still target it
+        (propsList as HTMLDivElement).dataset.currentElementId = String(id);
     }
     const element = document.getElementById(id as string) as HTMLElement;
     const dataset = element.dataset;
@@ -75,6 +77,8 @@ coms.on('elementSelected', (id) => {
             // show main element
             item.disabled = false;
             item.parentElement?.classList.remove('hidden-element');
+            // Store the bound element id on the control for robust blur updates
+            (item as HTMLInputElement | HTMLSelectElement).dataset.bindElementId = String(id);
 
             // Normalize boolean select values to 'true'/'false' strings
             const booleanProps = new Set(['isEnabled', 'isVisible', 'isSelected', 'isChecked']);
@@ -161,13 +165,15 @@ coms.on('elementSelected', (id) => {
 
 });
 
-// Multi-selection (ephemeral): show group-like properties (Left/Top + read-only Width/Height) and enable Group button
+    // Multi-selection (ephemeral): show group-like properties (Left/Top + read-only Width/Height) and enable Group button
 coms.on('elementSelectedMultiple', (...args: unknown[]) => {
     elementSelected = true;
 
     // Show properties panel and prepare fields
     const propsList = document.getElementById('propertiesList');
     if (propsList) {
+        // Clear stored currentElementId since we are not in single-element editing
+        (propsList as HTMLDivElement).dataset.currentElementId = '';
         propsList.classList.remove('hidden');
         // Hide all per-element fields
         document.querySelectorAll('#propertiesList .element-property').forEach(item => {
@@ -194,8 +200,10 @@ coms.on('elementSelectedMultiple', (...args: unknown[]) => {
         if (leftInput) leftInput.removeEventListener('keyup', propertyUpdateOnEnter as EventListener);
         if (topInput) topInput.removeEventListener('keyup', propertyUpdateOnEnter as EventListener);
 
+        const fallback = { left: 0, top: 0, width: 0, height: 0 };
+
         // Compute current bounds of selection and populate
-        const bounds = renderutils.computeBounds(renderutils.getSelectedIds()) || { left: 0, top: 0, width: 0, height: 0 };
+        const bounds = renderutils.computeBounds(renderutils.getSelectedIds()) || fallback;
         if (typeInput) {
             typeInput.value = 'Multiple selection';
             typeInput.parentElement?.classList.remove('hidden-element');
@@ -215,12 +223,12 @@ coms.on('elementSelectedMultiple', (...args: unknown[]) => {
         // Attach ephemeral blur handlers to move the whole selection when Left/Top change
         if (leftInput) {
             ephemeralLeftBlurHandler = () => {
-                const current = renderutils.computeBounds(renderutils.getSelectedIds()) || { left: 0, top: 0, width: 0, height: 0 };
+                const current = renderutils.computeBounds(renderutils.getSelectedIds()) || fallback;
                 const desiredLeft = Number(leftInput.value) || current.left;
                 const dx = desiredLeft - current.left;
                 if (dx !== 0) {
                     renderutils.moveElementsBy(renderutils.getSelectedIds(), dx, 0);
-                    const b = renderutils.computeBounds(renderutils.getSelectedIds()) || { left: 0, top: 0, width: 0, height: 0 };
+                    const b = renderutils.computeBounds(renderutils.getSelectedIds()) || fallback;
                     leftInput.value = String(b.left);
                 }
             };
@@ -229,12 +237,12 @@ coms.on('elementSelectedMultiple', (...args: unknown[]) => {
         }
         if (topInput) {
             ephemeralTopBlurHandler = () => {
-                const current = renderutils.computeBounds(renderutils.getSelectedIds()) || { left: 0, top: 0, width: 0, height: 0 };
+                const current = renderutils.computeBounds(renderutils.getSelectedIds()) || fallback;
                 const desiredTop = Number(topInput.value) || current.top;
                 const dy = desiredTop - current.top;
                 if (dy !== 0) {
                     renderutils.moveElementsBy(renderutils.getSelectedIds(), 0, dy);
-                    const b = renderutils.computeBounds(renderutils.getSelectedIds()) || { left: 0, top: 0, width: 0, height: 0 };
+                    const b = renderutils.computeBounds(renderutils.getSelectedIds()) || fallback;
                     topInput.value = String(b.top);
                 }
             };
@@ -510,6 +518,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     // When element gets deselected from editor logic
     coms.on('elementDeselected', () => {
         elementSelected = false;
+        // Clear stored selection id to avoid updates after deselect
+        const propsList = document.getElementById('propertiesList') as HTMLDivElement | null;
+        if (propsList && propsList.dataset) propsList.dataset.currentElementId = '';
         (document.getElementById('removeElement') as HTMLButtonElement).disabled = true;
         (document.getElementById('bringToFront') as HTMLButtonElement).disabled = true;
         (document.getElementById('sendToBack') as HTMLButtonElement).disabled = true;

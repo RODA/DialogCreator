@@ -81,6 +81,11 @@ export const editor: Editor = {
                 return;
             }
             if ((event.target as HTMLDivElement).id === dialog.id) {
+                // If a property input is active, blur it first to commit changes
+                const active = document.activeElement as HTMLElement | null;
+                if (active && active.closest('#propertiesList')) {
+                    try { (active as HTMLElement).blur(); } catch {}
+                }
                 editor.deselectAll();
             }
         });
@@ -97,6 +102,11 @@ export const editor: Editor = {
 
         dialog.canvas.addEventListener('mousedown', (e: MouseEvent) => {
             if ((e.target as HTMLElement).id !== dialog.id) return;
+            // Commit any in-progress property edits before starting lasso
+            const active = document.activeElement as HTMLElement | null;
+            if (active && active.closest('#propertiesList')) {
+                try { active.blur(); } catch {}
+            }
             const rect = dialog.canvas.getBoundingClientRect();
             lassoActive = true;
             lassoStart = { x: e.clientX - rect.left, y: e.clientY - rect.top };
@@ -702,14 +712,26 @@ export const editor: Editor = {
             // console.log(el);
             // editor.updateElement({ [el.name]: el.value });
 
-            const id = el.id.slice(2);
+            const propName = el.id.slice(2);
             let value = el.value;
-            const element = dialog.getElement(dialog.selectedElement);
+
+            // Determine target element id: prefer current selection, otherwise last-selected stored on the panel
+            let targetId = dialog.selectedElement;
+            if (!targetId) {
+                const propsList = document.getElementById('propertiesList') as HTMLDivElement | null;
+                const stored = propsList?.dataset.currentElementId || '';
+                if (stored) targetId = stored;
+            }
+            if (!targetId) {
+                const bound = (el as HTMLInputElement | HTMLSelectElement).dataset?.bindElementId || '';
+                if (bound) targetId = bound;
+            }
+            const element = targetId ? dialog.getElement(targetId) : undefined;
 
             if (element) {
                 const dataset = element.dataset;
-                let props = { [id]: value };
-                if (id === "size" && (dataset.type === "Checkbox" || dataset.type === "Radio")) {
+                let props: Record<string, string> = { [propName]: value };
+                if (propName === "size" && (dataset.type === "Checkbox" || dataset.type === "Radio")) {
                     const dialogW = dialog.canvas.getBoundingClientRect().width;
                     const dialogH = dialog.canvas.getBoundingClientRect().height;
                     if (Number(value) > Math.min(dialogW, dialogH) - 20) {
@@ -719,10 +741,12 @@ export const editor: Editor = {
                     props = {
                         width: value,
                         height: value
-                    };
+                    } as Record<string, string>;
                 }
                 renderutils.updateElement(element, props as AnyElement);
-                // renderutils.updateElement(element, { [id]: value } as AnyElement);
+                // Keep last-selected id updated
+                const propsList = document.getElementById('propertiesList') as HTMLDivElement | null;
+                if (propsList) propsList.dataset.currentElementId = element.id;
 
             } else {
                 showError('Element not found.');
