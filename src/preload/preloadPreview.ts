@@ -198,10 +198,23 @@ function renderPreview(dialog: {
 
     // Visibility / Enabled
     if (!utils.isTrue((data as any).isVisible)) {
-      element.classList.add('design-hidden');
+      // In preview, hidden elements should not be visible at all
+      element.style.display = 'none';
     }
     if (!utils.isTrue((data as any).isEnabled)) {
       element.classList.add('disabled-div');
+      // In preview, disabled elements should not be interactive
+      try {
+        (element as any).style.pointerEvents = 'none';
+        if (element instanceof HTMLInputElement || element instanceof HTMLSelectElement || (window as any).HTMLTextAreaElement && element instanceof (window as any).HTMLTextAreaElement) {
+          (element as HTMLInputElement | HTMLSelectElement).disabled = true;
+        } else {
+          const customCheckbox = element.querySelector('.custom-checkbox') as HTMLElement | null;
+          const customRadio = element.querySelector('.custom-radio') as HTMLElement | null;
+          if (customCheckbox) customCheckbox.setAttribute('aria-disabled', 'true');
+          if (customRadio) customRadio.setAttribute('aria-disabled', 'true');
+        }
+      } catch {}
     }
 
     canvas.appendChild(element);
