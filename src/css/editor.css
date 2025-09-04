@@ -478,6 +478,20 @@ input {
     word-break: break-word;
     white-space: normal;
     line-height: 1.2;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* Prevent selecting the button container text on double click */
+.smart-button {
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* Subtle pressed feedback in preview/editor */
+.smart-button.btn-active {
+    filter: brightness(0.95);
+    transform: translateY(1px);
 }
 
 

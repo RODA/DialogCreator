@@ -154,6 +154,29 @@ function renderPreview(dialog: {
       });
     }
 
+    // Button: prevent text selection and add pressed/click feedback
+    if ((element.dataset?.type || '') === 'Button') {
+      const doPress = () => element.classList.add('btn-active');
+      const clearPress = () => element.classList.remove('btn-active');
+      element.addEventListener('mousedown', doPress);
+      element.addEventListener('mouseup', clearPress);
+      element.addEventListener('mouseleave', clearPress);
+      element.addEventListener('click', () => {
+        if (!utils.isTrue((data as any).isEnabled)) return;
+        const action = String((data as any).onClick || 'run');
+        switch (action) {
+          case 'reset':
+            // showMessage('info', 'Preview', `Reset action for "${(data as any).nameid || 'Button'}"`);
+            coms.sendTo('editorWindow', 'consolog', `Reset action for "${(data as any).nameid || 'Button'}"`);
+            break;
+          case 'run':
+          default:
+            coms.sendTo('editorWindow', 'consolog', `Run action for "${(data as any).nameid || 'Button'}"`);
+            break;
+        }
+      });
+    }
+
     // Slider: make handle draggable within the track in preview
     if ((element.dataset?.type || '') === 'Slider') {
       const handle = element.querySelector('.slider-handle') as HTMLDivElement | null;
