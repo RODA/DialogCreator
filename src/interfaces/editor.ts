@@ -22,6 +22,9 @@ export interface Editor {
     sendSelectedToBack: () => void;
     bringSelectedForward: () => void;
     sendSelectedBackward: () => void;
+    // grouping actions
+    groupSelection: () => void;
+    ungroupSelection: () => void;
 }
 
 export interface EditorSettings {

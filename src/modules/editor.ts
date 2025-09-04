@@ -9,6 +9,56 @@ import { dialog } from './dialog';
 import { renderutils } from '../library/renderutils';
 import { utils } from '../library/utils';
 
+const multiSelected = new Set<string>();
+const suppressClickFor = new Set<string>();
+let currentGroupId: string | null = null;
+
+// Ephemeral multi-drag state and outline
+let multiDragActive = false;
+const multiDragSnapshot = new Map<string, { left: number; top: number; width: number; height: number }>();
+let dragStart = { x: 0, y: 0 };
+let multiOutline: HTMLDivElement | null = null;
+
+
+// moved to renderutils.updateMultiOutline(canvas, ids, outline)
+
+// moved to renderutils.clearMultiOutline(outline)
+
+function makeGroupFromSelection(persistent = false) {
+    if (multiSelected.size <= 1) {
+        if (multiSelected.size === 1) {
+            const only = Array.from(multiSelected)[0];
+            dialog.selectedElement = only;
+            coms.emit('elementSelected', only);
+        } else {
+            dialog.selectedElement = '';
+            coms.emit('elementDeselected');
+        }
+        multiOutline = renderutils.clearMultiOutline(multiOutline);
+        return;
+    }
+
+    const ids = Array.from(multiSelected);
+    if (!persistent) {
+        multiOutline = renderutils.clearMultiOutline(multiOutline);
+        dialog.selectedElement = '';
+        coms.emit('elementSelectedMultiple');
+        return;
+    }
+
+    const groupId = renderutils.makeGroupFromSelection(ids, true);
+    if (!groupId) return;
+    const groupEl = dialog.getElement(groupId) as HTMLElement | undefined;
+    if (!groupEl) return;
+    editor.addElementListeners(groupEl);
+    groupEl.classList.add('selectedElement');
+    multiSelected.clear();
+    multiSelected.add(groupId);
+    dialog.selectedElement = groupId;
+    currentGroupId = groupId;
+    coms.emit('elementSelected', groupId);
+}
+
 export const editor: Editor = {
 
     makeDialog: () => {
@@ -23,6 +73,13 @@ export const editor: Editor = {
         dialog.canvas.style.backgroundColor = editorSettings.dialog.background || '#ffffff';
         dialog.canvas.style.border = '1px solid gray';
         dialog.canvas.addEventListener('click', (event: MouseEvent) => {
+            // Ignore the synthetic click that follows a lasso selection
+            if (skipCanvasClickOnce) {
+                skipCanvasClickOnce = false;
+                event.stopPropagation();
+                event.preventDefault();
+                return;
+            }
             if ((event.target as HTMLDivElement).id === dialog.id) {
                 editor.deselectAll();
             }
@@ -30,6 +87,91 @@ export const editor: Editor = {
         dialog.canvas.addEventListener("drop", (event: MouseEvent) => {
             event.preventDefault();
         });
+
+        // Lasso selection (click-and-drag rectangle on empty canvas)
+        let lassoActive = false;
+        let lassoStart = { x: 0, y: 0 };
+        let lassoDiv: HTMLDivElement | null = null;
+        // Used to suppress the click on the canvas that follows a lasso mouseup
+        let skipCanvasClickOnce = false;
+
+        dialog.canvas.addEventListener('mousedown', (e: MouseEvent) => {
+            if ((e.target as HTMLElement).id !== dialog.id) return;
+            const rect = dialog.canvas.getBoundingClientRect();
+            lassoActive = true;
+            lassoStart = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+
+            lassoDiv = document.createElement('div');
+            lassoDiv.className = 'lasso-rect';
+            lassoDiv.style.left = lassoStart.x + 'px';
+            lassoDiv.style.top = lassoStart.y + 'px';
+            lassoDiv.style.width = '0px';
+            lassoDiv.style.height = '0px';
+            dialog.canvas.appendChild(lassoDiv);
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e: MouseEvent) => {
+            if (!lassoActive || !lassoDiv) return;
+            const rect = dialog.canvas.getBoundingClientRect();
+            const currX = e.clientX - rect.left;
+            const currY = e.clientY - rect.top;
+            const left = Math.min(currX, lassoStart.x);
+            const top = Math.min(currY, lassoStart.y);
+            const width = Math.abs(currX - lassoStart.x);
+            const height = Math.abs(currY - lassoStart.y);
+            lassoDiv.style.left = left + 'px';
+            lassoDiv.style.top = top + 'px';
+            lassoDiv.style.width = width + 'px';
+            lassoDiv.style.height = height + 'px';
+        });
+
+        const endLasso = (e: MouseEvent) => {
+            if (!lassoActive) return;
+            const additive = e.shiftKey;
+            const rect = dialog.canvas.getBoundingClientRect();
+            const endX = e.clientX - rect.left;
+            const endY = e.clientY - rect.top;
+            const left = Math.min(endX, lassoStart.x);
+            const top = Math.min(endY, lassoStart.y);
+            const width = Math.abs(endX - lassoStart.x);
+            const height = Math.abs(endY - lassoStart.y);
+            if (lassoDiv && lassoDiv.parentElement) lassoDiv.parentElement.removeChild(lassoDiv);
+            lassoDiv = null;
+            lassoActive = false;
+            if (width < 3 && height < 3 && !additive) {
+                editor.deselectAll();
+                return;
+            }
+            const selRectangle = { left, top, right: left + width, bottom: top + height };
+            if (!additive) {
+                editor.deselectAll();
+            }
+            const children = Array.from(dialog.canvas.children) as HTMLElement[];
+            children.forEach((el) => {
+                // Skip lasso rect itself and any existing groups
+                if (el.classList.contains('lasso-rect') || el.classList.contains('element-group')) {
+                    return;
+                }
+                const elRectangle = el.getBoundingClientRect();
+                const canvasRect = dialog.canvas.getBoundingClientRect();
+                const rel = {
+                    left: elRectangle.left - canvasRect.left,
+                    top: elRectangle.top - canvasRect.top,
+                    right: elRectangle.right - canvasRect.left,
+                    bottom: elRectangle.bottom - canvasRect.top
+                };
+                const overlap = !(rel.left > selRectangle.right || rel.right < selRectangle.left || rel.top > selRectangle.bottom || rel.bottom < selRectangle.top);
+                if (overlap) {
+                    el.classList.add('selectedElement');
+                    multiSelected.add(el.id);
+                }
+            });
+            // Prevent the canvas click that follows mouseup from clearing the new selection
+            skipCanvasClickOnce = true;
+            makeGroupFromSelection();
+        };
+        document.addEventListener('mouseup', endLasso);
 
         const dialogdiv = document.getElementById('dialog') as HTMLDivElement;
         if (dialogdiv) {
@@ -85,7 +227,11 @@ export const editor: Editor = {
         if (elementsList) {
             elementsList.innerHTML = '';
 
-            const availableElements = Object.keys(elements);
+            let availableElements = Object.keys(elements);
+            // Exclude Group from the addable elements in both editor and defaults windows
+            if (window === 'editor' || window === 'defaults') {
+                availableElements = availableElements.filter(name => name !== 'groupElement');
+            }
 
             const ul = document.createElement('ul');
             ul.setAttribute('id', 'paperAvailableElements');
@@ -134,25 +280,133 @@ export const editor: Editor = {
     // add new element on dialog
     addElementToDialog: function (name, data) {
         if (data) {
-            const element = renderutils.makeElement({ ...data });
-            element.dataset.type = name;
-            element.dataset.parentId = dialog.id;
-            dialog.canvas.appendChild(element);
-            editor.addElementListeners(element);
-            dialog.addElement(element);
+            // Create the core element as before
+            const core = renderutils.makeElement({ ...data });
+            // The core factory often sets dataset.type from data.type, but we normalize it to the name from UI
+            core.dataset.type = name;
+
+            // Build a wrapper that carries the dataset and positioning
+            const wrapper = document.createElement('div');
+            wrapper.classList.add('element-wrapper');
+            wrapper.style.position = 'absolute';
+
+            // Transfer id and dataset from core to wrapper
+            const origId = core.id;
+            wrapper.id = origId; // keep original id on wrapper so internal parts (#checkbox-<id>, etc.) continue to work
+            core.id = origId + '-inner'; // ensure DOM id uniqueness for the inner element
+
+            // Position wrapper where the core element would have been
+            wrapper.style.left = core.style.left;
+            wrapper.style.top = core.style.top;
+
+            // Copy all dataset attributes onto the wrapper
+            for (const [k, v] of Object.entries(core.dataset)) {
+                if (typeof v === 'string') wrapper.dataset[k] = v;
+            }
+            // Ensure parentId reflects dialog id
+            wrapper.dataset.parentId = dialog.id;
+
+            // The inner element should sit at (0,0) inside the wrapper
+            core.style.left = '0px';
+            core.style.top = '0px';
+            // For Button, use normal flow so wrapper can size to content
+            if (wrapper.dataset.type === 'Button') {
+                core.style.position = 'relative';
+            }
+
+            // Assemble
+            wrapper.appendChild(core);
+            dialog.canvas.appendChild(wrapper);
+
+            // Remove any inner cover created by factory (checkbox/radio)
+            try {
+                const innerCover = core.querySelector('.elementcover');
+                if (innerCover && innerCover.parentElement) {
+                    innerCover.parentElement.removeChild(innerCover);
+                }
+            } catch {}
+
+            // Set wrapper size for non-button elements; for buttons, avoid fixing width
+            try {
+                const isButton = (wrapper.dataset.type === 'Button');
+                if (!isButton) {
+                    const rect = core.getBoundingClientRect();
+                    if (rect.width > 0) wrapper.style.width = `${Math.round(rect.width)}px`;
+                    if (rect.height > 0) wrapper.style.height = `${Math.round(rect.height)}px`;
+                } else {
+                    // Let the wrapper auto-size to the button content; no explicit width/height here
+                }
+            } catch {}
+
+            // Add a universal cover at wrapper level to block inner interactions in editor
+            const cover = document.createElement('div');
+            cover.id = `cover-${wrapper.id}`;
+            cover.className = 'elementcover';
+            wrapper.appendChild(cover);
+
+            // Register
+            editor.addElementListeners(wrapper);
+            dialog.addElement(wrapper);
         }
     },
 
     // add listener to the element
     addElementListeners(element) {
-        element.addEventListener('click', (event) => {
+        element.addEventListener('click', (event: MouseEvent) => {
             event.stopPropagation();
-            dialog.selectedElement = element.id;
-            if (!element.classList.contains('selectedElement')) {
-                editor.deselectAll();
-                element.classList.add('selectedElement');
-                coms.emit('elementSelected', element.id);
+
+            // Prefer selecting the group if this element is inside one
+            const groupAncestor = element.classList.contains('element-group')
+                ? element
+                : (element.closest('.element-group') as HTMLElement | null);
+            if (groupAncestor && !element.classList.contains('element-group')) {
+                if (suppressClickFor.has(groupAncestor.id)) {
+                    suppressClickFor.delete(groupAncestor.id);
+                    return;
+                }
+                // Clear any existing selections (deep) and outline
+                dialog.canvas.querySelectorAll('.selectedElement').forEach((el) => el.classList.remove('selectedElement'));
+                multiOutline = renderutils.clearMultiOutline(multiOutline);
+
+                groupAncestor.classList.add('selectedElement');
+                // Remove selection from group's descendants to avoid double outlines
+                groupAncestor.querySelectorAll('.selectedElement').forEach((el) => el.classList.remove('selectedElement'));
+
+                multiSelected.clear();
+                multiSelected.add(groupAncestor.id);
+                dialog.selectedElement = groupAncestor.id;
+                currentGroupId = groupAncestor.id;
+                coms.emit('elementSelected', groupAncestor.id);
+                return;
             }
+
+            if (suppressClickFor.has(element.id)) {
+                suppressClickFor.delete(element.id);
+                return;
+            }
+            const shift = event.shiftKey;
+            if (shift) {
+                if (element.classList.contains('selectedElement')) {
+                    element.classList.remove('selectedElement');
+                    multiSelected.delete(element.id);
+                    if (dialog.selectedElement === element.id) {
+                        dialog.selectedElement = '';
+                        coms.emit('elementDeselected');
+                    }
+                } else {
+                    element.classList.add('selectedElement');
+                    multiSelected.add(element.id);
+                    dialog.selectedElement = element.id;
+                    coms.emit('elementSelected', element.id);
+                }
+                makeGroupFromSelection();
+                return;
+            }
+            editor.deselectAll();
+            element.classList.add('selectedElement');
+            multiSelected.add(element.id);
+            dialog.selectedElement = element.id;
+            coms.emit('elementSelected', element.id);
         })
 
         editor.addDragAndDrop(element);
@@ -166,78 +420,193 @@ export const editor: Editor = {
         let elementWidth = 0;
         let elementHeight = 0;
         let offsetX: number = 0, offsetY: number = 0, isDragging = false, isMoved = false;
-        const checkbox = element.dataset.type === 'Checkbox';
+
+        // The element that will actually move (a group container if present, otherwise the element itself)
+        let dragTarget: HTMLElement = element;
+        let isCheckboxDrag = false;
 
         // Event listeners for mouse down, move, and up events
         element.addEventListener('mousedown', (e) => {
+            // If this element is inside a group, drag the group instead of the child
+            const containerAncestor = (element.classList.contains('element-group') || element.classList.contains('element-wrapper'))
+                ? element
+                : (element.closest('.element-group, .element-wrapper') as HTMLElement | null);
+
+            // If this element is inside a persistent group, always drag the group container
+            const groupAncestor = element.closest('.element-group') as HTMLElement | null;
+            if (groupAncestor) {
+                dragTarget = groupAncestor;
+            } else {
+                dragTarget = containerAncestor || element;
+            }
+
+            isCheckboxDrag = (dragTarget.dataset.type === 'Checkbox');
+            const isGroupEl = dragTarget.classList.contains('element-group');
+
+            // If dragging a group and it's not selected, select it now and clear child outlines
+            if (isGroupEl && dialog.selectedElement !== dragTarget.id) {
+                dialog.canvas.querySelectorAll('.selectedElement').forEach((el) => el.classList.remove('selectedElement'));
+                (dragTarget as HTMLElement).classList.add('selectedElement');
+                (dragTarget as HTMLElement).querySelectorAll('.selectedElement').forEach((el) => el.classList.remove('selectedElement'));
+                multiSelected.clear();
+                multiSelected.add(dragTarget.id);
+                dialog.selectedElement = dragTarget.id;
+                currentGroupId = dragTarget.id;
+                coms.emit('elementSelected', dragTarget.id);
+                suppressClickFor.add(dragTarget.id);
+            }
+
             isDragging = true;
-            if (!element.classList.contains('selectedElement')) {
-                editor.deselectAll();
-                element.classList.add('selectedElement');
-                dialog.selectedElement = element.id;
-                const type = dialog.getElement(element.id)?.dataset.type;
-                if (!type) return;
-                coms.emit( // only to the current window / process
-                    'elementSelected',
-                    element.id
-                );
+
+            const hasPersistentGroup = Boolean(currentGroupId);
+
+            if (multiSelected.size > 1 && !hasPersistentGroup) {
+                // Prepare for ephemeral multi-drag: snapshot positions
+                multiDragActive = true;
+                multiDragSnapshot.clear();
+                dragStart = { x: e.clientX, y: e.clientY };
+                for (const id of multiSelected) {
+                    const el = dialog.getElement(id);
+                    if (!el) continue;
+                    const rect = el.getBoundingClientRect();
+                    const canvasRect = dialog.canvas.getBoundingClientRect();
+                    const left0 = rect.left - canvasRect.left;
+                    const top0 = rect.top - canvasRect.top;
+                    multiDragSnapshot.set(id, { left: left0, top: top0, width: rect.width, height: rect.height });
+                    suppressClickFor.add(id);
+                }
+            } else if (!isGroupEl) {
+                // Selection handling for single or persistent group context
+                if (!element.classList.contains('selectedElement')) {
+                    if (e.shiftKey) {
+                        element.classList.add('selectedElement');
+                        multiSelected.add(element.id);
+                        dialog.selectedElement = element.id;
+                        coms.emit('elementSelected', element.id);
+                        suppressClickFor.add(element.id);
+                        makeGroupFromSelection(false);
+                    } else {
+                        editor.deselectAll();
+                        element.classList.add('selectedElement');
+                        multiSelected.clear();
+                        multiSelected.add(element.id);
+                        dialog.selectedElement = element.id;
+                        const type = dialog.getElement(element.id)?.dataset.type;
+                        if (!type) return;
+                        coms.emit('elementSelected', element.id);
+                        suppressClickFor.add(element.id);
+                        makeGroupFromSelection(false);
+                    }
+                }
             }
 
-            elementWidth = element.getBoundingClientRect().width;
-            elementHeight = element.getBoundingClientRect().height;
+            elementWidth = dragTarget.getBoundingClientRect().width;
+            elementHeight = dragTarget.getBoundingClientRect().height;
 
-            // Get the initial mouse position relative to the element
-            if (element.parentElement) {
-                offsetX = element.parentElement.getBoundingClientRect().left + Math.floor(elementWidth / 2);
-                offsetY = element.parentElement.getBoundingClientRect().top + Math.floor(elementHeight / 2);
-            }
+            // Store pointer offset within the drag target for stable single dragging
+            const rect = dragTarget.getBoundingClientRect();
+            offsetX = e.clientX - rect.left;
+            offsetY = e.clientY - rect.top;
 
             // Change cursor style while dragging
-            element.style.cursor = 'grabbing';
+            dragTarget.style.cursor = 'grabbing';
             e.preventDefault();
         });
 
         document.addEventListener('mousemove', (e) => {
             if (!isDragging) return;
 
-            top = e.clientY - offsetY;
-            left = e.clientX - offsetX;
+            const canvasRect = dialog.canvas.getBoundingClientRect();
+
+            if (multiDragActive && multiSelected.size > 1 && !currentGroupId) {
+                // Move all selected wrappers by the same delta
+                const dx = e.clientX - dragStart.x;
+                const dy = e.clientY - dragStart.y;
+                for (const id of multiSelected) {
+                    const el = dialog.getElement(id);
+                    if (!el) continue;
+                    const snap = multiDragSnapshot.get(id);
+                    if (!snap) continue;
+                    let nleft = snap.left + dx;
+                    let ntop = snap.top + dy;
+                    const w = snap.width;
+                    const h = snap.height;
+                    const maxLeft = dialogW - w - 10;
+                    const maxTop = dialogH - h - 10;
+                    if (nleft > maxLeft) nleft = maxLeft;
+                    if (nleft < 10) nleft = 10;
+                    if (ntop > maxTop) ntop = maxTop;
+                    if (ntop < 10) ntop = 10;
+                    el.style.left = Math.round(nleft) + 'px';
+                    el.style.top = Math.round(ntop) + 'px';
+                }
+                isMoved = true;
+                return;
+            }
+
+            // Single or persistent group drag using stored pointer offset
+            // If dragging a child inside a group, we already redirected dragTarget to the group above
+            left = e.clientX - canvasRect.left - offsetX;
+            top = e.clientY - canvasRect.top - offsetY;
 
             if (left + elementWidth + 10 > dialogW) { left = dialogW - elementWidth - 10; }
             if (left < 10) { left = 10; }
-
             if (top + elementHeight + 10 > dialogH) { top = dialogH - elementHeight - 10; }
             if (top < 10) { top = 10; }
 
-            // Apply the new position
+            // Apply the new position to the drag target
             top = Math.round(top);
             left = Math.round(left);
-            element.style.left = left + 'px';
-            element.style.top = top + 'px';
+            dragTarget.style.left = left + 'px';
+            dragTarget.style.top = top + 'px';
             isMoved = true;
         });
 
         document.addEventListener('mouseup', () => {
+            if (!isDragging) return;
             isDragging = false;
 
             // Restore cursor style
-            element.style.cursor = 'grab';
+            dragTarget.style.cursor = 'grab';
             if (isMoved) {
-                if (checkbox) {
-                    const size = Number(element.dataset.size);
-                    if (top < 10 + size * 0.25) { top = 10 + size * 0.25; }
-                }
-                element.style.top = top + 'px';
-                element.dataset.left = String(left);
-                element.dataset.top = String(top);
+                if (multiDragActive && multiSelected.size > 1 && !currentGroupId) {
+                    // Commit positions for all selected wrappers
+                    for (const id of multiSelected) {
+                        const el = dialog.getElement(id);
+                        if (!el) continue;
+                        const leftNum = Math.round(parseInt(el.style.left || '0', 10) || 0);
+                        const topNum = Math.round(parseInt(el.style.top || '0', 10) || 0);
+                        el.dataset.left = String(leftNum);
+                        el.dataset.top = String(topNum);
+                        dialog.updateElementProperties(id, { top: String(topNum), left: String(leftNum) });
+                        suppressClickFor.add(id);
+                    }
+                } else {
+                    if (isCheckboxDrag) {
+                        const size = Number(dragTarget.dataset.size);
+                        if (top < 10 + size * 0.25) { top = 10 + size * 0.25; }
+                    }
+                    dragTarget.style.top = top + 'px';
+                    dragTarget.dataset.left = String(left);
+                    dragTarget.dataset.top = String(top);
 
-                dialog.updateElementProperties(
-                    element.id,
-                    { top: String(top), left: String(left) }
-                );
+                    dialog.updateElementProperties(
+                        dragTarget.id,
+                        { top: String(top), left: String(left) }
+                    );
+
+                    // Suppress the click that follows mouseup for the moved target and its children (if group)
+                    suppressClickFor.add(dragTarget.id);
+                    if (dragTarget.classList.contains('element-group')) {
+                        const kids = Array.from(dragTarget.children) as HTMLElement[];
+                        kids.forEach(k => suppressClickFor.add(k.id));
+                    }
+                }
 
                 isMoved = false; // position updated
             }
+            multiDragActive = false;
+            multiDragSnapshot.clear();
         });
 
         document.addEventListener('dragend', () => {
@@ -246,10 +615,12 @@ export const editor: Editor = {
     },
 
     deselectAll: function () {
-        for (const element of dialog.canvas.children) {
-            // last element in the set should be the cover
-            element.classList.remove('selectedElement')
-        }
+        // Remove selection from all elements (deep)
+        dialog.canvas.querySelectorAll('.selectedElement').forEach((el) => el.classList.remove('selectedElement'));
+        // Do not auto-ungroup on deselect
+        currentGroupId = null;
+        multiSelected.clear();
+        multiOutline = renderutils.clearMultiOutline(multiOutline);
         dialog.selectedElement = '';
         editor.clearPropsList();
         // notify UI that selection has been cleared
@@ -439,28 +810,94 @@ export const editor: Editor = {
         }
     },
 
-    stringifyDialog: function() {
-        const elements = Array.from(dialog.canvas.children).map((child) => {
-            const el = child as HTMLElement;
-            const obj: Record<string, unknown> = { id: el.id };
-            // Coerce dataset string values to booleans/numbers where appropriate
-            for (const [key, raw] of Object.entries(el.dataset)) {
-                let value: unknown = raw;
-                if (raw === 'true' || raw === 'false') {
-                    value = raw === 'true';
-                } else if (typeof raw === 'string' && utils.possibleNumeric(raw)) {
-                    value = utils.asNumeric(raw);
+    // Group / Ungroup actions
+    groupSelection: function() {
+        makeGroupFromSelection(true);
+    },
+
+    ungroupSelection: function() {
+        // Convert a persistent group back into an ephemeral multi-selection
+        if (currentGroupId) {
+            // Perform ungroup via renderutils and get the child IDs
+            const childIds: string[] = renderutils.ungroupGroup(currentGroupId);
+
+            // Clear all selection outlines, then select all former children
+            dialog.canvas.querySelectorAll('.selectedElement').forEach((el) => el.classList.remove('selectedElement'));
+            multiSelected.clear();
+            for (const id of childIds) {
+                const el = dialog.getElement(id);
+                if (el) {
+                    el.classList.add('selectedElement');
+                    multiSelected.add(id);
                 }
-                obj[key] = value as unknown;
             }
-            return obj;
-        });
+
+            // No persistent group is active anymore
+            currentGroupId = null;
+            dialog.selectedElement = '';
+
+            // Ephemeral multi-selection (keep group-like behavior without DOM container)
+            // Do not show any extra outer outline; just both elements selected
+            coms.emit('elementSelectedMultiple', childIds);
+        }
+    },
+
+    stringifyDialog: function() {
+        const flattened: Array<Record<string, unknown>> = [];
+        const toNumber = (v: string | undefined, fallback = 0) => {
+            if (!v) return fallback;
+            return utils.possibleNumeric(v) ? utils.asNumeric(v) : fallback;
+        };
+
+        const topLevel = Array.from(dialog.canvas.children) as HTMLElement[];
+        for (const child of topLevel) {
+            if (child.classList.contains('element-group')) {
+                // Flatten multi-select group: serialize its children with absolute coordinates
+                const gLeft = toNumber(child.dataset.left as string, 0);
+                const gTop = toNumber(child.dataset.top as string, 0);
+                const members = Array.from(child.children) as HTMLElement[];
+                for (const m of members) {
+                    // Skip nested groups (not expected) and lasso rects
+                    if (m.classList.contains('lasso-rect')) continue;
+                    const obj: Record<string, unknown> = { id: m.id };
+                    for (const [key, raw] of Object.entries(m.dataset)) {
+                        let value: unknown = raw;
+                        if (raw === 'true' || raw === 'false') {
+                            value = raw === 'true';
+                        } else if (typeof raw === 'string' && utils.possibleNumeric(raw)) {
+                            value = utils.asNumeric(raw);
+                        }
+                        obj[key] = value as unknown;
+                    }
+                    // Adjust left/top by the group's position to make them absolute
+                    const mLeftAbs = toNumber(m.dataset.left as string, 0) + gLeft;
+                    const mTopAbs = toNumber(m.dataset.top as string, 0) + gTop;
+                    obj.left = mLeftAbs;
+                    obj.top = mTopAbs;
+                    flattened.push(obj);
+                }
+            } else if (child.classList.contains('lasso-rect')) {
+                continue;
+            } else {
+                const obj: Record<string, unknown> = { id: child.id };
+                for (const [key, raw] of Object.entries(child.dataset)) {
+                    let value: unknown = raw;
+                    if (raw === 'true' || raw === 'false') {
+                        value = raw === 'true';
+                    } else if (typeof raw === 'string' && utils.possibleNumeric(raw)) {
+                        value = utils.asNumeric(raw);
+                    }
+                    obj[key] = value as unknown;
+                }
+                flattened.push(obj);
+            }
+        }
 
         const result = {
             id: dialog.id,
             properties: { ...dialog.properties },
             syntax: { ...dialog.syntax },
-            elements
+            elements: flattened
         };
         return JSON.stringify(result);
     },

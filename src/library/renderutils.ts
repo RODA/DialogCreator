@@ -3,6 +3,7 @@
 import { RenderUtils } from '../interfaces/renderutils';
 import { utils } from './utils';
 import { dialog } from '../modules/dialog';
+import { elements } from '../modules/elements';
 import { DialogProperties } from "../interfaces/dialog";
 import { showError, coms } from '../modules/coms';
 import { v4 as uuidv4 } from 'uuid';
@@ -360,11 +361,16 @@ export const renderutils: RenderUtils = {
         // const all: Record<string, any> = {... element.dataset, ... properties};
         const all: Record<string, any> = {... properties};
         const dataset = element.dataset;
+        const inner = element.firstElementChild as HTMLElement | null;
         const checkbox = dataset.type === 'Checkbox';
         const counter = dataset.type === 'Counter';
         const radio = dataset.type === 'Radio';
+        const input = dataset.type === 'Input';
         const select = dataset.type === 'Select';
         const slider = dataset.type === 'Slider';
+        const container = dataset.type === 'Container';
+        const separator = dataset.type === 'Separator';
+        const button = dataset.type === 'Button';
 
 
         Object.keys(all).forEach((key) => {
@@ -407,7 +413,11 @@ export const renderutils: RenderUtils = {
                     if (Number(value) > dialogH - 20) {
                         value = String(Math.round(dialogH - 20));
                     }
+                    // Apply height to wrapper by default, and also to inner for certain types
                     element.style.height = value + 'px';
+                    if (inner && (input || select || container || separator || slider)) {
+                        inner.style.height = value + 'px';
+                    }
 
                     if (Number(eltop.value) + Number(value) + 10 > dialogH) {
                         const newtop = String(Math.round(dialogH - Number(value) - 10));
@@ -427,6 +437,10 @@ export const renderutils: RenderUtils = {
                         elleft.value = newleft;
                         element.style.left = newleft + 'px';
                     }
+                    // For button, let wrapper height auto-follow content
+                    if (button) {
+                        element.style.height = '';
+                    }
                     break;
                 case 'width':
                     if (Number(value) > dialogW - 20) {
@@ -436,19 +450,31 @@ export const renderutils: RenderUtils = {
                     if (select && Number(value) < 100) {
                         value = String(Math.round(100));
                     }
+                    // Apply width to wrapper by default
                     element.style.width = value + 'px';
+                    // Ensure the visible child reflects width for contentful elements
+                    if (inner && (input || select || container || separator || slider)) {
+                        inner.style.width = value + 'px';
+                    }
                     if (Number(elleft.value) + Number(value) + 10 > dialogW) {
                         const newleft = String(Math.round(dialogW - Number(value) - 10));
                         elleft.value = newleft;
                         element.style.left = newleft + 'px';
                     }
+                    break;
                 case 'maxWidth':
                     if (Number(value) > dialogW - 20) {
                         value = String(Math.round(dialogW - 20));
                         const maxWidth = document.getElementById('elmaxWidth') as HTMLInputElement;
                         maxWidth.value = value;
                     }
-                    element.style[key] = value + 'px';
+                    if (button && inner) {
+                        (inner.style as any)['maxWidth'] = value + 'px';
+                        // Allow wrapper to auto-size vertically
+                        element.style.height = '';
+                    } else {
+                        (element.style as any)['maxWidth'] = value + 'px';
+                    }
                     break;
                 case 'lineClamp':
                     if (Number(value) > 3) {
@@ -456,10 +482,32 @@ export const renderutils: RenderUtils = {
                         const lineClamp = document.getElementById('ellineClamp') as HTMLInputElement;
                         lineClamp.value = value;
                     }
-                    const lineHeight = Number(dataset.fontSize) * 1.2;
-                    const paddingY = 3; // px
-                    const maxHeight = (lineHeight * value) + 3 * paddingY;
-                    element.style.maxHeight = maxHeight + 'px';
+                    if (button) {
+                        // Compute max height based on computed font size, padding, and borders
+                        try {
+                            const host = (inner as HTMLDivElement) || element;
+                            const span = host.querySelector('.smart-button-text') as HTMLSpanElement | null;
+                            const spanCS = window.getComputedStyle(span || host);
+                            const fs = parseFloat(spanCS.fontSize || '0') || Number(dataset.fontSize) || coms.fontSize;
+                            const lineHeightPx = fs * 1.2;
+                            const hostCS = window.getComputedStyle(host);
+                            const padT = parseFloat(hostCS.paddingTop || '0') || 0;
+                            const padB = parseFloat(hostCS.paddingBottom || '0') || 0;
+                            const borT = parseFloat(hostCS.borderTopWidth || '0') || 0;
+                            const borB = parseFloat(hostCS.borderBottomWidth || '0') || 0;
+                            const clamp = Number(value) || 1;
+                            const maxHeightPx = Math.round(lineHeightPx * clamp + padT + padB + borT + borB);
+                            host.style.maxHeight = maxHeightPx + 'px';
+                            if (span) span.style.setProperty('-webkit-line-clamp', String(clamp));
+                        } catch {}
+                        // Allow wrapper height to auto-size
+                        element.style.height = '';
+                    } else {
+                        const lineHeight = Number(dataset.fontSize) * 1.2;
+                        const paddingY = 3; // px
+                        const maxHeight = (lineHeight * value) + 2 * paddingY;
+                        element.style.maxHeight = maxHeight + 'px';
+                    }
                     break;
                 case 'maxHeight':
                     element.style[key] = value + 'px';
@@ -479,6 +527,8 @@ export const renderutils: RenderUtils = {
                             decrease.style.color = value;
                             const increase = document.querySelector(`#counter-increase-${element.id}`) as HTMLDivElement;
                             increase.style.color = value;
+                        } else if (button && inner) {
+                            inner.style.backgroundColor = value;
                         } else {
                             element.style.backgroundColor = value;
                             if (checkbox) {
@@ -499,6 +549,10 @@ export const renderutils: RenderUtils = {
                     break;
                 case 'fontSize':
                     element.style.fontSize = value + 'px';
+                    if (button && inner) {
+                        // Let wrapper height auto-follow content
+                        element.style.height = '';
+                    }
                     break;
                 case 'fontFamily':
                     element.style.fontFamily = value;
@@ -554,6 +608,11 @@ export const renderutils: RenderUtils = {
 
                     dataset.width = width;
                     dataset.height = height;
+                    // Apply sizes
+                    if (inner && (separator || slider || container)) {
+                        inner.style.width = width + 'px';
+                        inner.style.height = height + 'px';
+                    }
                     element.style.width = width + 'px';
                     element.style.height = height + 'px';
                     elwidth.value = String(width);
@@ -561,8 +620,10 @@ export const renderutils: RenderUtils = {
                     break;
 
                 case 'value':
-                    if (element instanceof HTMLInputElement) {
-                        element.value = value;
+                    if (inner instanceof HTMLInputElement) {
+                        inner.value = value;
+                    } else if (inner instanceof HTMLDivElement) {
+                        inner.textContent = value;
                     } else if (element instanceof HTMLDivElement) {
                         element.textContent = value;
                     }
@@ -644,7 +705,8 @@ export const renderutils: RenderUtils = {
         const span = button.querySelector('.smart-button-text') as HTMLSpanElement;
         span.style.fontSize = fontSize + 'px';
         span.style.lineHeight = '1.2';
-        span.style.webkitLineClamp = String(lineClamp); // Clamp to max lines
+        // Use CSS property setter for vendor-prefixed line clamp
+        try { span.style.setProperty('-webkit-line-clamp', String(lineClamp)); } catch {}
 
         span.textContent = text;
 
@@ -702,6 +764,162 @@ export const renderutils: RenderUtils = {
                     handle.style.top = (100 - Number(obj.handlepos)) + "%";
                 }
             }
+        }
+    },
+
+    getSelectedIds: function() {
+        return Array.from(document.querySelectorAll('#dialog .selectedElement')).map(el => (el as HTMLElement).id);
+    },
+
+    // Ungroup a persistent group element back into top-level elements; returns child IDs
+    ungroupGroup: function(groupId: string) {
+        const group = dialog.getElement(groupId) as HTMLElement | undefined;
+        if (!group) return [];
+        const groupLeft = parseInt(group.style.left || '0', 10) || 0;
+        const groupTop = parseInt(group.style.top || '0', 10) || 0;
+        const children = Array.from(group.children) as HTMLElement[];
+        const childIds: string[] = [];
+        for (const child of children) {
+            const cLeft = parseInt(child.style.left || '0', 10) || 0;
+            const cTop = parseInt(child.style.top || '0', 10) || 0;
+            const newLeft = groupLeft + cLeft;
+            const newTop = groupTop + cTop;
+            child.style.left = String(newLeft) + 'px';
+            child.style.top = String(newTop) + 'px';
+            child.dataset.left = String(newLeft);
+            child.dataset.top = String(newTop);
+            dialog.canvas.appendChild(child);
+            childIds.push(child.id);
+        }
+        try { group.remove(); } catch {}
+        dialog.removeElement(groupId);
+        return childIds;
+    },
+
+    // Create a persistent group from a list of element IDs; returns the new group id or null
+    makeGroupFromSelection: function(ids: string[], persistent?: boolean) {
+        try {
+            if (!Array.isArray(ids) || ids.length < 2) return null;
+            const els = ids
+                .map(id => dialog.getElement(id))
+                .filter((el): el is HTMLElement => Boolean(el));
+            if (els.length < 2) return null;
+
+            const canvasRect = dialog.canvas.getBoundingClientRect();
+            const rects = els.map(el => el.getBoundingClientRect());
+            const minLeft = Math.min(...rects.map(r => r.left));
+            const minTop = Math.min(...rects.map(r => r.top));
+            const maxRight = Math.max(...rects.map(r => r.right));
+            const maxBottom = Math.max(...rects.map(r => r.bottom));
+
+            const left = Math.round(minLeft - canvasRect.left);
+            const top = Math.round(minTop - canvasRect.top);
+            const width = Math.round(maxRight - minLeft);
+            const height = Math.round(maxBottom - minTop);
+
+            const groupTemplate = elements.groupElement;
+            const groupEl = renderutils.makeElement({ ...groupTemplate, left, top });
+            groupEl.dataset.type = 'Group';
+            groupEl.classList.add('element-group');
+            groupEl.style.width = width + 'px';
+            groupEl.style.height = height + 'px';
+            if (persistent) groupEl.dataset.persistent = 'true';
+
+            dialog.canvas.appendChild(groupEl);
+
+            for (let idx = 0; idx < els.length; idx++) {
+                const child = els[idx];
+                const childRect = child.getBoundingClientRect();
+                const newLeft = Math.round(childRect.left - canvasRect.left - left);
+                const newTop = Math.round(childRect.top - canvasRect.top - top);
+                child.style.left = String(newLeft) + 'px';
+                child.style.top = String(newTop) + 'px';
+                child.dataset.left = String(newLeft);
+                child.dataset.top = String(newTop);
+                child.classList.remove('selectedElement');
+                groupEl.appendChild(child);
+            }
+
+            groupEl.dataset.elementIds = ids.join(',');
+
+            // Inherit Radio 'Group' name as group's nameid if applicable
+            try {
+                const allRadio = els.length > 0 && els.every(el => el.dataset.type === 'Radio');
+                if (allRadio) {
+                    const groups = Array.from(new Set(els.map(el => el.dataset.group || '')));
+                    if (groups.length === 1 && groups[0]) {
+                        const desired = groups[0];
+                        const existing = new Set(renderutils.getDialogInfo().elements);
+                        let finalName = desired;
+                        if (existing.has(finalName)) {
+                            let i = 1;
+                            while (existing.has(`${desired}${i}`)) i++;
+                            finalName = `${desired}${i}`;
+                        }
+                        groupEl.dataset.nameid = finalName;
+                    }
+                }
+            } catch {}
+
+            dialog.addElement(groupEl);
+            return groupEl.id;
+        } catch {
+            return null;
+        }
+    },
+
+    // Selection helpers
+    updateMultiOutline: function(canvas: HTMLElement, ids: string[], outlineEl?: HTMLDivElement | null) {
+        const bounds = renderutils.computeBounds(ids);
+        if (!bounds) {
+            if (outlineEl && outlineEl.parentElement) outlineEl.parentElement.removeChild(outlineEl);
+            return null;
+        }
+        const { left, top, width, height } = bounds;
+        let outline = outlineEl;
+        if (!outline) {
+            outline = document.createElement('div') as HTMLDivElement;
+            outline.className = 'multi-outline';
+            canvas.appendChild(outline);
+        }
+        outline.style.left = left + 'px';
+        outline.style.top = top + 'px';
+        outline.style.width = width + 'px';
+        outline.style.height = height + 'px';
+        return outline;
+    },
+
+    clearMultiOutline: function(outlineEl?: HTMLDivElement | null) {
+        if (outlineEl && outlineEl.parentElement) outlineEl.parentElement.removeChild(outlineEl);
+        return null;
+    },
+
+    computeBounds: function(ids: string[]) {
+        const els = (ids || []).map(id => dialog.getElement(id)).filter((el): el is HTMLElement => Boolean(el));
+        if (!els || els.length === 0) return null;
+        const canvasRect = dialog.canvas.getBoundingClientRect();
+        const rects = els.map(el => el.getBoundingClientRect());
+        const minLeft = Math.min(...rects.map(r => r.left));
+        const minTop = Math.min(...rects.map(r => r.top));
+        const maxRight = Math.max(...rects.map(r => r.right));
+        const maxBottom = Math.max(...rects.map(r => r.bottom));
+        const left = Math.round(minLeft - canvasRect.left);
+        const top = Math.round(minTop - canvasRect.top);
+        const width = Math.round(maxRight - minLeft);
+        const height = Math.round(maxBottom - minTop);
+        return { left, top, width, height };
+    },
+
+    moveElementsBy: function(ids: string[], dx: number, dy: number) {
+        for (const id of ids) {
+            const el = dialog.getElement(id) as HTMLElement | undefined;
+            if (!el) continue;
+            const currentLeft = Number(el.dataset.left ?? (parseInt(el.style.left || '0', 10) || 0));
+            const currentTop = Number(el.dataset.top ?? (parseInt(el.style.top || '0', 10) || 0));
+            const props: Record<string, number> = { left: currentLeft + dx, top: currentTop + dy };
+            renderutils.updateElement(el, props as any);
+            el.dataset.left = String(props.left);
+            el.dataset.top = String(props.top);
         }
     },
 
@@ -768,23 +986,30 @@ export const renderutils: RenderUtils = {
         for (const key in dialog.elements) {
             const element = dialog.elements[key] as HTMLDivElement;
             const dataset = element.dataset;
+            const inner = element.firstElementChild as HTMLElement | null;
             switch (dataset.type) {
                 case "Input":
                 case "Select":
                 case "Label":
+                    // Apply to wrapper and let it cascade; also apply to inner if present
                     element.style.fontSize = fontSize + 'px';
+                    if (inner) inner.style.fontSize = fontSize + 'px';
                     if (fontFamily) {
                         element.style.fontFamily = fontFamily;
+                        if (inner) inner.style.fontFamily = fontFamily;
                     }
                     break;
                 case "Button":
+                    // Update the inner button node for precise sizing
                     renderutils.updateButton(
-                        element,
+                        (inner as HTMLDivElement) || element,
                         dataset.label || '',
                         fontSize,
                         Number(dataset.lineClamp) || 1,
                         Number(dataset.maxWidth) || 100
                     );
+                    // Let wrapper height auto-follow content
+                    element.style.height = '';
                     break;
                 case "Counter":
                     const countervalue = document.querySelector(`#counter-value-${element.id}`) as HTMLDivElement;

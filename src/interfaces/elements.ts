@@ -168,6 +168,19 @@ export type containerElementType = {
     conditions: string;
     [key: string]: any;
 }
+export type groupElementType = {
+    parentId: string;
+    id: string;
+    type: string;
+    nameid: string;
+    left: number;
+    top: number;
+    isEnabled: boolean;
+    isVisible: boolean;
+    elementIds: string[];
+    conditions: string;
+    [key: string]: any;
+}
 
 
 export interface Elements {
@@ -181,6 +194,7 @@ export interface Elements {
     labelElement: labelElementType;
     separatorElement: separatorElementType;
     containerElement: containerElementType;
+    groupElement: groupElementType;
     [key: string]: Elements[keyof Elements];
 }
 

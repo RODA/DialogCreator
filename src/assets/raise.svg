@@ -8,14 +8,14 @@
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    inkscape:version="1.1-dev (6039630, 2019-12-20)"
-   sodipodi:docname="selection-bottom-symbolic.svg"
+   sodipodi:docname="raise.svg"
    viewBox="0 0 16 16"
    height="16"
    width="16"
    id="svg1"
    version="1.1">
   <metadata
-     id="metadata7269">
+     id="metadata6691">
     <rdf:RDF>
       <cc:Work
          rdf:about="">
@@ -26,7 +26,7 @@
     </rdf:RDF>
   </metadata>
   <defs
-     id="defs7267" />
+     id="defs6689" />
   <style
      id="s0">
 .success { fill:#009909; }
@@ -45,9 +45,9 @@
      inkscape:window-x="65"
      inkscape:window-height="890"
      inkscape:window-width="1296"
-     inkscape:cy="2.6219759"
-     inkscape:cx="20.567327"
-     inkscape:zoom="19.209395"
+     inkscape:cy="7.7602509"
+     inkscape:cx="8.333963"
+     inkscape:zoom="27.166187"
      showgrid="true"
      id="namedview"
      guidetolerance="10"
@@ -58,44 +58,40 @@
        type="xygrid" />
   </sodipodi:namedview>
   <g
-     id="selection-bottom"
-     inkscape:label="00063"
-     transform="translate(-135,-687.36218)">
+     id="raise"
+     inkscape:label="00060"
+     transform="translate(-135,-627.3622)">
     <path
-       transform="scale(1,-1)"
+       transform="translate(0,512.3622)"
        style="opacity:0;fill:none"
-       d="m 135,-703.36218 h 16 v 16 h -16 z"
-       id="rect12189"
+       d="m 135,115 h 16 v 16 h -16 z"
+       id="rect12058"
        inkscape:connector-curvature="0" />
     <path
-       transform="scale(1,-1)"
        style="opacity:0.5"
-       d="m 136,-698.36218 h 5 v 2 h -5 z"
-       id="rect12191"
+       d="m 136,628.36218 h 5 v 2 h -5 z"
+       id="rect12060"
        inkscape:connector-curvature="0" />
     <path
-       transform="scale(1,-1)"
        style="opacity:1"
-       d="m 136,-702.36218 h 13 v 2 h -13 z"
-       id="rect12193"
+       d="m 136,632.36218 h 13 v 2 h -13 z"
+       id="rect12062"
        inkscape:connector-curvature="0" />
     <path
-       transform="scale(1,-1)"
        style="opacity:0.5"
-       d="m 136,-694.36218 h 5 v 2 h -5 z"
-       id="rect12195"
+       d="m 136,636.36218 h 5 v 2 h -5 z"
+       id="rect12064"
        inkscape:connector-curvature="0" />
     <path
-       transform="scale(1,-1)"
        style="opacity:0.5"
-       d="m 136,-690.36218 h 5 v 2 h -5 z"
-       id="rect12197"
+       d="m 136,640.36218 h 5 v 2 h -5 z"
+       id="rect12066"
        inkscape:connector-curvature="0" />
     <path
        class="success"
        style="opacity:1"
-       d="m 145,688.3622 h 2 v 7 h 2 l -3,2.9883 -3,-2.9883 h 2 z"
-       id="path12199"
+       d="m 145,642.3622 h 2 v -4 h 2 l -3,-2.9884 -3,2.9884 h 2 z"
+       id="path12074"
        inkscape:connector-curvature="0" />
   </g>
 </svg>

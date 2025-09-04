@@ -24,7 +24,6 @@ document.addEventListener('DOMContentLoaded', () => {
     ]);
 
     coms.on('defaultElementSelected', (...args: unknown[]) => {
-        console.log('receiver: defaultElementSelected', args);
         const name = typeof args[0] === 'string' ? args[0] : '';
         defaultElementSelected = name;
     });

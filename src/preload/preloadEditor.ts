@@ -33,6 +33,10 @@ const propertyUpdateOnEnter = (ev: KeyboardEvent) => {
     }
 }
 
+// Ephemeral multi-select helpers and listeners
+let ephemeralLeftBlurHandler: ((ev: Event) => void) | null = null;
+let ephemeralTopBlurHandler: ((ev: Event) => void) | null = null;
+
 coms.on('elementSelected', (id) => {
     elementSelected = true;
     // enable arrange toolbar buttons
@@ -41,8 +45,25 @@ coms.on('elementSelected', (id) => {
     (document.getElementById('bringForward') as HTMLButtonElement).disabled = false;
     (document.getElementById('sendBackward') as HTMLButtonElement).disabled = false;
 
+    // Remove ephemeral multi-select listeners if any
+    const leftInput0 = document.getElementById('elleft') as HTMLInputElement | null;
+    const topInput0 = document.getElementById('eltop') as HTMLInputElement | null;
+    if (leftInput0 && ephemeralLeftBlurHandler) {
+        leftInput0.removeEventListener('blur', ephemeralLeftBlurHandler);
+        ephemeralLeftBlurHandler = null;
+    }
+    if (topInput0 && ephemeralTopBlurHandler) {
+        topInput0.removeEventListener('blur', ephemeralTopBlurHandler);
+        ephemeralTopBlurHandler = null;
+    }
+
     // update props tab
-    document.getElementById('propertiesList')?.classList.remove('hidden');
+    const propsList = document.getElementById('propertiesList');
+    if (!propsList) {
+        console.warn('propertiesList element not found in DOM');
+    } else {
+        propsList.classList.remove('hidden');
+    }
     const element = document.getElementById(id as string) as HTMLElement;
     const dataset = element.dataset;
 
@@ -127,7 +148,115 @@ coms.on('elementSelected', (id) => {
     // disable update and remove button | force reselection
     (document.getElementById('removeElement') as HTMLButtonElement).disabled = false;
 
+    // Enable/disable group/ungroup toolbar buttons
+    const groupBtn = document.getElementById('groupElements') as HTMLButtonElement | null;
+    const ungroupBtn = document.getElementById('ungroupElements') as HTMLButtonElement | null;
+    if (groupBtn && ungroupBtn) {
+        const selectedCount = document.querySelectorAll('#dialog .selectedElement').length;
+        // Check if this is a group element (from lasso selection)
+        const isGroup = element.classList.contains('element-group');
+        groupBtn.disabled = !(selectedCount >= 2 && !isGroup);
+        ungroupBtn.disabled = !isGroup;
+    }
 
+});
+
+// Multi-selection (ephemeral): show group-like properties (Left/Top + read-only Width/Height) and enable Group button
+coms.on('elementSelectedMultiple', (...args: unknown[]) => {
+    elementSelected = true;
+
+    // Show properties panel and prepare fields
+    const propsList = document.getElementById('propertiesList');
+    if (propsList) {
+        propsList.classList.remove('hidden');
+        // Hide all per-element fields
+        document.querySelectorAll('#propertiesList .element-property').forEach(item => {
+            item.classList.add('hidden-element');
+        });
+        // Show a minimal set for the multi-selection "group": Type, Left, Top
+        const typeInput = document.getElementById('eltype') as HTMLInputElement | null;
+        const leftInput = document.getElementById('elleft') as HTMLInputElement | null;
+        const topInput = document.getElementById('eltop') as HTMLInputElement | null;
+
+        // Detach any previous ephemeral listeners
+        if (leftInput && ephemeralLeftBlurHandler) {
+            leftInput.removeEventListener('blur', ephemeralLeftBlurHandler);
+            ephemeralLeftBlurHandler = null;
+        }
+        if (topInput && ephemeralTopBlurHandler) {
+            topInput.removeEventListener('blur', ephemeralTopBlurHandler);
+            ephemeralTopBlurHandler = null;
+        }
+
+        // Also make sure the generic single-element listeners do not conflict on these two fields
+        if (leftInput) leftInput.removeEventListener('blur', propertyUpdate as EventListener);
+        if (topInput) topInput.removeEventListener('blur', propertyUpdate as EventListener);
+        if (leftInput) leftInput.removeEventListener('keyup', propertyUpdateOnEnter as EventListener);
+        if (topInput) topInput.removeEventListener('keyup', propertyUpdateOnEnter as EventListener);
+
+        // Compute current bounds of selection and populate
+        const bounds = renderutils.computeBounds(renderutils.getSelectedIds()) || { left: 0, top: 0, width: 0, height: 0 };
+        if (typeInput) {
+            typeInput.value = 'Multiple selection';
+            typeInput.parentElement?.classList.remove('hidden-element');
+        }
+        if (leftInput) {
+            leftInput.value = String(bounds.left);
+            leftInput.disabled = false;
+            leftInput.parentElement?.classList.remove('hidden-element');
+        }
+        if (topInput) {
+            topInput.value = String(bounds.top);
+            topInput.disabled = false;
+            topInput.parentElement?.classList.remove('hidden-element');
+        }
+        // Intentionally hide Width/Height for ephemeral group — not part of groupElementType
+
+        // Attach ephemeral blur handlers to move the whole selection when Left/Top change
+        if (leftInput) {
+            ephemeralLeftBlurHandler = () => {
+                const current = renderutils.computeBounds(renderutils.getSelectedIds()) || { left: 0, top: 0, width: 0, height: 0 };
+                const desiredLeft = Number(leftInput.value) || current.left;
+                const dx = desiredLeft - current.left;
+                if (dx !== 0) {
+                    renderutils.moveElementsBy(renderutils.getSelectedIds(), dx, 0);
+                    const b = renderutils.computeBounds(renderutils.getSelectedIds()) || { left: 0, top: 0, width: 0, height: 0 };
+                    leftInput.value = String(b.left);
+                }
+            };
+            leftInput.addEventListener('blur', ephemeralLeftBlurHandler);
+            leftInput.addEventListener('keyup', propertyUpdateOnEnter as EventListener);
+        }
+        if (topInput) {
+            ephemeralTopBlurHandler = () => {
+                const current = renderutils.computeBounds(renderutils.getSelectedIds()) || { left: 0, top: 0, width: 0, height: 0 };
+                const desiredTop = Number(topInput.value) || current.top;
+                const dy = desiredTop - current.top;
+                if (dy !== 0) {
+                    renderutils.moveElementsBy(renderutils.getSelectedIds(), 0, dy);
+                    const b = renderutils.computeBounds(renderutils.getSelectedIds()) || { left: 0, top: 0, width: 0, height: 0 };
+                    topInput.value = String(b.top);
+                }
+            };
+            topInput.addEventListener('blur', ephemeralTopBlurHandler);
+            topInput.addEventListener('keyup', propertyUpdateOnEnter as EventListener);
+        }
+    }
+
+    // Enable arrange toolbar buttons
+    (document.getElementById('bringToFront') as HTMLButtonElement).disabled = false;
+    (document.getElementById('sendToBack') as HTMLButtonElement).disabled = false;
+    (document.getElementById('bringForward') as HTMLButtonElement).disabled = false;
+    (document.getElementById('sendBackward') as HTMLButtonElement).disabled = false;
+
+    const groupBtn = document.getElementById('groupElements') as HTMLButtonElement | null;
+    const ungroupBtn = document.getElementById('ungroupElements') as HTMLButtonElement | null;
+    if (groupBtn && ungroupBtn) {
+        const selectedCount = document.querySelectorAll('#dialog .selectedElement').length;
+        // Ephemeral multi-select cannot be a group yet
+        groupBtn.disabled = !(selectedCount >= 2);
+        ungroupBtn.disabled = true;
+    }
 });
 
 
@@ -196,6 +325,10 @@ window.addEventListener("DOMContentLoaded", async () => {
     document.getElementById('bringForward')?.addEventListener('click', editor.bringSelectedForward);
     document.getElementById('sendBackward')?.addEventListener('click', editor.sendSelectedBackward);
 
+    // Grouping buttons
+    document.getElementById('groupElements')?.addEventListener('click', () => editor.groupSelection());
+    document.getElementById('ungroupElements')?.addEventListener('click', () => editor.ungroupSelection());
+
     document.addEventListener('keyup', function (ev) {
         if (ev.code == 'Delete' || ev.code == 'Backspace') {
             if (utils.isTrue(elementSelected)) {
@@ -223,33 +356,57 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         const step = ev.shiftKey ? 10 : 1;
 
-        const info = renderutils.getDialogInfo();
-        const el = info.selected as HTMLElement | null;
-        if (!el) return;
+        // Check how many elements are currently selected in the canvas
+        const selectedEls = Array.from(document.querySelectorAll('#dialog .selectedElement')) as HTMLElement[];
+        if (selectedEls.length === 0) return;
 
-        const currentLeft = Number(el.dataset.left ?? (parseInt(el.style.left || '0', 10) || 0));
-        const currentTop = Number(el.dataset.top ?? (parseInt(el.style.top || '0', 10) || 0));
-        let newLeft = currentLeft;
-        let newTop = currentTop;
+        if (selectedEls.length > 1) {
+            // Ephemeral multi-selection: nudge all selected elements together
+            let dx = 0, dy = 0;
+            if (isArrowUp) dy = -step;
+            if (isArrowDown) dy = step;
+            if (isArrowLeft) dx = -step;
+            if (isArrowRight) dx = step;
+            if (dx !== 0 || dy !== 0) {
+                for (const sel of selectedEls) {
+                    const currentLeft = Number(sel.dataset.left ?? (parseInt(sel.style.left || '0', 10) || 0));
+                    const currentTop = Number(sel.dataset.top ?? (parseInt(sel.style.top || '0', 10) || 0));
+                    const props: Record<string, number> = { left: currentLeft + dx, top: currentTop + dy };
+                    renderutils.updateElement(sel, props as any);
+                    sel.dataset.left = String(props.left);
+                    sel.dataset.top = String(props.top);
+                }
+            }
+        } else {
+            // Single selection (or a persistent group container)
+            const info = renderutils.getDialogInfo();
+            const el = info.selected as HTMLElement | null;
+            if (!el) return;
 
-        if (isArrowUp) newTop = currentTop - step;
-        if (isArrowDown) newTop = currentTop + step;
-        if (isArrowLeft) newLeft = currentLeft - step;
-        if (isArrowRight) newLeft = currentLeft + step;
+            const currentLeft = Number(el.dataset.left ?? (parseInt(el.style.left || '0', 10) || 0));
+            const currentTop = Number(el.dataset.top ?? (parseInt(el.style.top || '0', 10) || 0));
+            let newLeft = currentLeft;
+            let newTop = currentTop;
 
-        const props: Record<string, string | number> = {};
-        if (newLeft !== currentLeft) props.left = newLeft;
-        if (newTop !== currentTop) props.top = newTop;
-        if (Object.keys(props).length) {
-            renderutils.updateElement(el, props as any);
-            if (props.left !== undefined) el.dataset.left = String(props.left);
-            if (props.top !== undefined) el.dataset.top = String(props.top);
+            if (isArrowUp) newTop = currentTop - step;
+            if (isArrowDown) newTop = currentTop + step;
+            if (isArrowLeft) newLeft = currentLeft - step;
+            if (isArrowRight) newLeft = currentLeft + step;
+
+            const props: Record<string, string | number> = {};
+            if (newLeft !== currentLeft) props.left = newLeft;
+            if (newTop !== currentTop) props.top = newTop;
+            if (Object.keys(props).length) {
+                renderutils.updateElement(el, props as any);
+                if (props.left !== undefined) el.dataset.left = String(props.left);
+                if (props.top !== undefined) el.dataset.top = String(props.top);
+            }
         }
 
         ev.preventDefault();
     });
 
-    // Keyboard shortcuts for arrange actions (Cmd/Ctrl + Arrow keys)
+    // Keyboard shortcuts for arrange actions (Cmd/Ctrl + Arrow keys) and grouping (Cmd/Ctrl + G)
     document.addEventListener('keydown', function (ev) {
         if (!utils.isTrue(elementSelected)) return;
         const activeTag = document.activeElement?.tagName;
@@ -257,6 +414,19 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         const metaOrCtrl = ev.metaKey || ev.ctrlKey;
         if (!metaOrCtrl) return;
+
+        // Group/Ungroup shortcuts
+        // Use code 'KeyG' when available, fallback to key comparison
+        const isKeyG = ev.code === 'KeyG' || ev.key?.toLowerCase() === 'g';
+        if (isKeyG) {
+            ev.preventDefault();
+            if (ev.shiftKey) {
+                editor.ungroupSelection();
+            } else {
+                editor.groupSelection();
+            }
+            return;
+        }
 
         // Robust arrow detection across layouts: check code, key, and legacy keyCode
         const keyCode = (ev as unknown as { keyCode?: number }).keyCode;
@@ -345,6 +515,10 @@ window.addEventListener("DOMContentLoaded", async () => {
         (document.getElementById('sendToBack') as HTMLButtonElement).disabled = true;
         (document.getElementById('bringForward') as HTMLButtonElement).disabled = true;
         (document.getElementById('sendBackward') as HTMLButtonElement).disabled = true;
+        const groupBtn = document.getElementById('groupElements') as HTMLButtonElement | null;
+        const ungroupBtn = document.getElementById('ungroupElements') as HTMLButtonElement | null;
+        if (groupBtn) groupBtn.disabled = true;
+        if (ungroupBtn) ungroupBtn.disabled = true;
     });
 });
 

@@ -23,6 +23,15 @@ export interface RenderUtils {
         handle: HTMLDivElement,
         obj: { [key: string]: string },
     ) => void;
+    // Group helpers
+    getSelectedIds: () => string[];
+    ungroupGroup: (groupId: string) => string[];
+    // Selection/grouping utilities
+    makeGroupFromSelection: (ids: string[], persistent?: boolean) => string | null;
+    updateMultiOutline: (canvas: HTMLElement, ids: string[], outlineEl?: HTMLDivElement | null) => HTMLDivElement | null;
+    clearMultiOutline: (outlineEl?: HTMLDivElement | null) => null;
+    computeBounds: (ids: string[]) => { left: number; top: number; width: number; height: number } | null;
+    moveElementsBy: (ids: string[], dx: number, dy: number) => void;
     updateCheckboxColor: (uuid: string, color: string) => void;
     handleEvent(eventName: string, ...args: unknown[]): Promise<void>;
     objViewClassValid: (currentElement: HTMLElement) => boolean;

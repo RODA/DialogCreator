@@ -159,5 +159,17 @@ export const elements: Elements = {
         isVisible: true,
         elementIds: [],
         conditions: ''
+    },
+    groupElement: {
+        parentId: '',
+        id: '',
+        type: 'Group',
+        nameid: 'group',
+        left: 15,
+        top: 15,
+        isEnabled: true,
+        isVisible: true,
+        elementIds: [],
+        conditions: ''
     }
 }

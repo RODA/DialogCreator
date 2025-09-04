@@ -507,3 +507,31 @@ input {
     height: 100%;
     z-index: 2;
 }
+
+/* Selection rectangle for multi-select */
+.lasso-rect {
+    position: absolute;
+    border: 1px dashed var(--main-blue-color);
+    background: rgba(30, 144, 255, 0.15);
+    pointer-events: none;
+    z-index: 1000;
+}
+
+/* Group element wrapper (multi-select group) */
+.element-group {
+    position: absolute;
+}
+
+/* Single element wrapper */
+.element-wrapper {
+    position: absolute;
+    cursor: grab;
+}
+
+/* Ephemeral multi-selection outline */
+.multi-outline {
+    position: absolute;
+    border: 1px dotted var(--main-blue-color);
+    pointer-events: none;
+    z-index: 999;
+}
