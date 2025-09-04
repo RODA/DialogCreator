@@ -154,6 +154,48 @@ function renderPreview(dialog: {
       });
     }
 
+    // Slider: make handle draggable within the track in preview
+    if ((element.dataset?.type || '') === 'Slider') {
+      const handle = element.querySelector('.slider-handle') as HTMLDivElement | null;
+      if (handle) {
+        let dragging = false;
+        const direction = (element.dataset.direction || 'horizontal').toLowerCase();
+
+        const onMove = (ev: MouseEvent) => {
+          if (!dragging) return;
+          const rect = element.getBoundingClientRect();
+          if (rect.width <= 0 || rect.height <= 0) return;
+          let percent = 0;
+          if (direction === 'vertical') {
+            const relY = (ev.clientY - rect.top);
+            const clamped = Math.max(0, Math.min(rect.height, relY));
+            // handlepos is 0..100 where 100 is top; updateHandleStyle uses (100 - handlepos) for top
+            percent = Math.round(100 - (clamped / rect.height) * 100);
+          } else {
+            const relX = (ev.clientX - rect.left);
+            const clamped = Math.max(0, Math.min(rect.width, relX));
+            percent = Math.round((clamped / rect.width) * 100);
+          }
+          element.dataset.handlepos = String(percent);
+          renderutils.updateHandleStyle(handle, {
+            handleshape: element.dataset.handleshape || 'triangle',
+            direction: element.dataset.direction || 'horizontal',
+            handlesize: element.dataset.handlesize || '8',
+            handlecolor: element.dataset.handlecolor || '#4caf50',
+            handlepos: String(percent)
+          } as any);
+        };
+        const onUp = () => { dragging = false; document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
+        handle.addEventListener('mousedown', (ev: MouseEvent) => {
+          if ((element.classList.contains('disabled-div')) || !utils.isTrue((data as any).isEnabled)) return;
+          dragging = true;
+          document.addEventListener('mousemove', onMove);
+          document.addEventListener('mouseup', onUp);
+          ev.preventDefault();
+        });
+      }
+    }
+
     // Visibility / Enabled
     if (!utils.isTrue((data as any).isVisible)) {
       element.classList.add('design-hidden');
