@@ -17,6 +17,7 @@ export interface Editor {
     initializeDialogProperties: () => void;
     stringifyDialog: () => string;
     previewDialog: () => void;
+    loadDialogFromJson?: (data: unknown) => void;
     // arrange/z-order actions
     bringSelectedToFront: () => void;
     sendSelectedToBack: () => void;

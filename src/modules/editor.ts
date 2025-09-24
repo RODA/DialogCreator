@@ -950,5 +950,100 @@ export const editor: Editor = {
                 data: json
             }
         );
+    },
+
+    loadDialogFromJson: function(data: unknown) {
+        try {
+            const obj = typeof data === 'string' ? JSON.parse(data) : (data as any);
+            if (!obj || !obj.properties) return;
+
+            // Clear existing elements
+            try {
+                const keys = Object.keys(dialog.elements);
+                for (const id of keys) {
+                    const el = dialog.getElement(id);
+                    if (el && el.parentElement) el.parentElement.removeChild(el);
+                    dialog.removeElement(id);
+                }
+                dialog.canvas.innerHTML = '';
+            } catch {}
+
+            // Update dialog properties and UI
+            const props = obj.properties as any;
+            dialog.properties = { ...props };
+            try {
+                const w = Number(props.width) || 640;
+                const h = Number(props.height) || 480;
+                dialog.canvas.style.width = w + 'px';
+                dialog.canvas.style.height = h + 'px';
+                const wEl = document.getElementById('dialogWidth') as HTMLInputElement | null; if (wEl) wEl.value = String(props.width || '');
+                const hEl = document.getElementById('dialogHeight') as HTMLInputElement | null; if (hEl) hEl.value = String(props.height || '');
+                const nEl = document.getElementById('dialogName') as HTMLInputElement | null; if (nEl) nEl.value = String(props.name || '');
+                const tEl = document.getElementById('dialogTitle') as HTMLInputElement | null; if (tEl) tEl.value = String(props.title || '');
+                const fEl = document.getElementById('dialogFontSize') as HTMLInputElement | null; if (fEl) fEl.value = String(props.fontSize || '');
+            } catch {}
+
+            // Recreate elements
+            const arr = Array.isArray(obj.elements) ? obj.elements : [];
+            for (const e of arr) {
+                try {
+                    // Use the same wrapping approach as addElementToDialog, but preserve ids and nameids from JSON
+                    const core = renderutils.makeElement({ ...(e as any) } as any);
+                    const wrapper = document.createElement('div');
+                    wrapper.classList.add('element-wrapper');
+                    wrapper.style.position = 'absolute';
+
+                    const desiredId = String((e as any).id || core.id);
+                    const desiredType = String((e as any).type || core.dataset.type || '');
+                    const desiredNameId = String((e as any).nameid || core.dataset.nameid || '');
+
+                    // Preserve id on wrapper, move inner id aside
+                    wrapper.id = desiredId;
+                    core.id = desiredId + '-inner';
+
+                    // Position from JSON
+const left = Number((e as any).left ?? (parseInt(core.style.left || '0', 10) || 0));
+const top = Number((e as any).top ?? (parseInt(core.style.top || '0', 10) || 0));
+                    wrapper.style.left = `${left}px`;
+                    wrapper.style.top = `${top}px`;
+
+                    // Copy dataset from JSON into wrapper
+                    for (const [k, v] of Object.entries(e as any)) {
+                        if (k === 'id') continue;
+                        const val = typeof v === 'string' ? v : String(v);
+                        try { (wrapper.dataset as any)[k] = val; } catch {}
+                    }
+                    wrapper.dataset.type = desiredType;
+                    if (desiredNameId) wrapper.dataset.nameid = desiredNameId;
+                    wrapper.dataset.parentId = dialog.id;
+
+                    // Inner element positioned relative to wrapper
+                    core.style.left = '0px';
+                    core.style.top = '0px';
+                    if (desiredType === 'Button') core.style.position = 'relative';
+
+                    wrapper.appendChild(core);
+                    dialog.canvas.appendChild(wrapper);
+
+                    // Remove inner cover and add outer cover
+                    try { const innerCover = core.querySelector('.elementcover'); innerCover && innerCover.parentElement?.removeChild(innerCover); } catch {}
+                    const cover = document.createElement('div'); cover.id = `cover-${wrapper.id}`; cover.className = 'elementcover'; wrapper.appendChild(cover);
+
+                    // Size wrapper: for non-buttons, fix to core's rendered size; for buttons, let it auto-size
+                    try {
+                        if (desiredType !== 'Button') {
+                            const rect = core.getBoundingClientRect();
+                            if (rect.width > 0) wrapper.style.width = `${Math.round(rect.width)}px`;
+                            if (rect.height > 0) wrapper.style.height = `${Math.round(rect.height)}px`;
+                        }
+                    } catch {}
+
+                    editor.addElementListeners(wrapper);
+                    dialog.addElement(wrapper);
+                } catch {}
+            }
+        } catch (e) {
+            console.error('loadDialogFromJson failed', e);
+        }
     }
 }

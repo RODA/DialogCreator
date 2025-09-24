@@ -5,6 +5,7 @@ import { Elements } from '../interfaces/elements';
 import { elements as els } from '../modules/elements';
 import { attachColorPickers, syncColorPickers } from '../library/colorpicker';
 import { dialog } from "../modules/dialog";
+import { ipcRenderer } from 'electron';
 
 let elements = { ...els } as Elements;
 Object.keys(elements).forEach((element) => {
@@ -364,6 +365,25 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     document.getElementById('removeElement')?.addEventListener('click', editor.removeSelectedElement);
+
+    // Respond to save request from main: serialize dialog and send back
+    try {
+        ipcRenderer.on('request-dialog-json', () => {
+            try {
+                const json = editor.stringifyDialog();
+                ipcRenderer.send('send-to', 'main', 'dialog-json', json);
+            } catch (e) {
+                ipcRenderer.send('send-to', 'main', 'dialog-json', '');
+            }
+        });
+    } catch {}
+
+    // Respond to load dialog request from main
+    try {
+        ipcRenderer.on('load-dialog-json', (_ev, data: unknown) => {
+            try { (editor as any).loadDialogFromJson?.(data); } catch (e) { console.error('Failed to load dialog JSON', e); }
+        });
+    } catch {}
 
     // Persist syntax text coming from Syntax window
     try {

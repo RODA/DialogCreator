@@ -289,20 +289,49 @@ const mainMenuTemplate: MenuItemConstructorOptions[] = [
             {
                 label: 'Load dialog',
                 accelerator: "CommandOrControl+O",
-                click: () => {
-
+                click: async () => {
+                    const { canceled, filePaths } = await dialog.showOpenDialog(editorWindow, {
+                        title: 'Load dialog',
+                        filters: [{ name: 'Dialog JSON', extensions: ['json'] }],
+                        properties: ['openFile']
+                    });
+                    if (canceled || !filePaths || filePaths.length === 0) return;
+                    try {
+                        const fs = require('fs');
+                        const content = fs.readFileSync(filePaths[0], 'utf-8');
+                        editorWindow.webContents.send('load-dialog-json', content);
+                    } catch (e: any) {
+                        dialog.showErrorBox('Load failed', String((e && e.message) ? e.message : e));
+                    }
                 }
             },
             {
                 label: 'Save dialog',
                 accelerator: "CommandOrControl+S",
-                click: () => {
-                    editorWindow.webContents.send('previewDialog');
-                    ipcMain.once('containerData', (event, arg) => {
-                        if(utils.isTrue(arg)) {
-                            // saveDataToFile(arg);
+                click: async () => {
+                    // Ask renderer for JSON
+                    editorWindow.webContents.send('request-dialog-json');
+                    const onJson = async (_ev: any, json: string) => {
+                        ipcMain.removeListener('send-to', onSendTo);
+                        try {
+                            const { canceled, filePath } = await dialog.showSaveDialog(editorWindow, {
+                                title: 'Save dialog',
+                                filters: [{ name: 'Dialog JSON', extensions: ['json'] }],
+                                defaultPath: 'dialog.json'
+                            });
+                            if (canceled || !filePath) return;
+                            const fs = require('fs');
+                            fs.writeFileSync(filePath, json || '', 'utf-8');
+                        } catch (e: any) {
+                            dialog.showErrorBox('Save failed', String((e && e.message) ? e.message : e));
                         }
-                    });
+                    };
+                    const onSendTo = (_event: any, window: string, channel: string, ...args: any[]) => {
+                        if (window === 'main' && channel === 'dialog-json') {
+                            onJson(null, args[0] as string);
+                        }
+                    };
+                    ipcMain.on('send-to', onSendTo);
                 }
             },
         ]
