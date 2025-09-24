@@ -882,7 +882,7 @@ export const editor: Editor = {
                 const members = Array.from(child.children) as HTMLElement[];
                 for (const m of members) {
                     // Skip nested groups (not expected) and lasso rects
-                    if (m.classList.contains('lasso-rect')) continue;
+            if (child.classList.contains('lasso-rect')) continue;
                     const obj: Record<string, unknown> = { id: m.id };
                     for (const [key, raw] of Object.entries(m.dataset)) {
                         let value: unknown = raw;
@@ -893,6 +893,10 @@ export const editor: Editor = {
                         }
                         obj[key] = value as unknown;
                     }
+                    // Attach group's extra conditions so they apply at runtime without altering element-specific ones
+                    const gconds = (child.dataset as any)?.groupConditions || (child.dataset as any)?.conditions || '';
+                    if (gconds) (obj as any).groupConditions = String(gconds);
+
                     // Adjust left/top by the group's position to make them absolute
                     const mLeftAbs = toNumber(m.dataset.left as string, 0) + gLeft;
                     const mTopAbs = toNumber(m.dataset.top as string, 0) + gTop;

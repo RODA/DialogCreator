@@ -152,6 +152,9 @@ function createSecondWindow(args: { [key: string]: any }) {
             case 'preview.html':
                 secondWindow.webContents.send("response-from-main-renderPreview", args.data);
                 break;
+            case 'syntax.html':
+                secondWindow.webContents.send("response-from-main-renderSyntax", args.data);
+                break;
             default:
                 break;
         }

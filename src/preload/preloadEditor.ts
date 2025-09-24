@@ -4,6 +4,7 @@ import { utils } from "../library/utils";
 import { Elements } from '../interfaces/elements';
 import { elements as els } from '../modules/elements';
 import { attachColorPickers, syncColorPickers } from '../library/colorpicker';
+import { dialog } from "../modules/dialog";
 
 let elements = { ...els } as Elements;
 Object.keys(elements).forEach((element) => {
@@ -305,6 +306,34 @@ window.addEventListener("DOMContentLoaded", async () => {
     editor.addAvailableElementsTo("editor");
     editor.addDefaultsButton();
 
+    // Enable Syntax button and wire it
+    try {
+        const btn = document.getElementById('dialog-syntax') as HTMLButtonElement | null;
+        if (btn) {
+            btn.disabled = false;
+            btn.addEventListener('click', () => {
+                try {
+                    const json = editor.stringifyDialog();
+                    const width = Math.max(Number((window as any).innerWidth) || 900, 700);
+                    const height = 560;
+                    coms.sendTo('main', 'secondWindow', {
+                        width,
+                        height,
+                        useContentSize: true,
+                        autoHideMenuBar: true,
+                        backgroundColor: '#ffffff',
+                        title: 'Syntax',
+                        preload: 'preloadSyntax.js',
+                        html: 'syntax.html',
+                        data: json
+                    });
+                } catch (e) {
+                    console.error('Failed to open syntax window', e);
+                }
+            });
+        }
+    } catch {}
+
     // Attach color pickers to all color-related fields in the properties panel
     try { attachColorPickers(); } catch {}
 
@@ -335,6 +364,15 @@ window.addEventListener("DOMContentLoaded", async () => {
     }
 
     document.getElementById('removeElement')?.addEventListener('click', editor.removeSelectedElement);
+
+    // Persist syntax text coming from Syntax window
+    try {
+        coms.on('setDialogSyntaxText', (text: unknown) => {
+            const t = typeof text === 'string' ? text : '';
+            try { (dialog as any).syntax = (dialog as any).syntax || { command: '' }; } catch {}
+            (dialog as any).syntax.command = t;
+        });
+    } catch {}
 
     // Arrange buttons
     document.getElementById('bringToFront')?.addEventListener('click', editor.bringSelectedToFront);
@@ -519,9 +557,18 @@ window.addEventListener("DOMContentLoaded", async () => {
 
 
     coms.on('setElementConditions', (...args: unknown[]) => {
-        const element = document.getElementById(args[0] as string) as HTMLElement;
-        const dataset = element.dataset;
-        dataset.conditions = args[1] as string;
+        const targetId = String(args[0] || '');
+        const text = String(args[1] || '');
+        const element = document.getElementById(targetId) as HTMLElement | null;
+        if (!element) return;
+
+        const isGroup = element.classList.contains('element-group') || String(element.dataset?.type || '') === 'Group';
+        if (isGroup) {
+            // Store separately so it can be applied at runtime to all members, without overwriting per-element rules
+            element.dataset.groupConditions = text;
+        } else {
+            element.dataset.conditions = text;
+        }
     });
 
     // When element gets deselected from editor logic
