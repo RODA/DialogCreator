@@ -643,15 +643,32 @@ export const editor: Editor = {
     //     }
     // },
 
-    // remove element form paper and container
+    // remove selected elements (single, group, or multiple)
     removeSelectedElement() {
-        // remove from dialog
-        document.getElementById(dialog.selectedElement)?.remove();
-        // remove from container
-        dialog.removeElement(dialog.selectedElement);
-        // clear element properties
+        try {
+            const selected = Array.from(dialog.canvas.querySelectorAll('.selectedElement')) as HTMLElement[];
+            if (selected.length === 0 && dialog.selectedElement) {
+                const only = dialog.getElement(dialog.selectedElement);
+                if (only) selected.push(only);
+            }
+
+            // If a persistent group is selected, its children are inside; removing the group removes children as well
+            const toRemove = new Set<HTMLElement>();
+            for (const el of selected) {
+                // Avoid collecting both a parent group and its children; prefer removing the parent once
+                const parentGroup = el.closest('.element-group') as HTMLElement | null;
+                if (parentGroup && selected.includes(parentGroup)) continue;
+                toRemove.add(el);
+            }
+
+            for (const el of toRemove) {
+                try { el.remove(); } catch {}
+                dialog.removeElement(el.id);
+            }
+        } catch {}
+
+        // clear element properties and selection state
         editor.clearPropsList();
-        // notify UI that selection has been cleared
         coms.emit('elementDeselected');
     },
 
