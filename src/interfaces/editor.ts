@@ -26,6 +26,7 @@ export interface Editor {
     // grouping actions
     groupSelection: () => void;
     ungroupSelection: () => void;
+    selectAll?: () => void;
 }
 
 export interface EditorSettings {

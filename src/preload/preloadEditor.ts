@@ -503,6 +503,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
+
         // Robust arrow detection across layouts: check code, key, and legacy keyCode
         const keyCode = (ev as unknown as { keyCode?: number }).keyCode;
         const isArrowUp =
@@ -527,6 +528,17 @@ window.addEventListener("DOMContentLoaded", async () => {
             ev.preventDefault();
             editor.sendSelectedBackward();
         }
+    });
+
+    // Global Select All (Cmd/Ctrl + A) — works even when nothing is selected
+    document.addEventListener('keydown', function (ev) {
+        const metaOrCtrl = ev.metaKey || ev.ctrlKey;
+        const isA = ev.code === 'KeyA' || (ev.key && ev.key.toLowerCase() === 'a');
+        if (!metaOrCtrl || !isA) return;
+        const activeTag = document.activeElement?.tagName;
+        if (activeTag && activeTag !== 'BODY') return; // don't hijack text inputs
+        ev.preventDefault();
+        try { (editor as any).selectAll?.(); } catch {}
     });
 
     document.getElementById('conditions')?.addEventListener('click', function () {

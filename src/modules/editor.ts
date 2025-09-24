@@ -883,6 +883,26 @@ export const editor: Editor = {
         }
     },
 
+    // Select all top-level elements in the dialog canvas (ephemeral multi-selection)
+    selectAll: function() {
+        // Clear previous selection
+        dialog.canvas.querySelectorAll('.selectedElement').forEach((el) => el.classList.remove('selectedElement'));
+        multiSelected.clear();
+        currentGroupId = null;
+        multiOutline = renderutils.clearMultiOutline(multiOutline);
+        dialog.selectedElement = '';
+
+        const all = Array.from(dialog.canvas.children) as HTMLElement[];
+        const ids: string[] = [];
+        for (const el of all) {
+            if (el.classList.contains('lasso-rect')) continue;
+            el.classList.add('selectedElement');
+            multiSelected.add(el.id);
+            ids.push(el.id);
+        }
+        coms.emit('elementSelectedMultiple', ids);
+    },
+
     stringifyDialog: function() {
         const flattened: Array<Record<string, unknown>> = [];
         const toNumber = (v: string | undefined, fallback = 0) => {
