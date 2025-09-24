@@ -21,10 +21,11 @@ body {
 
 /* Elements ===================== */
 .elements {
-    flex-grow: 1;
+    flex-grow: 0;
     padding: 20px 10px 0px 10px;
     background-color: #f0f0f0;
-    max-width: 200px;
+    width: 160px;
+    max-width: 160px;
 }
 
 #paperAvailableElements {
@@ -79,8 +80,9 @@ body {
     display: flex;
     flex-direction: column;
     flex-grow: 1;
+    min-width: 240px;
+    width: 240px;
     max-width: 250px;
-    width: 200px;
 }
 
 #propertiesList {
@@ -282,7 +284,7 @@ body {
 
 /* Style the checked state for custom checkbox */
 .custom-checkbox[aria-checked="true"] {
-    background-color: var(--checkbox-color, #4caf50);
+    background-color: var(--checkbox-color, #318f34);
     border-color: #000;
 }
 
@@ -313,7 +315,7 @@ body {
 
 /* Element: radio button */
 .custom-radio {
-    --radio-color: #4caf50; /* Default color */
+    --radio-color: #318f34; /* Default color */
     background-color: #fff;
     border: 1px solid #333;
     border-radius: 50%;
@@ -438,7 +440,7 @@ input {
     font-size: 18px;
     width: 20px;
     text-align: center;
-    color: #4caf50;
+    color: #318f34;
 }
 
 .counter-arrow.up {

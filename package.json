@@ -71,6 +71,7 @@
   },
   "dependencies": {
     "sqlite3": "^5.1.7",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "@jaames/iro": "^5.5.2"
   }
 }

@@ -189,6 +189,12 @@ export const renderutils: RenderUtils = {
             element.className = 'custom-select';
             element.style.width = data.width + 'px';
             element.style.padding = '3px';
+            // Set arrow color via inline SVG data URI if provided
+            try {
+                const color = (data as any).arrowColor || '#000000';
+                const svg = encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path fill='${color}' d='M6 8L0 0h12z'/></svg>`);
+                (element as HTMLSelectElement).style.backgroundImage = `url("data:image/svg+xml,${svg}")`;
+            } catch {}
 
         } else if (data.type == "Checkbox") {
 
@@ -371,6 +377,7 @@ export const renderutils: RenderUtils = {
         const container = dataset.type === 'Container';
         const separator = dataset.type === 'Separator';
         const button = dataset.type === 'Button';
+        const label = dataset.type === 'Label';
 
 
         Object.keys(all).forEach((key) => {
@@ -545,7 +552,33 @@ export const renderutils: RenderUtils = {
                     }
                     break;
                 case 'fontColor':
-                    element.style.color = value;
+                    if (button && inner) {
+                        // Color the button text
+                        inner.style.color = value;
+                        try {
+                            const span = inner.querySelector('.smart-button-text') as HTMLSpanElement | null;
+                            if (span) span.style.color = value;
+                        } catch {}
+                    } else if (label && inner) {
+                        inner.style.color = value;
+                    } else if ((input || select) && inner) {
+                        inner.style.color = value;
+                    } else if (counter && countervalue) {
+                        countervalue.style.color = value;
+                    } else {
+                        element.style.color = value;
+                    }
+                    break;
+                case 'arrowColor':
+                    if (select && inner instanceof HTMLSelectElement) {
+                        try {
+                            const color = value;
+                            if (utils.isValidColor(color)) {
+                                const svg = encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path fill='${color}' d='M6 8L0 0h12z'/></svg>`);
+                                inner.style.backgroundImage = `url(\"data:image/svg+xml,${svg}\")`;
+                            }
+                        } catch {}
+                    }
                     break;
                 case 'fontSize':
                     element.style.fontSize = value + 'px';
@@ -622,10 +655,26 @@ export const renderutils: RenderUtils = {
                 case 'value':
                     if (inner instanceof HTMLInputElement) {
                         inner.value = value;
+                    } else if (inner instanceof HTMLSelectElement) {
+                        // Populate select options from comma/semicolon separated tokens
+                        const text = String(value || '');
+                        const tokens = text.split(/[;,]/).map(s => s.trim()).filter(s => s.length > 0);
+                        inner.innerHTML = '';
+                        if (tokens.length === 0) {
+                            const opt = document.createElement('option');
+                            opt.value = '';
+                            opt.textContent = '';
+                            inner.appendChild(opt);
+                        } else {
+                            for (const t of tokens) {
+                                const opt = document.createElement('option');
+                                opt.value = t;
+                                opt.textContent = t;
+                                inner.appendChild(opt);
+                            }
+                        }
                     } else if (inner instanceof HTMLDivElement) {
                         inner.textContent = value;
-                    } else if (element instanceof HTMLDivElement) {
-                        element.textContent = value;
                     }
                     // For Label elements, keep single-line and auto-size width up to maxWidth
                     if (dataset.type === 'Label') {

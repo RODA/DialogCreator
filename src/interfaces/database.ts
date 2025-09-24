@@ -27,6 +27,7 @@ export interface Select {
     top: string;
     width: string;
     value: string;
+    arrowColor: string;
     isEnabled: string;
     isVisible: string;
 }
@@ -145,7 +146,7 @@ export const DBElementsProps: Record<string, string[]> = {
         'nameid', 'left', 'top', 'width', 'value', 'isEnabled', 'isVisible'
     ],
     selectElement: [
-        'nameid', 'left', 'top', 'width', 'value', 'isEnabled', 'isVisible'
+        'nameid', 'left', 'top', 'width', 'value', 'arrowColor', 'isEnabled', 'isVisible'
     ],
     checkboxElement: [
         'nameid', 'left', 'top', 'size', 'color', 'isChecked', 'isEnabled', 'isVisible'

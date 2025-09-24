@@ -3,6 +3,7 @@ import { renderutils } from "../library/renderutils";
 import { utils } from "../library/utils";
 import { Elements } from '../interfaces/elements';
 import { elements as els } from '../modules/elements';
+import { attachColorPickers, syncColorPickers } from '../library/colorpicker';
 
 let elements = { ...els } as Elements;
 Object.keys(elements).forEach((element) => {
@@ -76,7 +77,8 @@ coms.on('elementSelected', (id) => {
         if (item.name in dataset) {
             // show main element
             item.disabled = false;
-            item.parentElement?.classList.remove('hidden-element');
+            const row = item.closest('.element-property') as HTMLElement | null;
+            if (row) row.classList.remove('hidden-element');
             // Store the bound element id on the control for robust blur updates
             (item as HTMLInputElement | HTMLSelectElement).dataset.bindElementId = String(id);
 
@@ -101,9 +103,13 @@ coms.on('elementSelected', (id) => {
             }
         } else {
             item.disabled = true;
-            item.parentElement?.classList.add('hidden-element');
+            const row = item.closest('.element-property') as HTMLElement | null;
+            if (row) row.classList.add('hidden-element');
         }
     });
+
+    // After values are populated, sync color swatches with current input values
+    try { syncColorPickers(); } catch {}
 
     const colorlabel = document.getElementById('colorlabel') as HTMLLabelElement;
 
@@ -298,6 +304,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     editor.makeDialog();
     editor.addAvailableElementsTo("editor");
     editor.addDefaultsButton();
+
+    // Attach color pickers to all color-related fields in the properties panel
+    try { attachColorPickers(); } catch {}
 
     // Ensure the editor (grey) area shrinks by the height of the toolbar to keep total app height constant
     const updateToolbarHeightVar = () => {

@@ -44,6 +44,7 @@ export type selectElementType = {
     // dataSource: string; // too R specific
     // Robjects: string;   // too R specific
     value: string;
+    arrowColor: string;
     isEnabled: boolean;
     isVisible: boolean;
     elementIds: string[];

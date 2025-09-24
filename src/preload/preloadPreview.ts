@@ -204,7 +204,7 @@ function renderPreview(dialog: {
             handleshape: element.dataset.handleshape || 'triangle',
             direction: element.dataset.direction || 'horizontal',
             handlesize: element.dataset.handlesize || '8',
-            handlecolor: element.dataset.handlecolor || '#4caf50',
+            handlecolor: element.dataset.handlecolor || '#318f34',
             handlepos: String(percent)
           } as any);
         };

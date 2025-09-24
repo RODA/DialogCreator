@@ -68,3 +68,40 @@
     border-bottom: 2px solid #d6d6d6;
     transition: all;
 }
+
+/* === Color picker helpers (shared) === */
+.color-input-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 18px; /* Leave room for the swatch, keep total equal to other rows */
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    min-width: 0; /* Allow grid item to shrink within the parent column */
+}
+/* Ensure the color input itself can shrink to fit the column */
+.color-input-wrapper > input[type="text"],
+#propertiesList .element-property .color-input-wrapper > input {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+.color-swatch-btn {
+    width: 18px;
+    height: 18px;
+    border: 1px solid #cfcfcf;
+    background: #000000;
+    padding: 0;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.color-swatch-btn:focus {
+    outline: 1px solid dodgerblue;
+    outline-offset: 1px;
+}
+.color-popover {
+    background: #ffffff;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    padding: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
