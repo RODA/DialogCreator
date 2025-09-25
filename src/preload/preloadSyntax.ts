@@ -12,6 +12,17 @@ type FlatEl = {
   handlepos?: number | string;
 };
 
+type ExcludedElements = {
+  type?: string;
+  nameid?: string
+};
+
+type rowType = {
+  name: string;
+  type: string;
+  defControl: HTMLElement
+};
+
 function tokensFromValue(value: string | undefined): string[] {
   if (!value) return [];
   return String(value).split(/[;,]/).map(s => s.trim()).filter(s => s.length);
@@ -33,12 +44,38 @@ window.addEventListener('DOMContentLoaded', () => {
   const txt = document.getElementById('syntaxText') as HTMLTextAreaElement | null;
   const btnSaveClose = document.getElementById('saveClose') as HTMLButtonElement | null;
 
+  // Future-proof: rules to exclude certain elements from the Syntax list
+  // e.g., exclude by type and optionally by nameid
+
+  const excluded: Array<ExcludedElements> = [
+    { type: 'Button' },
+    // more elements if needed
+  ];
+
+  const isExcluded = (el: any): boolean => {
+    try {
+      const t = String((el || {}).type || '').toLowerCase();
+      const n = String((el || {}).nameid || (el || {}).id || '').toLowerCase();
+      return excluded.some(rule => {
+        const rt = String((rule.type || '')).toLowerCase();
+        const rn = String((rule.nameid || '')).toLowerCase();
+        const typeOk = !rt || t === rt;
+        const nameOk = !rn || n === rn;
+        return typeOk && nameOk;
+      });
+    } catch {
+      return false;
+    }
+  };
+
   if (btnSaveClose && txt) {
     btnSaveClose.addEventListener('click', () => {
       try {
         coms.sendTo('editorWindow', 'setDialogSyntaxText', txt.value || '');
       } finally {
-        try { window.close(); } catch {}
+        try {
+          window.close();
+        } catch {}
       }
     });
   }
@@ -46,12 +83,16 @@ window.addEventListener('DOMContentLoaded', () => {
   coms.on('renderSyntax', (payload: unknown) => {
     try {
       const data = typeof payload === 'string' ? JSON.parse(payload as string) : (payload as any);
-      const elements = (data?.elements || []) as FlatEl[];
+      const elementsAll = (data?.elements || []) as FlatEl[];
+      // Apply exclusions (e.g., Buttons)
+      const elements = elementsAll.filter(el => !isExcluded(el));
 
       // If previous syntax text exists in the dialog data, load it into textarea
       if (txt) {
         const prev = String((data?.syntax && (data.syntax.command || data.syntax.text)) || '');
-        if (prev) txt.value = prev;
+        if (prev) {
+          txt.value = prev;
+        }
       }
 
       // Build radio groups
@@ -61,14 +102,16 @@ window.addEventListener('DOMContentLoaded', () => {
         const type = String((el as any).type || '').toLowerCase();
         if (type === 'radio') {
           const g = String((el as any).group || 'radiogroup1');
-          if (!radioGroups.has(g)) radioGroups.set(g, []);
+          if (!radioGroups.has(g)) {
+            radioGroups.set(g, []);
+          }
           radioGroups.get(g)!.push(el);
         } else {
           nonRadios.push(el);
         }
       }
 
-      const rows: Array<{ name: string; type: string; defControl: HTMLElement }> = [];
+      const rows: Array<rowType> = [];
 
       // Non-radio elements
       for (const el of nonRadios) {
@@ -101,13 +144,25 @@ window.addEventListener('DOMContentLoaded', () => {
             break;
           }
           case 'Input': {
-            const inp = document.createElement('input'); inp.type = 'text'; inp.value = String((el as any).value ?? ''); control = inp; break;
+            const inp = document.createElement('input');
+            inp.type = 'text';
+            inp.value = String((el as any).value ?? '');
+            control = inp;
+            break;
           }
           default: {
-            const inp = document.createElement('input'); inp.type = 'text'; inp.value = ''; control = inp; break;
+            const inp = document.createElement('input');
+            inp.type = 'text';
+            inp.value = '';
+            control = inp;
+            break;
           }
         }
-        rows.push({ name, type: t === 'Radio' ? 'Radio' : t, defControl: control });
+        rows.push({
+          name,
+          type: t === 'Radio' ? 'Radio' : t,
+          defControl: control
+        });
       }
 
       // Radio groups
@@ -117,25 +172,43 @@ window.addEventListener('DOMContentLoaded', () => {
           const rname = String((r as any).nameid || (r as any).id || '');
           if (!rname) continue;
           const opt = document.createElement('option');
-          opt.value = rname; opt.textContent = rname; sel.appendChild(opt);
-          if (utils.isTrue((r as any).isSelected)) sel.value = rname;
+          opt.value = rname;
+          opt.textContent = rname;
+          sel.appendChild(opt);
+          if (utils.isTrue((r as any).isSelected)) {
+            sel.value = rname;
+          }
         }
-        rows.push({ name: groupName, type: 'RadioGroup', defControl: sel });
+        rows.push({
+          name: groupName,
+          type: 'RadioGroup',
+          defControl: sel
+        });
       }
 
       if (tbody) {
         tbody.innerHTML = '';
         for (const row of rows) {
           const tr = document.createElement('tr');
-          const tdName = document.createElement('td'); tdName.textContent = row.name; tr.appendChild(tdName);
-          const tdType = document.createElement('td'); tdType.textContent = row.type; tr.appendChild(tdType);
-          const tdDef = document.createElement('td'); tdDef.appendChild(row.defControl); tr.appendChild(tdDef);
+          const tdName = document.createElement('td');
+          tdName.textContent = row.name;
+          tr.appendChild(tdName);
+          const tdType = document.createElement('td');
+          tdType.textContent = row.type;
+          tr.appendChild(tdType);
+          const tdDef = document.createElement('td');
+          tdDef.appendChild(row.defControl);
+          tr.appendChild(tdDef);
 
           tr.addEventListener('click', (ev) => {
             // Do not intercept clicks on controls
             const tag = (ev.target as HTMLElement).tagName;
-            if (tag === 'SELECT' || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'OPTION') return;
-            if (txt) insertAtCursor(txt, `{${row.name}}`);
+            if (tag === 'SELECT' || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'OPTION') {
+              return;
+            }
+            if (txt) {
+              insertAtCursor(txt, `{${row.name}}`);
+            }
           });
 
           tbody.appendChild(tr);
