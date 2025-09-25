@@ -677,7 +677,8 @@ export const editor: Editor = {
             for (const el of selected) {
                 // Avoid collecting both a parent group and its children; prefer removing the parent once
                 const parentGroup = el.closest('.element-group') as HTMLElement | null;
-                if (parentGroup && selected.includes(parentGroup)) continue;
+                // Skip child if its parent group is also selected, but do not skip the group itself
+                if (parentGroup && parentGroup !== el && selected.includes(parentGroup)) continue;
                 toRemove.add(el);
             }
 
