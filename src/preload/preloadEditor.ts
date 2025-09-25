@@ -550,6 +550,8 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
 
         const dataset = info.selected.dataset;
+        const isGroup = (dataset.type === 'Group') || info.selected.classList.contains('element-group');
+        const condText = isGroup ? (dataset.groupConditions || '') : (dataset.conditions || '');
 
         coms.sendTo(
             'main',
@@ -558,11 +560,11 @@ window.addEventListener("DOMContentLoaded", async () => {
                 width: 640,
                 height: 310,
                 backgroundColor: '#fff',
-                title: 'Conditions for element: ' + dataset.nameid,
+                title: 'Conditions for element: ' + (dataset.nameid || dataset.type || ''),
                 preload: 'preloadConditions.js',
                 html: 'conditions.html',
-                name: dataset.nameid,
-                conditions: dataset.conditions,
+                name: dataset.nameid || dataset.type || '',
+                conditions: condText,
                 elements: info.elements,
                 selected: info.selected.id // the id of the selected element
             }

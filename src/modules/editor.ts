@@ -934,13 +934,38 @@ export const editor: Editor = {
         const topLevel = Array.from(dialog.canvas.children) as HTMLElement[];
         for (const child of topLevel) {
             if (child.classList.contains('element-group')) {
-                // Flatten multi-select group: serialize its children with absolute coordinates
+                // Serialize group container and its children
                 const gLeft = toNumber(child.dataset.left as string, 0);
                 const gTop = toNumber(child.dataset.top as string, 0);
                 const members = Array.from(child.children) as HTMLElement[];
+
+                // Compute group width/height
+                const rects = members.map(m => m.getBoundingClientRect());
+                const canvasRect = dialog.canvas.getBoundingClientRect();
+                const minLeft = Math.min(...rects.map(r => r.left));
+                const minTop = Math.min(...rects.map(r => r.top));
+                const maxRight = Math.max(...rects.map(r => r.right));
+                const maxBottom = Math.max(...rects.map(r => r.bottom));
+                const width = Math.round(maxRight - minLeft);
+                const height = Math.round(maxBottom - minTop);
+
+                // Save group object itself
+                const groupObj: Record<string, unknown> = {
+                    id: child.id,
+                    type: 'Group',
+                    left: gLeft,
+                    top: gTop,
+                    width,
+                    height,
+                    elementIds: members.map(m => m.id),
+                };
+                const gcondsSave = (child.dataset as any)?.groupConditions || '';
+                if (gcondsSave) (groupObj as any).groupConditions = String(gcondsSave);
+                flattened.push(groupObj);
+
+                // Save children with absolute coordinates and carry groupConditions for runtime
                 for (const m of members) {
-                    // Skip nested groups (not expected) and lasso rects
-            if (child.classList.contains('lasso-rect')) continue;
+                    if (m.classList.contains('lasso-rect')) continue;
                     const obj: Record<string, unknown> = { id: m.id };
                     for (const [key, raw] of Object.entries(m.dataset)) {
                         let value: unknown = raw;
@@ -951,13 +976,10 @@ export const editor: Editor = {
                         }
                         obj[key] = value as unknown;
                     }
-                    // Attach group's extra conditions so they apply at runtime without altering element-specific ones
-                    const gconds = (child.dataset as any)?.groupConditions || (child.dataset as any)?.conditions || '';
-                    if (gconds) (obj as any).groupConditions = String(gconds);
+                    if (gcondsSave) (obj as any).groupConditions = String(gcondsSave);
 
-                    // Adjust left/top by the group's position to make them absolute
-                    const mLeftAbs = toNumber(m.dataset.left as string, 0) + gLeft;
-                    const mTopAbs = toNumber(m.dataset.top as string, 0) + gTop;
+                    const mLeftAbs = toNumber(m.getAttribute('data-left') as string, 0) + gLeft;
+                    const mTopAbs = toNumber(m.getAttribute('data-top') as string, 0) + gTop;
                     obj.left = mLeftAbs;
                     obj.top = mTopAbs;
                     flattened.push(obj);
@@ -1043,8 +1065,10 @@ export const editor: Editor = {
 
             // Recreate elements
             const arr = Array.isArray(obj.elements) ? obj.elements : [];
+            const groups: any[] = [];
             for (const e of arr) {
                 try {
+                    if (String((e as any).type || '').toLowerCase() === 'group') { groups.push(e); continue; }
                     // Use the same wrapping approach as addElementToDialog, but preserve ids and nameids from JSON
                     const core = renderutils.makeElement({ ...(e as any) } as any);
                     const wrapper = document.createElement('div');
@@ -1112,6 +1136,35 @@ const top = Number((e as any).top ?? (parseInt(core.style.top || '0', 10) || 0))
                     dialog.addElement(wrapper);
                 } catch {}
             }
+
+            // Recreate groups (after children exist)
+            try {
+                for (const g of groups) {
+                    const ids: string[] = Array.isArray((g as any).elementIds)
+                        ? (g as any).elementIds
+                        : String((g as any).elementIds || '').split(',').map((s: string) => s.trim()).filter((s: string) => s.length);
+                    const newId = renderutils.makeGroupFromSelection(ids, true);
+                    if (!newId) continue;
+                    const groupEl = dialog.getElement(newId) as HTMLElement | undefined;
+                    if (!groupEl) continue;
+                    const savedId = String((g as any).id || newId);
+                    // Set group id to saved id
+                    groupEl.id = savedId;
+                    (dialog.elements as any)[savedId] = groupEl;
+                    delete (dialog.elements as any)[newId];
+                    // Apply group conditions
+                    const gconds = String((g as any).groupConditions || '');
+                    if (gconds) groupEl.dataset.groupConditions = gconds;
+                    // Move group to saved position if provided
+                    const gl = (g as any).left; const gt = (g as any).top;
+                    if (gl !== undefined || gt !== undefined) {
+                        const props: any = {};
+                        if (gl !== undefined) props.left = String(gl);
+                        if (gt !== undefined) props.top = String(gt);
+                        renderutils.updateElement(groupEl, props);
+                    }
+                }
+            } catch {}
         } catch (e) {
             console.error('loadDialogFromJson failed', e);
         }
