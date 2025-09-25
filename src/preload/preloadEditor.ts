@@ -541,6 +541,14 @@ window.addEventListener("DOMContentLoaded", async () => {
         try { (editor as any).selectAll?.(); } catch {}
     });
 
+    // Clear dialog handler for New menu (select all + remove)
+    try {
+        ipcRenderer.on('newDialogClear', () => {
+            try { (editor as any).selectAll?.(); } catch {}
+            try { editor.removeSelectedElement(); } catch {}
+        });
+    } catch {}
+
     document.getElementById('conditions')?.addEventListener('click', function () {
         const info = renderutils.getDialogInfo();
 
