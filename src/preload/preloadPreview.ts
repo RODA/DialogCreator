@@ -272,7 +272,7 @@ function renderPreview(dialog: {
             return Math.max(0, Math.min(100, pos)) / 100;
           }
           case 'counter': {
-            const disp = document.querySelector(`#counter-value-${el.id}`) as HTMLDivElement | null;
+            const disp = el.querySelector('.counter-value') as HTMLDivElement | null;
             const n = Number(disp?.textContent ?? el.dataset?.startval ?? 0);
             return Number.isFinite(n) ? n : 0;
           }
@@ -390,11 +390,22 @@ function renderPreview(dialog: {
         case 'select':
           if (on && target.dataset.type === 'Radio') renderutils.updateElement(target, { isSelected: 'true' } as any);
           break;
-        case 'unselect':
-          if (on && target.dataset.type === 'Radio') renderutils.updateElement(target, { isSelected: 'false' } as any);
-          break;
-        default:
-          break;
+          case 'unselect':
+            if (on && target.dataset.type === 'Radio') renderutils.updateElement(target, { isSelected: 'false' } as any);
+            break;
+          default:
+            // Parameterized actions
+            if (on && action.toLowerCase().startsWith('setvalue=')) {
+              const num = Number(action.split('=')[1]);
+              if (Number.isFinite(num) && String(target.dataset.type || '').toLowerCase() === 'counter') {
+                const min = Number(target.dataset.startval ?? 0);
+                const max = Number(target.dataset.maxval ?? min);
+                const v = Math.max(min, Math.min(max, num));
+                const display = target.querySelector('.counter-value') as HTMLDivElement | null;
+                if (display) display.textContent = String(v);
+              }
+            }
+            break;
       }
     };
 

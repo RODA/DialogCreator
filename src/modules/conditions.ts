@@ -15,7 +15,8 @@ export const conditions: Conditions = {
         'select',
         'unselect',
         'check',
-        'uncheck'
+        'uncheck',
+        'setValue' // parameterized: setValue = <number>
     ],
 
     populateConditions: function(obj: ConditionsInfo) {
@@ -56,18 +57,27 @@ export const conditions: Conditions = {
             if (!line.endsWith(';')) {
                 return ('Each expression must end with a semicolon.')
             }
-            const m = line.match(/^(\w+)\s+if\s+(.+);$/);
+            // Support optional numeric parameter with setValue: e.g., setValue = 3 if checkbox1 == checked;
+            const m = line.match(/^(\w+)(?:\s*=\s*([0-9]+(?:\.[0-9]+)?))?\s+if\s+(.+);$/);
             if (!m) {
                 if (/^\w+\s+of\s+.+;$/.test(line)) {
                     return "Did you mean to use 'if' instead of 'of'? Use: &lt;action&gt; if &lt;condition&gt;;";
                 }
-                return "Expression must be in the format: &lt;action&gt; if &lt;condition&gt;; (e.g., enable if checkbox1 == checked;)";
+                return "Expression must be in the format: &lt;action&gt; if &lt;condition&gt;; or 'setValue = &lt;number&gt; if ...;'";
             }
             const action = m[1];
             if (!conditions.allowedActions.includes(action)) {
                 return (`Action type '${action}' is not allowed.`)
             }
-            const condExpr = m[2];
+            const param = m[2];
+            if (action === 'setValue') {
+                if (typeof param === 'undefined') return ("'setValue' requires a numeric value, e.g., setValue = 3 if checkbox1 == checked;");
+                const n = Number(param);
+                if (!Number.isFinite(n)) return ("'setValue' value must be numeric, e.g., setValue = 3;");
+            } else {
+                if (typeof param !== 'undefined') return ("Only 'setValue' accepts a value parameter.");
+            }
+            const condExpr = m[3];
             let balance = 0;
             for (const c of condExpr) {
                 if (c === '(') balance++;
@@ -203,15 +213,18 @@ export const conditions: Conditions = {
         const elements = new Set<string>();
         const lines = input.split('\n').map(l => l.trim()).filter(Boolean);
         for (const line of lines) {
-            const m = line.match(/^(\w+)\s+if\s+(.+);$/);
+            const m = line.match(/^(\w+)(?:\s*=\s*([0-9]+(?:\.[0-9]+)?))?\s+if\s+(.+);$/);
             if (m) {
-                const [_, action, condExpr] = m;
+                const action = m[1];
+                const param = m[2];
+                const condExpr = m[3];
                 const tokens = conditions.tokenize(condExpr.replace(/;$/, ''));
                 const parsed = conditions.parseExpression(tokens, elements);
                 if (typeof parsed === 'string') {
                     return(parsed);
                 }
-                result[action] = parsed;
+                const key = (action === 'setValue' && typeof param !== 'undefined') ? `${action}=${param}` : action;
+                result[key] = parsed;
             }
         }
         return {
