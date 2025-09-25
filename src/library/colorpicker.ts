@@ -16,8 +16,8 @@ type SliderType = 'saturation' | 'value';
 const pickerMap = new WeakMap<HTMLInputElement, ColorPickerInstance>();
 const popoverMap = new WeakMap<HTMLInputElement, HTMLDivElement>();
 const hostMap = new WeakMap<HTMLInputElement, HTMLDivElement>();
+const overlayMap = new WeakMap<HTMLInputElement, HTMLDivElement>();
 const swatchMap = new WeakMap<HTMLInputElement, HTMLButtonElement>();
-const sliderTypeMap = new WeakMap<HTMLInputElement, SliderType>();
 const suppressMap = new WeakMap<HTMLInputElement, boolean>();
 
 function isEditorWindow(): boolean {
@@ -72,13 +72,14 @@ function desiredSliderTypeFor(input: HTMLInputElement): SliderType {
   return 'saturation';
 }
 
-function buildPicker(host: HTMLDivElement, initialColor: string, sliderType: SliderType): ColorPickerInstance {
+function buildPicker(host: HTMLDivElement, initialColor: string): ColorPickerInstance {
   const picker: ColorPickerInstance = new (iro as any).ColorPicker(host, {
     width: 180,
     color: isValidHex(initialColor) ? initialColor : '#000000',
     layout: [
       { component: (iro as any).ui.Wheel },
-      { component: (iro as any).ui.Slider, options: { sliderType } },
+      { component: (iro as any).ui.Slider, options: { sliderType: 'value' } },
+      { component: (iro as any).ui.Slider, options: { sliderType: 'saturation' } },
     ],
   });
   return picker;
@@ -87,6 +88,7 @@ function buildPicker(host: HTMLDivElement, initialColor: string, sliderType: Sli
 function ensurePickerFor(input: HTMLInputElement): ColorPickerInstance {
   const existing = pickerMap.get(input);
   if (existing) return existing;
+  let picker: ColorPickerInstance;
 
   const pop = document.createElement('div');
   pop.className = 'color-popover';
@@ -97,17 +99,25 @@ function ensurePickerFor(input: HTMLInputElement): ColorPickerInstance {
 
   const host = document.createElement('div');
   host.style.width = '200px';
+  host.style.height = '200px';
   pop.appendChild(host);
 
-  const picker: ColorPickerInstance = new (iro as any).ColorPicker(host, {
-    width: 180,
-    color: isValidHex(input.value) ? input.value : '#000000',
-    layout: [
-      { component: (iro as any).ui.Wheel },
-      { component: (iro as any).ui.Slider, options: { sliderType: 'value' } },
-      { component: (iro as any).ui.Slider, options: { sliderType: 'saturation' } },
-    ],
-  });
+  // Overlay to visually brighten the wheel for low-brightness greys
+  const overlay = document.createElement('div');
+  overlay.style.position = 'absolute';
+  overlay.style.left = '0';
+  overlay.style.top = '0';
+  overlay.style.width = '200px';
+  overlay.style.height = '200px';
+  overlay.style.pointerEvents = 'none';
+  overlay.style.borderRadius = '50%';
+  overlay.style.opacity = '0';
+  overlay.style.background = 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.25) 60%, rgba(255,255,255,0) 100%)';
+  // Ensure pop is positioned to anchor overlay
+  try { pop.style.position = 'absolute'; } catch {}
+  pop.appendChild(overlay);
+
+  picker = buildPicker(host, input.value);
 
   picker.on('color:change', (color: any) => {
     if (suppressMap.get(input)) return;
@@ -118,9 +128,9 @@ function ensurePickerFor(input: HTMLInputElement): ColorPickerInstance {
   pickerMap.set(input, picker);
   popoverMap.set(input, pop);
   hostMap.set(input, host);
+  overlayMap.set(input, overlay);
   return picker;
 }
-
 function togglePopover(input: HTMLInputElement, open?: boolean) {
   // Ensure popover exists
   const pop = popoverMap.get(input) || ensurePickerFor(input) && popoverMap.get(input)!;
@@ -148,11 +158,26 @@ function togglePopover(input: HTMLInputElement, open?: boolean) {
         if (desiredHex && desiredHex !== currentHex) {
           (picker as any).color.set(desiredHex);
         }
-        // Only force brightness to 100 for grayscale colors (so saturation shows white→color)
-        if (isGrayscale(desiredHex)) {
-          const hsv = (picker as any).color.hsv as { h: number; s: number; v: number };
+        const hsv = (picker as any).color.hsv as { h: number; s: number; v: number };
+        // Keep brightness (value) from the original color for grayscale/black/white.
+        // For colored hues, set brightness to 100 so the saturation bar shows full hue by default.
+        if (!isGrayscale(desiredHex)) {
           (picker as any).color.hsv = { h: hsv.h || 0, s: hsv.s, v: 100 };
         }
+        // Visually keep the wheel bright for low-V greys using an overlay glow
+        try {
+          const over = overlayMap.get(input);
+          const vNow = ((picker as any).color.hsv as any).v as number;
+          if (over) {
+            if (isGrayscale(desiredHex) && typeof vNow === 'number' && vNow < 100) {
+              // Map V (0..100) to overlay opacity (stronger for darker)
+              const opacity = Math.min(0.8, Math.max(0.25, (100 - vNow) / 100 * 0.8));
+              over.style.opacity = String(opacity);
+            } else {
+              over.style.opacity = '0';
+            }
+          }
+        } catch {}
       }
     } catch {}
     finally {
