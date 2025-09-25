@@ -142,11 +142,8 @@ function togglePopover(input: HTMLInputElement, open?: boolean) {
         if (desiredHex && desiredHex !== currentHex) {
           (picker as any).color.set(desiredHex);
         }
-        const hsv = (picker as any).color.hsv as { h: number; s: number; v: number };
-        // For colored hues, optionally normalize brightness to 100 so box shows full hue; grayscale keeps its V
-        if (!isGrayscale(desiredHex)) {
-          (picker as any).color.hsv = { h: hsv.h || 0, s: hsv.s, v: 100 };
-        }
+        // Preserve the exact color brightness/saturation as saved by the user.
+        // Do not override V to 100 — this ensures the picker opens at the last chosen color.
       }
     } catch {}
     finally {
