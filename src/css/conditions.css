@@ -28,6 +28,11 @@ circle, path {
     height: 180px;
     resize: none;
 }
+/* Do not show any focus outline/ring on the conditions textarea */
+#conditions:focus, #conditions:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+}
 
 #errors span{
     color:red;

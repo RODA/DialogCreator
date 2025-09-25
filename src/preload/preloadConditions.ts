@@ -16,6 +16,19 @@ enable of checkbox1 == checked;
 document.addEventListener('DOMContentLoaded', () => {
 
     let resized = false;
+
+    // Cmd/Ctrl + A => select only the textarea content
+    document.addEventListener('keydown', (ev: KeyboardEvent) => {
+        const metaOrCtrl = ev.metaKey || ev.ctrlKey;
+        const isA = ev.code === 'KeyA' || (ev.key && ev.key.toLowerCase() === 'a');
+        if (!metaOrCtrl || !isA) return;
+        const ta = document.getElementById('conditions') as HTMLTextAreaElement | null;
+        if (!ta) return;
+        ev.preventDefault();
+        ta.focus();
+        try { ta.select(); } catch {}
+    });
+
     // send condtions for validation and to be saved
     document.getElementById('saveConditions')?.addEventListener('click', () => {
         const textarea = document.getElementById("conditions") as HTMLTextAreaElement;
