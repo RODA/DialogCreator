@@ -811,13 +811,13 @@ export const renderutils: RenderUtils = {
                 if (obj.direction === 'horizontal') {
                     handle.style.borderLeft = obj.handlesize + 'px solid transparent';
                     handle.style.borderRight = obj.handlesize + 'px solid transparent';
-                    handle.style.borderBottom = (1.5 * Number(obj.handlesize)) + 'px solid ' + obj.handlecolor;
+                    handle.style.borderBottom = (1.5 * Number(obj.handlesize)) + 'px solid ' + obj.handleColor;
                     handle.style.left = obj.handlepos + "%";
                     handle.style.top = "100%";
                 } else if (obj.direction === 'vertical') {
                     handle.style.borderTop = obj.handlesize + 'px solid transparent';
                     handle.style.borderBottom = obj.handlesize + 'px solid transparent';
-                    handle.style.borderRight = (1.5 * Number(obj.handlesize)) + 'px solid ' + obj.handlecolor;
+                    handle.style.borderRight = (1.5 * Number(obj.handlesize)) + 'px solid ' + obj.handleColor;
                     handle.style.left = "0%";
                     handle.style.top = (100 - Number(obj.handlepos)) + "%";
                 }
@@ -827,7 +827,7 @@ export const renderutils: RenderUtils = {
                 const radius = 1.5 * Number(obj.handlesize);
                 handle.style.width = `${radius}px`;
                 handle.style.height = `${radius}px`;
-                handle.style.backgroundColor = obj.handlecolor;
+                handle.style.backgroundColor = obj.handleColor;
                 handle.style.borderRadius = '50%';
                 if (obj.direction == "horizontal") {
                     handle.style.left = obj.handlepos + "%";

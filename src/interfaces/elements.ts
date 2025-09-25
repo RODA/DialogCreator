@@ -116,7 +116,7 @@ export type sliderElementType = {
     isVisible: boolean;
     handlepos: number;
     handleshape: string;
-    handlecolor: string;
+    handleColor: string;
     handlesize: number;
     conditions: string;
     [key: string]: any;

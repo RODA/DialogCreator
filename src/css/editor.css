@@ -284,7 +284,7 @@ body {
 
 /* Style the checked state for custom checkbox */
 .custom-checkbox[aria-checked="true"] {
-    background-color: var(--checkbox-color, #318f34);
+    background-color: var(--checkbox-color, #75c775);
     border-color: #000;
 }
 
@@ -315,7 +315,7 @@ body {
 
 /* Element: radio button */
 .custom-radio {
-    --radio-color: #318f34; /* Default color */
+    --radio-color: #75c775; /* Default color */
     background-color: #fff;
     border: 1px solid #333;
     border-radius: 50%;
@@ -440,7 +440,7 @@ input {
     font-size: 18px;
     width: 20px;
     text-align: center;
-    color: #318f34;
+    color: #75c775;
 }
 
 .counter-arrow.up {

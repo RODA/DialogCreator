@@ -42,6 +42,7 @@ INSERT INTO elements (element, property, value) VALUES
 ('selectElement', 'top', '15'),
 ('selectElement', 'width', '120'),
 ('selectElement', 'value', ''),
+('selectElement', 'arrowColor', '#5b9c5b'),
 ('selectElement', 'isEnabled', 'true'),
 ('selectElement', 'isVisible', 'true'),
 
@@ -50,7 +51,7 @@ INSERT INTO elements (element, property, value) VALUES
 ('checkboxElement', 'left', '10'),
 ('checkboxElement', 'top', '10'),
 ('checkboxElement', 'size', '14'),
-('checkboxElement', 'color', '#318f34'),
+('checkboxElement', 'color', '#75c775'),
 ('checkboxElement', 'isChecked', '0'),
 ('checkboxElement', 'isEnabled', 'true'),
 ('checkboxElement', 'isVisible', 'true'),
@@ -61,7 +62,7 @@ INSERT INTO elements (element, property, value) VALUES
 ('radioElement', 'left', '10'),
 ('radioElement', 'top', '10'),
 ('radioElement', 'size', '14'),
-('radioElement', 'color', '#318f34'),
+('radioElement', 'color', '#589658'),
 ('radioElement', 'isSelected', '0'),
 ('radioElement', 'isEnabled', 'true'),
 ('radioElement', 'isVisible', 'true'),
@@ -71,7 +72,7 @@ INSERT INTO elements (element, property, value) VALUES
 ('counterElement', 'left', '15'),
 ('counterElement', 'top', '15'),
 ('counterElement', 'space', '4'),
-('counterElement', 'color', '#318f34'),
+('counterElement', 'color', '#5b9c5b'),
 ('counterElement', 'startval', '1'),
 ('counterElement', 'maxval', '5'),
 ('counterElement', 'isEnabled', 'true'),
@@ -89,7 +90,7 @@ INSERT INTO elements (element, property, value) VALUES
 ('sliderElement', 'isVisible', 'true'),
 ('sliderElement', 'handlepos', '50'),
 ('sliderElement', 'handleshape', 'triangle'),
-('sliderElement', 'handlecolor', '#318f34'),
+('sliderElement', 'handleColor', '#5b9c5b'),
 ('sliderElement', 'handlesize', '8'),
 
 -- label

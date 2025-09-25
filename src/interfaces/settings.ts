@@ -120,7 +120,7 @@ export type sliderElementType = {
     nameid: string;
     handlepos: number;
     handleshape: string;
-    handlecolor: string;
+    handleColor: string;
     handlesize: number;
     width: number;
     height: number;

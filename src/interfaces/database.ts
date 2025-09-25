@@ -79,7 +79,7 @@ export interface Slider {
     isVisible: string;
     handlepos: string;
     handleshape: string;
-    handlecolor: string;
+    handleColor: string;
     handlesize: string;
 }
 
@@ -158,7 +158,7 @@ export const DBElementsProps: Record<string, string[]> = {
         'nameid', 'left', 'top', 'space', 'color', 'startval', 'maxval', 'isEnabled', 'isVisible'
     ],
     sliderElement: [
-        'nameid', 'left', 'top', 'width', 'height', 'direction', 'color', 'isEnabled', 'isVisible', 'handlepos', 'handleshape', 'handlecolor', 'handlesize'
+        'nameid', 'left', 'top', 'width', 'height', 'direction', 'color', 'isEnabled', 'isVisible', 'handlepos', 'handleshape', 'handleColor', 'handlesize'
     ],
     labelElement: [
         'left', 'top', 'maxWidth', 'value', 'isEnabled', 'isVisible'
