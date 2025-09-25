@@ -315,8 +315,9 @@ window.addEventListener("DOMContentLoaded", async () => {
             btn.addEventListener('click', () => {
                 try {
                     const json = editor.stringifyDialog();
-                    const width = Math.max(Number((window as any).innerWidth) || 900, 700);
-                    const height = 560;
+                    const screenW = Number((window as any).innerWidth) || 1024;
+                    const width = Math.max(560, Math.round(screenW * 0.66)); // ~1/3 narrower than editor
+                    const height = 480; // reduce height a bit as well
                     coms.sendTo('main', 'secondWindow', {
                         width,
                         height,

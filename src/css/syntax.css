@@ -1,0 +1,155 @@
+/* Syntax window stylesheet extracted from inline to a dedicated file */
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #ffffff;
+  font-family: Arial, Helvetica, sans-serif;
+  height: 100%;
+  overflow: hidden;
+}
+
+.page {
+  display: flex; flex-direction: column; height: 100vh;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.section-title {
+  font-weight: 600;
+  margin: 15px 10px 6px 10px;
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 12;
+}
+
+.grid-wrap {
+  margin: 0 10px;
+  border: 1px solid #ccc;
+}
+
+.grid-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.grid-wrap thead, .grid-wrap tbody {
+  display: block;
+  width: 100%;
+}
+
+/* Equal-width three columns via flex */
+.grid-wrap thead tr, .grid-wrap tbody tr {
+  display: flex;
+  width: 100%;
+}
+
+.grid-wrap thead th, .grid-wrap tbody td {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.grid-wrap thead {
+  background: #eee;
+  border-bottom: 1px solid #ccc;
+  padding-right: 12px; /* reserve space for vertical scrollbar to keep header aligned */
+  box-sizing: border-box;
+}
+
+.grid-wrap thead tr {
+  display: flex;
+  width: 100%;
+}
+
+.grid-wrap tbody {
+  overflow: auto;
+  height: 196px; /* approx 7 rows */
+  font-size: 13px;
+}
+
+.grid-wrap th, .grid-wrap td {
+  padding: 2px 7px;
+  font-weight: 400;
+  text-align: left;
+  font-size: 12px;
+  box-sizing: border-box;
+}
+
+.grid-wrap thead th {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+.grid-wrap tbody tr td:first-child {
+  cursor: pointer;
+}
+
+.grid-wrap tbody tr:hover {
+  background-color: #e8e8e8;
+}
+
+/* Remove inner padding on the Default column body cells so controls are flush-left and full-width */
+.grid-wrap tbody td:nth-child(3) {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Default controls in the third column */
+.grid-wrap input[type="text"], .grid-wrap select {
+  display: block;
+  width: 100%;
+  height: 24px;
+  box-sizing: border-box;
+  border: 1px solid #e6e5e5;
+  border-radius: 2px;
+  padding: 2px 5px;
+  margin: 0;
+}
+
+/* Slightly lower the Syntax label */
+.syntax-title {
+  font-weight: 600;
+  margin: 16px 10px 2px 10px;
+  font-size: 14px;
+  color: #333;
+  /* margin-top: 12px; */
+}
+
+.syntax-area {
+  margin: 5px 5px 5px 10px;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+}
+
+#syntaxText {
+  width: 99%;
+  height: 125px; /* shorter to make room for the bottom button */
+  resize: none;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 13px;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+}
+
+/* Actions bar and button padding */
+.actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-start;
+  padding: 8px 10px 12px 10px;
+  margin: 0;
+}
+
+.actions button {
+  padding: 5px 12px 7px 12px;
+}
+
+/* Focus ring: subtle green border + glow */
+input:focus, select:focus, textarea:focus {
+  outline: none !important;
+  border-color: rgba(51, 125, 51, 0.5) !important;
+  box-shadow: 0 0 4px 1px rgba(52, 125, 51, 0.25) !important;
+}

@@ -86,10 +86,10 @@ window.addEventListener('DOMContentLoaded', () => {
             break;
           }
           case 'Select': {
-            const opts = tokensFromValue((el as any).value);
-            const sel = document.createElement('select');
-            if (opts.length === 0) sel.innerHTML = `<option value=""></option>`; else sel.innerHTML = opts.map(o => `<option value="${o}">${o}</option>`).join('');
-            control = sel;
+            const inp = document.createElement('input');
+            inp.type = 'text';
+            inp.value = '';
+            control = inp;
             break;
           }
           case 'Slider': {
