@@ -70,29 +70,40 @@
 }
 
 /* === Color picker helpers (shared) === */
+/* The wrapper must occupy the entire grid cell and split into input + 18px swatch */
+#propertiesList .element-property .color-input-wrapper,
 .color-input-wrapper {
-    display: grid;
-    grid-template-columns: 1fr 18px; /* Leave room for the swatch, keep total equal to other rows */
-    align-items: center;
-    gap: 4px;
-    width: 100%;
-    min-width: 0; /* Allow grid item to shrink within the parent column */
-}
-/* Ensure the color input itself can shrink to fit the column */
-.color-input-wrapper > input[type="text"],
-#propertiesList .element-property .color-input-wrapper > input {
+    position: relative;
     width: 100%;
     min-width: 0;
+}
+/* Input occupies the cell minus the swatch width */
+.color-input-wrapper > input[type="text"],
+#propertiesList .element-property .color-input-wrapper > input {
+    width: calc(100% - 22px) !important; /* 18px swatch + 4px gap */
+    min-width: 0;
     box-sizing: border-box;
+    display: inline-block;
+    vertical-align: middle;
 }
 .color-swatch-btn {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
     width: 18px;
     height: 18px;
-    border: 1px solid #cfcfcf;
+    border: 0.5px solid #000000; /* thinner hairline on retina */
     background: #000000;
     padding: 0;
     cursor: pointer;
-    flex-shrink: 0;
+    display: block;
+}
+/* Prevent any focus ring on the swatch button */
+.color-swatch-btn:focus,
+.color-swatch-btn:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
 }
 .color-swatch-btn:focus {
     outline: 1px solid dodgerblue;
