@@ -15,6 +15,15 @@
       .preview-input, .preview-select { padding: 2px 4px; }
       .preview-separator { background: #000; }
       .no-select { user-select: none; }
+
+      /* Force blue focus ring in Preview (thinner + fuzzy) */
+      input:focus, select:focus, textarea:focus {
+        outline: none !important;
+        border-color: rgba(51, 125, 51, 0.5) !important; /* subtle green border */
+        /* thin ring + soft glow */
+        box-shadow:
+          0 0 4px 1px rgba(52, 125, 51, 0.25) !important; /* fuzzy glow */
+      }
     </style>
   </head>
   <body>
