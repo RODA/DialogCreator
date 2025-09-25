@@ -419,6 +419,26 @@ export const editor: Editor = {
             coms.emit('elementSelected', element.id);
         })
 
+        // Double-click inside a group should select the individual element (not the group)
+        element.addEventListener('dblclick', (event: MouseEvent) => {
+            event.stopPropagation();
+            // Only apply when the clicked element is not a group container but has a group ancestor
+            const isGroupContainer = element.classList.contains('element-group');
+            const hasGroupAncestor = !!(element.closest('.element-group') as HTMLElement | null);
+            if (!isGroupContainer && hasGroupAncestor) {
+                // Clear group selection and select this element instead
+                dialog.canvas.querySelectorAll('.selectedElement').forEach((el) => el.classList.remove('selectedElement'));
+                multiSelected.clear();
+                multiOutline = renderutils.clearMultiOutline(multiOutline);
+                currentGroupId = null;
+
+                element.classList.add('selectedElement');
+                multiSelected.add(element.id);
+                dialog.selectedElement = element.id;
+                coms.emit('elementSelected', element.id);
+            }
+        });
+
         editor.addDragAndDrop(element);
     },
 
@@ -1060,6 +1080,18 @@ const top = Number((e as any).top ?? (parseInt(core.style.top || '0', 10) || 0))
                     if (desiredType === 'Button') core.style.position = 'relative';
 
                     wrapper.appendChild(core);
+
+                    // Normalize inner element IDs to reflect the wrapper id so update routines work
+                    try {
+                        const wid = wrapper.id;
+                        const r = core.querySelector('.custom-radio') as HTMLElement | null; if (r) r.id = `radio-${wid}`;
+                        const cb = core.querySelector('.custom-checkbox') as HTMLElement | null; if (cb) cb.id = `checkbox-${wid}`;
+                        const cv = core.querySelector('.counter-value') as HTMLDivElement | null; if (cv) cv.id = `counter-value-${wid}`;
+                        const inc = core.querySelector('.counter-arrow.up') as HTMLDivElement | null; if (inc) inc.id = `counter-increase-${wid}`;
+                        const dec = core.querySelector('.counter-arrow.down') as HTMLDivElement | null; if (dec) dec.id = `counter-decrease-${wid}`;
+                        const sh = core.querySelector('.slider-handle') as HTMLDivElement | null; if (sh) sh.id = `slider-handle-${wid}`;
+                    } catch {}
+
                     dialog.canvas.appendChild(wrapper);
 
                     // Remove inner cover and add outer cover
