@@ -262,6 +262,8 @@ function enhanceColorInput(input: HTMLInputElement) {
   });
 }
 
+let escInstalled = false;
+
 export function attachColorPickers(root?: ParentNode) {
   const scope: ParentNode = root || document;
   const candidates = Array.from(
@@ -270,6 +272,21 @@ export function attachColorPickers(root?: ParentNode) {
 
   for (const input of candidates) {
     enhanceColorInput(input);
+  }
+
+  // Global ESC closes any open color popovers
+  if (!escInstalled) {
+    escInstalled = true;
+    document.addEventListener('keydown', (ev: KeyboardEvent) => {
+      const key = ev.key || (ev as any).code;
+      if (key === 'Escape' || key === 'Esc') {
+        try {
+          const pops = Array.from(document.querySelectorAll('.color-popover')) as HTMLElement[];
+          pops.forEach(p => p.style.display = 'none');
+          ev.stopPropagation();
+        } catch {}
+      }
+    }, true);
   }
 }
 

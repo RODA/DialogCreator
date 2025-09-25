@@ -504,6 +504,22 @@ function renderPreview(dialog: {
     console.error('Conditions evaluation failed:', e);
   }
 
+  try {
+    document.addEventListener('keydown', (ev: KeyboardEvent) => {
+      const key = ev.key || (ev as any).code;
+      if (key === 'Escape' || key === 'Esc') {
+        try {
+          Array.from(document.querySelectorAll('.color-popover')).forEach((el) => {
+            (el as HTMLElement).style.display = 'none';
+          });
+        } catch {}
+        try { coms.sendTo('main', 'close-conditionsWindow'); } catch {}
+        ev.preventDefault();
+        ev.stopPropagation();
+      }
+    }, true);
+  } catch {}
+
   root.appendChild(canvas);
 }
 
