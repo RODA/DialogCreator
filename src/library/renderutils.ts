@@ -208,6 +208,7 @@ export const renderutils: RenderUtils = {
             customCheckbox.setAttribute('role', 'checkbox');
             customCheckbox.setAttribute('tabindex', '0');
             customCheckbox.setAttribute('aria-checked', 'false');
+            customCheckbox.dataset.fill = String(!!data.fill);
             customCheckbox.style.setProperty('--checkbox-color', data.color);
 
             const SVG_NS = "http://www.w3.org/2000/svg";
@@ -733,6 +734,11 @@ export const renderutils: RenderUtils = {
                         } else {
                             customCheckbox.classList.remove('checked');
                         }
+                    }
+                    break;
+                case 'fill':
+                    if (customCheckbox) {
+                        customCheckbox.dataset.fill = String(utils.isTrue(value));
                     }
                     break;
                 default:

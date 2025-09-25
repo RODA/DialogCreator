@@ -57,6 +57,7 @@ export const elements: Elements = {
         top: 10,
         size: 14,
         color: '#75c775',
+        fill: true,
         isChecked: false,
         isEnabled: true,
         isVisible: true,

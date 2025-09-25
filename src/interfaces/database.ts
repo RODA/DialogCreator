@@ -38,6 +38,7 @@ export interface Checkbox {
     top: string;
     size: string;
     color: string;
+    fill: string;
     isChecked: string;
     isEnabled: string;
     isVisible: string;
@@ -149,7 +150,7 @@ export const DBElementsProps: Record<string, string[]> = {
         'nameid', 'left', 'top', 'width', 'value', 'arrowColor', 'isEnabled', 'isVisible'
     ],
     checkboxElement: [
-        'nameid', 'left', 'top', 'size', 'color', 'isChecked', 'isEnabled', 'isVisible'
+        'nameid', 'left', 'top', 'size', 'color', 'fill', 'isChecked', 'isEnabled', 'isVisible'
     ],
     radioElement: [
         'nameid', 'group', 'left', 'top', 'size', 'color', 'isSelected', 'isEnabled', 'isVisible'

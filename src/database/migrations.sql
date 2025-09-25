@@ -52,6 +52,7 @@ INSERT INTO elements (element, property, value) VALUES
 ('checkboxElement', 'top', '10'),
 ('checkboxElement', 'size', '14'),
 ('checkboxElement', 'color', '#75c775'),
+('checkboxElement', 'fill', 'true'),
 ('checkboxElement', 'isChecked', '0'),
 ('checkboxElement', 'isEnabled', 'true'),
 ('checkboxElement', 'isVisible', 'true'),

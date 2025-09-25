@@ -60,6 +60,7 @@ export type checkboxElementType = {
     top: number;
     size: number;
     color: string;
+    fill: boolean;
     isChecked: boolean;
     isEnabled: boolean;
     isVisible: boolean;
