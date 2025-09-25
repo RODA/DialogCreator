@@ -59,8 +59,8 @@ export type checkboxElementType = {
     left: number;
     top: number;
     size: number;
-    color: string;
     fill: boolean;
+    color: string;
     isChecked: boolean;
     isEnabled: boolean;
     isVisible: boolean;
