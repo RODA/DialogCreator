@@ -38,30 +38,21 @@ html, body {
   width: 100%;
 }
 
-/* Equal-width three columns via flex */
+/* Equal-width three columns via CSS grid to keep header/body perfectly aligned */
 .grid-wrap thead tr, .grid-wrap tbody tr {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
   width: 100%;
-}
-
-.grid-wrap thead th, .grid-wrap tbody td {
-  flex: 1 1 0;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
+  align-items: center; /* vertical centering */
 }
 
 .grid-wrap thead {
   background: #eee;
   border-bottom: 1px solid #ccc;
-  padding-right: 12px; /* reserve space for vertical scrollbar to keep header aligned */
   box-sizing: border-box;
 }
 
-.grid-wrap thead tr {
-  display: flex;
-  width: 100%;
-}
+/* Header row already set to grid above */
 
 .grid-wrap tbody {
   overflow: auto;
@@ -93,6 +84,11 @@ html, body {
 /* Remove inner padding on the Default column body cells so controls are flush-left and full-width */
 .grid-wrap tbody td:nth-child(3) {
   padding-left: 0;
+  padding-right: 0;
+}
+/* Match header "Default" label indent to the input's inner text start (≈ 1px border + 5px padding) */
+.grid-wrap thead th:nth-child(3) {
+  padding-left: 1px;
   padding-right: 0;
 }
 
