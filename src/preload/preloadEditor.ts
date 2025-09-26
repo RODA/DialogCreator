@@ -417,12 +417,14 @@ window.addEventListener("DOMContentLoaded", async () => {
     document.getElementById('ungroupElements')?.addEventListener('click', () => editor.ungroupSelection());
 
     document.addEventListener('keyup', function (ev) {
-        if (ev.code == 'Delete' || ev.code == 'Backspace') {
-            if (utils.isTrue(elementSelected)) {
-                if (document.activeElement?.tagName === 'BODY') {
-                    editor.removeSelectedElement();
-                }
-            }
+        if (ev.code === 'Delete' || ev.code === 'Backspace') {
+            if (!utils.isTrue(elementSelected)) return;
+            const ae = document.activeElement as HTMLElement | null;
+            const tag = (ae?.tagName || '').toUpperCase();
+            const isEditable = !!ae && (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || ae.isContentEditable);
+            if (isEditable) return; // don't delete while actively editing a field
+            editor.removeSelectedElement();
+            ev.preventDefault();
         }
     });
 
