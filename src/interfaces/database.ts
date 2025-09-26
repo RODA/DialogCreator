@@ -17,6 +17,7 @@ export interface Input {
     top: string;
     width: string;
     value: string;
+    valueType: string;
     isEnabled: string;
     isVisible: string;
 }
@@ -144,7 +145,7 @@ export const DBElementsProps: Record<string, string[]> = {
         'nameid', 'label', 'left', 'top', 'maxWidth', 'lineClamp', 'color', 'fontColor', 'isEnabled', 'isVisible'
     ],
     inputElement: [
-        'nameid', 'left', 'top', 'width', 'value', 'isEnabled', 'isVisible'
+        'nameid', 'left', 'top', 'width', 'value', 'valueType', 'isEnabled', 'isVisible'
     ],
     selectElement: [
         'nameid', 'left', 'top', 'width', 'value', 'arrowColor', 'isEnabled', 'isVisible'

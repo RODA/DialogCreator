@@ -28,6 +28,7 @@ export const elements: Elements = {
         top: 15,
         width: 120,
         value: '',
+        valueType: 'String',
         isEnabled: true,
         isVisible: true,
         elementIds: [],

@@ -2,8 +2,9 @@
 
 
 ---------- Terminal command to run / create the database:
+-- sqlite3 src/database/DialogCreator.sqlite < src/database/migrations.sql
+-- or
 -- duckdb src/database/DialogCreator.duckdb < src/database/migrations.sql
-
 
 DROP TABLE IF EXISTS elements;
 
@@ -33,6 +34,7 @@ INSERT INTO elements (element, property, value) VALUES
 ('inputElement', 'top', '15'),
 ('inputElement', 'width', '120'),
 ('inputElement', 'value', ''),
+('inputElement', 'valueType', 'String'),
 ('inputElement', 'isEnabled', 'true'),
 ('inputElement', 'isVisible', 'true'),
 

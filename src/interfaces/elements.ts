@@ -27,6 +27,7 @@ export type inputElementType = {
     top: number;
     width: number;
     value: string;
+    valueType: string; // 'Numeric' | 'String'
     isEnabled: boolean;
     isVisible: boolean;
     elementIds: string[];
