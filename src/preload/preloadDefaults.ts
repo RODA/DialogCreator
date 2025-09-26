@@ -7,7 +7,7 @@ let defaultElementSelected = "";
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    renderutils.setOnlyNumbers([
+    renderutils.setIntegers([
         "width",
         "height",
         "size",
@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Attach color pickers once DOM is ready
     try { attachColorPickers(); } catch {}
 
-    renderutils.setOnlyNumbersWithMinus([
+    renderutils.setSignedIntegers([
         "startval",
         "maxval"
     ]);

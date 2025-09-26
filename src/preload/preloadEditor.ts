@@ -285,7 +285,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     // Run the main setup logic for the editor window
     // (mimics the previous top-level code in this file)
-    renderutils.setOnlyNumbers([
+    renderutils.setIntegers([
         "width",
         "height",
         "size",
@@ -297,7 +297,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         "lineClamp"
     ]);
 
-    renderutils.setOnlyNumbersWithMinus([
+    renderutils.setSignedIntegers([
         "startval",
         "maxval"
     ]);

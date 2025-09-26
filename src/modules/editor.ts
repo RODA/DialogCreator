@@ -794,7 +794,7 @@ export const editor: Editor = {
     initializeDialogProperties: function() {
         // numeric filters for dialog fields
         try {
-            renderutils.setOnlyNumbers(['Width', 'Height', 'FontSize'], 'dialog');
+            renderutils.setIntegers(['Width', 'Height', 'FontSize'], 'dialog');
         } catch {}
 
         // add dialog props

@@ -131,9 +131,9 @@ export const utils: Utils = {
         return set.indexOf(x) < 0;
     },
 
-    isValidColor: function(value: string): boolean {
+    isValidColor: function(value) {
         const x = new Option().style;
         x.color = value;
         return x.color !== '';
     },
-}
+};

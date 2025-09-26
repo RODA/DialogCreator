@@ -108,7 +108,11 @@ function renderPreview(dialog: {
       if (custom) {
         const selected = utils.isTrue((data as any).isSelected);
         custom.setAttribute('aria-checked', String(selected));
-        if (selected) custom.classList.add('selected'); else custom.classList.remove('selected');
+        if (selected) {
+          custom.classList.add('selected');
+        } else {
+          custom.classList.remove('selected');
+        }
 
         const selectThis = () => {
           const group = custom.getAttribute('group') || '';
@@ -244,6 +248,35 @@ function renderPreview(dialog: {
 
     canvas.appendChild(element);
     created.push(element);
+
+    // After the element is in DOM: enforce valueType for Input
+    try {
+      if (element instanceof HTMLInputElement) {
+        const valueType = String((data as any).valueType || (element as any).dataset?.valueType || '').toLowerCase();
+
+        switch (valueType) {
+          case 'integer': {
+            renderutils.setIntegers([element], '');
+            break;
+          }
+          case 'signed integer': {
+            renderutils.setSignedIntegers([element], '');
+            break;
+          }
+          case 'double': {
+            renderutils.setDouble([element], '');
+            break;
+          }
+          case 'signed double': {
+            renderutils.setSignedDouble([element], '');
+            break;
+          }
+          default:
+            // String or unknown: no filter
+            break;
+        }
+      }
+    } catch {}
   }
 
   // === Conditions engine (preview) ===

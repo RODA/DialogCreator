@@ -48,15 +48,23 @@ export const renderutils: RenderUtils = {
 		// https://stackoverflow.com/questions/469357/html-text-input-allow-only-numeric-input
 		// Restricts input for the given textbox to the given inputFilter function.
 		if (!textbox) return;
-
-        const state = {
+		const state = {
             oldValue: '',
             oldSelectionStart: 0,
             oldSelectionEnd: 0
         };
 
-        const events = ["input", "keydown", "keyup", "mousedown", "mouseup", "select", "contextmenu", "drop"];
-        events.forEach((event) => {
+        [
+            "input",
+            "keydown",
+            "keyup",
+            "mousedown",
+            "mouseup",
+            "select",
+            "contextmenu",
+            "drop",
+            "focusout"
+        ].forEach((event) => {
             textbox.addEventListener(event, function () {
             if (inputFilter(textbox.value)) {
                 state.oldValue = textbox.value;
@@ -64,7 +72,12 @@ export const renderutils: RenderUtils = {
                 state.oldSelectionEnd = textbox.selectionEnd ?? 0;
             } else if (state.oldValue !== undefined) {
                 textbox.value = state.oldValue;
-                textbox.setSelectionRange(state.oldSelectionStart, state.oldSelectionEnd);
+                if (state.oldSelectionStart != null && state.oldSelectionEnd != null) {
+                    try {
+                        textbox.setSelectionRange(state.oldSelectionStart, state.oldSelectionEnd);
+                    } catch {}
+                }
+                // textbox.setSelectionRange(state.oldSelectionStart, state.oldSelectionEnd);
             } else {
                 textbox.value = "";
             }
@@ -72,27 +85,92 @@ export const renderutils: RenderUtils = {
         });
 	},
 
-	setOnlyNumbers: function (items, prefix = 'el') {
+	setIntegers: function (items, prefix = 'el') {
         items.forEach((item) => {
+            let element: HTMLInputElement | null = null;
+
+            if (item instanceof HTMLInputElement) {
+                element = item;
+            } else {
+                element = document.getElementById(prefix + item) as HTMLInputElement | null;
+            }
+
+            if (!element) return;
+
             renderutils.setInputFilter(
-                <HTMLInputElement>document.getElementById(prefix + item),
-                function (value: string): boolean { return /^\d*$/.test(value); }
+                element,
+                function (value: string): boolean {
+                    let v = String(value || '');
+                    // allow empty while typing
+                    if (v === '') return true;
+                    // digits only
+                    if (!/^\d+$/.test(v)) return false;
+                    // normalize leading zeros: lone 0 allowed, but 01 -> 1, 000 -> 0
+                    if (v.length > 1 && v.startsWith('0')) {
+                        const stripped = v.replace(/^0+/, '');
+                        element!.value = stripped === '' ? '0' : stripped;
+                    }
+                    return true;
+                }
             );
         })
 	},
 
-	setOnlyNumbersWithMinus: function (items, prefix = 'el') {
+	setSignedIntegers: function (items, prefix = 'el') {
         items.forEach((item) => {
+            let element: HTMLInputElement | null = null;
+
+            if (item instanceof HTMLInputElement) {
+                element = item;
+            } else {
+                element = document.getElementById(prefix + item) as HTMLInputElement | null;
+            }
+
+            if (!element) return;
+
             renderutils.setInputFilter(
-                <HTMLInputElement>document.getElementById(prefix + item),
-                function (value) { return /^-?\d*$/.test(value);}
+                element,
+                function (value: string): boolean {
+                    let v = String(value || '');
+                    // allow partial minus or empty
+                    if (v === '' || v === '-') return true;
+                    // must be optional '-' followed by digits
+                    if (!/^-?\d+$/.test(v)) return false;
+                    // Disallow '-0' and normalize '-0\d+' to '-\d+'
+                    if (v.startsWith('-0')) {
+                        if (v.length === 2) { // '-0'
+                            element!.value = '-';
+                            return true;
+                        }
+                        // '-0..' -> '-' + stripped
+                        const stripped = v.slice(2).replace(/^0+/, '');
+                        element!.value = '-' + (stripped === '' ? '' : stripped);
+                        return true;
+                    }
+                    // Normalize leading zeros on positive numbers: 01 -> 1, 000 -> 0 -> but since we disallow starting 0 except lone 0, convert to stripped or '0'
+                    if (!v.startsWith('-') && v.length > 1 && v.startsWith('0')) {
+                        const stripped = v.replace(/^0+/, '');
+                        element!.value = stripped === '' ? '0' : stripped;
+                        return true;
+                    }
+                    return true;
+                }
             );
         });
 	},
 
-	setOnlyDouble: function (items, prefix = 'el') {
+	setDouble: function (items, prefix = 'el') {
         items.forEach((item) => {
-            const element = document.getElementById(prefix + item) as HTMLInputElement;
+            let element: HTMLInputElement | null = null;
+
+            if (item instanceof HTMLInputElement) {
+                element = item;
+            } else {
+                element = document.getElementById(prefix + item) as HTMLInputElement | null;
+            }
+
+            if (!element) return;
+
             renderutils.setInputFilter(
                 element,
                 function (value) {
@@ -113,11 +191,38 @@ export const renderutils: RenderUtils = {
                     if (value === "" || value.endsWith(".")) {
                         return true;
                     }
-                    return /^\d*\.?\d{1,2}$/.test(value);
+                    // Allow up to 3 decimals
+                    return /^\d*\.?\d{1,3}$/.test(value);
                 }
             );
         })
 	},
+
+    setSignedDouble: function (items, prefix = 'el') {
+        items.forEach((item) => {
+            let element: HTMLInputElement | null = null;
+
+            if (item instanceof HTMLInputElement) {
+                element = item;
+            } else {
+                element = document.getElementById(prefix + item) as HTMLInputElement | null;
+            }
+
+            if (!element) return;
+
+            renderutils.setInputFilter(
+                element,
+                function (value: string): boolean {
+                    const v = String(value || '');
+                    if (v === '' || v === '+' || v === '-' || v === '.' || v === '+.' || v === '-.') return true;
+                    if (/^[+-]?\d+$/.test(v)) return true;
+                    if (/^[+-]?\d*\.\d*$/.test(v)) return true;
+                    if (/^[+-]?\.\d+$/.test(v)) return true;
+                    return false;
+                }
+            );
+        });
+    },
 
     getDialogInfo: function() {
 
