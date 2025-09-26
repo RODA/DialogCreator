@@ -760,9 +760,10 @@ export const renderutils: RenderUtils = {
                     break;
 
                 case 'value':
-                    if (inner instanceof HTMLInputElement) {
+                    // Update only the appropriate UI elements; do not inject text into custom radios/checkboxes
+                    if (inner instanceof HTMLInputElement && input) {
                         inner.value = value;
-                    } else if (inner instanceof HTMLSelectElement) {
+                    } else if (inner instanceof HTMLSelectElement && select) {
                         // Populate select options from comma/semicolon separated tokens
                         const text = String(value || '');
                         const tokens = text.split(/[;,]/).map(s => s.trim()).filter(s => s.length > 0);
@@ -780,14 +781,12 @@ export const renderutils: RenderUtils = {
                                 inner.appendChild(opt);
                             }
                         }
-                    } else if (inner instanceof HTMLDivElement) {
-                        inner.textContent = value;
-                    }
-                    // For Label elements, keep single-line and auto-size width up to maxWidth
-                    if (dataset.type === 'Label') {
+                    } else if (dataset.type === 'Label') {
+                        // Labels display their value as text (wrapper has no inner child)
+                        element.textContent = value;
                         try {
+                            // Keep single-line and auto-size width up to maxWidth
                             const host = (inner as HTMLElement) || element;
-                            // Let CSS handle single-line behavior; ensure width fits content up to maxWidth
                             const original = element.style.width;
                             element.style.width = '';
                             const natural = Math.ceil(host.scrollWidth || host.getBoundingClientRect().width);
@@ -796,7 +795,6 @@ export const renderutils: RenderUtils = {
                             if (maxW && finalW > maxW) finalW = maxW;
                             if (finalW > 0) {
                                 element.style.width = `${finalW}px`;
-                                // Ensure we remain within canvas bounds
                                 if (Number(elleft.value) + finalW + 10 > dialogW) {
                                     const newleft = String(Math.round(dialogW - finalW - 10));
                                     elleft.value = newleft;
@@ -807,6 +805,8 @@ export const renderutils: RenderUtils = {
                             }
                         } catch {}
                     }
+                    // For other element types (e.g., Radio, Checkbox, Button, Counter, etc.)
+                    // the Value is metadata only and should not alter visible text.
                     break;
                 case 'isVisible':
                     if (utils.isTrue(value)) {

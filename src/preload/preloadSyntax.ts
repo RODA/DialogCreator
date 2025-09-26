@@ -169,14 +169,15 @@ window.addEventListener('DOMContentLoaded', () => {
       for (const [groupName, members] of radioGroups) {
         const sel = document.createElement('select');
         for (const r of members) {
-          const rname = String((r as any).nameid || (r as any).id || '');
-          if (!rname) continue;
+          // Prefer the element's Value property; fall back to nameid or id when missing
+          const rval = String((r as any).value ?? (r as any).nameid ?? (r as any).id ?? '');
+          if (!rval) continue;
           const opt = document.createElement('option');
-          opt.value = rname;
-          opt.textContent = rname;
+          opt.value = rval;
+          opt.textContent = rval;
           sel.appendChild(opt);
           if (utils.isTrue((r as any).isSelected)) {
-            sel.value = rname;
+            sel.value = rval;
           }
         }
         rows.push({
