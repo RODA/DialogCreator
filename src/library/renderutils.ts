@@ -413,6 +413,9 @@ export const renderutils: RenderUtils = {
         } else if (data.type == "Label") {
 
             element.textContent = data.value;
+            try {
+                (element.style as any).maxWidth = (data as any).maxWidth + 'px';
+            } catch {}
 
         } else if (data.type == "Separator") {
 
@@ -586,6 +589,32 @@ export const renderutils: RenderUtils = {
                         (inner.style as any)['maxWidth'] = value + 'px';
                         // Allow wrapper to auto-size vertically
                         element.style.height = '';
+                    } else if (label) {
+                        // Recompute Label width respecting new maxWidth
+                        try {
+                            // Temporarily clear constraints to measure natural width
+                            const host = (inner as HTMLElement) || element;
+                            const prevW = element.style.width;
+                            const prevMax = element.style.maxWidth;
+                            const prevInnerW = (host as HTMLElement).style?.width || '';
+                            const prevInnerMax = (host as HTMLElement).style?.maxWidth || '';
+                            element.style.width = '';
+                            element.style.maxWidth = '';
+                            try { (host as HTMLElement).style.width = ''; (host as HTMLElement).style.maxWidth = ''; } catch {}
+                            const natural = Math.ceil(host.scrollWidth || host.getBoundingClientRect().width);
+                            const maxW = Number(value) || 0;
+                            let finalW = natural;
+                            if (maxW && finalW > maxW) finalW = maxW;
+                            // Apply new constraints and final width
+                            element.style.maxWidth = maxW > 0 ? `${maxW}px` : '';
+                            element.style.width = `${finalW}px`;
+                            // Keep in canvas bounds
+                            if (Number(elleft.value) + finalW + 10 > dialogW) {
+                                const newleft = String(Math.round(dialogW - finalW - 10));
+                                elleft.value = newleft;
+                                element.style.left = newleft + 'px';
+                            }
+                        } catch {}
                     } else {
                         (element.style as any)['maxWidth'] = value + 'px';
                     }
@@ -646,7 +675,6 @@ export const renderutils: RenderUtils = {
                         } else {
                             element.style.backgroundColor = value;
                             if (checkbox) {
-                                const customCheckbox = document.querySelector(`#checkbox-${element.id}`) as HTMLDivElement;
                                 if (customCheckbox) {
                                     customCheckbox.style.setProperty('--checkbox-color', value);
                                 }
@@ -782,38 +810,49 @@ export const renderutils: RenderUtils = {
                             }
                         }
                     } else if (dataset.type === 'Label') {
-                        // Labels display their value as text (wrapper has no inner child)
-                        element.textContent = value;
+                        // Update label text and recompute width to min(natural, maxWidth)
+                        const host = (inner as HTMLElement) || element;
+                        if (host !== element) { host.textContent = String(value || ''); } else { element.textContent = String(value || ''); }
                         try {
-                            // Keep single-line and auto-size width up to maxWidth
-                            const host = (inner as HTMLElement) || element;
-                            const original = element.style.width;
+                            // Temporarily clear width/maxWidth to measure natural width
+                            const prevW = element.style.width;
+                            const prevMax = element.style.maxWidth;
+                            const prevInnerW = host.style?.width || '';
+                            const prevInnerMax = host.style?.maxWidth || '';
                             element.style.width = '';
+                            element.style.maxWidth = '';
+                            try { host.style.width = ''; host.style.maxWidth = ''; } catch {}
                             const natural = Math.ceil(host.scrollWidth || host.getBoundingClientRect().width);
-                            let finalW = natural;
-                            const maxW = Number(dataset.maxWidth) || undefined;
-                            if (maxW && finalW > maxW) finalW = maxW;
-                            if (finalW > 0) {
-                                element.style.width = `${finalW}px`;
-                                if (Number(elleft.value) + finalW + 10 > dialogW) {
-                                    const newleft = String(Math.round(dialogW - finalW - 10));
-                                    elleft.value = newleft;
-                                    element.style.left = newleft + 'px';
-                                }
+                            const maxW = Number(dataset.maxWidth || 0);
+                            const finalW = maxW > 0 ? Math.min(natural, maxW) : natural;
+                            // Apply width constraints to the wrapper
+                            element.style.maxWidth = maxW > 0 ? `${maxW}px` : '';
+                            element.style.width = `${finalW}px`;
+                            // Apply single-line ellipsis to the text host
+                            host.style.whiteSpace = 'nowrap';
+                            host.style.overflow = 'hidden';
+                            host.style.textOverflow = 'ellipsis';
+                            host.style.display = 'block';
+                            host.style.maxWidth = '100%';
+                            host.style.width = '100%';
+                            // Keep within canvas
+                            if (Number(elleft.value) + finalW + 10 > dialogW) {
+                                const newleft = String(Math.round(dialogW - finalW - 10));
+                                elleft.value = newleft;
+                                element.style.left = newleft + 'px';
+                            }
+                            // Tooltip on overflow
+                            const hostWidth = element.getBoundingClientRect().width;
+                            const contentWidth = host.scrollWidth || host.getBoundingClientRect().width;
+                            if (contentWidth > hostWidth) {
+                                element.title = String(value || '');
                             } else {
-                                element.style.width = original; // restore
+                                element.removeAttribute('title');
                             }
                         } catch {}
                     }
                     // For other element types (e.g., Radio, Checkbox, Button, Counter, etc.)
                     // the Value is metadata only and should not alter visible text.
-                    break;
-                case 'isVisible':
-                    if (utils.isTrue(value)) {
-                        element.classList.remove('design-hidden');
-                    } else {
-                        element.classList.add('design-hidden');
-                    }
                     break;
                 case 'isEnabled':
                     if (utils.isTrue(value)) {
@@ -1178,7 +1217,6 @@ export const renderutils: RenderUtils = {
             switch (dataset.type) {
                 case "Input":
                 case "Select":
-                case "Label":
                     // Apply to wrapper and let it cascade; also apply to inner if present
                     element.style.fontSize = fontSize + 'px';
                     if (inner) inner.style.fontSize = fontSize + 'px';
@@ -1187,6 +1225,51 @@ export const renderutils: RenderUtils = {
                         if (inner) inner.style.fontFamily = fontFamily;
                     }
                     break;
+                case "Label": {
+                    // Update font sizing and recompute width to fit content
+                    element.style.fontSize = fontSize + 'px';
+                    if (inner) inner.style.fontSize = fontSize + 'px';
+                    if (fontFamily) {
+                        element.style.fontFamily = fontFamily;
+                        if (inner) inner.style.fontFamily = fontFamily;
+                    }
+                    try {
+                        // Temporarily clear constraints to measure natural width
+                        const host = (inner as HTMLElement) || element;
+                        const prevW = element.style.width;
+                        const prevMax = element.style.maxWidth;
+                        const prevInnerW = host.style?.width || '';
+                        const prevInnerMax = host.style?.maxWidth || '';
+                        element.style.width = '';
+                        element.style.maxWidth = '';
+                        try { host.style.width = ''; host.style.maxWidth = ''; } catch {}
+                        const natural = Math.ceil(host.scrollWidth || host.getBoundingClientRect().width);
+                        let finalW = natural;
+                        const maxW = Number(element.dataset.maxWidth || 0);
+                        if (maxW && finalW > maxW) finalW = maxW;
+                        if (finalW > 0) {
+                            element.style.maxWidth = maxW > 0 ? `${maxW}px` : '';
+                            element.style.width = `${finalW}px`;
+                            // Ensure the element stays within canvas horizontally
+                            const canvasW = dialog.canvas.getBoundingClientRect().width;
+                            const left = Number(element.dataset.left ?? (parseInt(element.style.left || '0', 10) || 0));
+                            if (left + finalW + 10 > canvasW) {
+                                const newLeft = Math.max(10, Math.round(canvasW - finalW - 10));
+                                element.style.left = `${newLeft}px`;
+                                element.dataset.left = String(newLeft);
+                                try {
+                                    const elleft = document.getElementById('elleft') as HTMLInputElement | null;
+                                    if (elleft) elleft.value = String(newLeft);
+                                } catch {}
+                            }
+                        } else {
+                            element.style.width = prevW; // restore
+                            element.style.maxWidth = prevMax;
+                            try { host.style.width = prevInnerW; host.style.maxWidth = prevInnerMax; } catch {}
+                        }
+                    } catch {}
+                    break;
+                }
                 case "Button":
                     // Update the inner button node for precise sizing
                     renderutils.updateButton(
