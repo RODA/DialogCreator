@@ -18,6 +18,7 @@ export const renderutils: RenderUtils = {
                 const id = radio.id.slice(6);
                 dialog.elements[id].dataset.isSelected = 'false';
                 radio.setAttribute('aria-checked', 'false');
+                radio.classList.remove('selected');
             }
         );
     },
@@ -823,10 +824,13 @@ export const renderutils: RenderUtils = {
                     break;
                 case 'isSelected':
                     if (customRadio) {
-                        customRadio.setAttribute('aria-checked', String(value));
                         if (utils.isTrue(value)) {
+                            // Enforce single selection within the same radio group
+                            renderutils.unselectRadioGroup(customRadio);
+                            customRadio.setAttribute('aria-checked', 'true');
                             customRadio.classList.add('selected');
                         } else {
+                            customRadio.setAttribute('aria-checked', 'false');
                             customRadio.classList.remove('selected');
                         }
                     }
