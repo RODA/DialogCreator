@@ -170,14 +170,14 @@ window.addEventListener('DOMContentLoaded', () => {
         const sel = document.createElement('select');
         for (const r of members) {
           // Prefer the element's Value property; fall back to nameid or id when missing
-          const rval = String((r as any).value ?? (r as any).nameid ?? (r as any).id ?? '');
-          if (!rval) continue;
+          const rname = String((r as any).nameid ?? (r as any).id ?? '');
+          if (!rname) continue;
           const opt = document.createElement('option');
-          opt.value = rval;
-          opt.textContent = rval;
+          opt.value = rname;
+          opt.textContent = rname;
           sel.appendChild(opt);
           if (utils.isTrue((r as any).isSelected)) {
-            sel.value = rval;
+            sel.value = rname;
           }
         }
         rows.push({

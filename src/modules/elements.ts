@@ -74,7 +74,6 @@ export const elements: Elements = {
         left: 10,
         top: 10,
         size: 14,
-        value: '',
         color: '#589658',
         isSelected: false,
         isEnabled: true,

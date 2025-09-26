@@ -314,16 +314,16 @@ window.addEventListener("DOMContentLoaded", async () => {
             btn.disabled = false;
             btn.addEventListener('click', () => {
                 try {
-                    // Validate that all Radio buttons have a non-empty Value before opening Syntax
-                    const radios = Array.from(document.querySelectorAll('#dialog .element-wrapper[data-type="Radio"]')) as HTMLElement[];
-                    const missing = radios.filter(r => (String(r.dataset.value).trim().length === 0));
-                    if (missing.length > 0) {
-                        const names = missing.map(r => (r.dataset.nameid || r.id || '').toString());
-                        const unique = Array.from(new Set(names)).filter(Boolean);
-                        const list = unique.join(', ');
-                        showError(`All Radio buttons must have a Value before opening Syntax. Missing Value for: ${list}`);
-                        return; // do not open Syntax window
-                    }
+                    // // Validate that all Radio buttons have a non-empty Value before opening Syntax
+                    // const radios = Array.from(document.querySelectorAll('#dialog .element-wrapper[data-type="Radio"]')) as HTMLElement[];
+                    // const missing = radios.filter(r => (String(r.dataset.value).trim().length === 0));
+                    // if (missing.length > 0) {
+                    //     const names = missing.map(r => (r.dataset.nameid || r.id || '').toString());
+                    //     const unique = Array.from(new Set(names)).filter(Boolean);
+                    //     const list = unique.join(', ');
+                    //     showError(`All Radio buttons must have a Value before opening Syntax. Missing Value for: ${list}`);
+                    //     return; // do not open Syntax window
+                    // }
 
                     const json = editor.stringifyDialog();
                     const screenW = Number((window as any).innerWidth) || 1024;

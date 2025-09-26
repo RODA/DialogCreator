@@ -78,7 +78,6 @@ export type radioElementType = {
     left: number;
     top: number;
     size: number;
-    value: string;
     color: string;
     isSelected: boolean;
     isEnabled: boolean;
