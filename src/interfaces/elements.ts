@@ -130,6 +130,7 @@ export type labelElementType = {
     left: number;
     top: number;
     maxWidth: number;
+    lineClamp: number;
     fontColor: string;
     value: string;
     isEnabled?: boolean;

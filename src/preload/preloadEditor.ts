@@ -111,7 +111,7 @@ coms.on('elementSelected', (id) => {
     });
 
     // After values are populated, sync color swatches with current input values
-    try { syncColorPickers(); } catch {}
+    syncColorPickers();
 
     const colorlabel = document.getElementById('colorlabel') as HTMLLabelElement;
 
@@ -308,47 +308,30 @@ window.addEventListener("DOMContentLoaded", async () => {
     editor.addDefaultsButton();
 
     // Enable Syntax button and wire it
-    try {
-        const btn = document.getElementById('dialog-syntax') as HTMLButtonElement | null;
-        if (btn) {
-            btn.disabled = false;
-            btn.addEventListener('click', () => {
-                try {
-                    // // Validate that all Radio buttons have a non-empty Value before opening Syntax
-                    // const radios = Array.from(document.querySelectorAll('#dialog .element-wrapper[data-type="Radio"]')) as HTMLElement[];
-                    // const missing = radios.filter(r => (String(r.dataset.value).trim().length === 0));
-                    // if (missing.length > 0) {
-                    //     const names = missing.map(r => (r.dataset.nameid || r.id || '').toString());
-                    //     const unique = Array.from(new Set(names)).filter(Boolean);
-                    //     const list = unique.join(', ');
-                    //     showError(`All Radio buttons must have a Value before opening Syntax. Missing Value for: ${list}`);
-                    //     return; // do not open Syntax window
-                    // }
-
-                    const json = editor.stringifyDialog();
-                    const screenW = Number((window as any).innerWidth) || 1024;
-                    const width = Math.max(560, Math.round(screenW * 0.66)); // ~1/3 narrower than editor
-                    const height = 480; // reduce height a bit as well
-                    coms.sendTo('main', 'secondWindow', {
-                        width,
-                        height,
-                        useContentSize: true,
-                        autoHideMenuBar: true,
-                        backgroundColor: '#ffffff',
-                        title: 'Syntax',
-                        preload: 'preloadSyntax.js',
-                        html: 'syntax.html',
-                        data: json
-                    });
-                } catch (e) {
-                    console.error('Failed to open syntax window', e);
-                }
+    const btn = document.getElementById('dialog-syntax') as HTMLButtonElement | null;
+    if (btn) {
+        btn.disabled = false;
+        btn.addEventListener('click', () => {
+            const json = editor.stringifyDialog();
+            const screenW = Number(window.innerWidth) || 1024;
+            const width = Math.max(560, Math.round(screenW * 0.66)); // ~1/3 narrower than editor
+            const height = 480; // reduce height a bit as well
+            coms.sendTo('main', 'secondWindow', {
+                width,
+                height,
+                useContentSize: true,
+                autoHideMenuBar: true,
+                backgroundColor: '#ffffff',
+                title: 'Syntax',
+                preload: 'preloadSyntax.js',
+                html: 'syntax.html',
+                data: json
             });
-        }
-    } catch {}
+        });
+    }
 
     // Attach color pickers to all color-related fields in the properties panel
-    try { attachColorPickers(); } catch {}
+    attachColorPickers();
 
     // Ensure the editor (grey) area shrinks by the height of the toolbar to keep total app height constant
     const updateToolbarHeightVar = () => {
@@ -365,46 +348,48 @@ window.addEventListener("DOMContentLoaded", async () => {
     window.addEventListener('resize', updateToolbarHeightVar);
 
     // Observe toolbar size changes (safer if styles/fonts change)
+    type ROType = {
+        ResizeObserver?: new (cb: () => void) => { observe: (el: Element) => void }
+    };
+
     try {
-        const RO = (window as unknown as { ResizeObserver?: new (cb: () => void) => { observe: (el: Element) => void } }).ResizeObserver;
+        const RO = (window as unknown as ROType).ResizeObserver;
         const toolbar = document.getElementById('editor-toolbar');
         if (RO && toolbar) {
             const ro = new RO(() => updateToolbarHeightVar());
             ro.observe(toolbar);
         }
     } catch {
-        // no-op if ResizeObserver is unavailable
+        // ResizeObserver is unavailable
     }
 
     document.getElementById('removeElement')?.addEventListener('click', editor.removeSelectedElement);
 
     // Respond to save request from main: serialize dialog and send back
-    try {
-        ipcRenderer.on('request-dialog-json', () => {
-            try {
-                const json = editor.stringifyDialog();
-                ipcRenderer.send('send-to', 'main', 'dialog-json', json);
-            } catch (e) {
-                ipcRenderer.send('send-to', 'main', 'dialog-json', '');
-            }
-        });
-    } catch {}
+    ipcRenderer.on('request-dialog-json', () => {
+        try {
+            const json = editor.stringifyDialog();
+            ipcRenderer.send('send-to', 'main', 'dialog-json', json);
+        } catch (error) {
+            ipcRenderer.send('send-to', 'main', 'dialog-json', '');
+        }
+    });
 
     // Respond to load dialog request from main
-    try {
-        ipcRenderer.on('load-dialog-json', (_ev, data: unknown) => {
-            try { (editor as any).loadDialogFromJson?.(data); } catch (e) { console.error('Failed to load dialog JSON', e); }
-        });
-    } catch {}
+    ipcRenderer.on('load-dialog-json', (_ev, data: unknown) => {
+        try {
+            editor.loadDialogFromJson?.(data);
+        } catch (error) {
+            console.error('Failed to load dialog JSON', error);
+        }
+    });
 
     // Persist syntax text coming from Syntax window
-    try {
-        coms.on('setDialogSyntaxText', (text: unknown) => {
-            const t = typeof text === 'string' ? text : '';
-            try { (dialog as any).syntax = (dialog as any).syntax || { command: '' }; } catch {}
-            (dialog as any).syntax.command = t;
-        });
-    } catch {}
+    coms.on('setDialogSyntaxText', (text: unknown) => {
+        const t = typeof text === 'string' ? text : '';
+        dialog.syntax = dialog.syntax || { command: '' };
+        dialog.syntax.command = t;
+    });
 
     // Arrange buttons
     document.getElementById('bringToFront')?.addEventListener('click', editor.bringSelectedToFront);
@@ -552,16 +537,14 @@ window.addEventListener("DOMContentLoaded", async () => {
         const activeTag = document.activeElement?.tagName;
         if (activeTag && activeTag !== 'BODY') return; // don't hijack text inputs
         ev.preventDefault();
-        try { (editor as any).selectAll?.(); } catch {}
+        editor.selectAll?.();
     });
 
     // Clear dialog handler for New menu (select all + remove)
-    try {
-        ipcRenderer.on('newDialogClear', () => {
-            try { (editor as any).selectAll?.(); } catch {}
-            try { editor.removeSelectedElement(); } catch {}
-        });
-    } catch {}
+    ipcRenderer.on('newDialogClear', () => {
+        editor.selectAll?.();
+        editor.removeSelectedElement?.();
+    });
 
     document.getElementById('conditions')?.addEventListener('click', function () {
         const info = renderutils.getDialogInfo();

@@ -548,14 +548,6 @@ input {
     cursor: grab;
 }
 
-/* Label element: keep on one line and ellipsize when constrained */
-.element-wrapper[data-type="Label"],
-.element-wrapper[data-type="Label"] > * {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
 /* Ephemeral multi-selection outline */
 .multi-outline {
     position: absolute;

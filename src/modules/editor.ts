@@ -84,7 +84,7 @@ export const editor: Editor = {
                 // If a property input is active, blur it first to commit changes
                 const active = document.activeElement as HTMLElement | null;
                 if (active && active.closest('#propertiesList')) {
-                    try { (active as HTMLElement).blur(); } catch {}
+                    active.blur();
                 }
                 editor.deselectAll();
             }
@@ -100,16 +100,16 @@ export const editor: Editor = {
         // Used to suppress the click on the canvas that follows a lasso mouseup
         let skipCanvasClickOnce = false;
 
-        dialog.canvas.addEventListener('mousedown', (e: MouseEvent) => {
-            if ((e.target as HTMLElement).id !== dialog.id) return;
+        dialog.canvas.addEventListener('mousedown', (event: MouseEvent) => {
+            if ((event.target as HTMLElement).id !== dialog.id) return;
             // Commit any in-progress property edits before starting lasso
             const active = document.activeElement as HTMLElement | null;
             if (active && active.closest('#propertiesList')) {
-                try { active.blur(); } catch {}
+                active.blur();
             }
             const rect = dialog.canvas.getBoundingClientRect();
             lassoActive = true;
-            lassoStart = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+            lassoStart = { x: event.clientX - rect.left, y: event.clientY - rect.top };
 
             lassoDiv = document.createElement('div');
             lassoDiv.className = 'lasso-rect';
@@ -118,14 +118,14 @@ export const editor: Editor = {
             lassoDiv.style.width = '0px';
             lassoDiv.style.height = '0px';
             dialog.canvas.appendChild(lassoDiv);
-            e.preventDefault();
+            event.preventDefault();
         });
 
-        document.addEventListener('mousemove', (e: MouseEvent) => {
+        document.addEventListener('mousemove', (event: MouseEvent) => {
             if (!lassoActive || !lassoDiv) return;
             const rect = dialog.canvas.getBoundingClientRect();
-            const currX = e.clientX - rect.left;
-            const currY = e.clientY - rect.top;
+            const currX = event.clientX - rect.left;
+            const currY = event.clientY - rect.top;
             const left = Math.min(currX, lassoStart.x);
             const top = Math.min(currY, lassoStart.y);
             const width = Math.abs(currX - lassoStart.x);
@@ -136,12 +136,12 @@ export const editor: Editor = {
             lassoDiv.style.height = height + 'px';
         });
 
-        const endLasso = (e: MouseEvent) => {
+        const endLasso = (event: MouseEvent) => {
             if (!lassoActive) return;
-            const additive = e.shiftKey;
+            const additive = event.shiftKey;
             const rect = dialog.canvas.getBoundingClientRect();
-            const endX = e.clientX - rect.left;
-            const endY = e.clientY - rect.top;
+            const endX = event.clientX - rect.left;
+            const endY = event.clientY - rect.top;
             const left = Math.min(endX, lassoStart.x);
             const top = Math.min(endY, lassoStart.y);
             const width = Math.abs(endX - lassoStart.x);
@@ -329,34 +329,33 @@ export const editor: Editor = {
             dialog.canvas.appendChild(wrapper);
 
             // Remove any inner cover created by factory (checkbox/radio)
-            try {
-                const innerCover = core.querySelector('.elementcover');
-                if (innerCover && innerCover.parentElement) {
-                    innerCover.parentElement.removeChild(innerCover);
-                }
-            } catch {}
+            const innerCover = core.querySelector('.elementcover');
+            if (innerCover && innerCover.parentElement) {
+                innerCover.parentElement.removeChild(innerCover);
+            }
 
-            // Set wrapper size for non-button elements; for buttons, avoid fixing width
-            try {
-                const isButton = (wrapper.dataset.type === 'Button');
-                if (!isButton) {
-                    const rect = core.getBoundingClientRect();
-                    if (rect.width > 0) wrapper.style.width = `${Math.round(rect.width)}px`;
-                    if (rect.height > 0) wrapper.style.height = `${Math.round(rect.height)}px`;
-                } else {
-                    // Let the wrapper auto-size to the button content; no explicit width/height here
-                }
-            } catch {}
+            // Set wrapper size for most elements; for auto-sized ones (Button, Label), avoid fixing width/height
+            // because the wrapper auto-sizes to the content
+            if (!(wrapper.dataset.type === 'Button' || wrapper.dataset.type === 'Label')) {
+                const rect = core.getBoundingClientRect();
+                if (rect.width > 0) wrapper.style.width = `${Math.round(rect.width)}px`;
+                if (rect.height > 0) wrapper.style.height = `${Math.round(rect.height)}px`;
+            }
 
             // Add a universal cover at wrapper level to block inner interactions in editor
             const cover = document.createElement('div');
-            cover.id = `cover-${wrapper.id}`;
+            cover.id = `${wrapper.id}-cover`;
             cover.className = 'elementcover';
             wrapper.appendChild(cover);
 
             // Register
             editor.addElementListeners(wrapper);
             dialog.addElement(wrapper);
+
+            // For Label, immediately calibrate size so the wrapper height matches content
+            if (wrapper.dataset.type === 'Label') {
+                renderutils.updateLabel(wrapper);
+            }
         }
     },
 
@@ -456,7 +455,7 @@ export const editor: Editor = {
         let isCheckboxDrag = false;
 
         // Event listeners for mouse down, move, and up events
-        element.addEventListener('mousedown', (e) => {
+        element.addEventListener('mousedown', (event) => {
             // If this element is inside a group, drag the group instead of the child
             const containerAncestor = (element.classList.contains('element-group') || element.classList.contains('element-wrapper'))
                 ? element
@@ -494,7 +493,7 @@ export const editor: Editor = {
                 // Prepare for ephemeral multi-drag: snapshot positions
                 multiDragActive = true;
                 multiDragSnapshot.clear();
-                dragStart = { x: e.clientX, y: e.clientY };
+                dragStart = { x: event.clientX, y: event.clientY };
                 for (const id of multiSelected) {
                     const el = dialog.getElement(id);
                     if (!el) continue;
@@ -508,7 +507,7 @@ export const editor: Editor = {
             } else if (!isGroupEl) {
                 // Selection handling for single or persistent group context
                 if (!element.classList.contains('selectedElement')) {
-                    if (e.shiftKey) {
+                    if (event.shiftKey) {
                         element.classList.add('selectedElement');
                         multiSelected.add(element.id);
                         dialog.selectedElement = element.id;
@@ -535,23 +534,23 @@ export const editor: Editor = {
 
             // Store pointer offset within the drag target for stable single dragging
             const rect = dragTarget.getBoundingClientRect();
-            offsetX = e.clientX - rect.left;
-            offsetY = e.clientY - rect.top;
+            offsetX = event.clientX - rect.left;
+            offsetY = event.clientY - rect.top;
 
             // Change cursor style while dragging
             dragTarget.style.cursor = 'grabbing';
-            e.preventDefault();
+            event.preventDefault();
         });
 
-        document.addEventListener('mousemove', (e) => {
+        document.addEventListener('mousemove', (event) => {
             if (!isDragging) return;
 
             const canvasRect = dialog.canvas.getBoundingClientRect();
 
             if (multiDragActive && multiSelected.size > 1 && !currentGroupId) {
                 // Move all selected wrappers by the same delta
-                const dx = e.clientX - dragStart.x;
-                const dy = e.clientY - dragStart.y;
+                const dx = event.clientX - dragStart.x;
+                const dy = event.clientY - dragStart.y;
                 for (const id of multiSelected) {
                     const el = dialog.getElement(id);
                     if (!el) continue;
@@ -576,8 +575,8 @@ export const editor: Editor = {
 
             // Single or persistent group drag using stored pointer offset
             // If dragging a child inside a group, we already redirected dragTarget to the group above
-            left = e.clientX - canvasRect.left - offsetX;
-            top = e.clientY - canvasRect.top - offsetY;
+            left = event.clientX - canvasRect.left - offsetX;
+            top = event.clientY - canvasRect.top - offsetY;
 
             if (left + elementWidth + 10 > dialogW) { left = dialogW - elementWidth - 10; }
             if (left < 10) { left = 10; }
@@ -665,28 +664,26 @@ export const editor: Editor = {
 
     // remove selected elements (single, group, or multiple)
     removeSelectedElement() {
-        try {
-            const selected = Array.from(dialog.canvas.querySelectorAll('.selectedElement')) as HTMLElement[];
-            if (selected.length === 0 && dialog.selectedElement) {
-                const only = dialog.getElement(dialog.selectedElement);
-                if (only) selected.push(only);
-            }
+        const selected = Array.from(dialog.canvas.querySelectorAll('.selectedElement')) as HTMLElement[];
+        if (selected.length === 0 && dialog.selectedElement) {
+            const only = dialog.getElement(dialog.selectedElement);
+            if (only) selected.push(only);
+        }
 
-            // If a persistent group is selected, its children are inside; removing the group removes children as well
-            const toRemove = new Set<HTMLElement>();
-            for (const el of selected) {
-                // Avoid collecting both a parent group and its children; prefer removing the parent once
-                const parentGroup = el.closest('.element-group') as HTMLElement | null;
-                // Skip child if its parent group is also selected, but do not skip the group itself
-                if (parentGroup && parentGroup !== el && selected.includes(parentGroup)) continue;
-                toRemove.add(el);
-            }
+        // If a persistent group is selected, its children are inside; removing the group removes children as well
+        const toRemove = new Set<HTMLElement>();
+        for (const el of selected) {
+            // Avoid collecting both a parent group and its children; prefer removing the parent once
+            const parentGroup = el.closest('.element-group') as HTMLElement | null;
+            // Skip child if its parent group is also selected, but do not skip the group itself
+            if (parentGroup && parentGroup !== el && selected.includes(parentGroup)) continue;
+            toRemove.add(el);
+        }
 
-            for (const el of toRemove) {
-                try { el.remove(); } catch {}
-                dialog.removeElement(el.id);
-            }
-        } catch {}
+        for (const el of toRemove) {
+            el.remove();
+            dialog.removeElement(el.id);
+        }
 
         // clear element properties and selection state
         editor.clearPropsList();
@@ -781,10 +778,14 @@ export const editor: Editor = {
                         height: value
                     } as Record<string, string>;
                 }
+
                 renderutils.updateElement(element, props as AnyElement);
+
                 // Keep last-selected id updated
                 const propsList = document.getElementById('propertiesList') as HTMLDivElement | null;
-                if (propsList) propsList.dataset.currentElementId = element.id;
+                if (propsList) {
+                    propsList.dataset.currentElementId = element.id;
+                }
 
             } else {
                 showError('Element not found.');
@@ -793,9 +794,7 @@ export const editor: Editor = {
 
     initializeDialogProperties: function() {
         // numeric filters for dialog fields
-        try {
-            renderutils.setIntegers(['Width', 'Height', 'FontSize'], 'dialog');
-        } catch {}
+        renderutils.setIntegers(['Width', 'Height', 'FontSize'], 'dialog');
 
         // add dialog props
         const properties: NodeListOf<HTMLInputElement> = document.querySelectorAll('#dialog-properties [id^="dialog"]');
@@ -828,6 +827,7 @@ export const editor: Editor = {
                 if (idLower === 'dialogfontsize') {
                     const value = element.value;
                     if (value) {
+                        coms.fontSize = Number(value);
                         renderutils.updateFont(Number(value));
                     }
                 }
@@ -1038,135 +1038,125 @@ export const editor: Editor = {
             if (!obj || !obj.properties) return;
 
             // Clear existing elements
-            try {
-                const keys = Object.keys(dialog.elements);
-                for (const id of keys) {
-                    const el = dialog.getElement(id);
-                    if (el && el.parentElement) el.parentElement.removeChild(el);
-                    dialog.removeElement(id);
-                }
-                dialog.canvas.innerHTML = '';
-            } catch {}
+            const keys = Object.keys(dialog.elements);
+            for (const id of keys) {
+                const el = dialog.getElement(id);
+                if (el && el.parentElement) el.parentElement.removeChild(el);
+                dialog.removeElement(id);
+            }
+            dialog.canvas.innerHTML = '';
 
             // Update dialog properties and UI
             const props = obj.properties as any;
             dialog.properties = { ...props };
-            try {
-                const w = Number(props.width) || 640;
-                const h = Number(props.height) || 480;
-                dialog.canvas.style.width = w + 'px';
-                dialog.canvas.style.height = h + 'px';
-                const wEl = document.getElementById('dialogWidth') as HTMLInputElement | null; if (wEl) wEl.value = String(props.width || '');
-                const hEl = document.getElementById('dialogHeight') as HTMLInputElement | null; if (hEl) hEl.value = String(props.height || '');
-                const nEl = document.getElementById('dialogName') as HTMLInputElement | null; if (nEl) nEl.value = String(props.name || '');
-                const tEl = document.getElementById('dialogTitle') as HTMLInputElement | null; if (tEl) tEl.value = String(props.title || '');
-                const fEl = document.getElementById('dialogFontSize') as HTMLInputElement | null; if (fEl) fEl.value = String(props.fontSize || '');
-            } catch {}
+            const w = Number(props.width) || 640;
+            const h = Number(props.height) || 480;
+            dialog.canvas.style.width = w + 'px';
+            dialog.canvas.style.height = h + 'px';
+            const wEl = document.getElementById('dialogWidth') as HTMLInputElement | null; if (wEl) wEl.value = String(props.width || '');
+            const hEl = document.getElementById('dialogHeight') as HTMLInputElement | null; if (hEl) hEl.value = String(props.height || '');
+            const nEl = document.getElementById('dialogName') as HTMLInputElement | null; if (nEl) nEl.value = String(props.name || '');
+            const tEl = document.getElementById('dialogTitle') as HTMLInputElement | null; if (tEl) tEl.value = String(props.title || '');
+            const fEl = document.getElementById('dialogFontSize') as HTMLInputElement | null; if (fEl) fEl.value = String(props.fontSize || '');
 
             // Recreate elements
             const arr = Array.isArray(obj.elements) ? obj.elements : [];
             const groups: any[] = [];
-            for (const e of arr) {
-                try {
-                    if (String((e as any).type || '').toLowerCase() === 'group') { groups.push(e); continue; }
-                    // Use the same wrapping approach as addElementToDialog, but preserve ids and nameids from JSON
-                    const core = renderutils.makeElement({ ...(e as any) } as any);
-                    const wrapper = document.createElement('div');
-                    wrapper.classList.add('element-wrapper');
-                    wrapper.style.position = 'absolute';
+            for (const element of arr) {
+                if (String((element as any).type || '').toLowerCase() === 'group') { groups.push(element); continue; }
+                // Use the same wrapping approach as addElementToDialog, but preserve ids and nameids from JSON
+                const core = renderutils.makeElement({ ...(element as any) } as any);
+                const wrapper = document.createElement('div');
+                wrapper.classList.add('element-wrapper');
+                wrapper.style.position = 'absolute';
 
-                    const desiredId = String((e as any).id || core.id);
-                    const desiredType = String((e as any).type || core.dataset.type || '');
-                    const desiredNameId = String((e as any).nameid || core.dataset.nameid || '');
+                const desiredId = String((element as any).id || core.id);
+                const desiredType = String((element as any).type || core.dataset.type || '');
+                const desiredNameId = String((element as any).nameid || core.dataset.nameid || '');
 
-                    // Preserve id on wrapper, move inner id aside
-                    wrapper.id = desiredId;
-                    core.id = desiredId + '-inner';
+                // Preserve id on wrapper, move inner id aside
+                wrapper.id = desiredId;
+                core.id = desiredId + '-inner';
 
-                    // Position from JSON
-const left = Number((e as any).left ?? (parseInt(core.style.left || '0', 10) || 0));
-const top = Number((e as any).top ?? (parseInt(core.style.top || '0', 10) || 0));
-                    wrapper.style.left = `${left}px`;
-                    wrapper.style.top = `${top}px`;
+                // Position from JSON
+                const left = Number((element as any).left ?? (parseInt(core.style.left || '0', 10) || 0));
+                const top = Number((element as any).top ?? (parseInt(core.style.top || '0', 10) || 0));
+                wrapper.style.left = `${left}px`;
+                wrapper.style.top = `${top}px`;
 
-                    // Copy dataset from JSON into wrapper
-                    for (const [k, v] of Object.entries(e as any)) {
-                        if (k === 'id') continue;
-                        const val = typeof v === 'string' ? v : String(v);
-                        try { (wrapper.dataset as any)[k] = val; } catch {}
-                    }
-                    wrapper.dataset.type = desiredType;
-                    if (desiredNameId) wrapper.dataset.nameid = desiredNameId;
-                    wrapper.dataset.parentId = dialog.id;
+                // Copy dataset from JSON into wrapper
+                for (const [key, value] of Object.entries(element as any)) {
+                    if (key === 'id') continue;
+                    const val = typeof value === 'string' ? value : String(value);
+                    wrapper.dataset[key] = val;
+                }
+                wrapper.dataset.type = desiredType;
+                if (desiredNameId) wrapper.dataset.nameid = desiredNameId;
+                wrapper.dataset.parentId = dialog.id;
 
-                    // Inner element positioned relative to wrapper
-                    core.style.left = '0px';
-                    core.style.top = '0px';
-                    if (desiredType === 'Button') core.style.position = 'relative';
+                // Inner element positioned relative to wrapper
+                core.style.left = '0px';
+                core.style.top = '0px';
+                if (desiredType === 'Button') core.style.position = 'relative';
 
-                    wrapper.appendChild(core);
+                wrapper.appendChild(core);
 
-                    // Normalize inner element IDs to reflect the wrapper id so update routines work
-                    try {
-                        const wid = wrapper.id;
-                        const r = core.querySelector('.custom-radio') as HTMLElement | null; if (r) r.id = `radio-${wid}`;
-                        const cb = core.querySelector('.custom-checkbox') as HTMLElement | null; if (cb) cb.id = `checkbox-${wid}`;
-                        const cv = core.querySelector('.counter-value') as HTMLDivElement | null; if (cv) cv.id = `counter-value-${wid}`;
-                        const inc = core.querySelector('.counter-arrow.up') as HTMLDivElement | null; if (inc) inc.id = `counter-increase-${wid}`;
-                        const dec = core.querySelector('.counter-arrow.down') as HTMLDivElement | null; if (dec) dec.id = `counter-decrease-${wid}`;
-                        const sh = core.querySelector('.slider-handle') as HTMLDivElement | null; if (sh) sh.id = `slider-handle-${wid}`;
-                    } catch {}
+                // Normalize inner element IDs to reflect the wrapper id so update routines work
+                const wid = wrapper.id;
+                const r = core.querySelector('.custom-radio') as HTMLElement | null; if (r) r.id = `radio-${wid}`;
+                const cb = core.querySelector('.custom-checkbox') as HTMLElement | null; if (cb) cb.id = `checkbox-${wid}`;
+                const cv = core.querySelector('.counter-value') as HTMLDivElement | null; if (cv) cv.id = `counter-value-${wid}`;
+                const inc = core.querySelector('.counter-arrow.up') as HTMLDivElement | null; if (inc) inc.id = `counter-increase-${wid}`;
+                const dec = core.querySelector('.counter-arrow.down') as HTMLDivElement | null; if (dec) dec.id = `counter-decrease-${wid}`;
+                const sh = core.querySelector('.slider-handle') as HTMLDivElement | null; if (sh) sh.id = `slider-handle-${wid}`;
 
-                    dialog.canvas.appendChild(wrapper);
+                dialog.canvas.appendChild(wrapper);
 
-                    // Remove inner cover and add outer cover
-                    try { const innerCover = core.querySelector('.elementcover'); innerCover && innerCover.parentElement?.removeChild(innerCover); } catch {}
-                    const cover = document.createElement('div'); cover.id = `cover-${wrapper.id}`; cover.className = 'elementcover'; wrapper.appendChild(cover);
+                // Remove inner cover and add outer cover
+                const innerCover = core.querySelector('.elementcover');
+                innerCover && innerCover.parentElement?.removeChild(innerCover);
+                const cover = document.createElement('div'); cover.id = `cover-${wrapper.id}`; cover.className = 'elementcover'; wrapper.appendChild(cover);
 
-                    // Size wrapper: for non-buttons, fix to core's rendered size; for buttons, let it auto-size
-                    try {
-                        if (desiredType !== 'Button') {
-                            const rect = core.getBoundingClientRect();
-                            if (rect.width > 0) wrapper.style.width = `${Math.round(rect.width)}px`;
-                            if (rect.height > 0) wrapper.style.height = `${Math.round(rect.height)}px`;
-                        }
-                    } catch {}
+                // Size wrapper: fix to core's rendered size for most
+                // (Button, Label should auto-size)
+                if (desiredType !== 'Button' && desiredType !== 'Label') {
+                    const rect = core.getBoundingClientRect();
+                    if (rect.width > 0) wrapper.style.width = `${Math.round(rect.width)}px`;
+                    if (rect.height > 0) wrapper.style.height = `${Math.round(rect.height)}px`;
+                }
 
-                    editor.addElementListeners(wrapper);
-                    dialog.addElement(wrapper);
-                } catch {}
+                editor.addElementListeners(wrapper);
+                dialog.addElement(wrapper);
             }
 
             // Recreate groups (after children exist)
-            try {
-                for (const g of groups) {
-                    const ids: string[] = Array.isArray((g as any).elementIds)
-                        ? (g as any).elementIds
-                        : String((g as any).elementIds || '').split(',').map((s: string) => s.trim()).filter((s: string) => s.length);
-                    const newId = renderutils.makeGroupFromSelection(ids, true);
-                    if (!newId) continue;
-                    const groupEl = dialog.getElement(newId) as HTMLElement | undefined;
-                    if (!groupEl) continue;
-                    const savedId = String((g as any).id || newId);
-                    // Set group id to saved id
-                    groupEl.id = savedId;
-                    (dialog.elements as any)[savedId] = groupEl;
-                    delete (dialog.elements as any)[newId];
-                    // Apply group conditions
-                    const gconds = String((g as any).groupConditions || '');
-                    if (gconds) groupEl.dataset.groupConditions = gconds;
-                    // Move group to saved position if provided
-                    const gl = (g as any).left; const gt = (g as any).top;
-                    if (gl !== undefined || gt !== undefined) {
-                        const props: any = {};
-                        if (gl !== undefined) props.left = String(gl);
-                        if (gt !== undefined) props.top = String(gt);
-                        renderutils.updateElement(groupEl, props);
-                    }
+            for (const g of groups) {
+                const ids: string[] = Array.isArray((g as any).elementIds)
+                    ? (g as any).elementIds
+                    : String((g as any).elementIds || '').split(',').map((s: string) => s.trim()).filter((s: string) => s.length);
+                const newId = renderutils.makeGroupFromSelection(ids, true);
+                if (!newId) continue;
+                const groupEl = dialog.getElement(newId) as HTMLElement | undefined;
+                if (!groupEl) continue;
+                const savedId = String((g as any).id || newId);
+                // Set group id to saved id
+                groupEl.id = savedId;
+                (dialog.elements as any)[savedId] = groupEl;
+                delete (dialog.elements as any)[newId];
+                // Apply group conditions
+                const gconds = String((g as any).groupConditions || '');
+                if (gconds) groupEl.dataset.groupConditions = gconds;
+                // Move group to saved position if provided
+                const gl = (g as any).left; const gt = (g as any).top;
+                if (gl !== undefined || gt !== undefined) {
+                    const props: any = {};
+                    if (gl !== undefined) props.left = String(gl);
+                    if (gt !== undefined) props.top = String(gt);
+                    renderutils.updateElement(groupEl, props);
                 }
-            } catch {}
-        } catch (e) {
-            console.error('loadDialogFromJson failed', e);
+            }
+        } catch (error) {
+            console.error('loadDialogFromJson failed', error);
         }
     }
 }

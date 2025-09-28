@@ -15,4 +15,5 @@ export interface Utils {
     isElementOf<T>(x: T, set: T[]): boolean;
     isNotElementOf<T>(x: T, set: T[]): boolean;
     isValidColor: (value: string) => boolean;
+    textWidth(text: string, fontSize: number, fontFamily?: string): number;
 }

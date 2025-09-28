@@ -233,50 +233,52 @@ function renderPreview(dialog: {
     if (!utils.isTrue((data as any).isEnabled)) {
       element.classList.add('disabled-div');
       // In preview, disabled elements should not be interactive
-      try {
-        (element as any).style.pointerEvents = 'none';
-        if (element instanceof HTMLInputElement || element instanceof HTMLSelectElement || (window as any).HTMLTextAreaElement && element instanceof (window as any).HTMLTextAreaElement) {
-          (element as HTMLInputElement | HTMLSelectElement).disabled = true;
-        } else {
-          const customCheckbox = element.querySelector('.custom-checkbox') as HTMLElement | null;
-          const customRadio = element.querySelector('.custom-radio') as HTMLElement | null;
-          if (customCheckbox) customCheckbox.setAttribute('aria-disabled', 'true');
-          if (customRadio) customRadio.setAttribute('aria-disabled', 'true');
-        }
-      } catch {}
+      element.style.pointerEvents = 'none';
+      if (
+        element instanceof HTMLInputElement ||
+        element instanceof HTMLSelectElement ||
+        (
+          window.HTMLTextAreaElement && element instanceof window.HTMLTextAreaElement
+        )
+      ) {
+        element.disabled = true;
+      } else {
+        const customCheckbox = element.querySelector('.custom-checkbox') as HTMLElement | null;
+        const customRadio = element.querySelector('.custom-radio') as HTMLElement | null;
+        if (customCheckbox) customCheckbox.setAttribute('aria-disabled', 'true');
+        if (customRadio) customRadio.setAttribute('aria-disabled', 'true');
+      }
     }
 
     canvas.appendChild(element);
     created.push(element);
 
     // After the element is in DOM: enforce valueType for Input
-    try {
-      if (element instanceof HTMLInputElement) {
-        const valueType = String((data as any).valueType || (element as any).dataset?.valueType || '').toLowerCase();
+    if (element instanceof HTMLInputElement) {
+      const valueType = String((data as any).valueType || (element as any).dataset?.valueType || '').toLowerCase();
 
-        switch (valueType) {
-          case 'integer': {
-            renderutils.setIntegers([element], '');
-            break;
-          }
-          case 'signed integer': {
-            renderutils.setSignedIntegers([element], '');
-            break;
-          }
-          case 'double': {
-            renderutils.setDouble([element], '');
-            break;
-          }
-          case 'signed double': {
-            renderutils.setSignedDouble([element], '');
-            break;
-          }
-          default:
-            // String or unknown: no filter
-            break;
+      switch (valueType) {
+        case 'integer': {
+          renderutils.setIntegers([element], '');
+          break;
         }
+        case 'signed integer': {
+          renderutils.setSignedIntegers([element], '');
+          break;
+        }
+        case 'double': {
+          renderutils.setDouble([element], '');
+          break;
+        }
+        case 'signed double': {
+          renderutils.setSignedDouble([element], '');
+          break;
+        }
+        default:
+          // String or unknown: no filter
+          break;
       }
-    } catch {}
+    }
   }
 
   // === Conditions engine (preview) ===
@@ -384,32 +386,51 @@ function renderPreview(dialog: {
     const setEnabledState = (el: HTMLElement, enabled: boolean) => {
       // Update visual state via shared util
       renderutils.updateElement(el, { isEnabled: enabled ? 'true' : 'false' } as any);
-      try {
-        // Native inputs/selects
-        if (el instanceof HTMLInputElement || el instanceof HTMLSelectElement) {
-          (el as HTMLInputElement | HTMLSelectElement).disabled = !enabled;
-          (el.style as CSSStyleDeclaration).pointerEvents = enabled ? '' : 'none';
-          return;
+      // Native inputs/selects
+      if (el instanceof HTMLInputElement || el instanceof HTMLSelectElement) {
+        (el as HTMLInputElement | HTMLSelectElement).disabled = !enabled;
+        (el.style as CSSStyleDeclaration).pointerEvents = enabled ? '' : 'none';
+        return;
+      }
+      // Inner controls
+      const input = el.querySelector('input') as HTMLInputElement | null;
+      const select = el.querySelector('select') as HTMLSelectElement | null;
+      if (input) {
+        input.disabled = !enabled;
+        input.style.pointerEvents = enabled ? '' : 'none';
+      }
+
+      if (select) {
+        select.disabled = !enabled;
+        select.style.pointerEvents = enabled ? '' : 'none';
+      }
+      // Custom checkbox/radio
+      const customCheckbox = el.querySelector('.custom-checkbox') as HTMLElement | null;
+      const customRadio = el.querySelector('.custom-radio') as HTMLElement | null;
+
+      if (customCheckbox) {
+
+        if (!enabled) {
+          customCheckbox.setAttribute('aria-disabled', 'true');
+        } else {
+          customCheckbox.removeAttribute('aria-disabled');
         }
-        // Inner controls
-        const input = el.querySelector('input') as HTMLInputElement | null;
-        const select = el.querySelector('select') as HTMLSelectElement | null;
-        if (input) { input.disabled = !enabled; input.style.pointerEvents = enabled ? '' : 'none'; }
-        if (select) { select.disabled = !enabled; select.style.pointerEvents = enabled ? '' : 'none'; }
-        // Custom checkbox/radio
-        const customCheckbox = el.querySelector('.custom-checkbox') as HTMLElement | null;
-        const customRadio = el.querySelector('.custom-radio') as HTMLElement | null;
-        if (customCheckbox) {
-          if (!enabled) customCheckbox.setAttribute('aria-disabled', 'true'); else customCheckbox.removeAttribute('aria-disabled');
-          customCheckbox.style.pointerEvents = enabled ? '' : 'none';
+
+        customCheckbox.style.pointerEvents = enabled ? '' : 'none';
+      }
+
+      if (customRadio) {
+
+        if (!enabled) {
+          customRadio.setAttribute('aria-disabled', 'true');
+        } else {
+          customRadio.removeAttribute('aria-disabled');
         }
-        if (customRadio) {
-          if (!enabled) customRadio.setAttribute('aria-disabled', 'true'); else customRadio.removeAttribute('aria-disabled');
-          customRadio.style.pointerEvents = enabled ? '' : 'none';
-        }
-        // Fallback pointer events for other blocks
-        el.style.pointerEvents = enabled ? '' : 'none';
-      } catch {}
+
+        customRadio.style.pointerEvents = enabled ? '' : 'none';
+      }
+      // Fallback pointer events for other blocks
+      el.style.pointerEvents = enabled ? '' : 'none';
     };
 
     const applyAction = (target: HTMLElement, action: string, on: boolean) => {
@@ -548,21 +569,17 @@ function renderPreview(dialog: {
     console.error('Conditions evaluation failed:', e);
   }
 
-  try {
-    document.addEventListener('keydown', (ev: KeyboardEvent) => {
-      const key = ev.key || (ev as any).code;
-      if (key === 'Escape' || key === 'Esc') {
-        try {
-          Array.from(document.querySelectorAll('.color-popover')).forEach((el) => {
-            (el as HTMLElement).style.display = 'none';
-          });
-        } catch {}
-        try { coms.sendTo('main', 'close-conditionsWindow'); } catch {}
-        ev.preventDefault();
-        ev.stopPropagation();
-      }
-    }, true);
-  } catch {}
+  document.addEventListener('keydown', (ev: KeyboardEvent) => {
+    const key = ev.key || (ev as any).code;
+    if (key === 'Escape' || key === 'Esc') {
+      Array.from(document.querySelectorAll('.color-popover')).forEach((el) => {
+        (el as HTMLElement).style.display = 'none';
+      });
+      coms.sendTo('main', 'close-conditionsWindow');
+      ev.preventDefault();
+      ev.stopPropagation();
+    }
+  }, true);
 
   root.appendChild(canvas);
 }

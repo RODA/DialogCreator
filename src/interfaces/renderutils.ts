@@ -20,6 +20,7 @@ export interface RenderUtils {
         lineClamp: number,
         widthMax: number
     ) => void;
+    updateLabel: (element: HTMLElement, properties?: AnyElement) => void;
     updateHandleStyle: (
         handle: HTMLDivElement,
         obj: { [key: string]: string },

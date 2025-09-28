@@ -150,10 +150,10 @@ function createSecondWindow(args: { [key: string]: any }) {
                 });
                 break;
             case 'preview.html':
-                secondWindow.webContents.send("response-from-main-renderPreview", args.data);
+                secondWindow.webContents.send("message-from-main-renderPreview", args.data);
                 break;
             case 'syntax.html':
-                secondWindow.webContents.send("response-from-main-renderSyntax", args.data);
+                secondWindow.webContents.send("message-from-main-renderSyntax", args.data);
                 break;
             default:
                 break;
@@ -206,7 +206,7 @@ function setupIPC() {
                     {
                         const properties = await database.getProperties(args[0] as keyof DBElements);
                         BrowserWindow.getAllWindows().forEach((win) => {
-                            win.webContents.send("response-from-main-propertiesFromDB", args[0], properties);
+                            win.webContents.send("message-from-main-propertiesFromDB", args[0], properties);
                         });
                     }
                     break;
@@ -216,8 +216,8 @@ function setupIPC() {
                         if (utils.isFalse(properties)) {
                             dialog.showErrorBox("Error", `Failed to reset properties of ${args[0]}`);
                         } else {
-                            secondWindow.webContents.send("response-from-main-resetOK", properties);
-                            editorWindow.webContents.send("response-from-main-propertiesFromDB", args[0], properties);
+                            secondWindow.webContents.send("message-from-main-resetOK", properties);
+                            editorWindow.webContents.send("message-from-main-propertiesFromDB", args[0], properties);
                         }
                     }
                     break;
@@ -226,7 +226,7 @@ function setupIPC() {
                         const ok = await database.updateProperty(args[0] as keyof DBElements, args[1], args[2]);
                         if (ok) {
                             const properties = await database.getProperties(args[0] as keyof DBElements);
-                            editorWindow.webContents.send("response-from-main-propertiesFromDB", args[0], properties);
+                            editorWindow.webContents.send("message-from-main-propertiesFromDB", args[0], properties);
                         }
                         else {
                             dialog.showErrorBox("Error", `Failed to update property ${args[1]} of ${args[0]}`);
@@ -242,12 +242,12 @@ function setupIPC() {
 
         } else if (window == "all") { // forward to all windows
             BrowserWindow.getAllWindows().forEach((win) => {
-                win.webContents.send(`response-from-main-${channel}`, ...args);
+                win.webContents.send(`message-from-main-${channel}`, ...args);
             });
         } else {
             const win = BrowserWindow.fromId(windowid[window]);
             if (win && !win.isDestroyed() && !win.webContents.isDestroyed()) {
-                win.webContents.send(`response-from-main-${channel}`, ...args);
+                win.webContents.send(`message-from-main-${channel}`, ...args);
             }
         }
     });
@@ -277,44 +277,45 @@ const mainMenuTemplate: MenuItemConstructorOptions[] = [
 
                     const onJson = async (_ev: any, json: string) => {
                         ipcMain.removeListener('send-to', onSendTo);
-                        try {
-                            const current = json || '';
-                            const isSame = current && lastSavedJson && current === lastSavedJson;
-                            if (!current || !isSame) {
-                                // Ask to save changes
-                                const res = await dialog.showMessageBox(editorWindow, {
-                                    type: 'question',
-                                    buttons: ['Save', "Don't Save", 'Cancel'],
-                                    defaultId: 0,
-                                    cancelId: 2,
-                                    message: 'Do you want to save changes to this dialog before creating a new one?'
-                                });
-                                if (res.response === 2) return; // Cancel
-                                if (res.response === 0) {
-                                    // Save then proceed
-                                    try {
-                                        const { canceled, filePath } = await dialog.showSaveDialog(editorWindow, {
-                                            title: 'Save dialog',
-                                            filters: [{ name: 'Dialog JSON', extensions: ['json'] }],
-                                            defaultPath: 'dialog.json'
-                                        });
-                                        if (!canceled && filePath) {
-                                            const fs = require('fs');
-                                            fs.writeFileSync(filePath, current, 'utf-8');
-                                            lastSavedJson = current;
-                                        } else {
-                                            // user canceled save dialog => abort New
-                                            return;
-                                        }
-                                    } catch (e: any) {
-                                        dialog.showErrorBox('Save failed', String((e && e.message) ? e.message : e));
+                        const current = json || '';
+                        const isSame = current && lastSavedJson && current === lastSavedJson;
+                        if (!current || !isSame) {
+                            // Ask to save changes
+                            const res = await dialog.showMessageBox(editorWindow, {
+                                type: 'question',
+                                buttons: ['Save', "Don't Save", 'Cancel'],
+                                defaultId: 0,
+                                cancelId: 2,
+                                message: 'Do you want to save changes to this dialog before creating a new one?'
+                            });
+
+                            if (res.response === 2) return; // Cancel
+
+                            if (res.response === 0) {
+                                // Save then proceed
+                                try {
+                                    const { canceled, filePath } = await dialog.showSaveDialog(editorWindow, {
+                                        title: 'Save dialog',
+                                        filters: [{ name: 'Dialog JSON', extensions: ['json'] }],
+                                        defaultPath: 'dialog.json'
+                                    });
+
+                                    if (!canceled && filePath) {
+                                        const fs = require('fs');
+                                        fs.writeFileSync(filePath, current, 'utf-8');
+                                        lastSavedJson = current;
+                                    } else {
+                                        // user canceled save dialog => abort New
                                         return;
                                     }
+                                } catch (e: any) {
+                                    dialog.showErrorBox('Save failed', String((e && e.message) ? e.message : e));
+                                    return;
                                 }
                             }
-                            // Clear dialog: select all + remove
-                            editorWindow.webContents.send('newDialogClear');
-                        } catch {}
+                        }
+                        // Clear dialog: select all + remove
+                        editorWindow.webContents.send('newDialogClear');
                     };
                     const onSendTo = (_event: any, window: string, channel: string, ...args: any[]) => {
                         if (window === 'main' && channel === 'dialog-json') {

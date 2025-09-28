@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!ta) return;
         ev.preventDefault();
         ta.focus();
-        try { ta.select(); } catch {}
+        ta.select();
     });
 
     // send condtions for validation and to be saved

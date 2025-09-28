@@ -145,8 +145,7 @@ function togglePopover(input: HTMLInputElement, open?: boolean) {
         // Preserve the exact color brightness/saturation as saved by the user.
         // Do not override V to 100 — this ensures the picker opens at the last chosen color.
       }
-    } catch {}
-    finally {
+    } finally {
       // release suppression after microtask
       setTimeout(() => suppressMap.delete(input), 0);
     }
@@ -163,7 +162,7 @@ function togglePopover(input: HTMLInputElement, open?: boolean) {
             input.dispatchEvent(new Event('change', { bubbles: true }));
           } else {
             // In editor, blur to trigger any existing blur-based update if needed
-            try { input.blur(); } catch {}
+            input.blur();
           }
         }
       };
@@ -186,15 +185,20 @@ function applyColorToInput(input: HTMLInputElement, hex: string, liveOnly = fals
     if (selId) {
       const selected = (document.getElementById(selId) as HTMLElement | null);
       if (selected) {
-        try { renderutils.updateElement(selected, { [propName]: hex } as any); } catch {}
+        renderutils.updateElement(
+          selected,
+          { [propName]: hex } as any // TODO: as AnyElementProperties
+        );
       }
     }
     if (!liveOnly) {
-      try { input.blur(); } catch {}
+      input.blur();
     }
   } else if (!liveOnly) {
     // Defaults window: trigger change to persist via existing handler
-    input.dispatchEvent(new Event('change', { bubbles: true }));
+    input.dispatchEvent(new Event('change', {
+      bubbles: true
+    }));
   }
 }
 
@@ -209,21 +213,17 @@ function enhanceColorInput(input: HTMLInputElement) {
   const wrapper = document.createElement('div');
   wrapper.className = 'color-input-wrapper';
   // Inline layout to override any conflicting rules
-  try {
-    wrapper.style.position = 'relative';
-    wrapper.style.display = 'grid';
-    (wrapper.style as any).gridTemplateColumns = 'minmax(0, 1fr) 18px';
-    wrapper.style.alignItems = 'center';
-    (wrapper.style as any).columnGap = '4px';
-    wrapper.style.width = '100%';
-  } catch {}
+  wrapper.style.position = 'relative';
+  wrapper.style.display = 'grid';
+  wrapper.style.gridTemplateColumns = 'minmax(0, 1fr) 18px';
+  wrapper.style.alignItems = 'center';
+  wrapper.style.columnGap = '4px';
+  wrapper.style.width = '100%';
 
   parent.insertBefore(wrapper, input);
   wrapper.appendChild(input);
-  try {
-    input.style.width = '100%';
-    (input.style as any).gridColumn = '1 / 2';
-  } catch {}
+  input.style.width = '100%';
+  input.style.gridColumn = '1 / 2';
 
   const swatch = document.createElement('button');
   swatch.type = 'button';
@@ -236,7 +236,8 @@ function enhanceColorInput(input: HTMLInputElement) {
   swatch.setAttribute('tabindex', '-1'); // do not take focus
   swatch.addEventListener('mousedown', (e) => e.preventDefault()); // prevent focus ring on mouse
   swatch.addEventListener('keydown', (e) => e.preventDefault()); // ignore keyboard focus actions
-  try { (swatch.style as any).gridColumn = '2 / 3'; (swatch.style as any).justifySelf = 'end'; } catch {}
+  swatch.style.gridColumn = '2 / 3';
+  swatch.style.justifySelf = 'end';
   wrapper.appendChild(swatch);
   swatchMap.set(input, swatch);
 
@@ -247,7 +248,9 @@ function enhanceColorInput(input: HTMLInputElement) {
     const v = input.value;
     if (utils.isValidColor(v)) {
       const picker = pickerMap.get(input);
-      if (picker) { try { picker.color.set(v); } catch {} }
+      if (picker) {
+        picker.color.set(v);
+      }
       swatch.style.background = v;
     }
   });
@@ -271,11 +274,9 @@ export function attachColorPickers(root?: ParentNode) {
     document.addEventListener('keydown', (ev: KeyboardEvent) => {
       const key = ev.key || (ev as any).code;
       if (key === 'Escape' || key === 'Esc') {
-        try {
-          const pops = Array.from(document.querySelectorAll('.color-popover')) as HTMLElement[];
-          pops.forEach(p => p.style.display = 'none');
-          ev.stopPropagation();
-        } catch {}
+        const pops = Array.from(document.querySelectorAll('.color-popover')) as HTMLElement[];
+        pops.forEach(p => p.style.display = 'none');
+        ev.stopPropagation();
       }
     }, true);
   }
@@ -294,7 +295,7 @@ export function syncColorPickers(root?: ParentNode) {
     }
     const picker = pickerMap.get(input);
     if (picker && utils.isValidColor(input.value)) {
-      try { picker.color.set(input.value); } catch {}
+      picker.color.set(input.value);
     }
   }
 }

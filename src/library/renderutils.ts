@@ -9,6 +9,7 @@ import { showError, coms } from '../modules/coms';
 import { v4 as uuidv4 } from 'uuid';
 import * as path from "path";
 import * as fs from "fs";
+import { AnyElement } from '../interfaces/elements';
 
 export const renderutils: RenderUtils = {
 
@@ -73,12 +74,9 @@ export const renderutils: RenderUtils = {
                 state.oldSelectionEnd = textbox.selectionEnd ?? 0;
             } else if (state.oldValue !== undefined) {
                 textbox.value = state.oldValue;
-                if (state.oldSelectionStart != null && state.oldSelectionEnd != null) {
-                    try {
-                        textbox.setSelectionRange(state.oldSelectionStart, state.oldSelectionEnd);
-                    } catch {}
+                if (!(utils.isNull(state.oldSelectionStart) || utils.isNull(state.oldSelectionEnd))) {
+                    textbox.setSelectionRange(state.oldSelectionStart, state.oldSelectionEnd);
                 }
-                // textbox.setSelectionRange(state.oldSelectionStart, state.oldSelectionEnd);
             } else {
                 textbox.value = "";
             }
@@ -296,11 +294,13 @@ export const renderutils: RenderUtils = {
             element.style.width = data.width + 'px';
             element.style.padding = '3px';
             // Set arrow color via inline SVG data URI if provided
-            try {
-                const color = (data as any).arrowColor || '#000000';
-                const svg = encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path fill='${color}' d='M6 8L0 0h12z'/></svg>`);
-                (element as HTMLSelectElement).style.backgroundImage = `url("data:image/svg+xml,${svg}")`;
-            } catch {}
+            const color = data.arrowColor || '#000000';
+            const svg = encodeURIComponent(`
+                <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'>
+                    <path fill='${color}' d='M6 8L0 0h12z'/>
+                </svg>
+            `);
+            element.style.backgroundImage = `url("data:image/svg+xml,${svg}")`;
 
         } else if (data.type == "Checkbox") {
 
@@ -412,10 +412,34 @@ export const renderutils: RenderUtils = {
 
         } else if (data.type == "Label") {
 
-            element.textContent = data.value;
-            try {
-                (element.style as any).maxWidth = (data as any).maxWidth + 'px';
-            } catch {}
+            // Initial label setup: single span-like behavior within the core node
+            element.textContent = data.value || '';
+            element.style.fontFamily = coms.fontFamily;
+            element.style.fontSize = coms.fontSize + 'px';
+            element.style.lineHeight = '1.2';
+            element.style.overflow = 'hidden';
+            element.style.textOverflow = 'ellipsis';
+            // Place in normal flow so width measures to content
+            element.style.position = 'relative';
+            // Default to single-line unless lineClamp > 1
+            const clampInit = Number((data as any).lineClamp) || 1;
+            const maxWInit = Number((data as any).maxWidth) || 0;
+            if (clampInit > 1) {
+                element.style.display = '-webkit-box';
+                (element.style as any).setProperty('-webkit-line-clamp', String(clampInit));
+                (element.style as any).setProperty('-webkit-box-orient', 'vertical');
+                element.style.whiteSpace = 'normal';
+                // Height cap for the clamp
+                const maxH = Math.round(coms.fontSize * 1.2 * clampInit);
+                element.style.maxHeight = maxH + 'px';
+            } else {
+                element.style.display = 'inline-block';
+                element.style.whiteSpace = 'nowrap';
+                element.style.removeProperty('-webkit-line-clamp');
+                element.style.removeProperty('-webkit-box-orient');
+                element.style.maxHeight = Math.round(coms.fontSize * 1.2) + 'px';
+            }
+            if (maxWInit > 0) element.style.maxWidth = maxWInit + 'px';
 
         } else if (data.type == "Separator") {
 
@@ -464,20 +488,19 @@ export const renderutils: RenderUtils = {
 
     updateElement: function (element, properties) {
 
+        // All elements should have the following structure:
+        // (constructed by addElementToDialog() in editor.ts)
+        // - wrapper div
+        //   - inner div (the actual element, constructed by makeElement())
+        //   - cover div (for dragging/selection)
+        // The dataset properties are copied on both the wrapper div and the inner div
+
         // console.log('properties', properties);
         // console.log('dataset', element.dataset);
         // console.log('combined', {... element.dataset, ... properties});
         // console.log('combined2', {... properties, ... element.dataset});
 
-        let elementWidth = element.getBoundingClientRect().width;
-        const elementHeight = element.getBoundingClientRect().height;
-        const dialogW = dialog.canvas.getBoundingClientRect().width;
-        const dialogH = dialog.canvas.getBoundingClientRect().height;
-
-        // const all: Record<string, any> = {... element.dataset, ... properties};
-        const all: Record<string, any> = {... properties};
         const dataset = element.dataset;
-        const inner = element.firstElementChild as HTMLElement | null;
         const checkbox = dataset.type === 'Checkbox';
         const counter = dataset.type === 'Counter';
         const radio = dataset.type === 'Radio';
@@ -489,13 +512,21 @@ export const renderutils: RenderUtils = {
         const button = dataset.type === 'Button';
         const label = dataset.type === 'Label';
 
+        let elementWidth = element.getBoundingClientRect().width;
+        const elementHeight = element.getBoundingClientRect().height;
+        const dialogW = dialog.canvas.getBoundingClientRect().width;
+        const dialogH = dialog.canvas.getBoundingClientRect().height;
 
-        Object.keys(all).forEach((key) => {
+        // const all: Record<string, any> = {... element.dataset, ... properties};
+        const props: Record<string, any> = {... properties}; // copy of properties only
+        const inner = element.firstElementChild as HTMLElement | null;
+
+        Object.keys(props).forEach((key) => {
             // if (['parentId', 'elementIds', 'conditions'].includes(key)) {
             //     return;
             // }
 
-            let value = all[key];
+            let value = props[key];
 
             const customCheckbox = document.querySelector(`#checkbox-${element.id}`) as HTMLDivElement;
             const customRadio = document.querySelector(`#radio-${element.id}`) as HTMLDivElement;
@@ -512,20 +543,31 @@ export const renderutils: RenderUtils = {
                         value = element.dataset.nameid || '';
                         showError('Name already exists.');
                     }
+
                 case 'left':
                     if (Number(value) + elementWidth + 10 > dialogW) {
                         value = String(Math.round(dialogW - elementWidth - 10));
                     }
-                    if (Number(value) < 10) { value = '10'; }
+
+                    if (Number(value) < 10) {
+                        value = '10';
+                    }
+
                     element.style.left = value + 'px';
                     break;
+
                 case 'top':
                     if (Number(value) + elementHeight + 10 > dialogH) {
                         value = String(Math.round(dialogH - elementHeight - 10));
                     }
-                    if (Number(value) < 10) { value = '10'; }
+
+                    if (Number(value) < 10) {
+                        value = '10';
+                    }
+
                     element.style.top = value + 'px';
                     break;
+
                 case 'height':
                     if (Number(value) > dialogH - 20) {
                         value = String(Math.round(dialogH - 20));
@@ -541,110 +583,105 @@ export const renderutils: RenderUtils = {
                         eltop.value = newtop;
                         element.style.top = newtop + 'px';
                     }
+
                     break;
-                case 'label':
+
+                case 'label': // NOT the "Label" element type, but the text label of Button
                     const span = element.querySelector('.smart-button-text') as HTMLSpanElement;
                     if (span) {
                         span.textContent = value;
                     }
 
                     elementWidth = element.getBoundingClientRect().width;
+
                     if (elementWidth && Number(elleft.value) + elementWidth + 10 > dialogW) {
                         const newleft = String(Math.round(dialogW - elementWidth - 10));
                         elleft.value = newleft;
                         element.style.left = newleft + 'px';
                     }
+
                     // For button, let wrapper height auto-follow content
                     if (button) {
                         element.style.height = '';
                     }
                     break;
+
                 case 'width':
                     if (Number(value) > dialogW - 20) {
                         value = String(Math.round(dialogW - 20));
                     }
 
                     if (select && Number(value) < 100) {
-                        value = String(Math.round(100));
+                        value = '100';
                     }
-                    // Apply width to wrapper by default
+
                     element.style.width = value + 'px';
+
                     // Ensure the visible child reflects width for contentful elements
                     if (inner && (input || select || container || separator || slider)) {
                         inner.style.width = value + 'px';
                     }
+
                     if (Number(elleft.value) + Number(value) + 10 > dialogW) {
                         const newleft = String(Math.round(dialogW - Number(value) - 10));
                         elleft.value = newleft;
                         element.style.left = newleft + 'px';
                     }
                     break;
+
                 case 'maxWidth':
                     if (Number(value) > dialogW - 20) {
                         value = String(Math.round(dialogW - 20));
                         const maxWidth = document.getElementById('elmaxWidth') as HTMLInputElement;
                         maxWidth.value = value;
                     }
+
                     if (button && inner) {
-                        (inner.style as any)['maxWidth'] = value + 'px';
+                        inner.style.maxWidth = value + 'px';
                         // Allow wrapper to auto-size vertically
                         element.style.height = '';
                     } else if (label) {
-                        // Recompute Label width respecting new maxWidth
-                        try {
-                            // Temporarily clear constraints to measure natural width
-                            const host = (inner as HTMLElement) || element;
-                            const prevW = element.style.width;
-                            const prevMax = element.style.maxWidth;
-                            const prevInnerW = (host as HTMLElement).style?.width || '';
-                            const prevInnerMax = (host as HTMLElement).style?.maxWidth || '';
-                            element.style.width = '';
-                            element.style.maxWidth = '';
-                            try { (host as HTMLElement).style.width = ''; (host as HTMLElement).style.maxWidth = ''; } catch {}
-                            const natural = Math.ceil(host.scrollWidth || host.getBoundingClientRect().width);
-                            const maxW = Number(value) || 0;
-                            let finalW = natural;
-                            if (maxW && finalW > maxW) finalW = maxW;
-                            // Apply new constraints and final width
-                            element.style.maxWidth = maxW > 0 ? `${maxW}px` : '';
-                            element.style.width = `${finalW}px`;
-                            // Keep in canvas bounds
-                            if (Number(elleft.value) + finalW + 10 > dialogW) {
-                                const newleft = String(Math.round(dialogW - finalW - 10));
-                                elleft.value = newleft;
-                                element.style.left = newleft + 'px';
-                            }
-                        } catch {}
+                        element.dataset[key] = value;
+                        renderutils.updateLabel(element);
                     } else {
-                        (element.style as any)['maxWidth'] = value + 'px';
+                        // TODO: if the structure consists of a wrapper (here, the "element") and an inner (here, "inner"), then
+                        // why do I apply maxWidth to the wrapper for non-button / label?
+                        element.style.maxWidth = value + 'px';
                     }
                     break;
+
                 case 'lineClamp':
                     if (Number(value) > 3) {
                         value = String(3);
                         const lineClamp = document.getElementById('ellineClamp') as HTMLInputElement;
                         lineClamp.value = value;
                     }
+
                     if (button) {
                         // Compute max height based on computed font size, padding, and borders
-                        try {
-                            const host = (inner as HTMLDivElement) || element;
-                            const span = host.querySelector('.smart-button-text') as HTMLSpanElement | null;
-                            const spanCS = window.getComputedStyle(span || host);
-                            const fs = parseFloat(spanCS.fontSize || '0') || Number(dataset.fontSize) || coms.fontSize;
-                            const lineHeightPx = fs * 1.2;
-                            const hostCS = window.getComputedStyle(host);
-                            const padT = parseFloat(hostCS.paddingTop || '0') || 0;
-                            const padB = parseFloat(hostCS.paddingBottom || '0') || 0;
-                            const borT = parseFloat(hostCS.borderTopWidth || '0') || 0;
-                            const borB = parseFloat(hostCS.borderBottomWidth || '0') || 0;
-                            const clamp = Number(value) || 1;
-                            const maxHeightPx = Math.round(lineHeightPx * clamp + padT + padB + borT + borB);
-                            host.style.maxHeight = maxHeightPx + 'px';
-                            if (span) span.style.setProperty('-webkit-line-clamp', String(clamp));
-                        } catch {}
+                        const host = (inner as HTMLDivElement) || element;
+                        const span = host.querySelector('.smart-button-text') as HTMLSpanElement | null;
+                        const spanCS = window.getComputedStyle(span || host);
+                        const fs = parseFloat(spanCS.fontSize || '0') || Number(dataset.fontSize) || coms.fontSize;
+                        const lineHeightPx = fs * 1.2;
+                        const hostCS = window.getComputedStyle(host);
+                        const padT = parseFloat(hostCS.paddingTop || '0') || 0;
+                        const padB = parseFloat(hostCS.paddingBottom || '0') || 0;
+                        const borT = parseFloat(hostCS.borderTopWidth || '0') || 0;
+                        const borB = parseFloat(hostCS.borderBottomWidth || '0') || 0;
+                        const clamp = Number(value) || 1;
+                        const maxHeightPx = Math.round(lineHeightPx * clamp + padT + padB + borT + borB);
+                        host.style.maxHeight = maxHeightPx + 'px';
+
+                        if (span) {
+                            span.style.setProperty('-webkit-line-clamp', String(clamp));
+                        }
+
                         // Allow wrapper height to auto-size
                         element.style.height = '';
+                    } else if (label) {
+                        element.dataset[key] = value;
+                        renderutils.updateLabel(element);
                     } else {
                         const lineHeight = Number(dataset.fontSize) * 1.2;
                         const paddingY = 3; // px
@@ -652,15 +689,18 @@ export const renderutils: RenderUtils = {
                         element.style.maxHeight = maxHeight + 'px';
                     }
                     break;
+
                 case 'maxHeight':
                     element.style[key] = value + 'px';
                     break;
+
                 case 'size':
                     if (checkbox || radio) {
                         element.style.width = value + 'px';
                         element.style.height = value + 'px';
                     }
                     break;
+
                 case 'color':
                     if (utils.isValidColor(value)) {
                         if (customRadio) {
@@ -685,15 +725,17 @@ export const renderutils: RenderUtils = {
                         const color = document.getElementById('elcolor') as HTMLInputElement;
                         color.value = value;
                     }
+
                     break;
+
                 case 'fontColor':
                     if (button && inner) {
                         // Color the button text
                         inner.style.color = value;
-                        try {
-                            const span = inner.querySelector('.smart-button-text') as HTMLSpanElement | null;
-                            if (span) span.style.color = value;
-                        } catch {}
+                        const span = inner.querySelector('.smart-button-text') as HTMLSpanElement | null;
+                        if (span) {
+                            span.style.color = value;
+                        }
                     } else if (label && inner) {
                         inner.style.color = value;
                     } else if ((input || select) && inner) {
@@ -703,28 +745,21 @@ export const renderutils: RenderUtils = {
                     } else {
                         element.style.color = value;
                     }
+
                     break;
+
                 case 'arrowColor':
-                    if (select && inner instanceof HTMLSelectElement) {
-                        try {
-                            const color = value;
-                            if (utils.isValidColor(color)) {
-                                const svg = encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'><path fill='${color}' d='M6 8L0 0h12z'/></svg>`);
-                                inner.style.backgroundImage = `url(\"data:image/svg+xml,${svg}\")`;
-                            }
-                        } catch {}
+                    if (utils.isValidColor(value)) {
+                        // property arrowColor is only for Select
+                        const svg = encodeURIComponent(`
+                            <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'>
+                                <path fill='${value}' d='M6 8L0 0h12z'/>
+                            </svg>
+                        `);
+                        (inner as HTMLElement).style.backgroundImage = `url(\"data:image/svg+xml,${svg}\")`;
                     }
                     break;
-                case 'fontSize':
-                    element.style.fontSize = value + 'px';
-                    if (button && inner) {
-                        // Let wrapper height auto-follow content
-                        element.style.height = '';
-                    }
-                    break;
-                case 'fontFamily':
-                    element.style.fontFamily = value;
-                    break;
+
                 case 'space':
                     if (Number(value) > 50) {
                         value = String(Math.round(50));
@@ -732,7 +767,8 @@ export const renderutils: RenderUtils = {
                         space.value = value;
                     }
                     countervalue.style.padding = '0px ' + value + 'px';
-                    break
+                    break;
+
                 case 'startval':
                     if (Number(value) < Number(dataset.maxval)) {
                         countervalue.textContent = value;
@@ -742,6 +778,7 @@ export const renderutils: RenderUtils = {
                         startval.value = value;
                     }
                     break;
+
                 case 'maxval':
                     if (Number(value) <= Number(dataset.startval)) {
                         value = dataset.maxval;
@@ -749,6 +786,7 @@ export const renderutils: RenderUtils = {
                         maxval.value = value;
                     }
                     break;
+
                 case 'direction':
                     // e.g. separator, switch height with width
                     let width = dataset.height;
@@ -788,7 +826,7 @@ export const renderutils: RenderUtils = {
                     break;
 
                 case 'value':
-                    // Update only the appropriate UI elements; do not inject text into custom radios/checkboxes
+                    // Update only the appropriate UI elements
                     if (inner instanceof HTMLInputElement && input) {
                         inner.value = value;
                     } else if (inner instanceof HTMLSelectElement && select) {
@@ -809,51 +847,17 @@ export const renderutils: RenderUtils = {
                                 inner.appendChild(opt);
                             }
                         }
-                    } else if (dataset.type === 'Label') {
-                        // Update label text and recompute width to min(natural, maxWidth)
-                        const host = (inner as HTMLElement) || element;
-                        if (host !== element) { host.textContent = String(value || ''); } else { element.textContent = String(value || ''); }
-                        try {
-                            // Temporarily clear width/maxWidth to measure natural width
-                            const prevW = element.style.width;
-                            const prevMax = element.style.maxWidth;
-                            const prevInnerW = host.style?.width || '';
-                            const prevInnerMax = host.style?.maxWidth || '';
-                            element.style.width = '';
-                            element.style.maxWidth = '';
-                            try { host.style.width = ''; host.style.maxWidth = ''; } catch {}
-                            const natural = Math.ceil(host.scrollWidth || host.getBoundingClientRect().width);
-                            const maxW = Number(dataset.maxWidth || 0);
-                            const finalW = maxW > 0 ? Math.min(natural, maxW) : natural;
-                            // Apply width constraints to the wrapper
-                            element.style.maxWidth = maxW > 0 ? `${maxW}px` : '';
-                            element.style.width = `${finalW}px`;
-                            // Apply single-line ellipsis to the text host
-                            host.style.whiteSpace = 'nowrap';
-                            host.style.overflow = 'hidden';
-                            host.style.textOverflow = 'ellipsis';
-                            host.style.display = 'block';
-                            host.style.maxWidth = '100%';
-                            host.style.width = '100%';
-                            // Keep within canvas
-                            if (Number(elleft.value) + finalW + 10 > dialogW) {
-                                const newleft = String(Math.round(dialogW - finalW - 10));
-                                elleft.value = newleft;
-                                element.style.left = newleft + 'px';
-                            }
-                            // Tooltip on overflow
-                            const hostWidth = element.getBoundingClientRect().width;
-                            const contentWidth = host.scrollWidth || host.getBoundingClientRect().width;
-                            if (contentWidth > hostWidth) {
-                                element.title = String(value || '');
-                            } else {
-                                element.removeAttribute('title');
-                            }
-                        } catch {}
+                        // Sync wrapper height to the inner control after options change
+                        const r = inner.getBoundingClientRect();
+                        if (r.height > 0) element.style.height = `${Math.round(r.height)}px`;
+                    } else if (label) {
+                        element.dataset[key] = value;
+                        renderutils.updateLabel(element);
                     }
                     // For other element types (e.g., Radio, Checkbox, Button, Counter, etc.)
                     // the Value is metadata only and should not alter visible text.
                     break;
+
                 case 'isEnabled':
                     if (utils.isTrue(value)) {
                         element.classList.remove('disabled-div');
@@ -861,6 +865,7 @@ export const renderutils: RenderUtils = {
                         element.classList.add('disabled-div');
                     }
                     break;
+
                 case 'isSelected':
                     if (customRadio) {
                         if (utils.isTrue(value)) {
@@ -874,6 +879,7 @@ export const renderutils: RenderUtils = {
                         }
                     }
                     break;
+
                 case 'isChecked':
                     if (customCheckbox) {
                         customCheckbox.setAttribute('aria-checked', String(value));
@@ -884,11 +890,13 @@ export const renderutils: RenderUtils = {
                         }
                     }
                     break;
+
                 case 'fill':
                     if (customCheckbox) {
                         customCheckbox.dataset.fill = String(utils.isTrue(value));
                     }
                     break;
+
                 default:
                     break;
             }
@@ -898,18 +906,14 @@ export const renderutils: RenderUtils = {
                 elprop.value = value;
             }
 
-            if (dataset.type !== "Checkbox") {
-                element.dataset[key] = value;
+            if (key == "width" || key == "height") {
+                element.dataset.size = value;
             } else {
-                if (key == "width" || key == "height") {
-                    element.dataset.size = value;
-                } else {
-                    element.dataset[key] = value;
-                }
+                element.dataset[key] = value;
             }
 
             if (slider && handle) {
-                renderutils.updateHandleStyle(handle, {...all, ...dataset});
+                renderutils.updateHandleStyle(handle, {...props, ...dataset});
             }
         });
 
@@ -933,7 +937,7 @@ export const renderutils: RenderUtils = {
         span.style.fontSize = fontSize + 'px';
         span.style.lineHeight = '1.2';
         // Use CSS property setter for vendor-prefixed line clamp
-        try { span.style.setProperty('-webkit-line-clamp', String(lineClamp)); } catch {}
+        span.style.setProperty('-webkit-line-clamp', String(lineClamp));
 
         span.textContent = text;
 
@@ -941,6 +945,111 @@ export const renderutils: RenderUtils = {
             button.title = text;
         } else {
             button.removeAttribute('title');
+        }
+    },
+
+    updateLabel: function(element, properties) {
+        // element is the wrapper; host is the core inner label element
+        const host = element.firstElementChild as HTMLElement | null;
+        if (!host) return;
+
+        let dataset = element.dataset;
+
+        // Determine effective font size with precedence:
+        let fontSize = 0;
+
+        // 1) dataset.fontSize
+        if (dataset.fontSize) {
+            fontSize = Number(dataset.fontSize);
+        }
+
+        // 2) wrapper inline style (dialog-level)
+        if (fontSize <= 0) {
+            const wrFS = utils.asInteger(element.style.fontSize.replace('px', '') || '');
+            if (!Number.isNaN(wrFS) && wrFS > 0) fontSize = wrFS;
+        }
+
+        // 3) computed host
+        if (fontSize <= 0) {
+            const cs = window.getComputedStyle(host);
+            const hcFS = parseFloat(cs.fontSize || '');
+            if (!Number.isNaN(hcFS) && hcFS > 0) fontSize = hcFS;
+        }
+
+        // 4) global fallback
+        if (fontSize <= 0) {
+            fontSize = Number(coms.fontSize);
+        }
+
+        const text = dataset.value ? dataset.value : '';
+        let lines = dataset.lineClamp ? Number(dataset.lineClamp) : 1;
+        let maxW = dataset.maxWidth ? Number(dataset.maxWidth) : 100;
+
+
+        // Apply text and font styles
+        host.textContent = text;
+        host.style.fontSize = fontSize + 'px';
+        host.style.lineHeight = '1.2';
+        host.style.overflow = 'hidden';
+        host.style.textOverflow = 'ellipsis';
+
+        // Configure clamp/ellipsis behavior
+        if (lines > 1) {
+            host.style.display = '-webkit-box';
+            host.style.whiteSpace = 'normal';
+            host.style.overflow = 'hidden';
+            host.style.textOverflow = 'ellipsis';
+            host.style.wordBreak = 'break-word';
+            host.style.textAlign = 'left';
+            host.style.setProperty('-webkit-line-clamp', String(lines));
+            host.style.setProperty('-webkit-box-orient', 'vertical');
+            element.style.removeProperty('max-height');
+            host.style.removeProperty('max-height');
+        } else {
+            host.style.display = 'block';
+            host.style.whiteSpace = 'nowrap';
+            host.style.overflow = 'hidden';
+            host.style.textOverflow = 'ellipsis';
+            host.style.removeProperty('word-break');
+            host.style.textAlign = 'left';
+            host.style.removeProperty('-webkit-line-clamp');
+            host.style.removeProperty('-webkit-box-orient');
+            element.style.removeProperty('max-height');
+            host.style.removeProperty('max-height');
+        }
+
+        element.style.height = '';
+        host.style.height = '';
+
+        // Measure natural single-line width (no wrapping) using canvas measurement
+        const natural = utils.textWidth(text, fontSize, coms.fontFamily);
+
+        const finalW = maxW > 0 ? Math.min(natural, maxW) : natural;
+        element.style.maxWidth = maxW > 0 ? `${maxW}px` : '';
+        element.style.width = `${finalW}px`;
+
+        // Host should fill wrapper
+        host.style.maxWidth = '100%';
+        host.style.width = '100%';
+        host.style.textAlign = 'left';
+
+        // Keep in canvas bounds
+        const dialogW = dialog.canvas.getBoundingClientRect().width;
+        const elleft = document.getElementById('elleft') as HTMLInputElement | null;
+        const left = Number(element.dataset.left ?? (parseInt(element.style.left || '0', 10) || 0));
+        if (left + finalW + 10 > dialogW) {
+            const newleft = Math.max(10, Math.round(dialogW - finalW - 10));
+            element.style.left = newleft + 'px';
+            element.dataset.left = String(newleft);
+            if (elleft) elleft.value = String(newleft);
+        }
+
+        // Tooltip based on overflow
+        const overflow = (host.scrollWidth > host.clientWidth) || (host.scrollHeight > host.clientHeight);
+        if (overflow) {
+            element.title = text;
+        } else {
+            element.removeAttribute('title');
         }
     },
 
@@ -1018,7 +1127,7 @@ export const renderutils: RenderUtils = {
             dialog.canvas.appendChild(child);
             childIds.push(child.id);
         }
-        try { group.remove(); } catch {}
+        group.remove();
         dialog.removeElement(groupId);
         return childIds;
     },
@@ -1070,23 +1179,21 @@ export const renderutils: RenderUtils = {
             groupEl.dataset.elementIds = ids.join(',');
 
             // Inherit Radio 'Group' name as group's nameid if applicable
-            try {
-                const allRadio = els.length > 0 && els.every(el => el.dataset.type === 'Radio');
-                if (allRadio) {
-                    const groups = Array.from(new Set(els.map(el => el.dataset.group || '')));
-                    if (groups.length === 1 && groups[0]) {
-                        const desired = groups[0];
-                        const existing = new Set(renderutils.getDialogInfo().elements);
-                        let finalName = desired;
-                        if (existing.has(finalName)) {
-                            let i = 1;
-                            while (existing.has(`${desired}${i}`)) i++;
-                            finalName = `${desired}${i}`;
-                        }
-                        groupEl.dataset.nameid = finalName;
+            const allRadio = els.length > 0 && els.every(el => el.dataset.type === 'Radio');
+            if (allRadio) {
+                const groups = Array.from(new Set(els.map(el => el.dataset.group || '')));
+                if (groups.length === 1 && groups[0]) {
+                    const desired = groups[0];
+                    const existing = new Set(renderutils.getDialogInfo().elements);
+                    let finalName = desired;
+                    if (existing.has(finalName)) {
+                        let i = 1;
+                        while (existing.has(`${desired}${i}`)) i++;
+                        finalName = `${desired}${i}`;
                     }
+                    groupEl.dataset.nameid = finalName;
                 }
-            } catch {}
+            }
 
             dialog.addElement(groupEl);
             return groupEl.id;
@@ -1224,52 +1331,19 @@ export const renderutils: RenderUtils = {
                         element.style.fontFamily = fontFamily;
                         if (inner) inner.style.fontFamily = fontFamily;
                     }
-                    break;
-                case "Label": {
-                    // Update font sizing and recompute width to fit content
-                    element.style.fontSize = fontSize + 'px';
-                    if (inner) inner.style.fontSize = fontSize + 'px';
-                    if (fontFamily) {
-                        element.style.fontFamily = fontFamily;
-                        if (inner) inner.style.fontFamily = fontFamily;
+                    // Sync wrapper height to the inner control after font changes
+                    if (inner) {
+                        const r = inner.getBoundingClientRect();
+                        if (r.height > 0) element.style.height = `${Math.round(r.height)}px`;
                     }
-                    try {
-                        // Temporarily clear constraints to measure natural width
-                        const host = (inner as HTMLElement) || element;
-                        const prevW = element.style.width;
-                        const prevMax = element.style.maxWidth;
-                        const prevInnerW = host.style?.width || '';
-                        const prevInnerMax = host.style?.maxWidth || '';
-                        element.style.width = '';
-                        element.style.maxWidth = '';
-                        try { host.style.width = ''; host.style.maxWidth = ''; } catch {}
-                        const natural = Math.ceil(host.scrollWidth || host.getBoundingClientRect().width);
-                        let finalW = natural;
-                        const maxW = Number(element.dataset.maxWidth || 0);
-                        if (maxW && finalW > maxW) finalW = maxW;
-                        if (finalW > 0) {
-                            element.style.maxWidth = maxW > 0 ? `${maxW}px` : '';
-                            element.style.width = `${finalW}px`;
-                            // Ensure the element stays within canvas horizontally
-                            const canvasW = dialog.canvas.getBoundingClientRect().width;
-                            const left = Number(element.dataset.left ?? (parseInt(element.style.left || '0', 10) || 0));
-                            if (left + finalW + 10 > canvasW) {
-                                const newLeft = Math.max(10, Math.round(canvasW - finalW - 10));
-                                element.style.left = `${newLeft}px`;
-                                element.dataset.left = String(newLeft);
-                                try {
-                                    const elleft = document.getElementById('elleft') as HTMLInputElement | null;
-                                    if (elleft) elleft.value = String(newLeft);
-                                } catch {}
-                            }
-                        } else {
-                            element.style.width = prevW; // restore
-                            element.style.maxWidth = prevMax;
-                            try { host.style.width = prevInnerW; host.style.maxWidth = prevInnerMax; } catch {}
-                        }
-                    } catch {}
                     break;
-                }
+
+                case "Label":
+                    element.style.fontSize = fontSize + 'px';
+                    element.dataset.fontSize = String(fontSize);
+                    renderutils.updateLabel(element);
+                    break;
+
                 case "Button":
                     // Update the inner button node for precise sizing
                     renderutils.updateButton(
@@ -1282,6 +1356,7 @@ export const renderutils: RenderUtils = {
                     // Let wrapper height auto-follow content
                     element.style.height = '';
                     break;
+
                 case "Counter":
                     const countervalue = document.querySelector(`#counter-value-${element.id}`) as HTMLDivElement;
                     countervalue.style.fontSize = fontSize + 'px';
@@ -1289,6 +1364,7 @@ export const renderutils: RenderUtils = {
                         countervalue.style.fontFamily = fontFamily;
                     }
                     break;
+
                 default:
                     break;
             }

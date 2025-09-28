@@ -124,6 +124,7 @@ export const elements: Elements = {
         left: 15,
         top: 15,
         maxWidth: 200,
+        lineClamp: 1,
         fontColor: '#000000',
         value: 'Label',
         isEnabled: true,

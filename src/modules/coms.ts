@@ -29,7 +29,7 @@ export const coms: Communications = {
 
     on(channel, listener) {
         // Ensure ipcRenderer is listening only once per logical channel
-        const responseChannel = `response-from-main-${channel}`;
+        const responseChannel = `message-from-main-${channel}`;
 
         if (!registeredChannels.has(channel)) {
             ipcRenderer.on(responseChannel, (_event, ...args) => {
@@ -42,7 +42,7 @@ export const coms: Communications = {
     },
 
     once(channel, listener) {
-        const responseChannel = `response-from-main-${channel}`;
+        const responseChannel = `message-from-main-${channel}`;
 
         if (!registeredChannels.has(channel)) {
             ipcRenderer.on(responseChannel, (_event, ...args) => {

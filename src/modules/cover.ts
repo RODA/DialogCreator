@@ -1,4 +1,3 @@
-// completely unnecessary separate module, just to test the module system
 
 export const cover = {
 

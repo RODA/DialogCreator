@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ]);
 
     // Attach color pickers once DOM is ready
-    try { attachColorPickers(); } catch {}
+    attachColorPickers();
 
     renderutils.setSignedIntegers([
         "startval",
@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const colorlabel = document.getElementById('colorlabel') as HTMLLabelElement;
 
             // Sync color swatches after initial populate
-            try { syncColorPickers(); } catch {}
+            syncColorPickers();
 
             if (name === 'sliderElement') {
                 colorlabel.innerText = 'Track color';
@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     item.value = updatedProperties[item.name];
                 }
             });
-            try { syncColorPickers(); } catch {}
+            syncColorPickers();
     });
 
 });

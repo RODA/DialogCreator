@@ -9,6 +9,8 @@ const TRUE_SET = new Set(['true', 't', '1']); // , 'yes', 'y', 'on'
 const FALSE_SET = new Set(['false', 'f', '0']); // , 'no', 'n', 'off'
 
 
+let __measureCanvas: HTMLCanvasElement | null = null;
+
 export const utils: Utils = {
     getKeys: function(obj) {
         if (obj === null) return([]);
@@ -135,5 +137,56 @@ export const utils: Utils = {
         const x = new Option().style;
         x.color = value;
         return x.color !== '';
+    },
+
+    // Measure the natural width (in CSS pixels) of a text string for a given font
+    // Prefers an offscreen canvas when a DOM is available; otherwise falls back to an approximation
+    textWidth: function(text, fontSize, fontFamily?) {
+        const t = String(text ?? '');
+        if (t.length === 0) return 0;
+
+        const size = Number(fontSize) || 12;
+        // Resolve a usable font-family string
+        let family = (fontFamily && String(fontFamily).trim().length) ? String(fontFamily) : '';
+        if (!family && typeof window !== 'undefined' && typeof getComputedStyle === 'function') {
+            family = getComputedStyle(document.body || document.documentElement).fontFamily || '';
+        }
+
+        if (!family) {
+            family = 'Arial, Helvetica, sans-serif';
+        }
+        // Quote family names with spaces that are not already quoted
+        const familyNormalized = family
+            .split(',')
+            .map(s => s.trim())
+            .filter(s => s.length > 0)
+            .map(name => (/^['"]/ .test(name) || !/\s/.test(name)) ? name : `"${name}"`)
+            .join(', ');
+
+        // Prefer OffscreenCanvas if available (no layout required)
+        const Offscreen = (globalThis as any).OffscreenCanvas as any;
+        if (Offscreen && typeof Offscreen === 'function') {
+            const off = new Offscreen(0, 0) as any;
+            const ctx = off.getContext('2d');
+            if (ctx && typeof ctx.measureText === 'function') {
+                ctx.font = `${size}px ${familyNormalized}`;
+                const metrics = ctx.measureText(t);
+                return Math.ceil(metrics.width);
+            }
+        }
+
+        // Fallback to a hidden canvas element in the DOM
+        if (typeof document !== 'undefined' && typeof (document as any).createElement === 'function') {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                ctx.font = `${size}px ${familyNormalized}`;
+                const metrics = ctx.measureText(t);
+                return Math.ceil(metrics.width);
+            }
+        }
+
+        // Final fallback approximation: average character width ≈ 0.6 * fontSize
+        return Math.ceil(t.length * size * 0.6);
     },
 };

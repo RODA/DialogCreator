@@ -1,7 +1,8 @@
 import { coms } from "../modules/coms";
 import { utils } from "../library/utils";
+import { AnyElement } from "../interfaces/elements";
 
-type FlatEl = {
+type FlatProperties = {
   id: string;
   type: string;
   nameid?: string;
@@ -10,11 +11,6 @@ type FlatEl = {
   isChecked?: boolean | string;
   isSelected?: boolean | string;
   handlepos?: number | string;
-};
-
-type ExcludedElements = {
-  type?: string;
-  nameid?: string
 };
 
 type rowType = {
@@ -44,48 +40,29 @@ window.addEventListener('DOMContentLoaded', () => {
   const txt = document.getElementById('syntaxText') as HTMLTextAreaElement | null;
   const btnSaveClose = document.getElementById('saveClose') as HTMLButtonElement | null;
 
-  // Future-proof: rules to exclude certain elements from the Syntax list
-  // e.g., exclude by type and optionally by nameid
-
-  const excluded: Array<ExcludedElements> = [
-    { type: 'Button' },
-    // more elements if needed
-  ];
-
-  const isExcluded = (el: any): boolean => {
-    try {
-      const t = String((el || {}).type || '').toLowerCase();
-      const n = String((el || {}).nameid || (el || {}).id || '').toLowerCase();
-      return excluded.some(rule => {
-        const rt = String((rule.type || '')).toLowerCase();
-        const rn = String((rule.nameid || '')).toLowerCase();
-        const typeOk = !rt || t === rt;
-        const nameOk = !rn || n === rn;
-        return typeOk && nameOk;
-      });
-    } catch {
-      return false;
-    }
-  };
 
   if (btnSaveClose && txt) {
     btnSaveClose.addEventListener('click', () => {
       try {
         coms.sendTo('editorWindow', 'setDialogSyntaxText', txt.value || '');
       } finally {
-        try {
-          window.close();
-        } catch {}
+        window.close();
       }
     });
   }
 
   coms.on('renderSyntax', (payload: unknown) => {
     try {
-      const data = typeof payload === 'string' ? JSON.parse(payload as string) : (payload as any);
-      const elementsAll = (data?.elements || []) as FlatEl[];
+      const data = (typeof payload === 'string') ? JSON.parse(payload as string) : (payload as any);
+      const elementsAll = (data?.elements || []) as AnyElement[];
+
       // Apply exclusions (e.g., Buttons)
-      const elements = elementsAll.filter(el => !isExcluded(el));
+      const elements = elementsAll.filter(el => {
+        return !utils.isElementOf(
+          el.type,
+          [ 'Button', 'Group' ] // add here more types to exclude
+        );
+      });
 
       // If previous syntax text exists in the dialog data, load it into textarea
       if (txt) {
@@ -96,8 +73,8 @@ window.addEventListener('DOMContentLoaded', () => {
       }
 
       // Build radio groups
-      const radioGroups = new Map<string, FlatEl[]>();
-      const nonRadios: FlatEl[] = [];
+      const radioGroups = new Map<string, FlatProperties[]>();
+      const nonRadios: FlatProperties[] = [];
       for (const el of elements) {
         const type = String((el as any).type || '').toLowerCase();
         if (type === 'radio') {
