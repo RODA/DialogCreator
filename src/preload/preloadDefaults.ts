@@ -1,6 +1,7 @@
 import { showError, coms } from "../modules/coms";
 import { renderutils } from "../library/renderutils";
-import { DBElements } from "../interfaces/database";
+import { DBElements, DBElementsProps, PropertiesType } from "../interfaces/database";
+import { elements } from "../modules/elements";
 import { attachColorPickers, syncColorPickers } from "../library/colorpicker";
 
 let defaultElementSelected = "";
@@ -44,17 +45,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const properties = args[1] as DBElements[keyof DBElements];
 
-            // disable all elements and hide everything | reseting properties tab
+            // Warn developer if element defaults define properties missing from DB interface mapping
+            const allowed = DBElementsProps[name] || [];
+            const defaults = (elements as any)[name] || {};
+            const missingFromDBInterface = Object.keys(defaults)
+                .filter(k => !allowed.includes(k))
+                // ignore non-persisted/volatile keys if any
+                .filter(k => !['id', 'parentId', 'type', 'elementIds', 'conditions'].includes(k));
+            if (missingFromDBInterface.length > 0) {
+                console.log(missingFromDBInterface)
+                showError(
+                    `Database interface out of sync for ${name}, check interfaces/database.ts`
+                );
+            }
+
+            // disable all elements and hide everything | resetting properties tab based on DB rows
             ellist.forEach(el => {
                 const item = el as HTMLInputElement;
                 if (item.name in properties) {
                     // show main element
                     item.disabled = false;
                     const row = item.closest('.element-property') as HTMLElement | null;
-                    if (row) row.classList.remove('hidden-element');
-                    let value = properties[item.name as keyof DBElements[keyof DBElements]];
+                    if (row) {
+                        row.classList.remove('hidden-element');
+                    }
+                    const value = properties[item.name] as string;
                     item.value = value || '';
                     item.addEventListener("change", async () => {
+                        // Guard: prevent committing properties not listed in DBElementsProps
+                        const allowed = DBElementsProps[name] || [];
+                        if (!allowed.includes(item.name)) {
+                            showError(`Cannot save property "${item.name}" for ${name}: not declared in interfaces/database.ts (DBElementsProps).`);
+                            item.blur();
+                            return;
+                        }
                         item.blur();
                         coms.sendTo(
                             'main',
@@ -67,7 +91,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     item.disabled = true;
                     const row = item.closest('.element-property') as HTMLElement | null;
-                    if (row) row.classList.add('hidden-element');
+                    if (row) {
+                        row.classList.add('hidden-element');
+                    }
                 }
             });
 
