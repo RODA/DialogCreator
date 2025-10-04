@@ -18,14 +18,47 @@ export const database: DBInterface = {
     getProperties: async (element) => {
         const sql = "SELECT property, value FROM elements WHERE element = ?";
         return new Promise<Record<string, string>>((resolve, reject) => {
-            db.all(sql, [element], (err, rows) => {
+            db.all(sql, [element], async (err, rows) => {
                 if (err) {
                     reject(err);
-                } else {
-                    const result: Record<string, string> = {};
-                    for (const row of rows as { property: string; value: string }[]) {
-                        result[row.property] = row.value;
+                    return;
+                }
+
+                const result: Record<string, string> = {};
+                const existing = new Set<string>();
+                for (const row of rows as { property: string; value: string }[]) {
+                    result[row.property] = row.value;
+                    existing.add(row.property);
+                }
+
+                const allowed = (DBElementsProps as any)[element] as string[] || [];
+                const missing = allowed.filter(p => !existing.has(p));
+
+                if (missing.length > 0) {
+                    // Insert missing properties with defaults from modules/elements
+                    const defaults = (elements as any)[element] || {};
+                    const insSql = "INSERT INTO elements (element, property, value) VALUES (?, ?, ?)";
+                    try {
+                        await Promise.all(missing.map(p => new Promise<void>((res) => {
+                            const v = defaults[p] !== undefined ? String(defaults[p]) : '';
+                            db.run(insSql, [element, p, v], () => res());
+                        })));
+                    } catch (_e) {
+                        // ignore insert errors; continue
                     }
+                    // Re-read full set
+                    db.all(sql, [element], (err2, rows2) => {
+                        if (err2) {
+                            reject(err2);
+                        } else {
+                            const out: Record<string, string> = {};
+                            for (const r of rows2 as { property: string; value: string }[]) {
+                                out[r.property] = r.value;
+                            }
+                            resolve(out);
+                        }
+                    });
+                } else {
                     resolve(result);
                 }
             });
@@ -33,14 +66,25 @@ export const database: DBInterface = {
     },
 
     updateProperty: async (element, property, value) => {
-        const sql = "UPDATE elements SET value = ? WHERE element = ? AND property = ?";
+        const updateSQL = "UPDATE elements SET value = ? WHERE element = ? AND property = ?";
+        const insertSQL = "INSERT INTO elements (value, element, property) VALUES (?, ?, ?)";
         return new Promise<boolean>((resolve) => {
-            db.run(sql, [value, element, property], function (err) {
+            db.run(updateSQL, [value, element, property], function (err) {
                 if (err) {
                     console.error("Error updating property:", err);
                     resolve(false);
+                } else if (this.changes > 0) {
+                    resolve(true);
                 } else {
-                    resolve(this.changes > 0);
+                    // Property row might not exist yet; insert it
+                    db.run(insertSQL, [value, element, property], function (err2) {
+                        if (err2) {
+                            console.error("Error inserting property:", err2);
+                            resolve(false);
+                        } else {
+                            resolve(this.changes > 0);
+                        }
+                    });
                 }
             });
         });
@@ -59,13 +103,26 @@ export const database: DBInterface = {
             await new Promise<void>((resolve) => {
                 db.run(
                     "UPDATE elements SET value = ? WHERE element = ? AND property = ?",
-                    [value, element, property],
+                    [String(value), element, property],
                     function (err) {
                         if (err) {
                             console.log(err);
                             success = false;
+                            return resolve();
                         }
-                        resolve();
+                        if (this.changes === 0) {
+                            // Insert if missing
+                            db.run(
+                                "INSERT INTO elements (element, property, value) VALUES (?, ?, ?)",
+                                [element, property, String(value)],
+                                function (_err2) {
+                                    // ignore _err2 here; success flag remains accurate
+                                    resolve();
+                                }
+                            );
+                        } else {
+                            resolve();
+                        }
                     }
                 );
             });
