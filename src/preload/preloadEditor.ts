@@ -147,6 +147,36 @@ coms.on('elementSelected', (id) => {
         valuelabel.innerText = 'Value';
     }
 
+    // Container-specific: lock Selection when Content type is Dataset
+    if (dataset.type === 'Container') {
+        const contentType = document.getElementById('elcontentType') as HTMLSelectElement | null;
+        const selection = document.getElementById('elselection') as HTMLSelectElement | null;
+        const applySelectionLock = () => {
+            if (!contentType || !selection) return;
+            const isDataset = (contentType.value || '').toLowerCase() === 'dataset';
+            if (isDataset) {
+                selection.value = 'single';
+                selection.disabled = true;
+                // Reflect change on the element if needed
+                if (element && element.dataset.selection !== 'single') {
+                    renderutils.updateElement(element, { selection: 'single' } as any);
+                    element.dataset.selection = 'single';
+                }
+            } else {
+                selection.disabled = false;
+            }
+        };
+        // Initial apply based on current values
+        applySelectionLock();
+        // Re-apply on content type change
+        if (contentType) {
+            contentType.addEventListener('change', () => {
+                // propertyUpdate will also run; enforce UI and value here
+                applySelectionLock();
+            });
+        }
+    }
+
 
     // trigger change for the select element source values
     // if (element.dataSource) {
@@ -154,7 +184,7 @@ coms.on('elementSelected', (id) => {
     // }
     // if(element.type === 'Container') {
     //     // trigger change for container
-    //     $("#elobjViewClass" ).trigger("change");
+    //     $("#elcontentType" ).trigger("change");
     // }
 
     // disable update and remove button | force reselection
