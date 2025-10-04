@@ -31,12 +31,12 @@ export const database: DBInterface = {
                     existing.add(row.property);
                 }
 
-                const allowed = (DBElementsProps as any)[element] as string[] || [];
+                const allowed = DBElementsProps[element] as string[] || [];
                 const missing = allowed.filter(p => !existing.has(p));
 
                 if (missing.length > 0) {
                     // Insert missing properties with defaults from modules/elements
-                    const defaults = (elements as any)[element] || {};
+                    const defaults = elements[element] || {};
                     const insSql = "INSERT INTO elements (element, property, value) VALUES (?, ?, ?)";
                     try {
                         await Promise.all(missing.map(p => new Promise<void>((res) => {
