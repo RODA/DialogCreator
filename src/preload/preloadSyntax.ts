@@ -60,7 +60,7 @@ window.addEventListener('DOMContentLoaded', () => {
       const elements = elementsAll.filter(el => {
         return !utils.isElementOf(
           el.type,
-          [ 'Button', 'Group' ] // add here more types to exclude
+          [ 'Button', 'Group', 'Label', 'Separator' ] // add here more types to exclude
         );
       });
 
