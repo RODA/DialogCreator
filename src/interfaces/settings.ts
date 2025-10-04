@@ -166,7 +166,8 @@ export type containerElementType = {
     type: string;
     id: string;
     nameid: string;
-    objViewClass: string;
+    contentType: string;
+    selection: string;
     variableType: string;
     parentContainer: string;
     width: number;

@@ -36,7 +36,7 @@ export interface RenderUtils {
     moveElementsBy: (ids: string[], dx: number, dy: number) => void;
     updateCheckboxColor: (uuid: string, color: string) => void;
     handleEvent(eventName: string, ...args: unknown[]): Promise<void>;
-    objViewClassValid: (currentElement: HTMLElement) => boolean;
+    contentTypeValid: (currentElement: HTMLElement) => boolean;
     collectDialogProperties: () => DialogProperties;
     updateFont: (fontSize: number, fontFamily?: string) => void;
 }

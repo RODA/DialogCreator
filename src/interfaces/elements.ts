@@ -163,7 +163,8 @@ export type containerElementType = {
     top: number;
     width: number;
     height: number;
-    objViewClass: string;
+    contentType: string;
+    selection: string;
     variableType: string;
     parentContainer: string;
     isEnabled: boolean;

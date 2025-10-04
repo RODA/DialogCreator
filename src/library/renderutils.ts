@@ -454,7 +454,7 @@ export const renderutils: RenderUtils = {
             element.style.backgroundColor = '#ffffff';
             element.style.width = data.width + 'px';
             element.style.height = data.height + 'px';
-            element.dataset.objViewClass = data.objViewClass;
+            element.dataset.contentType = data.contentType;
 
         }
 
@@ -784,6 +784,24 @@ export const renderutils: RenderUtils = {
                         value = dataset.maxval;
                         const maxval = document.getElementById('elmaxval') as HTMLInputElement;
                         maxval.value = value;
+                    }
+                    break;
+
+                case 'contentType':
+                    if (container) {
+                        const ct = String(value || '').toLowerCase();
+                        const selection = document.getElementById('elselection') as HTMLSelectElement | null;
+                        if (selection) {
+                            if (ct === 'dataset') {
+                                // Force selection to single for datasets
+                                selection.value = 'single';
+                                selection.disabled = true;
+                                // Reflect on dataset and UI consumers
+                                element.dataset.selection = 'single';
+                            } else{
+                                selection.disabled = false;
+                            }
+                        }
                     }
                     break;
 
@@ -1295,13 +1313,13 @@ export const renderutils: RenderUtils = {
         }
     },
 
-    objViewClassValid: function (currentElement: HTMLElement) {
+    contentTypeValid: function (currentElement: HTMLElement) {
         const allobjs = new Set(
             Array.from(document.querySelectorAll<HTMLElement>('[data-obj-view-class]'))
-            .map(el => el !== currentElement ? el.dataset.objViewClass! : null)
+            .map(el => el !== currentElement ? el.dataset.contentType! : null)
             .filter(id => id !== null)
         )
-        return !allobjs.has('dataSet');
+        return !allobjs.has('dataset');
     },
 
     collectDialogProperties: function() {

@@ -111,7 +111,8 @@ export interface Container {
     top: string;
     width: string;
     height: string;
-    objViewClass: string;
+    contentType: string;
+    selection: string;
     variableType: string;
     parentContainer: string;
     isEnabled: string;
@@ -169,6 +170,6 @@ export const DBElementsProps: Record<string, string[]> = {
         'left', 'top', 'width', 'height', 'direction', 'color', 'isEnabled', 'isVisible'
     ],
     containerElement: [
-        'nameid', 'left', 'top', 'width', 'height', 'objViewClass', 'variableType', 'parentContainer', 'isEnabled', 'isVisible'
+        'nameid', 'left', 'top', 'width', 'height', 'contentType', 'selection', 'variableType', 'parentContainer', 'isEnabled', 'isVisible'
     ]
 };

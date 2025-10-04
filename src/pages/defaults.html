@@ -81,12 +81,22 @@
 
                     <!-- Container Type -->
                     <div class="element-property hidden-element">
-                        <label for="elobjViewClass">Object class</label>
-                        <select name="objViewClass" id="elobjViewClass">
-                            <option value="dataSet">Dataset</option>
-                            <option value="variable">Variable</option>
+                        <label for="elcontentType">Content</label>
+                        <select name="contentType" id="elcontentType">
+                            <option value="dataset">Datasets</option>
+                            <option value="variable">Variables</option>
+                            <option value="custom">Custom</option>
                         </select>
                     </div>
+
+                    <div class="element-property hidden-element">
+                        <label for="elselection">Selection</label>
+                        <select name="selection" id="elselection">
+                            <option value="single">Single</option>
+                            <option value="multiple">Multiple</option>
+                        </select>
+                    </div>
+
                     <!-- Parent Container -->
                     <div class="element-property hidden-element" id="parentContainer">
                         <label for="elparentContainer">Parent</label>
