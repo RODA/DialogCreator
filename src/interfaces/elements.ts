@@ -13,7 +13,6 @@ export type buttonElementType = {
     fontColor: string;
     isEnabled: boolean;
     isVisible: boolean;
-    onClick: string;
     elementIds: string[];
     conditions: string;
     [key: string]: any;

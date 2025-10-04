@@ -15,7 +15,6 @@ export const elements: Elements = {
         fontColor: '#000000',
         isEnabled: true,
         isVisible: true,
-        onClick: 'run',
         elementIds: [],
         conditions: ''
     },
