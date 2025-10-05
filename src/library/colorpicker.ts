@@ -72,14 +72,14 @@ function desiredSliderTypeFor(input: HTMLInputElement): SliderType {
 }
 
 function buildPicker(host: HTMLDivElement, initialColor: string): ColorPickerInstance {
-  const picker: ColorPickerInstance = new (iro as any).ColorPicker(host, {
+  const picker: ColorPickerInstance = new iro.ColorPicker(host, {
     width: 260, // allow room for vertical sliders next to the box
     color: isValidHex(initialColor) ? initialColor : '#000000',
     layoutDirection: 'horizontal',
     layout: [
-      { component: (iro as any).ui.Box, options: { borderWidth: 1 } },
-      { component: (iro as any).ui.Slider, options: { sliderType: 'value', layoutDirection: 'vertical', height: 180 } },
-      { component: (iro as any).ui.Slider, options: { sliderType: 'hue', layoutDirection: 'vertical', height: 180 } },
+      { component: iro.ui.Box, options: { borderWidth: 1 } },
+      { component: iro.ui.Slider, options: { sliderType: 'value', layoutDirection: 'vertical', height: 180 } },
+      { component: iro.ui.Slider, options: { sliderType: 'hue', layoutDirection: 'vertical', height: 180 } },
     ],
   });
   return picker;
@@ -138,9 +138,9 @@ function togglePopover(input: HTMLInputElement, open?: boolean) {
       const valid = utils.isValidColor(input.value);
       if (valid) {
         const desiredHex = String(input.value).trim().toLowerCase();
-        const currentHex = String(((picker as any).color.hexString || '')).toLowerCase();
+        const currentHex = String((picker.color.hexString || '')).toLowerCase();
         if (desiredHex && desiredHex !== currentHex) {
-          (picker as any).color.set(desiredHex);
+          picker.color.set(desiredHex);
         }
         // Preserve the exact color brightness/saturation as saved by the user.
         // Do not override V to 100 — this ensures the picker opens at the last chosen color.
@@ -203,8 +203,8 @@ function applyColorToInput(input: HTMLInputElement, hex: string, liveOnly = fals
 }
 
 function enhanceColorInput(input: HTMLInputElement) {
-  if ((input as any)._hasColorPicker) return;
-  (input as any)._hasColorPicker = true;
+  if (input.dataset.hasColorPicker) return;
+  input.dataset.hasColorPicker = 'true';
 
   const parent = input.parentElement;
   if (!parent) return;
@@ -272,7 +272,7 @@ export function attachColorPickers(root?: ParentNode) {
   if (!escInstalled) {
     escInstalled = true;
     document.addEventListener('keydown', (ev: KeyboardEvent) => {
-      const key = ev.key || (ev as any).code;
+      const key = ev.key || ev.code;
       if (key === 'Escape' || key === 'Esc') {
         const pops = Array.from(document.querySelectorAll('.color-popover')) as HTMLElement[];
         pops.forEach(p => p.style.display = 'none');

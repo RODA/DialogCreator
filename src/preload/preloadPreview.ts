@@ -2,12 +2,13 @@ import { coms } from "../modules/coms";
 import { utils } from "../library/utils";
 import { renderutils } from "../library/renderutils";
 import { conditions as cond } from "../modules/conditions";
+import { AnyElement, StringNumber } from "../interfaces/elements";
 
 // Render a snapshot of the dialog using the exact same element factory as the editor
 window.addEventListener("DOMContentLoaded", () => {
   coms.on("renderPreview", (data: unknown) => {
     try {
-      const payload = typeof data === "string" ? JSON.parse(data as string) : (data as any);
+      const payload = typeof data === "string" ? JSON.parse(data as string) : data;
       renderPreview(payload);
     } catch (e) {
       console.error("Failed to parse preview data:", e);
@@ -17,7 +18,12 @@ window.addEventListener("DOMContentLoaded", () => {
 
 function renderPreview(dialog: {
   id: string;
-  properties: { width: string | number; height: string | number; background?: string };
+  properties: {
+    width: string | number;
+    height: string | number;
+    background?: string
+    fontSize?: string | number
+  };
   syntax: Record<string, unknown>;
   elements: Array<Record<string, any>>;
 }) {
@@ -36,18 +42,18 @@ function renderPreview(dialog: {
   canvas.style.backgroundColor = String(background);
 
   // Align typography with editor
-  const fs = Number((dialog.properties as any).fontSize);
+  const fs = Number(dialog.properties.fontSize);
   if (Number.isFinite(fs) && fs > 0) {
-    (coms as any).fontSize = fs;
+    coms.fontSize = fs;
   }
 
   const created: HTMLElement[] = [];
   for (const data of dialog.elements || []) {
-    const element = renderutils.makeElement({ ...(data as any) } as any);
+    const element = renderutils.makeElement({ ...data } as AnyElement);
 
     // Restore original id and nameid to avoid factory renaming for preview
-    if ((data as any).id) element.id = String((data as any).id);
-    if ((data as any).nameid) (element.dataset as any).nameid = String((data as any).nameid);
+    if (data.id) element.id = String(data.id);
+    if (data.nameid) element.dataset.nameid = String(data.nameid);
 
     // Remove the drag-protection overlay used in the editor so interactions work in preview
     const cover = element.querySelector('.elementcover');
@@ -56,16 +62,16 @@ function renderPreview(dialog: {
     }
 
     // Ensure left/top are applied (makeElement already does this when provided)
-    if ((data as any).left !== undefined) {
-      element.style.left = String((data as any).left) + 'px';
+    if (data.left !== undefined) {
+      element.style.left = String(data.left) + 'px';
     }
-    if ((data as any).top !== undefined) {
-      element.style.top = String((data as any).top) + 'px';
+    if (data.top !== undefined) {
+      element.style.top = String(data.top) + 'px';
     }
 
     // Select: populate options from value (comma/semicolon separated)
     if (element instanceof HTMLSelectElement) {
-      const raw = (data as any).value ?? '';
+      const raw = data.value ?? '';
       const text = String(raw);
       const tokens = text.split(/[;,]/).map(s => s.trim()).filter(s => s.length > 0);
       element.innerHTML = '';
@@ -89,7 +95,7 @@ function renderPreview(dialog: {
     if ((element.dataset?.type || '') === 'Checkbox') {
       const custom = element.querySelector('.custom-checkbox') as HTMLElement | null;
       if (custom) {
-        const checked = utils.isTrue((data as any).isChecked);
+        const checked = utils.isTrue(data.isChecked);
         custom.setAttribute('aria-checked', String(checked));
         if (checked) custom.classList.add('checked'); else custom.classList.remove('checked');
         // Keyboard accessibility in preview (space/enter)
@@ -106,7 +112,7 @@ function renderPreview(dialog: {
     if ((element.dataset?.type || '') === 'Radio') {
       const custom = element.querySelector('.custom-radio') as HTMLElement | null;
       if (custom) {
-        const selected = utils.isTrue((data as any).isSelected);
+        const selected = utils.isTrue(data.isSelected);
         custom.setAttribute('aria-checked', String(selected));
         if (selected) {
           custom.classList.add('selected');
@@ -144,8 +150,8 @@ function renderPreview(dialog: {
       const display = element.querySelector('.counter-value') as HTMLDivElement | null;
       const inc = element.querySelector('.counter-arrow.up') as HTMLDivElement | null;
       const dec = element.querySelector('.counter-arrow.down') as HTMLDivElement | null;
-      const min = Number((data as any).startval ?? 0);
-      const max = Number((data as any).maxval ?? min);
+      const min = Number(data.startval ?? 0);
+      const max = Number(data.maxval ?? min);
 
       const getValue = () => Number(display?.textContent ?? min);
       const setValue = (v: number) => { if (display) display.textContent = String(v); };
@@ -168,16 +174,16 @@ function renderPreview(dialog: {
       element.addEventListener('mouseup', clearPress);
       element.addEventListener('mouseleave', clearPress);
       element.addEventListener('click', () => {
-        if (!utils.isTrue((data as any).isEnabled)) return;
-        const action = String((data as any).onClick || 'run');
+        if (!utils.isTrue(data.isEnabled)) return;
+        const action = String(data.onClick || 'run');
         switch (action) {
           case 'reset':
-            // showMessage('info', 'Preview', `Reset action for "${(data as any).nameid || 'Button'}"`);
-            coms.sendTo('editorWindow', 'consolog', `Reset action for "${(data as any).nameid || 'Button'}"`);
+            // showMessage('info', 'Preview', `Reset action for "${data.nameid || 'Button'}"`);
+            coms.sendTo('editorWindow', 'consolog', `Reset action for "${data.nameid || 'Button'}"`);
             break;
           case 'run':
           default:
-            coms.sendTo('editorWindow', 'consolog', `Run action for "${(data as any).nameid || 'Button'}"`);
+            coms.sendTo('editorWindow', 'consolog', `Run action for "${data.nameid || 'Button'}"`);
             break;
         }
       });
@@ -212,11 +218,11 @@ function renderPreview(dialog: {
             handlesize: element.dataset.handlesize || '8',
             handleColor: element.dataset.handleColor || '#75c775',
             handlepos: String(percent)
-          } as any);
+          } as StringNumber);
         };
         const onUp = () => { dragging = false; document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
         handle.addEventListener('mousedown', (ev: MouseEvent) => {
-          if ((element.classList.contains('disabled-div')) || !utils.isTrue((data as any).isEnabled)) return;
+          if ((element.classList.contains('disabled-div')) || !utils.isTrue(data.isEnabled)) return;
           dragging = true;
           document.addEventListener('mousemove', onMove);
           document.addEventListener('mouseup', onUp);
@@ -226,11 +232,11 @@ function renderPreview(dialog: {
     }
 
     // Visibility / Enabled
-    if (!utils.isTrue((data as any).isVisible)) {
+    if (!utils.isTrue(data.isVisible)) {
       // In preview, hidden elements should not be visible at all
       element.style.display = 'none';
     }
-    if (!utils.isTrue((data as any).isEnabled)) {
+    if (!utils.isTrue(data.isEnabled)) {
       element.classList.add('disabled-div');
       // In preview, disabled elements should not be interactive
       element.style.pointerEvents = 'none';
@@ -255,7 +261,7 @@ function renderPreview(dialog: {
 
     // After the element is in DOM: enforce valueType for Input
     if (element instanceof HTMLInputElement) {
-      const valueType = String((data as any).valueType || (element as any).dataset?.valueType || '').toLowerCase();
+      const valueType = String(data.valueType || element.dataset?.valueType || '').toLowerCase();
 
       switch (valueType) {
         case 'integer': {
@@ -385,7 +391,10 @@ function renderPreview(dialog: {
 
     const setEnabledState = (el: HTMLElement, enabled: boolean) => {
       // Update visual state via shared util
-      renderutils.updateElement(el, { isEnabled: enabled ? 'true' : 'false' } as any);
+      renderutils.updateElement(
+        el,
+        { isEnabled: enabled ? 'true' : 'false' } as StringNumber
+      );
       // Native inputs/selects
       if (el instanceof HTMLInputElement || el instanceof HTMLSelectElement) {
         (el as HTMLInputElement | HTMLSelectElement).disabled = !enabled;
@@ -436,22 +445,45 @@ function renderPreview(dialog: {
     const applyAction = (target: HTMLElement, action: string, on: boolean) => {
       switch (action) {
         case 'check':
-          if (on && target.dataset.type === 'Checkbox') renderutils.updateElement(target, { isChecked: 'true' } as any);
+          if (on && target.dataset.type === 'Checkbox') {
+            renderutils.updateElement(
+              target,
+              { isChecked: 'true' } as StringNumber
+            );
+          }
           break;
         case 'uncheck':
-          if (on && target.dataset.type === 'Checkbox') renderutils.updateElement(target, { isChecked: 'false' } as any);
+          if (on && target.dataset.type === 'Checkbox') {
+            renderutils.updateElement(
+              target,
+              { isChecked: 'false' } as StringNumber
+            );
+          }
           break;
         case 'select':
-          if (on && target.dataset.type === 'Radio') renderutils.updateElement(target, { isSelected: 'true' } as any);
+          if (on && target.dataset.type === 'Radio') {
+            renderutils.updateElement(
+              target,
+              { isSelected: 'true' } as StringNumber
+            );
+          }
           break;
           case 'unselect':
-            if (on && target.dataset.type === 'Radio') renderutils.updateElement(target, { isSelected: 'false' } as any);
+            if (on && target.dataset.type === 'Radio') {
+              renderutils.updateElement(
+                target,
+                { isSelected: 'false' } as StringNumber
+              );
+            }
             break;
           default:
             // Parameterized actions
             if (on && action.toLowerCase().startsWith('setvalue=')) {
               const num = Number(action.split('=')[1]);
-              if (Number.isFinite(num) && String(target.dataset.type || '').toLowerCase() === 'counter') {
+              if (
+                Number.isFinite(num) &&
+                String(target.dataset.type || '').toLowerCase() === 'counter'
+              ) {
                 const min = Number(target.dataset.startval ?? 0);
                 const max = Number(target.dataset.maxval ?? min);
                 const v = Math.max(min, Math.min(max, num));
@@ -570,7 +602,7 @@ function renderPreview(dialog: {
   }
 
   document.addEventListener('keydown', (ev: KeyboardEvent) => {
-    const key = ev.key || (ev as any).code;
+    const key = ev.key || ev.code;
     if (key === 'Escape' || key === 'Esc') {
       Array.from(document.querySelectorAll('.color-popover')).forEach((el) => {
         (el as HTMLElement).style.display = 'none';

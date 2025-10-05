@@ -3,13 +3,15 @@
 import { RenderUtils } from '../interfaces/renderutils';
 import { utils } from './utils';
 import { dialog } from '../modules/dialog';
-import { elements } from '../modules/elements';
+import { elements, ElementsWithPersist } from '../modules/elements';
 import { DialogProperties } from "../interfaces/dialog";
+import { PrimitiveKind, AssertOptions, BuildOptions, UniformSchema, StringNumber } from "../interfaces/elements";
 import { showError, coms } from '../modules/coms';
 import { v4 as uuidv4 } from 'uuid';
 import * as path from "path";
 import * as fs from "fs";
-import { AnyElement } from '../interfaces/elements';
+
+let __uniformSchema: UniformSchema | null = null;
 
 export const renderutils: RenderUtils = {
 
@@ -249,9 +251,41 @@ export const renderutils: RenderUtils = {
         const element = document.createElement(eltype) as HTMLDivElement | HTMLInputElement | HTMLSelectElement;
 
         data.id = uuid;
+        // Assign unique nameid BEFORE copying properties into dataset so dataset.nameid isn't the template default
+        if (utils.isNotElementOf(data.type, ["Counter", "Label"])) {
+            data.nameid = nameid;
+        }
+
         element.style.position = 'absolute';
         element.style.top = data.top + 'px';
         element.style.left = data.left + 'px';
+
+        const errs = (renderutils.assertTypes(data, elements, { collect: true }) || []) as string[];
+        if (errs.length) {
+            console.log('Element creation aborted due to invalid or missing properties:\n' + errs.join('\n'));
+        }
+
+        function toDatasetValue(v: unknown): string | undefined {
+            if (v == null) return undefined;
+            if (Array.isArray(v)) return v.map(String).join(',');
+            return String(v);
+        }
+
+        const bag = data as Record<string, unknown>;
+        const keys = utils.getKeys(bag);
+        keys.forEach((key) => {
+            if (key === '$persist' || key.startsWith('$')) return;
+            if (!/^[$A-Za-z_][\w$]*$/.test(key)) return;
+
+            const v = toDatasetValue(bag[key]);
+            if (v !== undefined) {
+                try {
+                    element.dataset[key] = v;
+                } catch {
+                    /* silently ignore invalid dataset assignments */
+                }
+            }
+        });
 
         if (data.type == "Button") {
 
@@ -285,8 +319,8 @@ export const renderutils: RenderUtils = {
             element.type = 'text';
             element.value = data.value || '';
             element.style.width = data.width + 'px';
-            element.style.maxHeight = data.height + 'px';
-            element.style.maxWidth = data.maxWidth + 'px';
+            // element.style.maxHeight = data.height + 'px';
+            // element.style.maxWidth = data.maxWidth + 'px';
 
         } else if (data.type == "Select") {
 
@@ -386,7 +420,7 @@ export const renderutils: RenderUtils = {
 
             display.style.fontFamily = coms.fontFamily;
             display.style.fontSize = coms.fontSize + 'px';
-            display.style.color = data.fontColor || '#000000';
+            display.style.color = data.color || '#000000';
 
             const increase = document.createElement("div");
             increase.className = "counter-arrow up";
@@ -408,7 +442,10 @@ export const renderutils: RenderUtils = {
             handle.id = 'slider-handle-' + uuid;
             element.appendChild(handle);
 
-            renderutils.updateHandleStyle(handle, data);
+            const handleConfig = Object.fromEntries(
+                Object.entries(data).map(([k, v]) => [k, v ?? ''])
+            ) as { [key: string]: string };
+            renderutils.updateHandleStyle(handle, handleConfig);
 
         } else if (data.type == "Label") {
 
@@ -422,12 +459,12 @@ export const renderutils: RenderUtils = {
             // Place in normal flow so width measures to content
             element.style.position = 'relative';
             // Default to single-line unless lineClamp > 1
-            const clampInit = Number((data as any).lineClamp) || 1;
-            const maxWInit = Number((data as any).maxWidth) || 0;
+            const clampInit = Number(data.lineClamp) || 1;
+            const maxWInit = Number(data.maxWidth) || 0;
             if (clampInit > 1) {
                 element.style.display = '-webkit-box';
-                (element.style as any).setProperty('-webkit-line-clamp', String(clampInit));
-                (element.style as any).setProperty('-webkit-box-orient', 'vertical');
+                (element.style).setProperty('-webkit-line-clamp', String(clampInit));
+                (element.style).setProperty('-webkit-box-orient', 'vertical');
                 element.style.whiteSpace = 'normal';
                 // Height cap for the clamp
                 const maxH = Math.round(coms.fontSize * 1.2 * clampInit);
@@ -458,15 +495,13 @@ export const renderutils: RenderUtils = {
 
         }
 
-        if (utils.isNotElementOf(data.type, ["Counter", "Label"])) {
-            data.nameid = nameid;
-        }
+        // nameid already assigned earlier (before dataset population) for non Counter/Label types
         element.style.fontFamily = coms.fontFamily;
         element.style.fontSize = coms.fontSize + 'px';
 
-        if (utils.exists(data.fontColor)) {
-            element.style.color = data.fontColor;
-        }
+        // if (utils.exists(data.fontColor)) {
+        //     element.style.color = data.fontColor;
+        // }
 
         if (utils.isFalse(data.isVisible)) {
             element.classList.add('design-hidden');
@@ -475,11 +510,6 @@ export const renderutils: RenderUtils = {
         if (utils.isFalse(data.isEnabled)) {
             element.classList.add('disabled-div');
         }
-
-        const keys = utils.getKeys(data);
-        keys.forEach((key) => {
-            element.dataset[key] = data[key];
-        });
 
         element.id = uuid;
 
@@ -1086,8 +1116,8 @@ export const renderutils: RenderUtils = {
             handle.style.borderRadius = '';
 
             // Update dataset (this triggers CSS-based fallback if needed)
-            handle.dataset.handleshape = obj.handleshape || 'triangle';
-            handle.dataset.direction = obj.direction;
+            handle.dataset.handleshape = String(obj.handleshape) || 'triangle';
+            handle.dataset.direction = String(obj.direction);
             if (obj.handleshape === 'triangle') {
                 if (obj.direction === 'horizontal') {
                     handle.style.borderLeft = obj.handlesize + 'px solid transparent';
@@ -1108,7 +1138,7 @@ export const renderutils: RenderUtils = {
                 const radius = 1.5 * Number(obj.handlesize);
                 handle.style.width = `${radius}px`;
                 handle.style.height = `${radius}px`;
-                handle.style.backgroundColor = obj.handleColor;
+                handle.style.backgroundColor = String(obj.handleColor);
                 handle.style.borderRadius = '50%';
                 if (obj.direction == "horizontal") {
                     handle.style.left = obj.handlepos + "%";
@@ -1269,7 +1299,7 @@ export const renderutils: RenderUtils = {
             const currentLeft = Number(el.dataset.left ?? (parseInt(el.style.left || '0', 10) || 0));
             const currentTop = Number(el.dataset.top ?? (parseInt(el.style.top || '0', 10) || 0));
             const props: Record<string, number> = { left: currentLeft + dx, top: currentTop + dy };
-            renderutils.updateElement(el, props as any);
+            renderutils.updateElement(el, props as StringNumber);
             el.dataset.left = String(props.left);
             el.dataset.top = String(props.top);
         }
@@ -1387,5 +1417,112 @@ export const renderutils: RenderUtils = {
                     break;
             }
         }
+    },
+
+    buildUniformSchema: function(templates: Record<string, any>, opts: BuildOptions = {}) {
+        const {
+            includeBooleans = true,
+            includeNumbers = true,
+            includeStrings = true,
+            skipKeys = [],
+            treatMixedAs = 'skip'
+        } = opts;
+
+        const typeMap: Record<string, Set<PrimitiveKind>> = {};
+        const allowed = new Set<PrimitiveKind>();
+        if (includeStrings) allowed.add('string');
+        if (includeNumbers) allowed.add('number');
+        if (includeBooleans) allowed.add('boolean');
+
+        for (const tmpl of Object.values(templates)) {
+            if (!tmpl || typeof tmpl !== 'object') continue;
+            for (const [k, v] of Object.entries(tmpl)) {
+            if (skipKeys.includes(k)) continue;
+            const t = typeof v;
+            if (t === 'string' || t === 'number' || t === 'boolean') {
+                if (!allowed.has(t)) continue;
+                if (!typeMap[k]) typeMap[k] = new Set();
+                typeMap[k].add(t);
+            }
+            }
+        }
+
+        const schema: UniformSchema = {};
+        for (const [k, set] of Object.entries(typeMap)) {
+            if (set.size === 1) {
+            schema[k] = [...set][0];
+            } else {
+            if (treatMixedAs !== 'skip') {
+                schema[k] = treatMixedAs as PrimitiveKind; // user-forced
+            }
+            // else skip keys with mixed types
+            }
+        }
+        return schema;
+    },
+
+    assertTypes: function(
+        data: Record<string, unknown>,
+        templates: Record<string, any>,
+        options: AssertOptions = {}
+    ) {
+        const { schema, collect = false, strictPresence = false } = options;
+        if (!__uniformSchema && !schema) {
+            __uniformSchema = renderutils.buildUniformSchema(templates);
+        }
+        const active = schema || __uniformSchema!;
+        const errors: string[] = [];
+
+        for (const [key, expected] of Object.entries(active)) {
+            const has = Object.prototype.hasOwnProperty.call(data, key);
+            if (!has) {
+                if (strictPresence) {
+                    const msg = `Missing expected key "${key}"`;
+                    if (collect) errors.push(msg); else throw new Error(msg);
+                }
+                continue;
+            }
+            const val = data[key];
+            const t = typeof val;
+            if (t !== expected) {
+            // Attempt safe coercions to reduce noisy errors when loading persisted dialogs
+            let coerced = false;
+            if (expected === 'string' && (t === 'boolean' || t === 'number')) {
+                data[key] = String(val);
+                coerced = true;
+            } else if (expected === 'boolean' && t === 'string') {
+                const low = String(val).toLowerCase();
+                if (low === 'true' || low === 'false') {
+                    data[key] = (low === 'true');
+                    coerced = true;
+                }
+            } else if (expected === 'number' && t === 'string') {
+                const num = Number(val);
+                if (!Number.isNaN(num)) {
+                    data[key] = num;
+                    coerced = true;
+                }
+            }
+            if (!coerced) {
+                const msg = `Property "${key}" expected ${expected}, got ${t}`;
+                if (collect) {
+                    errors.push(msg);
+                } else {
+                    throw new Error(msg);
+                }
+            }
+            }
+        }
+
+        if (collect) return errors;
+    },
+
+    // Return the keys of an element template that are NOT listed in its $persist array
+    // (excluding the metadata key $persist itself)
+    getNonPersistKeys: function(name) {
+        const tmpl = elements[name];
+        if (!tmpl) return [];
+        const persistSet = new Set<string>((tmpl.$persist as readonly string[] | undefined) || []);
+        return Object.keys(tmpl).filter(k => k !== '$persist' && !persistSet.has(k));
     }
 }

@@ -1,5 +1,15 @@
 export interface Utils {
-    getKeys(obj: Record<string, unknown>): Array<string>;
+    getKeys<T extends object>(obj: T | null | undefined): Array<Extract<keyof T, string>>;
+    // getKeys(obj: Record<string, unknown>): Array<string>;
+    isKeyOf<T extends object>(obj: T, key: PropertyKey): key is keyof T;
+    isOwnKeyOf<T extends object>(obj: T, key: PropertyKey): key is keyof T;
+    getKeyValue<T extends object, K extends keyof T>(obj: T, key: K): T[K];
+
+    // --- overload expectType
+    expectType<T extends object, K extends string>(obj: T, key: K, kind: 'string'): asserts obj is T & Record<K, string>;
+    expectType<T extends object, K extends string>(obj: T, key: K, kind: 'number'): asserts obj is T & Record<K, number>;
+    expectType<T extends object, K extends string>(obj: T, key: K, kind: 'boolean'): asserts obj is T & Record<K, boolean>;
+
     isNumeric: (x: string) => boolean;
     possibleNumeric: (x: string) => boolean;
     isInteger: (x: number) => boolean;

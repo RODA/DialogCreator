@@ -2,7 +2,7 @@
 export type buttonElementType = {
     parentId: string;
     id: string;
-    type: string;
+    type: 'Button';
     nameid: string;
     label: string;
     left: number;
@@ -15,12 +15,11 @@ export type buttonElementType = {
     isVisible: boolean;
     elementIds: string[];
     conditions: string;
-    [key: string]: any;
 }
 export type inputElementType = {
     parentId: string;
     id: string;
-    type: string;
+    type: 'Input';
     nameid: string;
     left: number;
     top: number;
@@ -31,12 +30,11 @@ export type inputElementType = {
     isVisible: boolean;
     elementIds: string[];
     conditions: string;
-    [key: string]: any;
 }
 export type selectElementType = {
     parentId: string;
     id: string;
-    type: string;
+    type: 'Select';
     nameid: string;
     left: number;
     top: number;
@@ -49,12 +47,11 @@ export type selectElementType = {
     isVisible: boolean;
     elementIds: string[];
     conditions: string;
-    [key: string]: any;
 }
 export type checkboxElementType = {
     parentId: string;
     id: string;
-    type: string;
+    type: 'Checkbox';
     nameid: string;
     left: number;
     top: number;
@@ -66,12 +63,11 @@ export type checkboxElementType = {
     isVisible: boolean;
     elementIds: string[];
     conditions: string;
-    [key: string]: any;
 }
 export type radioElementType = {
     parentId: string;
     id: string;
-    type: string;
+    type: 'Radio';
     nameid: string;
     group: string;
     left: number;
@@ -83,12 +79,11 @@ export type radioElementType = {
     isVisible: boolean;
     elementIds: string[];
     conditions: string;
-    [key: string]: any;
 }
 export type counterElementType = {
     parentId: string;
     id: string;
-    type: string;
+    type: 'Counter';
     nameid: string;
     left: number;
     top: number;
@@ -100,12 +95,11 @@ export type counterElementType = {
     isVisible: boolean;
     elementIds: string[];
     conditions: string;
-    [key: string]: any;
 }
 export type sliderElementType = {
     parentId: string;
     id: string;
-    type: string;
+    type: 'Slider';
     nameid: string;
     left: number;
     top: number;
@@ -119,13 +113,14 @@ export type sliderElementType = {
     handleshape: string;
     handleColor: string;
     handlesize: number;
+    elementIds: string[];
     conditions: string;
-    [key: string]: any;
 }
 export type labelElementType = {
     parentId: string;
     id: string;
-    type: string;
+    type: 'Label';
+    nameid: string;
     left: number;
     top: number;
     maxWidth: number;
@@ -136,12 +131,12 @@ export type labelElementType = {
     isVisible: boolean;
     elementIds: string[];
     conditions: string;
-    [key: string]: any;
 }
 export type separatorElementType = {
     parentId: string;
     id: string;
-    type: string;
+    type: 'Separator';
+    nameid: string;
     left: number;
     top: number;
     width: number;
@@ -150,13 +145,13 @@ export type separatorElementType = {
     color: string;
     isEnabled?: boolean;
     isVisible: boolean;
+    elementIds: string[];
     conditions: string;
-    [key: string]: any;
 }
 export type containerElementType = {
     parentId: string;
     id: string;
-    type: string;
+    type: 'Container';
     nameid: string;
     left: number;
     top: number;
@@ -170,12 +165,11 @@ export type containerElementType = {
     isVisible: boolean;
     elementIds: string[];
     conditions: string;
-    [key: string]: any;
 }
 export type groupElementType = {
     parentId: string;
     id: string;
-    type: string;
+    type: 'Group';
     nameid: string;
     left: number;
     top: number;
@@ -183,7 +177,6 @@ export type groupElementType = {
     isVisible: boolean;
     elementIds: string[];
     conditions: string;
-    [key: string]: any;
 }
 
 
@@ -199,10 +192,26 @@ export interface Elements {
     separatorElement: separatorElementType;
     containerElement: containerElementType;
     groupElement: groupElementType;
-    [key: string]: Elements[keyof Elements];
 }
 
 
-
+export type StringNumber = Record<string, string | number>;
+export type GeneralElements = Record<string, AnyElement>;
 export type AnyElement = Elements[keyof Elements];
 export type keyofAnyElement = keyof AnyElement;
+
+
+export type PrimitiveKind = 'string' | 'number' | 'boolean';
+export type UniformSchema = Record<string, PrimitiveKind>;
+export interface BuildOptions {
+    includeBooleans?: boolean;   // default true
+    includeNumbers?: boolean;    // default true
+    includeStrings?: boolean;    // default true
+    skipKeys?: string[];         // explicit excludes
+    treatMixedAs?: PrimitiveKind | 'skip'; // default 'skip'
+}
+export interface AssertOptions {
+    schema?: UniformSchema;
+    collect?: boolean;  // if true, return array of errors instead of throwing first
+    strictPresence?: boolean; // if true, error if schema key is missing on data
+}

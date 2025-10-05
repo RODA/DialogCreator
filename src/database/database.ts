@@ -2,6 +2,8 @@ import * as path from "path";
 import * as sqlite3 from "sqlite3";
 import { DBInterface, DBElementsProps } from "../interfaces/database";
 import { elements } from "../modules/elements";
+import { utils } from "../library/utils";
+import { AnyElement } from '../interfaces/elements';
 const sqlite = sqlite3.verbose();
 
 let dbFile = '';
@@ -36,11 +38,16 @@ export const database: DBInterface = {
 
                 if (missing.length > 0) {
                     // Insert missing properties with defaults from modules/elements
-                    const defaults = elements[element] || {};
+                    if (!utils.isKeyOf(elements, element)) {
+                        reject(new Error(`Unknown element: ${element}`));
+                        return;
+                    }
+                    type DefaultsType = AnyElement & { [key: string]: string | number } & { $persist?: readonly string[] };
+                    const defaults = (elements[element] || {}) as DefaultsType;
                     const insSql = "INSERT INTO elements (element, property, value) VALUES (?, ?, ?)";
                     try {
                         await Promise.all(missing.map(p => new Promise<void>((res) => {
-                            const v = defaults[p] !== undefined ? String(defaults[p]) : '';
+                            const v = String(defaults[p]);
                             db.run(insSql, [element, p, v], () => res());
                         })));
                     } catch (_e) {

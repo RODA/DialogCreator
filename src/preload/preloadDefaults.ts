@@ -1,6 +1,7 @@
 import { showError, coms } from "../modules/coms";
 import { renderutils } from "../library/renderutils";
-import { DBElements, DBElementsProps, PropertiesType } from "../interfaces/database";
+import { DBElements, DBElementsProps } from "../interfaces/database";
+import { GeneralElements } from "../interfaces/elements";
 import { elements } from "../modules/elements";
 import { attachColorPickers, syncColorPickers } from "../library/colorpicker";
 
@@ -47,11 +48,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Warn developer if element defaults define properties missing from DB interface mapping
             const allowed = DBElementsProps[name] || [];
-            const defaults = (elements as any)[name] || {};
+            const defaults = (elements as GeneralElements)[name] || {};
+            const nonPersistKeys = renderutils.getNonPersistKeys(name as keyof typeof elements);
             const missingFromDBInterface = Object.keys(defaults)
                 .filter(k => !allowed.includes(k))
-                // ignore non-persisted/volatile keys if any
-                .filter(k => !['id', 'parentId', 'type', 'elementIds', 'conditions'].includes(k));
+                // ignore all non-persist keys dynamically (covers id, parentId, type, etc.)
+                .filter(k => !nonPersistKeys.includes(k));
             if (missingFromDBInterface.length > 0) {
                 console.log(missingFromDBInterface)
                 showError(

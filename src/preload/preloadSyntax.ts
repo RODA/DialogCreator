@@ -5,7 +5,7 @@ import { AnyElement } from "../interfaces/elements";
 type FlatProperties = {
   id: string;
   type: string;
-  nameid?: string;
+  nameid: string;
   group?: string;
   value?: string;
   isChecked?: boolean | string;
@@ -22,6 +22,22 @@ type rowType = {
 function tokensFromValue(value: string | undefined): string[] {
   if (!value) return [];
   return String(value).split(/[;,]/).map(s => s.trim()).filter(s => s.length);
+}
+
+function toFlat(el: AnyElement): FlatProperties {
+  switch (el.type) {
+    case 'Radio':
+      return { id: el.id, type: el.type, nameid: el.nameid, group: el.group, isSelected: el.isSelected };
+    case 'Checkbox':
+      return { id: el.id, type: el.type, nameid: el.nameid, isChecked: el.isChecked };
+    case 'Slider':
+      return { id: el.id, type: el.type, nameid: el.nameid, handlepos: el.handlepos };
+    case 'Input':
+      return { id: el.id, type: el.type, nameid: el.nameid, value: el.value };
+    default:
+      // Fallback to el.id (always a string) if nameid is missing
+      return { id: el.id, type: el.type, nameid: (el as { nameid?: string }).nameid ?? el.id };
+  }
 }
 
 function insertAtCursor(textarea: HTMLTextAreaElement, text: string) {
@@ -53,7 +69,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
   coms.on('renderSyntax', (payload: unknown) => {
     try {
-      const data = (typeof payload === 'string') ? JSON.parse(payload as string) : (payload as any);
+      const data = (typeof payload === 'string') ? JSON.parse(payload) : payload;
       const elementsAll = (data?.elements || []) as AnyElement[];
 
       // Apply exclusions (e.g., Buttons)
@@ -72,13 +88,15 @@ window.addEventListener('DOMContentLoaded', () => {
         }
       }
 
+
       // Build radio groups
       const radioGroups = new Map<string, FlatProperties[]>();
       const nonRadios: FlatProperties[] = [];
       for (const el of elements) {
-        const type = String((el as any).type || '').toLowerCase();
+        const flat = toFlat(el as AnyElement);
+        const type = String(flat.type || '').toLowerCase();
         if (type === 'radio') {
-          const g = String((el as any).group || 'radiogroup1');
+          const g = String(flat.group || 'radiogroup1');
           if (!radioGroups.has(g)) {
             radioGroups.set(g, []);
           }
@@ -92,15 +110,16 @@ window.addEventListener('DOMContentLoaded', () => {
 
       // Non-radio elements
       for (const el of nonRadios) {
-        const t = String((el as any).type || '');
-        const name = String((el as any).nameid || (el as any).id || '');
+        const flat = toFlat(el as AnyElement);
+        const t = String(flat.type || '');
+        const name = String(flat.nameid || flat.id || '');
         if (!name) continue;
         let control: HTMLElement;
         switch (t) {
           case 'Checkbox': {
             const sel = document.createElement('select');
             sel.innerHTML = `<option value="checked">checked</option><option value="unchecked">unchecked</option>`;
-            const v = utils.isTrue((el as any).isChecked) ? 'checked' : 'unchecked';
+            const v = utils.isTrue(flat.isChecked) ? 'checked' : 'unchecked';
             sel.value = v;
             control = sel;
             break;
@@ -115,7 +134,7 @@ window.addEventListener('DOMContentLoaded', () => {
           case 'Slider': {
             const inp = document.createElement('input');
             inp.type = 'text';
-            const pos = Number((el as any).handlepos ?? 50);
+            const pos = Number(flat.handlepos ?? 50);
             inp.value = String(Math.max(0, Math.min(100, pos)) / 100);
             control = inp;
             break;
@@ -123,7 +142,7 @@ window.addEventListener('DOMContentLoaded', () => {
           case 'Input': {
             const inp = document.createElement('input');
             inp.type = 'text';
-            inp.value = String((el as any).value ?? '');
+            inp.value = String(flat.value ?? '');
             control = inp;
             break;
           }
@@ -146,14 +165,15 @@ window.addEventListener('DOMContentLoaded', () => {
       for (const [groupName, members] of radioGroups) {
         const sel = document.createElement('select');
         for (const r of members) {
+          const flat = toFlat(r as AnyElement);
           // Prefer the element's Value property; fall back to nameid or id when missing
-          const rname = String((r as any).nameid ?? (r as any).id ?? '');
+          const rname = String(flat.nameid ?? flat.id ?? '');
           if (!rname) continue;
           const opt = document.createElement('option');
           opt.value = rname;
           opt.textContent = rname;
           sel.appendChild(opt);
-          if (utils.isTrue((r as any).isSelected)) {
+          if (utils.isTrue(flat.isSelected)) {
             sel.value = rname;
           }
         }

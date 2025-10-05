@@ -12,10 +12,50 @@ const FALSE_SET = new Set(['false', 'f', '0']); // , 'no', 'n', 'off'
 let __measureCanvas: HTMLCanvasElement | null = null;
 
 export const utils: Utils = {
-    getKeys: function(obj) {
-        if (obj === null) return([]);
-        return Object.keys(obj);
+    // Generic typing lives in the Utils interface; we keep implementation minimal here.
+    getKeys: function (obj) {
+        if (!obj) {
+            // never[] is assignable to Array<Extract<keyof typeof obj,string>>
+            return [] as never[];
+        }
+        return Object.keys(obj) as Array<Extract<keyof typeof obj, string>>;
     },
+    // getKeys: function(obj) {
+    //     if (obj === null) return([]);
+    //     return Object.keys(obj);
+    // },
+
+    // ---- inline typing necessary below ----
+    isKeyOf: function <T extends object>(obj: T, key: PropertyKey): key is keyof T {
+        return !!obj && key in obj;
+    },
+
+    isOwnKeyOf: function <T extends object>(obj: T, key: PropertyKey): key is keyof T {
+        if (!obj) return false;
+        return Object.prototype.hasOwnProperty.call(obj, key);
+    },
+
+    getKeyValue: function <T extends object, K extends keyof T>(obj: T, key: K): T[K] {
+        return obj[key];
+    },
+
+    // Overloaded primitive type expectation helper
+    expectType: (function() {
+        function expectType<T extends object, K extends string>(obj: T, key: K, kind: 'string'): asserts obj is T & Record<K, string>;
+        function expectType<T extends object, K extends string>(obj: T, key: K, kind: 'number'): asserts obj is T & Record<K, number>;
+        function expectType<T extends object, K extends string>(obj: T, key: K, kind: 'boolean'): asserts obj is T & Record<K, boolean>;
+        function expectType(obj: any, key: string, kind: 'string' | 'number' | 'boolean') {
+            if (!obj || !(key in obj)) {
+                throw new Error(`Missing property "${key}"`);
+            }
+            const v = obj[key];
+            if (typeof v !== kind || (kind === 'number' && !Number.isFinite(v))) {
+                throw new Error(`Expected "${key}" to be ${kind}, got ${typeof v}`);
+            }
+        }
+        return expectType;
+    })(),
+    // ---- inline typing necessary above ----
 
     isNumeric: function (x) {
         if (utils.missing(x) || x === null || ("" + x).length == 0) {
@@ -164,9 +204,9 @@ export const utils: Utils = {
             .join(', ');
 
         // Prefer OffscreenCanvas if available (no layout required)
-        const Offscreen = (globalThis as any).OffscreenCanvas as any;
+        const Offscreen = globalThis.OffscreenCanvas;
         if (Offscreen && typeof Offscreen === 'function') {
-            const off = new Offscreen(0, 0) as any;
+            const off = new Offscreen(0, 0);
             const ctx = off.getContext('2d');
             if (ctx && typeof ctx.measureText === 'function') {
                 ctx.font = `${size}px ${familyNormalized}`;
@@ -176,7 +216,7 @@ export const utils: Utils = {
         }
 
         // Fallback to a hidden canvas element in the DOM
-        if (typeof document !== 'undefined' && typeof (document as any).createElement === 'function') {
+        if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             if (ctx) {

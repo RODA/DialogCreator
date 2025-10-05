@@ -1,7 +1,7 @@
 import { showError, coms } from "../modules/coms";
 import { renderutils } from "../library/renderutils";
 import { utils } from "../library/utils";
-import { Elements } from '../interfaces/elements';
+import { Elements, AnyElement, keyofAnyElement, StringNumber } from '../interfaces/elements';
 import { elements as els } from '../modules/elements';
 import { attachColorPickers, syncColorPickers } from '../library/colorpicker';
 import { dialog } from "../modules/dialog";
@@ -159,7 +159,7 @@ coms.on('elementSelected', (id) => {
                 selection.disabled = true;
                 // Reflect change on the element if needed
                 if (element && element.dataset.selection !== 'single') {
-                    renderutils.updateElement(element, { selection: 'single' } as any);
+                    renderutils.updateElement(element, { selection: 'single' } as StringNumber);
                     element.dataset.selection = 'single';
                 }
             } else {
@@ -475,8 +475,11 @@ window.addEventListener("DOMContentLoaded", async () => {
                 for (const sel of selectedEls) {
                     const currentLeft = Number(sel.dataset.left ?? (parseInt(sel.style.left || '0', 10) || 0));
                     const currentTop = Number(sel.dataset.top ?? (parseInt(sel.style.top || '0', 10) || 0));
-                    const props: Record<string, number> = { left: currentLeft + dx, top: currentTop + dy };
-                    renderutils.updateElement(sel, props as any);
+                    const props = {
+                        left: currentLeft + dx,
+                        top: currentTop + dy
+                    } as StringNumber;
+                    renderutils.updateElement(sel, props);
                     sel.dataset.left = String(props.left);
                     sel.dataset.top = String(props.top);
                 }
@@ -497,11 +500,11 @@ window.addEventListener("DOMContentLoaded", async () => {
             if (isArrowLeft) newLeft = currentLeft - step;
             if (isArrowRight) newLeft = currentLeft + step;
 
-            const props: Record<string, string | number> = {};
+            const props = {} as StringNumber;
             if (newLeft !== currentLeft) props.left = newLeft;
             if (newTop !== currentTop) props.top = newTop;
             if (Object.keys(props).length) {
-                renderutils.updateElement(el, props as any);
+                renderutils.updateElement(el, props);
                 if (props.left !== undefined) el.dataset.left = String(props.left);
                 if (props.top !== undefined) el.dataset.top = String(props.top);
             }
@@ -619,7 +622,14 @@ window.addEventListener("DOMContentLoaded", async () => {
                 if (utils.possibleNumeric(String(value))) {
                     value = utils.asNumeric(String(value));
                 }
-                elements[name][pkey] = value;
+                // elements[name][pkey] = value;
+                if (utils.isKeyOf(elements, name)) {
+                    const element = elements[name] as AnyElement;
+                    const k = pkey as keyofAnyElement;
+                    if (k in element) {
+                        (element as any)[k] = value; // safe enough after the above guard
+                    }
+                }
             }
         }
     });

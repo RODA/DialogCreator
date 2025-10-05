@@ -779,7 +779,7 @@ export const editor: Editor = {
                     } as Record<string, string>;
                 }
 
-                renderutils.updateElement(element, props as AnyElement);
+                renderutils.updateElement(element, props);
 
                 // Keep last-selected id updated
                 const propsList = document.getElementById('propertiesList') as HTMLDivElement | null;
@@ -959,8 +959,8 @@ export const editor: Editor = {
                     height,
                     elementIds: members.map(m => m.id),
                 };
-                const gcondsSave = (child.dataset as any)?.groupConditions || '';
-                if (gcondsSave) (groupObj as any).groupConditions = String(gcondsSave);
+                const gcondsSave = child.dataset?.groupConditions || '';
+                if (gcondsSave) groupObj.groupConditions = String(gcondsSave);
                 flattened.push(groupObj);
 
                 // Save children with absolute coordinates and carry groupConditions for runtime
@@ -976,7 +976,7 @@ export const editor: Editor = {
                         }
                         obj[key] = value as unknown;
                     }
-                    if (gcondsSave) (obj as any).groupConditions = String(gcondsSave);
+                    if (gcondsSave) obj.groupConditions = String(gcondsSave);
 
                     const mLeftAbs = toNumber(m.getAttribute('data-left') as string, 0) + gLeft;
                     const mTopAbs = toNumber(m.getAttribute('data-top') as string, 0) + gTop;
@@ -1034,7 +1034,7 @@ export const editor: Editor = {
 
     loadDialogFromJson: function(data: unknown) {
         try {
-            const obj = typeof data === 'string' ? JSON.parse(data) : (data as any);
+            const obj = typeof data === 'string' ? JSON.parse(data) : data;
             if (!obj || !obj.properties) return;
 
             // Clear existing elements
@@ -1063,29 +1063,32 @@ export const editor: Editor = {
             const arr = Array.isArray(obj.elements) ? obj.elements : [];
             const groups: any[] = [];
             for (const element of arr) {
-                if (String((element as any).type || '').toLowerCase() === 'group') { groups.push(element); continue; }
+                if (String(element.type || '').toLowerCase() === 'group') {
+                    groups.push(element);
+                    continue;
+                }
                 // Use the same wrapping approach as addElementToDialog, but preserve ids and nameids from JSON
-                const core = renderutils.makeElement({ ...(element as any) } as any);
+                const core = renderutils.makeElement({ ...element });
                 const wrapper = document.createElement('div');
                 wrapper.classList.add('element-wrapper');
                 wrapper.style.position = 'absolute';
 
-                const desiredId = String((element as any).id || core.id);
-                const desiredType = String((element as any).type || core.dataset.type || '');
-                const desiredNameId = String((element as any).nameid || core.dataset.nameid || '');
+                const desiredId = String(element.id || core.id);
+                const desiredType = String(element.type || core.dataset.type || '');
+                const desiredNameId = String(element.nameid || core.dataset.nameid || '');
 
                 // Preserve id on wrapper, move inner id aside
                 wrapper.id = desiredId;
                 core.id = desiredId + '-inner';
 
                 // Position from JSON
-                const left = Number((element as any).left ?? (parseInt(core.style.left || '0', 10) || 0));
-                const top = Number((element as any).top ?? (parseInt(core.style.top || '0', 10) || 0));
+                const left = Number(element.left ?? (parseInt(core.style.left || '0', 10) || 0));
+                const top = Number(element.top ?? (parseInt(core.style.top || '0', 10) || 0));
                 wrapper.style.left = `${left}px`;
                 wrapper.style.top = `${top}px`;
 
                 // Copy dataset from JSON into wrapper
-                for (const [key, value] of Object.entries(element as any)) {
+                for (const [key, value] of Object.entries(element)) {
                     if (key === 'id') continue;
                     const val = typeof value === 'string' ? value : String(value);
                     wrapper.dataset[key] = val;
@@ -1131,23 +1134,23 @@ export const editor: Editor = {
 
             // Recreate groups (after children exist)
             for (const g of groups) {
-                const ids: string[] = Array.isArray((g as any).elementIds)
-                    ? (g as any).elementIds
-                    : String((g as any).elementIds || '').split(',').map((s: string) => s.trim()).filter((s: string) => s.length);
+                const ids: string[] = Array.isArray(g.elementIds)
+                    ? g.elementIds
+                    : String(g.elementIds || '').split(',').map((s: string) => s.trim()).filter((s: string) => s.length);
                 const newId = renderutils.makeGroupFromSelection(ids, true);
                 if (!newId) continue;
                 const groupEl = dialog.getElement(newId) as HTMLElement | undefined;
                 if (!groupEl) continue;
-                const savedId = String((g as any).id || newId);
+                const savedId = String(g.id || newId);
                 // Set group id to saved id
                 groupEl.id = savedId;
-                (dialog.elements as any)[savedId] = groupEl;
-                delete (dialog.elements as any)[newId];
+                dialog.elements[savedId] = groupEl;
+                delete dialog.elements[newId];
                 // Apply group conditions
-                const gconds = String((g as any).groupConditions || '');
+                const gconds = String(g.groupConditions || '');
                 if (gconds) groupEl.dataset.groupConditions = gconds;
                 // Move group to saved position if provided
-                const gl = (g as any).left; const gt = (g as any).top;
+                const gl = g.left; const gt = g.top;
                 if (gl !== undefined || gt !== undefined) {
                     const props: any = {};
                     if (gl !== undefined) props.left = String(gl);

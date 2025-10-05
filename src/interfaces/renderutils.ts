@@ -1,5 +1,7 @@
-import { AnyElement } from './elements';
+import { AnyElement, AssertOptions, BuildOptions, StringNumber, UniformSchema } from './elements';
 import { DialogProperties } from "./dialog";
+// Use relative path to avoid module resolution duplication issues
+import { ElementsWithPersist } from '../modules/elements';
 
 export interface RenderUtils {
     unselectRadioGroup: (element: HTMLElement) => void;
@@ -11,8 +13,8 @@ export interface RenderUtils {
     setDouble: (items: string[] | HTMLInputElement[], prefix?: string) => void;
     setSignedDouble: (items: string[] | HTMLInputElement[], prefix?: string) => void;
     getDialogInfo: () => { elements: string[]; selected: HTMLElement | undefined };
-    makeElement: (settings: AnyElement) => HTMLElement;
-    updateElement: (element: HTMLElement, properties?: AnyElement) => void;
+    makeElement: (data: AnyElement) => HTMLElement;
+    updateElement: (element: HTMLElement, properties?: StringNumber) => void;
     updateButton: (
         button: HTMLDivElement,
         text: string,
@@ -21,10 +23,7 @@ export interface RenderUtils {
         widthMax: number
     ) => void;
     updateLabel: (element: HTMLElement, properties?: AnyElement) => void;
-    updateHandleStyle: (
-        handle: HTMLDivElement,
-        obj: { [key: string]: string },
-    ) => void;
+    updateHandleStyle: (handle: HTMLDivElement, properties: StringNumber) => void;
     // Group helpers
     getSelectedIds: () => string[];
     ungroupGroup: (groupId: string) => string[];
@@ -39,4 +38,15 @@ export interface RenderUtils {
     contentTypeValid: (currentElement: HTMLElement) => boolean;
     collectDialogProperties: () => DialogProperties;
     updateFont: (fontSize: number, fontFamily?: string) => void;
+    buildUniformSchema: (
+        templates: Record<string, any>,
+        opts?: BuildOptions
+    ) => UniformSchema;
+    assertTypes: (
+        data: Record<string, unknown>,
+        templates: Record<string, any>,
+        options?: AssertOptions
+    ) => void | string[];
+    // Return non-persist keys for a given element template name
+    getNonPersistKeys: (name: keyof ElementsWithPersist) => string[];
 }

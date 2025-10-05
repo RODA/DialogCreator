@@ -1,6 +1,12 @@
 import { Elements } from '../interfaces/elements';
 
-export const elements: Elements = {
+// Augment each element definition with an optional $persist array whose literal entries
+// are constrained to the keys of that element's own type. This keeps strong typing
+// while allowing inline persistence metadata.
+type ElementEntryWithPersist<T> = T & { $persist?: readonly (keyof T)[] };
+export type ElementsWithPersist = { [K in keyof Elements]: ElementEntryWithPersist<Elements[K]> };
+
+export const elements: ElementsWithPersist = {
     buttonElement: {
         parentId: '',
         id: '',
@@ -16,7 +22,10 @@ export const elements: Elements = {
         isEnabled: true,
         isVisible: true,
         elementIds: [],
-        conditions: ''
+        conditions: '',
+        $persist: [
+            'nameid','label','left','top','maxWidth','lineClamp','color','fontColor','isEnabled','isVisible'
+        ] as const
     },
     inputElement: {
         parentId: '',
@@ -31,7 +40,10 @@ export const elements: Elements = {
         isEnabled: true,
         isVisible: true,
         elementIds: [],
-        conditions: ''
+        conditions: '',
+        $persist: [
+            'nameid','left','top','width','value','valueType','isEnabled','isVisible'
+        ] as const
     },
     selectElement: {
         parentId: '',
@@ -46,7 +58,10 @@ export const elements: Elements = {
         isEnabled: true,
         isVisible: true,
         elementIds: [],
-        conditions: ''
+        conditions: '',
+        $persist: [
+            'nameid','left','top','width','value','arrowColor','isEnabled','isVisible'
+        ] as const
     },
     checkboxElement: {
         parentId: '',
@@ -62,7 +77,10 @@ export const elements: Elements = {
         isEnabled: true,
         isVisible: true,
         elementIds: [],
-        conditions: ''
+        conditions: '',
+        $persist: [
+            'nameid','left','top','size','color','fill','isChecked','isEnabled','isVisible'
+        ] as const
     },
     radioElement: {
         parentId: '',
@@ -78,7 +96,10 @@ export const elements: Elements = {
         isEnabled: true,
         isVisible: true,
         elementIds: [],
-        conditions: ''
+        conditions: '',
+        $persist: [
+            'nameid','group','left','top','size','color','isSelected','isEnabled','isVisible'
+        ] as const
     },
     counterElement: {
         parentId: '',
@@ -94,7 +115,10 @@ export const elements: Elements = {
         isEnabled: true,
         isVisible: true,
         elementIds: [],
-        conditions: ''
+        conditions: '',
+        $persist: [
+            'nameid','left','top','space','color','startval','maxval','isEnabled','isVisible'
+        ] as const
     },
     sliderElement: {
         parentId: '',
@@ -114,12 +138,16 @@ export const elements: Elements = {
         handleColor: '#75c775',
         handlesize: 8,
         elementIds: [],
-        conditions: ''
+        conditions: '',
+        $persist: [
+            'nameid','left','top','width','height','direction','color','isEnabled','isVisible','handlepos','handleshape','handleColor','handlesize'
+        ] as const
     },
     labelElement: {
         parentId: '',
         id: '',
         type: 'Label',
+        nameid: 'label',
         left: 15,
         top: 15,
         maxWidth: 200,
@@ -129,12 +157,16 @@ export const elements: Elements = {
         isEnabled: true,
         isVisible: true,
         elementIds: [],
-        conditions: ''
+        conditions: '',
+        $persist: [
+            'left','top','maxWidth','lineClamp','fontColor','value','isEnabled','isVisible'
+        ] as const
     },
     separatorElement: {
         parentId: '',
         id: '',
         type: 'Separator',
+        nameid: 'separator',
         left: 15,
         top: 15,
         width: 200,
@@ -144,7 +176,10 @@ export const elements: Elements = {
         isEnabled: true,
         isVisible: true,
         elementIds: [],
-        conditions: ''
+        conditions: '',
+        $persist: [
+            'left','top','width','height','direction','color','isEnabled','isVisible'
+        ] as const
     },
     containerElement: {
         parentId: '',
@@ -162,7 +197,10 @@ export const elements: Elements = {
         isEnabled: true,
         isVisible: true,
         elementIds: [],
-        conditions: ''
+        conditions: '',
+        $persist: [
+            'nameid','left','top','width','height','contentType','selection','variableType','parentContainer','isEnabled','isVisible'
+        ] as const
     },
     groupElement: {
         parentId: '',

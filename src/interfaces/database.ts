@@ -20,131 +20,21 @@ export type PropertiesType = {
 // that must be persisted for each element. We type‑check that every listed
 // property actually exists on the element defaults (defined in modules/elements.ts).
 
-// Type‑only import to avoid runtime coupling (no circular dep at runtime)
-import type { elements } from '../modules/elements';
+// Import at runtime; we only read the lightweight $persist arrays.
+// This creates a (non-problematic) dependency on modules/elements.ts; if a cycle appears,
+// we can refactor by moving a thin metadata export.
+import { elements } from '../modules/elements';
 
 type ElementDefaults = typeof elements;
 
-// Helper mapped type trimming non-DB elements (e.g. groupElement) if desired
-type PersistableElementKeys = Exclude<keyof ElementDefaults, 'groupElement'>;
-
-// Declare the persisted property lists (single source of truth for persistence)
-export const PersistedProps = {
-    buttonElement: [
-        'nameid',
-        'label',
-        'left',
-        'top',
-        'maxWidth',
-        'lineClamp',
-        'color',
-        'fontColor',
-        'isEnabled',
-        'isVisible'
-    ],
-    inputElement: [
-        'nameid',
-        'left',
-        'top',
-        'width',
-        'value',
-        'valueType',
-        'isEnabled',
-        'isVisible'
-    ],
-    selectElement: [
-        'nameid',
-        'left',
-        'top',
-        'width',
-        'value',
-        'arrowColor',
-        'isEnabled',
-        'isVisible'
-    ],
-    checkboxElement: [
-        'nameid',
-        'left',
-        'top',
-        'size',
-        'color',
-        'fill',
-        'isChecked',
-        'isEnabled',
-        'isVisible'
-    ],
-    radioElement: [
-        'nameid',
-        'group',
-        'left',
-        'top',
-        'size',
-        'color',
-        'isSelected',
-        'isEnabled',
-        'isVisible'
-    ],
-    counterElement: [
-        'nameid',
-        'left',
-        'top',
-        'space',
-        'color',
-        'startval',
-        'maxval',
-        'isEnabled',
-        'isVisible'
-    ],
-    sliderElement: [
-        'nameid',
-        'left',
-        'top',
-        'width',
-        'height',
-        'direction',
-        'color',
-        'isEnabled',
-        'isVisible',
-        'handlepos',
-        'handleshape',
-        'handleColor',
-        'handlesize'
-    ],
-    labelElement: [
-        'left',
-        'top',
-        'maxWidth',
-        'lineClamp',
-        'fontColor',
-        'value',
-        'isEnabled',
-        'isVisible'
-    ],
-    separatorElement: [
-        'left',
-        'top',
-        'width',
-        'height',
-        'direction',
-        'color',
-        'isEnabled',
-        'isVisible'
-    ],
-    containerElement: [
-        'nameid',
-        'left',
-        'top',
-        'width',
-        'height',
-        'contentType',
-        'selection',
-        'variableType',
-        'parentContainer',
-        'isEnabled',
-        'isVisible'
-    ]
-} as const satisfies {
-    [K in PersistableElementKeys]?: readonly (keyof ElementDefaults[K])[]
+// Build PersistedProps from $persist arrays present on each element definition.
+// groupElement intentionally omitted from persistence (no DB row requirements yet).
+export const PersistedProps = Object.fromEntries(
+    Object.entries(elements)
+        .filter(([key]) => key !== 'groupElement')
+        .map(([key, val]) => [key, val.$persist ?? []])
+) as {
+    [K in Exclude<keyof ElementDefaults, 'groupElement'>]: readonly (keyof ElementDefaults[K])[];
 };
 
 // Export in the previous shape (mutable string arrays) where existing code expects it
