@@ -3,7 +3,7 @@ import * as sqlite3 from "sqlite3";
 import { DBInterface, DBElementsProps } from "../interfaces/database";
 import { elements } from "../modules/elements";
 import { utils } from "../library/utils";
-import { AnyElement } from '../interfaces/elements';
+import { AnyElement, StringNumber } from '../interfaces/elements';
 const sqlite = sqlite3.verbose();
 
 let dbFile = '';
@@ -42,7 +42,12 @@ export const database: DBInterface = {
                         reject(new Error(`Unknown element: ${element}`));
                         return;
                     }
-                    type DefaultsType = AnyElement & { [key: string]: string | number } & { $persist?: readonly string[] };
+
+                    // The type for defaults, but only for those elements in $persist
+                    // We need to assert that the properties we want to insert exist on the defaults
+                    // to avoid runtime errors. The $persist array should ensure this, but we add
+                    // StringNumber to coerce AnyElement to a regular object.
+                    type DefaultsType = AnyElement & StringNumber & { $persist?: readonly string[] };
                     const defaults = (elements[element] || {}) as DefaultsType;
                     const insSql = "INSERT INTO elements (element, property, value) VALUES (?, ?, ?)";
                     try {

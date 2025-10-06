@@ -1,8 +1,9 @@
 import { Elements } from '../interfaces/elements';
 
-// Augment each element definition with an optional $persist array whose literal entries
-// are constrained to the keys of that element's own type. This keeps strong typing
-// while allowing inline persistence metadata.
+// Each element definition is augmented with an optional $persist array whose literal entries
+// are constrained to the keys of that element's own type.
+// The entries of $persist are used to determine which properties to persist in the database.
+
 type ElementEntryWithPersist<T> = T & { $persist?: readonly (keyof T)[] };
 export type ElementsWithPersist = { [K in keyof Elements]: ElementEntryWithPersist<Elements[K]> };
 
