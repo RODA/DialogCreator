@@ -3,9 +3,15 @@
 import { RenderUtils } from '../interfaces/renderutils';
 import { utils } from './utils';
 import { dialog } from '../modules/dialog';
-import { elements, ElementsWithPersist } from '../modules/elements';
+import { elements } from '../modules/elements';
 import { DialogProperties } from "../interfaces/dialog";
-import { PrimitiveKind, AssertOptions, BuildOptions, UniformSchema, StringNumber } from "../interfaces/elements";
+import {
+    PrimitiveKind,
+    AssertOptions,
+    BuildOptions,
+    UniformSchema,
+    StringNumber
+} from "../interfaces/elements";
 import { showError, coms } from '../modules/coms';
 import { v4 as uuidv4 } from 'uuid';
 import * as path from "path";
@@ -14,6 +20,19 @@ import * as fs from "fs";
 let __uniformSchema: UniformSchema | null = null;
 
 export const renderutils: RenderUtils = {
+    // Determine if current window/context is the Preview window
+    // Heuristic: pathname or body data attribute; fallback to checking for preview-specific element
+    previewWindow: function() {
+        try {
+            const loc = window.location.pathname.toLowerCase();
+            if (loc.includes('preview.html')) return true;
+            if (document.body && document.body.dataset.view === 'preview') return true;
+            // Fallback: editor has an element with id 'dialog-properties'; preview should not
+            return !document.getElementById('dialog-properties');
+        } catch {
+            return false;
+        }
+    },
 
     unselectRadioGroup: function(element) {
         document.querySelectorAll(`[group="${element.getAttribute("group")}"]`).forEach(
@@ -260,7 +279,7 @@ export const renderutils: RenderUtils = {
         element.style.top = data.top + 'px';
         element.style.left = data.left + 'px';
 
-        const errs = (renderutils.assertTypes(data, elements, { collect: true }) || []) as string[];
+        const errs = (renderutils.assertTypes(data, { collect: true }) || []) as string[];
         if (errs.length) {
             console.log('Element creation aborted due to invalid or missing properties:\n' + errs.join('\n'));
         }
@@ -483,7 +502,6 @@ export const renderutils: RenderUtils = {
             element.className = 'separator';
             element.style.width = data.width + 'px';
             element.style.height = data.height + 'px';
-            element.style.backgroundColor = data.color;
 
         } else if (data.type == "Container") {
 
@@ -499,12 +517,14 @@ export const renderutils: RenderUtils = {
         element.style.fontFamily = coms.fontFamily;
         element.style.fontSize = coms.fontSize + 'px';
 
-        // if (utils.exists(data.fontColor)) {
-        //     element.style.color = data.fontColor;
-        // }
-
+        // Initial visibility handling (editor: faint/ghosted, preview: fully removed)
         if (utils.isFalse(data.isVisible)) {
-            element.classList.add('design-hidden');
+            if (renderutils.previewWindow()) {
+                element.style.display = 'none';
+            } else {
+                element.classList.add('design-hidden'); // applies 10% opacity, still interactive
+                element.style.removeProperty('visibility');
+            }
         }
 
         if (utils.isFalse(data.isEnabled)) {
@@ -742,6 +762,8 @@ export const renderutils: RenderUtils = {
                             increase.style.color = value;
                         } else if (button && inner) {
                             inner.style.backgroundColor = value;
+                        } else if (separator && inner) {
+                            inner.style.backgroundColor = value;
                         } else {
                             element.style.backgroundColor = value;
                             if (checkbox) {
@@ -911,6 +933,24 @@ export const renderutils: RenderUtils = {
                         element.classList.remove('disabled-div');
                     } else {
                         element.classList.add('disabled-div');
+                    }
+                    break;
+
+                case 'isVisible':
+                    if (utils.isTrue(value)) {
+                        // Restore element in both modes
+                        element.classList.remove('design-hidden');
+                        element.style.removeProperty('display');
+                        element.style.removeProperty('visibility');
+                    } else {
+                        if (renderutils.previewWindow()) {
+                            element.style.display = 'none';
+                            element.classList.remove('design-hidden');
+                        } else {
+                            element.classList.add('design-hidden');
+                            element.style.removeProperty('display');
+                            element.style.removeProperty('visibility');
+                        }
                     }
                     break;
 
@@ -1419,7 +1459,7 @@ export const renderutils: RenderUtils = {
         }
     },
 
-    buildUniformSchema: function(templates: Record<string, any>, opts: BuildOptions = {}) {
+    buildUniformSchema: function(opts: BuildOptions = {}) {
         const {
             includeBooleans = true,
             includeNumbers = true,
@@ -1434,7 +1474,7 @@ export const renderutils: RenderUtils = {
         if (includeNumbers) allowed.add('number');
         if (includeBooleans) allowed.add('boolean');
 
-        for (const tmpl of Object.values(templates)) {
+        for (const tmpl of Object.values(elements)) {
             if (!tmpl || typeof tmpl !== 'object') continue;
             for (const [k, v] of Object.entries(tmpl)) {
             if (skipKeys.includes(k)) continue;
@@ -1463,12 +1503,11 @@ export const renderutils: RenderUtils = {
 
     assertTypes: function(
         data: Record<string, unknown>,
-        templates: Record<string, any>,
         options: AssertOptions = {}
     ) {
         const { schema, collect = false, strictPresence = false } = options;
         if (!__uniformSchema && !schema) {
-            __uniformSchema = renderutils.buildUniformSchema(templates);
+            __uniformSchema = renderutils.buildUniformSchema();
         }
         const active = schema || __uniformSchema!;
         const errors: string[] = [];

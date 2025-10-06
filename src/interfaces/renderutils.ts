@@ -4,6 +4,7 @@ import { DialogProperties } from "./dialog";
 import { ElementsWithPersist } from '../modules/elements';
 
 export interface RenderUtils {
+    previewWindow: () => boolean;
     unselectRadioGroup: (element: HTMLElement) => void;
     makeUniqueNameID: (type: string) => string;
     nameidValidChange: (newId: string, currentElement: HTMLElement) => boolean;
@@ -38,15 +39,8 @@ export interface RenderUtils {
     contentTypeValid: (currentElement: HTMLElement) => boolean;
     collectDialogProperties: () => DialogProperties;
     updateFont: (fontSize: number, fontFamily?: string) => void;
-    buildUniformSchema: (
-        templates: Record<string, any>,
-        opts?: BuildOptions
-    ) => UniformSchema;
-    assertTypes: (
-        data: Record<string, unknown>,
-        templates: Record<string, any>,
-        options?: AssertOptions
-    ) => void | string[];
+    buildUniformSchema: (opts?: BuildOptions) => UniformSchema;
+    assertTypes: (data: Record<string, unknown>, options?: AssertOptions) => void | string[];
     // Return non-persist keys for a given element template name
     getNonPersistKeys: (name: keyof ElementsWithPersist) => string[];
 }
