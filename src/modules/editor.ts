@@ -172,7 +172,19 @@ export const editor: Editor = {
                     bottom: elRectangle.bottom - canvasRect.top
                 };
                 const overlap = !(rel.left > selRectangle.right || rel.right < selRectangle.left || rel.top > selRectangle.bottom || rel.bottom < selRectangle.top);
-                if (overlap) {
+                if (!overlap) return;
+
+                if (additive) {
+                    // Shift+lasso toggles membership: deselect if already selected, otherwise add
+                    if (el.classList.contains('selectedElement')) {
+                        el.classList.remove('selectedElement');
+                        multiSelected.delete(el.id);
+                    } else {
+                        el.classList.add('selectedElement');
+                        multiSelected.add(el.id);
+                    }
+                } else {
+                    // Non-additive: simply select everything in the rectangle (we already cleared above)
                     el.classList.add('selectedElement');
                     multiSelected.add(el.id);
                 }
@@ -369,11 +381,35 @@ export const editor: Editor = {
                 ? element
                 : (element.closest('.element-group') as HTMLElement | null);
             if (groupAncestor && !element.classList.contains('element-group')) {
+                const shift = event.shiftKey;
                 if (suppressClickFor.has(groupAncestor.id)) {
                     suppressClickFor.delete(groupAncestor.id);
                     return;
                 }
-                // Clear any existing selections (deep) and outline
+                if (shift) {
+                    // Toggle selection of the persistent group when shift-clicking inside it
+                    if (groupAncestor.classList.contains('selectedElement')) {
+                        groupAncestor.classList.remove('selectedElement');
+                        multiSelected.delete(groupAncestor.id);
+                        if (dialog.selectedElement === groupAncestor.id) {
+                            dialog.selectedElement = '';
+                            currentGroupId = null;
+                            coms.emit('elementDeselected');
+                        }
+                    } else {
+                        // Add the group to the multi selection set
+                        groupAncestor.classList.add('selectedElement');
+                        // Remove selection from group's descendants to avoid double outlines
+                        groupAncestor.querySelectorAll('.selectedElement').forEach((el) => el.classList.remove('selectedElement'));
+                        multiSelected.add(groupAncestor.id);
+                        dialog.selectedElement = groupAncestor.id;
+                        currentGroupId = groupAncestor.id;
+                        coms.emit('elementSelected', groupAncestor.id);
+                    }
+                    makeGroupFromSelection();
+                    return;
+                }
+                // Default click inside group selects the group exclusively
                 dialog.canvas.querySelectorAll('.selectedElement').forEach((el) => el.classList.remove('selectedElement'));
                 multiOutline = renderutils.clearMultiOutline(multiOutline);
 
@@ -502,7 +538,7 @@ export const editor: Editor = {
                     const left0 = rect.left - canvasRect.left;
                     const top0 = rect.top - canvasRect.top;
                     multiDragSnapshot.set(id, { left: left0, top: top0, width: rect.width, height: rect.height });
-                    suppressClickFor.add(id);
+                    // Do not suppress click yet; only suppress after we actually move on mouseup
                 }
             } else if (!isGroupEl) {
                 // Selection handling for single or persistent group context
