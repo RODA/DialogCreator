@@ -587,7 +587,7 @@ input {
     display: flex;
     align-items: center;
     justify-content: flex-start; /* left-align content */
-    min-height: 25px; /* taller row */
+    min-height: 22px; /* row height */
     /* line-height: 1.2; */
     border-radius: 0;
     margin-bottom: 1px; /* bigger space between rows */
