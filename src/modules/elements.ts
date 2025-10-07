@@ -136,7 +136,7 @@ export const elements: ElementsWithPersist = {
         isVisible: true,
         handlepos: 50,
         handleshape: 'triangle',
-        handleColor: '#75c775',
+        handleColor: '#5b9c5b',
         handlesize: 8,
         elementIds: [],
         conditions: '',
@@ -194,13 +194,12 @@ export const elements: ElementsWithPersist = {
         selection: 'single',
         contentType: 'dataset',
         variableType: '',
-        parentContainer: '',
         isEnabled: true,
         isVisible: true,
         elementIds: [],
         conditions: '',
         $persist: [
-            'nameid','left','top','width','height','contentType','selection','variableType','parentContainer','isEnabled','isVisible'
+            'nameid','left','top','width','height','contentType','selection','variableType','isEnabled','isVisible'
         ] as const
     },
     groupElement: {

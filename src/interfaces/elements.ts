@@ -160,7 +160,6 @@ export type containerElementType = {
     contentType: string;
     selection: string;
     variableType: string;
-    parentContainer: string;
     isEnabled: boolean;
     isVisible: boolean;
     elementIds: string[];
