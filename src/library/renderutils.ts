@@ -439,7 +439,8 @@ export const renderutils: RenderUtils = {
 
             display.style.fontFamily = coms.fontFamily;
             display.style.fontSize = coms.fontSize + 'px';
-            display.style.color = data.color || '#000000';
+            // Counter text color independent from arrow color; default to black
+            display.style.color = '#000000';
 
             const increase = document.createElement("div");
             increase.className = "counter-arrow up";

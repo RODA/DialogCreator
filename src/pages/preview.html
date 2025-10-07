@@ -38,8 +38,7 @@
         padding: 3px 5px;                  /* consistent box */
         height: 22px;                      /* fixed height to avoid jump */
         line-height: 1.2;
-        border: 1px solid #bbb;            /* flat border */
-        border-radius: 0;                  /* no bevel */
+        border: 1px solid #777777;         /* flat border */
         appearance: none;
         -webkit-appearance: none;
         box-shadow: none;
@@ -47,6 +46,14 @@
         background-color: #ffffff;         /* enabled bg */
         color: #000;
         background-clip: padding-box;
+      }
+      /* Rounded corners for Input controls in Preview */
+      .preview-canvas input[type="text"] {
+        border-radius: 4px;
+      }
+      /* Keep selects squared (optional: match platform look) */
+      .preview-canvas select {
+        border-radius: 0;
       }
 
       /* Ensure native disabled controls remain readable and sized the same */

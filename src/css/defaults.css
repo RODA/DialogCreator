@@ -155,7 +155,7 @@ body {
 }
 
 .selected-available-element {
-    background: #cccccc;
+    background: #ccc;
     border-radius: 4px;
     transition: background 0.2s;
 }
