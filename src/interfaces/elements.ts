@@ -158,6 +158,10 @@ export type containerElementType = {
     width: number;
     height: number;
     contentType: string;
+    backgroundColor: string;
+    fontColor: string;
+    activeBackgroundColor: string;
+    activeFontColor: string;
     selection: string;
     variableType: string;
     isEnabled: boolean;

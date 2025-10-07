@@ -92,8 +92,16 @@ body {
 
 #propertiesList .element-property {
     display: grid;
-    grid-template-columns: 40% 60%;
     gap: 8px;
+
+    /* grid-template-columns: 40% 60%; */
+    /*
+        this simply sets the column (proportional) width
+        (after subtracting the gap), from the "fr"ee space
+        2/5 = 40% and 3/5 = 60%
+    */
+    grid-template-columns: 2fr 3fr;
+
     margin-bottom: 0.5rem;
     align-items: center;
     width: 100%;
@@ -112,6 +120,18 @@ body {
     padding: 3px 3px;
     color: #323232;
     font-size: 0.8rem;
+    width: 100%;
+    min-width: 0;      /* allow shrinking inside the grid track */
+    box-sizing: border-box;
+}
+
+#propertiesList .element-property label {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 #propertiesList .element-property input:focus-visible,

@@ -99,8 +99,18 @@ body {
 
 #propertiesList .element-property {
     display: grid;
-    grid-template-columns: calc(40% - 5px) calc(60% - 5px);
     gap: 10px;
+
+    /* Because of the above gap of 10px, this ajusts the columns with 5px each side */
+    /* grid-template-columns: calc(47% - 5px) calc(53% - 5px); */
+
+    /*
+        while this simply sets the column (proportional) width
+        (after subtracting the gap), from the "fr"ee space
+        11/20 = 55% and 9/20 = 45%
+    */
+    grid-template-columns: 9fr 11fr;
+
     margin-bottom: 0.5rem;
     align-items: center;
 }
@@ -117,6 +127,18 @@ body {
     padding: 3px 3px;
     color: #323232;
     font-size: 0.8rem;
+    width: 100%;
+    min-width: 0;      /* allow shrinking inside the grid track */
+    box-sizing: border-box;
+}
+
+#propertiesList .element-property label {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 #propertiesList .element-property input:focus-visible,
@@ -504,6 +526,7 @@ input {
 .container {
     border: 1px solid black;
     border-radius: 2px;
+    box-sizing: border-box;
 }
 
 
@@ -554,4 +577,34 @@ input {
     border: 1px dotted var(--main-blue-color);
     pointer-events: none;
     z-index: 999;
+}
+
+/* Container sample content */
+.container-sample {
+    padding: 0px; /* rows should stretch edge-to-edge */
+}
+.container-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* left-align content */
+    min-height: 25px; /* taller row */
+    /* line-height: 1.2; */
+    border-radius: 0;
+    margin-bottom: 1px; /* bigger space between rows */
+    width: 100%;
+    box-sizing: border-box;
+    text-align: left;
+}
+.container-row .container-text {
+    font-size: inherit;
+    /* font-weight: 700; */
+    color: #000;
+    text-align: left;
+    display: block;
+    width: 100%;
+    padding-left: 4px;
+    min-width: 0;            /* allow shrinking within row width */
+    overflow: hidden;        /* hide overflow beyond container width */
+    white-space: nowrap;     /* single line */
+    text-overflow: ellipsis; /* add ellipsis when text is longer */
 }

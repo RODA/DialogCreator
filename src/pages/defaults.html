@@ -122,6 +122,11 @@
                         <label for="elcolor" id="colorlabel">Color</label>
                         <input name="color" type="text" id="elcolor" />
                     </div>
+                    <div class="element-property hidden-element"> <!-- Select -->
+                        <label for="elbackgroundColor" id="backgroundColor">Background color</label>
+                        <input name="backgroundColor" type="text" id="elbackgroundColor" />
+                    </div>
+
                     <div class="element-property hidden-element">
                         <label for="elfontColor">Font color</label>
                         <input name="fontColor" type="text" id="elfontColor" />
@@ -142,36 +147,51 @@
                         <input name="maxval" type="text" id="elmaxval" />
                     </div>
 
-                    <!-- select -->
+                    <!-- Select -->
                     <div class="element-property hidden-element">
-                        <label for="eldataSource">Data source</label>
-                        <select name="dataSource" id="eldataSource">
-                            <option value="custom">Custom</option>
-                            <option value="fromR">R workspace</option>
-                        </select>
+                        <label for="elbackgroundColor" id="backgroundColor">Background color</label>
+                        <input name="backgroundColor" type="text" id="elbackgroundColor" />
                     </div>
 
-                    <!--
-                        This works and could be used, but it is very R specific and the
-                        Dialog Creator could theoretically be used for any other language
-                    -->
-                    <!-- <div class="element-property hidden-element" id="divRobjects">
-                        <label for="elRobjects">Objects</label>
-                        <select name="Robjects" id="elRobjects">
-                            <option value="all">All</option>
-                            <option value="df">Data frames</option>
-                            <option value="list">Lists</option>
-                            <option value="mat">Matrices</option>
-                            <option value="vec">Vectors</option>
-                        </select>
-                    </div> -->
+                    <div class="element-property hidden-element">
+                        <label for="elactiveBackgroundColor" id="activeBackgroundColor">Active background</label>
+                        <input name="activeBackgroundColor" type="text" id="elactiveBackgroundColor" />
+                    </div>
 
-<!-- Input val -->
+                    <div class="element-property hidden-element">
+                        <label for="elactiveFontColor" id="activeFontColor">Active font color</label>
+                        <input name="activeFontColor" type="text" id="elactiveFontColor" />
+                    </div>
+
+                            <!-- This works and could be used, but it is very R specific and the
+                                Dialog Creator could theoretically be used for any other language -->
+                                <div class="element-property hidden-element">
+                                    <label for="eldataSource">Data source</label>
+                                    <select name="dataSource" id="eldataSource">
+                                        <option value="custom">Custom</option>
+                                        <option value="fromR">R workspace</option>
+                                    </select>
+                                </div>
+
+
+                                <div class="element-property hidden-element" id="divRobjects">
+                                    <label for="elRobjects">Objects</label>
+                                    <select name="Robjects" id="elRobjects">
+                                        <option value="all">All</option>
+                                        <option value="df">Data frames</option>
+                                        <option value="list">Lists</option>
+                                        <option value="mat">Matrices</option>
+                                        <option value="vec">Vectors</option>
+                                    </select>
+                                </div>
+                            <!-- End of "could be used" -->
+
+                    <!-- Input val -->
                     <div class="element-property hidden-element" id="divalue">
                         <label for="elvalue" id="valuelabel">Value</label>
                         <input name="value" type="text" id="elvalue" />
                     </div>
-<!-- Input type -->
+                    <!-- Input type -->
                     <div class="element-property hidden-element" id="divalueType">
                         <label for="elvalueType">Type</label>
                         <select name="valueType" id="elvalueType">
@@ -237,7 +257,7 @@
                     </div>
 
                     <!-- Actions -->
-                    <div class="mt-1_5">
+                    <div class="mt-1">
                         <div class="text-right">
                             <button class="custombutton" type="button" id="reset">Reset</button>
                         </div>

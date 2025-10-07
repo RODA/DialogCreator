@@ -506,10 +506,39 @@ export const renderutils: RenderUtils = {
         } else if (data.type == "Container") {
 
             element.className = 'container';
-            element.style.backgroundColor = '#ffffff';
+            element.style.backgroundColor = String((data as any).backgroundColor || '#ffffff');
             element.style.width = data.width + 'px';
             element.style.height = data.height + 'px';
             element.dataset.contentType = data.contentType;
+
+            // Build a simple sample of container contents showing inactive and active rows
+            const sample = document.createElement('div');
+            sample.className = 'container-sample';
+
+            const mkRow = (cls: string, text: string) => {
+                const row = document.createElement('div');
+                row.className = `container-row ${cls}`;
+                const label = document.createElement('span');
+                label.className = 'container-text';
+                label.textContent = text;
+                row.appendChild(label);
+                return { row, label };
+            };
+
+            const inactive = mkRow('inactive', 'unselected');
+            const active = mkRow('active', 'active / selected');
+
+            const fg = String(data.fontColor) || '#000000';
+            const abg = String(data.activeBackgroundColor) || '#779B49';
+            const afg = String(data.activeFontColor) || '#ffffff';
+
+            inactive.label.style.color = fg;
+            active.row.style.backgroundColor = abg;
+            active.label.style.color = afg;
+
+            sample.appendChild(inactive.row);
+            sample.appendChild(active.row);
+            element.appendChild(sample);
 
         }
 
@@ -768,9 +797,8 @@ export const renderutils: RenderUtils = {
                             increase.style.color = value;
                         } else if (button && inner) {
                             inner.style.backgroundColor = value;
-                        } else if (separator && inner) {
-                            inner.style.backgroundColor = value;
-                        } else {
+                        } else if (!container) {
+                            // For most elements, 'color' is background. Container uses 'backgroundColor' instead.
                             element.style.backgroundColor = value;
                             if (checkbox) {
                                 if (customCheckbox) {
@@ -785,25 +813,54 @@ export const renderutils: RenderUtils = {
                     }
 
                     break;
+                case 'backgroundColor':
+                    // Container background + inactive row background color
+                    if (container) {
+                        const host = inner || element;
+                        if (utils.isValidColor(value)) {
+                            host.style.backgroundColor = value;
+                            // const row = host.querySelector('.container-row.inactive') as HTMLDivElement | null;
+                            // if (row) row.style.backgroundColor = value;
+                        }
+                    }
+                    break;
 
                 case 'fontColor':
                     if (button && inner) {
                         // Color the button text
                         inner.style.color = value;
-                        const span = inner.querySelector('.smart-button-text') as HTMLSpanElement | null;
-                        if (span) {
-                            span.style.color = value;
-                        }
+                        try {
+                            const span = inner.querySelector('.smart-button-text') as HTMLSpanElement | null;
+                            if (span) span.style.color = value;
+                        } catch {}
                     } else if (label && inner) {
                         inner.style.color = value;
                     } else if ((input || select) && inner) {
                         inner.style.color = value;
                     } else if (counter && countervalue) {
                         countervalue.style.color = value;
+                    } else if (container) {
+                        const host = inner || element;
+                        const txt = host.querySelector('.container-row.inactive .container-text') as HTMLElement | null;
+                        if (txt) txt.style.color = value;
                     } else {
                         element.style.color = value;
                     }
 
+                    break;
+                case 'activeBackgroundColor':
+                    if (container) {
+                        const host = inner || element;
+                        const row = host.querySelector('.container-row.active') as HTMLDivElement | null;
+                        if (row && utils.isValidColor(value)) row.style.backgroundColor = value;
+                    }
+                    break;
+                case 'activeFontColor':
+                    if (container) {
+                        const host = inner || element;
+                        const txt = host.querySelector('.container-row.active .container-text') as HTMLElement | null;
+                        if (txt) txt.style.color = value;
+                    }
                     break;
 
                 case 'arrowColor':
@@ -1458,6 +1515,19 @@ export const renderutils: RenderUtils = {
                         countervalue.style.fontFamily = fontFamily;
                     }
                     break;
+
+                case "Container": {
+                    // Apply font size to container and its inner sample rows
+                    element.style.fontSize = fontSize + 'px';
+                    if (inner) inner.style.fontSize = fontSize + 'px';
+                    try {
+                        const host = inner || element;
+                        const rows = host.querySelectorAll('.container-row') as NodeListOf<HTMLDivElement>;
+                        const rowMinH = Math.max(24, Math.round(fontSize * 2)); // scale row height with font
+                        rows.forEach(r => { r.style.minHeight = rowMinH + 'px'; });
+                    } catch {}
+                    break;
+                }
 
                 default:
                     break;
