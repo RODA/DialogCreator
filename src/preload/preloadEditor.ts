@@ -363,6 +363,9 @@ window.addEventListener("DOMContentLoaded", async () => {
     // Attach color pickers to all color-related fields in the properties panel
     attachColorPickers();
 
+    // Enhance custom buttons with press feedback
+    renderutils.enhanceButtons(document);
+
     // Ensure the editor (grey) area shrinks by the height of the toolbar to keep total app height constant
     const updateToolbarHeightVar = () => {
         const toolbar = document.getElementById('editor-toolbar');

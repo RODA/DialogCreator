@@ -1640,5 +1640,34 @@ export const renderutils: RenderUtils = {
         const persistSet = new Set<string>((tmpl.$persist as readonly string[] | undefined) || []);
         // Non-persist keys are everything not explicitly listed in $persist, including the metadata key '$persist' itself
         return Object.keys(tmpl).filter(k => !persistSet.has(k));
+    },
+
+    // Add press/hover keyboard feedback to consistent buttons
+    enhanceButton: function(btn: HTMLButtonElement) {
+        if (!btn || (btn as any).__enhanced) return;
+        (btn as any).__enhanced = true;
+        const press = () => btn.classList.add('btn-active');
+        const release = () => btn.classList.remove('btn-active');
+        btn.addEventListener('mousedown', press);
+        btn.addEventListener('mouseup', release);
+        btn.addEventListener('mouseleave', release);
+        btn.addEventListener('keydown', (e: KeyboardEvent) => {
+            if (e.key === ' ' || e.key === 'Enter') {
+                press();
+            }
+        });
+        btn.addEventListener('keyup', (e: KeyboardEvent) => {
+            if (e.key === ' ' || e.key === 'Enter') {
+                release();
+                // Trigger click on Enter/Space for accessibility
+                btn.click();
+            }
+        });
+    },
+
+    enhanceButtons: function(root?: ParentNode) {
+        const scope: ParentNode = root || document;
+        const buttons = Array.from(scope.querySelectorAll('button.custombutton')) as HTMLButtonElement[];
+        buttons.forEach(renderutils.enhanceButton);
     }
 }

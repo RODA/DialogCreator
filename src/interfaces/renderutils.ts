@@ -35,6 +35,9 @@ export interface RenderUtils {
     computeBounds: (ids: string[]) => { left: number; top: number; width: number; height: number } | null;
     moveElementsBy: (ids: string[], dx: number, dy: number) => void;
     updateCheckboxColor: (uuid: string, color: string) => void;
+    // Button UX helpers
+    enhanceButton: (btn: HTMLButtonElement) => void;
+    enhanceButtons: (root?: ParentNode) => void;
     handleEvent(eventName: string, ...args: unknown[]): Promise<void>;
     contentTypeValid: (currentElement: HTMLElement) => boolean;
     collectDialogProperties: () => DialogProperties;

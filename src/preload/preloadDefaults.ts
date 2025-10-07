@@ -24,6 +24,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Attach color pickers once DOM is ready
     attachColorPickers();
 
+    // Enhance custom buttons with press feedback
+    renderutils.enhanceButtons(document);
+
     renderutils.setSignedIntegers([
         "startval",
         "maxval"
