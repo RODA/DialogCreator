@@ -1057,11 +1057,7 @@ export const renderutils: RenderUtils = {
                 elprop.value = value;
             }
 
-            if (key == "width" || key == "height") {
-                element.dataset.size = value;
-            } else {
-                element.dataset[key] = value;
-            }
+            element.dataset[key] = value;
 
             if (slider && handle) {
                 renderutils.updateHandleStyle(handle, {...props, ...dataset});
