@@ -622,10 +622,13 @@ export const renderutils: RenderUtils = {
                     if (Number(value) > dialogH - 20) {
                         value = String(Math.round(dialogH - 20));
                     }
-                    // Apply height to wrapper by default, and also to inner for certain types
+                    // Apply height to wrapper by default, and also to inner for visual elements
                     element.style.height = value + 'px';
-                    if (inner && (input || select || container || separator || slider)) {
+                    if (inner && (input || select || container || separator || slider || checkbox || radio)) {
                         inner.style.height = value + 'px';
+                        // Also resize the custom control node if present
+                        if (checkbox && customCheckbox) customCheckbox.style.height = value + 'px';
+                        if (radio && customRadio) customRadio.style.height = value + 'px';
                     }
 
                     if (Number(eltop.value) + Number(value) + 10 > dialogH) {
@@ -668,8 +671,11 @@ export const renderutils: RenderUtils = {
                     element.style.width = value + 'px';
 
                     // Ensure the visible child reflects width for contentful elements
-                    if (inner && (input || select || container || separator || slider)) {
+                    if (inner && (input || select || container || separator || slider || checkbox || radio)) {
                         inner.style.width = value + 'px';
+                        // Also resize the custom control node if present
+                        if (checkbox && customCheckbox) customCheckbox.style.width = value + 'px';
+                        if (radio && customRadio) customRadio.style.width = value + 'px';
                     }
 
                     if (Number(elleft.value) + Number(value) + 10 > dialogW) {
