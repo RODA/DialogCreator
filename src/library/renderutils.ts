@@ -1562,6 +1562,7 @@ export const renderutils: RenderUtils = {
         const tmpl = elements[name];
         if (!tmpl) return [];
         const persistSet = new Set<string>((tmpl.$persist as readonly string[] | undefined) || []);
-        return Object.keys(tmpl).filter(k => k !== '$persist' && !persistSet.has(k));
+        // Non-persist keys are everything not explicitly listed in $persist, including the metadata key '$persist' itself
+        return Object.keys(tmpl).filter(k => !persistSet.has(k));
     }
 }

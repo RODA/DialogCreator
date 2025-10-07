@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // ignore all non-persist keys dynamically (covers id, parentId, type, etc.)
                 .filter(k => !nonPersistKeys.includes(k));
             if (missingFromDBInterface.length > 0) {
-                console.log(missingFromDBInterface)
+                console.log(missingFromDBInterface);
                 showError(
                     `Database interface out of sync for ${name}, check interfaces/database.ts`
                 );
