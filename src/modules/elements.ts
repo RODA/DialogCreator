@@ -35,7 +35,7 @@ export const elements: ElementsWithPersist = {
         nameid: 'input',
         left: 15,
         top: 15,
-        width: 120,
+        width: 60,
         value: '',
         valueType: 'String',
         isEnabled: true,
