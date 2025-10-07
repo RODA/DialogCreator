@@ -171,8 +171,14 @@ export const editor: Editor = {
                     right: elRectangle.right - canvasRect.left,
                     bottom: elRectangle.bottom - canvasRect.top
                 };
-                const overlap = !(rel.left > selRectangle.right || rel.right < selRectangle.left || rel.top > selRectangle.bottom || rel.bottom < selRectangle.top);
-                if (!overlap) return;
+                // Require full containment inside lasso rectangle
+                const contained = (
+                    rel.left >= selRectangle.left &&
+                    rel.right <= selRectangle.right &&
+                    rel.top >= selRectangle.top &&
+                    rel.bottom <= selRectangle.bottom
+                );
+                if (!contained) return;
 
                 if (additive) {
                     // Shift+lasso toggles membership: deselect if already selected, otherwise add
@@ -184,7 +190,7 @@ export const editor: Editor = {
                         multiSelected.add(el.id);
                     }
                 } else {
-                    // Non-additive: simply select everything in the rectangle (we already cleared above)
+                    // Non-additive: simply select everything fully inside the rectangle (we already cleared above)
                     el.classList.add('selectedElement');
                     multiSelected.add(el.id);
                 }
