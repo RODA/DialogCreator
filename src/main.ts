@@ -131,8 +131,20 @@ function createSecondWindow(args: { [key: string]: any }) {
     });
 
     if (development && args.html !== 'preview.html') {
-        // Open the DevTools.
-        secondWindow.webContents.openDevTools();
+        // Open DevTools detached and without activating them so focus stays on the new window
+        try {
+            secondWindow.webContents.openDevTools({ mode: 'detach', activate: false } as any);
+            // As an extra safeguard, refocus shortly after opening DevTools
+            setTimeout(() => {
+                secondWindow.focus();
+            }, 50);
+        } catch {
+            // Fallback if options unsupported: open and refocus
+            secondWindow.webContents.openDevTools();
+            setTimeout(() => {
+                secondWindow.focus();
+            }, 50);
+        }
     }
 
 
