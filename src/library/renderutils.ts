@@ -812,55 +812,82 @@ export const renderutils: RenderUtils = {
                         const color = document.getElementById('elcolor') as HTMLInputElement;
                         color.value = value;
                     }
-
                     break;
+
                 case 'backgroundColor':
                     // Container background + inactive row background color
                     if (container) {
-                        const host = inner || element;
                         if (utils.isValidColor(value)) {
+                            const host = inner || element;
                             host.style.backgroundColor = value;
                             // const row = host.querySelector('.container-row.inactive') as HTMLDivElement | null;
                             // if (row) row.style.backgroundColor = value;
+                        } else {
+                            value = dataset.backgroundColor;
+                            const color = document.getElementById('elbackgroundColor') as HTMLInputElement;
+                            color.value = value;
                         }
                     }
                     break;
 
                 case 'fontColor':
-                    if (button && inner) {
-                        // Color the button text
-                        inner.style.color = value;
-                        try {
-                            const span = inner.querySelector('.smart-button-text') as HTMLSpanElement | null;
-                            if (span) span.style.color = value;
-                        } catch {}
-                    } else if (label && inner) {
-                        inner.style.color = value;
-                    } else if ((input || select) && inner) {
-                        inner.style.color = value;
-                    } else if (counter && countervalue) {
-                        countervalue.style.color = value;
-                    } else if (container) {
-                        const host = inner || element;
-                        const txt = host.querySelector('.container-row.inactive .container-text') as HTMLElement | null;
-                        if (txt) txt.style.color = value;
+                    if (utils.isValidColor(value)) {
+                        if (button && inner) {
+                            // Color the button text
+                            inner.style.color = value;
+                            try {
+                                const span = inner.querySelector('.smart-button-text') as HTMLSpanElement | null;
+                                if (span) span.style.color = value;
+                            } catch {}
+                        } else if (label && inner) {
+                            inner.style.color = value;
+                        } else if ((input || select) && inner) {
+                            inner.style.color = value;
+                        } else if (counter && countervalue) {
+                            countervalue.style.color = value;
+                        } else if (container) {
+                            const host = inner || element;
+                            const txt = host.querySelector('.container-row.inactive .container-text') as HTMLElement | null;
+                            if (txt) txt.style.color = value;
+                        } else {
+                            element.style.color = value;
+                        }
                     } else {
-                        element.style.color = value;
+                        value = dataset.fontColor;
+                        const color = document.getElementById('elfontColor') as HTMLInputElement;
+                        color.value = value;
                     }
-
                     break;
+
                 case 'activeBackgroundColor':
                     if (container) {
-                        const host = inner || element;
-                        const row = host.querySelector('.container-row.active') as HTMLDivElement | null;
-                        if (row && utils.isValidColor(value)) row.style.backgroundColor = value;
+                        if (utils.isValidColor(value)) {
+                            const host = inner || element;
+                            const row = host.querySelector('.container-row.active') as HTMLDivElement | null;
+                            if (row) {
+                                row.style.backgroundColor = value;
+                            }
+                        } else {
+                            value = dataset.activeBackgroundColor;
+                            const color = document.getElementById('elactiveBackgroundColor') as HTMLInputElement;
+                            color.value = value;
+                        }
                     }
                     break;
+
                 case 'activeFontColor':
                     if (container) {
-                        const host = inner || element;
-                        const txt = host.querySelector('.container-row.active .container-text') as HTMLElement | null;
-                        if (txt) txt.style.color = value;
+                        if (utils.isValidColor(value)) {
+                            const host = inner || element;
+                            const txt = host.querySelector('.container-row.active .container-text') as HTMLElement | null;
+                            if (txt) {
+                                txt.style.color = value;
+                            }
+                        } else {
+                            value = dataset.activeFontColor;
+                            const color = document.getElementById('elactiveFontColor') as HTMLInputElement;
+                            color.value = value;
+                        }
                     }
                     break;
 
@@ -873,6 +900,10 @@ export const renderutils: RenderUtils = {
                             </svg>
                         `);
                         (inner as HTMLElement).style.backgroundImage = `url(\"data:image/svg+xml,${svg}\")`;
+                    } else {
+                        value = dataset.arrowColor;
+                        const color = document.getElementById('elarrowColor') as HTMLInputElement;
+                        color.value = value;
                     }
                     break;
 
