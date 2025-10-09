@@ -25,5 +25,7 @@ export interface Utils {
     isElementOf<T>(x: T, set: T[]): boolean;
     isNotElementOf<T>(x: T, set: T[]): boolean;
     isValidColor: (value: string) => boolean;
+    // True if s is a valid (non-reserved) JavaScript identifier using ASCII letters/digits/_/$
+    isIdentifier: (s: string) => boolean;
     textWidth(text: string, fontSize: number, fontFamily?: string): number;
 }

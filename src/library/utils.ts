@@ -179,6 +179,33 @@ export const utils: Utils = {
         return x.color !== '';
     },
 
+    isIdentifier: function(s) {
+        // Returns true if (and only if) the string is a valid, non-reserved simple JavaScript identifier
+        // under a narrow ASCII rule set (letters, digits, _, $) that does NOT start with a digit.
+        // Otherwise false.
+
+        if (typeof s !== 'string' || s.length === 0) {
+            return false;
+        }
+
+        if (!/^[A-Za-z_$][\w$]*$/.test(s)) {
+            return false;
+        }
+
+        // Exclude ECMAScript reserved words and literals.
+        const RESERVED = new Set<string>([
+            // Strict + future + contextual (conservative superset)
+            'break','case','catch','class','const','continue','debugger','default','delete','do','else','enum','export','extends',
+            'false','finally','for','function','if','import','in','instanceof','new','null','return','super','switch','this','throw','true','try','typeof','var','void','while','with','yield','let','static','implements','interface','package','private','protected','public','await','arguments','eval','of','from','as'
+        ]);
+
+        if (RESERVED.has(s.toLowerCase())) {
+            return false;
+        }
+
+        return true;
+    },
+
     // Measure the natural width (in CSS pixels) of a text string for a given font
     // Prefers an offscreen canvas when a DOM is available; otherwise falls back to an approximation
     textWidth: function(text, fontSize, fontFamily?) {
@@ -230,3 +257,4 @@ export const utils: Utils = {
         return Math.ceil(t.length * size * 0.6);
     },
 };
+
