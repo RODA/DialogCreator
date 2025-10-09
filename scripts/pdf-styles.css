@@ -1,0 +1,64 @@
+/* Basic PDF styling for USER_MANUAL.md */
+@page {
+    size: A4;
+    margin: 15mm 15mm 20mm 15mm;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    color: #222;
+    /* Smaller overall text */
+    font-size: 13px;
+}
+
+h1, h2, h3 {
+    page-break-after: avoid;
+}
+
+/* Keep headings proportional to base size */
+h1 { font-size: 1.6em; }
+h2 { font-size: 1.3em; }
+h3 { font-size: 1.15em; }
+
+pre, code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+pre {
+    background: #f8f8f8;
+    border: 1px solid #eee;
+    padding: 8px 10px;
+    border-radius: 4px;
+    overflow-x: auto;
+    /* Slightly smaller code blocks */
+    font-size: 0.85em;
+    line-height: 1.4;
+}
+
+/* Slightly smaller inline code too */
+code {
+    font-size: 0.9em;
+}
+
+img {
+    max-width: 100%;
+}
+
+/* Add a simple header/footer */
+header, footer {
+    position: running(header-footer);
+}
+
+@page {
+    @top-left {
+        content: 'Dialog Creator — User Manual';
+        font-size: 10px;
+        color: #666;
+    }
+    @bottom-right {
+        content: 'Page ' counter(page) ' of ' counter(pages);
+        font-size: 10px;
+        color: #666;
+    }
+}
