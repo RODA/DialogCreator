@@ -3,79 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <title>Preview</title>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
     <link rel="stylesheet" href="../css/global.css">
     <link rel="stylesheet" href="../css/editor.css">
-    <style>
-      html, body { margin: 0; padding: 0; overflow: hidden; background: #ffffff; }
-      #preview-root { margin: 0; padding: 0; }
-      .preview-canvas { position: relative; background: #fff; border: none; }
-      .preview-canvas * { box-sizing: border-box; }
-      .preview-button { padding: 4px 8px; border: 1px solid #888; border-radius: 3px; cursor: pointer; }
-      .preview-input, .preview-select { padding: 2px 4px; }
-      .preview-separator { background: #000; }
-      .no-select { user-select: none; }
-
-      /* Force blue focus ring in Preview (thinner + fuzzy) */
-      input:focus, select:focus, textarea:focus {
-        outline: none !important;
-        border-color: rgba(51, 125, 51, 0.5) !important; /* subtle green border */
-        /* thin ring + soft glow */
-        box-shadow:
-          0 0 4px 1px rgba(52, 125, 51, 0.25) !important; /* fuzzy glow */
-      }
-
-      /* Preview-only: keep disabled elements fully visible but greyed */
-      .preview-canvas .disabled-div {
-        opacity: 1 !important;                         /* do not fade */
-        filter: grayscale(100%) brightness(0.95) !important; /* neutral grey look */
-      }
-
-      /* Normalize control sizing so enabled/disabled are identical */
-      .preview-canvas input[type="text"],
-      .preview-canvas select {
-        box-sizing: border-box;
-        padding: 3px 5px;                  /* consistent box */
-        height: 22px;                      /* fixed height to avoid jump */
-        line-height: 1.2;
-        border: 1px solid #777777;         /* flat border */
-        appearance: none;
-        -webkit-appearance: none;
-        box-shadow: none;
-        outline: none;
-        background-color: #ffffff;         /* enabled bg */
-        color: #000;
-        background-clip: padding-box;
-      }
-      /* Rounded corners for Input controls in Preview */
-      .preview-canvas input[type="text"] {
-        border-radius: 4px;
-      }
-      /* Keep selects squared (optional: match platform look) */
-      .preview-canvas select {
-        border-radius: 0;
-      }
-
-      /* Ensure native disabled controls remain readable and sized the same */
-      .preview-canvas input:disabled,
-      .preview-canvas select:disabled,
-      .preview-canvas textarea:disabled {
-        opacity: 1 !important;
-        color: #444 !important;
-        -webkit-text-fill-color: #444 !important;      /* Safari/WebKit */
-        background-color: #f7f7f7 !important;
-        border: 1px solid #bbb !important;             /* normalize border */
-        border-radius: 0 !important;                    /* remove rounded bevels */
-        box-shadow: none !important;                    /* kill inset/outer shadows */
-        outline: none !important;                       /* no focus outline on disabled */
-        appearance: none !important;                    /* remove platform-specific styling */
-        -webkit-appearance: none !important;
-        background-clip: padding-box !important;        /* prevent background under border */
-        filter: grayscale(100%) !important;
-        padding: 3px 5px !important;                    /* keep same vertical box */
-        height: 22px !important;                        /* exact same height */
-      }
-    </style>
+    <link rel="stylesheet" href="../css/preview.css">
   </head>
   <body>
     <div id="preview-root"></div>

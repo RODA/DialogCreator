@@ -6,7 +6,7 @@ const production = process.env.NODE_ENV === 'production';
 const development = process.env.NODE_ENV === 'development';
 const OS_Windows = process.platform == 'win32';
 
-import { app, BrowserWindow, dialog, ipcMain, globalShortcut, Menu } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, Menu } from "electron";
 import { utils } from "./library/utils";
 import * as path from "path";
 import { database } from "./database/database";
@@ -57,32 +57,19 @@ function createMainWindow() {
     // Open the DevTools.
     if (development) {
         editorWindow.webContents.openDevTools();
+        setTimeout(() => {
+            editorWindow.focus();
+        }, 50);
     }
 }
 
 app.whenReady().then(() => {
     createMainWindow();
     setupIPC();
-
-    const success = globalShortcut.register('CommandOrControl+Q', () => {
-        quitApp();
-    });
-
-    if (!success) {
-        console.error("Global shortcut registration failed");
-    }
-
-    // editorWindow.webContents.on("did-finish-load", () => {
-    //     consolog(path.join(__dirname, "../src/pages/editor.html"));
-    // });
 });
 
 app.on("window-all-closed", () => {
     quitApp()
-});
-
-app.on('will-quit', () => {
-    globalShortcut.unregisterAll();
 });
 
 function createSecondWindow(args: { [key: string]: any }) {
@@ -130,7 +117,8 @@ function createSecondWindow(args: { [key: string]: any }) {
         }
     });
 
-    if (development && args.html !== 'preview.html') {
+    // if (development && args.html !== 'preview.html') {
+    if (development) {
         // Open DevTools detached and without activating them so focus stays on the new window
         try {
             secondWindow.webContents.openDevTools({ mode: 'detach', activate: false } as any);
@@ -166,6 +154,9 @@ function createSecondWindow(args: { [key: string]: any }) {
                 break;
             case 'syntax.html':
                 secondWindow.webContents.send("message-from-main-renderSyntax", args.data);
+                break;
+            case 'code.html':
+                secondWindow.webContents.send("message-from-main-renderCode", args.data);
                 break;
             default:
                 break;
@@ -228,8 +219,15 @@ function setupIPC() {
                         if (utils.isFalse(properties)) {
                             dialog.showErrorBox("Error", `Failed to reset properties of ${args[0]}`);
                         } else {
-                            secondWindow.webContents.send("message-from-main-resetOK", properties);
-                            editorWindow.webContents.send("message-from-main-propertiesFromDB", args[0], properties);
+                            secondWindow.webContents.send(
+                                "message-from-main-resetOK",
+                                properties
+                            );
+                            editorWindow.webContents.send(
+                                "message-from-main-propertiesFromDB",
+                                args[0],
+                                properties
+                            );
                         }
                     }
                     break;
@@ -238,14 +236,19 @@ function setupIPC() {
                         const ok = await database.updateProperty(args[0] as keyof DBElements, args[1], args[2]);
                         if (ok) {
                             const properties = await database.getProperties(args[0] as keyof DBElements);
-                            editorWindow.webContents.send("message-from-main-propertiesFromDB", args[0], properties);
+                            editorWindow.webContents.send(
+                                "message-from-main-propertiesFromDB",
+                                args[0],
+                                properties);
                         }
                         else {
                             dialog.showErrorBox("Error", `Failed to update property ${args[1]} of ${args[0]}`);
                         }
                     }
                     break;
+                case 'close-secondWindow':
                 case 'close-conditionsWindow':
+                case 'close-codeWindow':
                     secondWindow.close();
                     break;
                 default:
@@ -400,6 +403,15 @@ const mainMenuTemplate: MenuItemConstructorOptions[] = [
                     ipcMain.on('send-to', onSendTo);
                 }
             },
+            { type: 'separator' },
+            {
+                label: 'Quit',
+                accelerator: 'CommandOrControl+Q',
+                click: () => {
+                    // Only fires when app/menu focused (Electron menu accelerator semantics)
+                    quitApp();
+                }
+            }
         ]
     },
     {

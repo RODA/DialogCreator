@@ -338,10 +338,10 @@ window.addEventListener("DOMContentLoaded", async () => {
     editor.addDefaultsButton();
 
     // Enable Syntax button and wire it
-    const btn = document.getElementById('dialog-syntax') as HTMLButtonElement | null;
-    if (btn) {
-        btn.disabled = false;
-        btn.addEventListener('click', () => {
+    const syntaxBtn = document.getElementById('dialog-syntax') as HTMLButtonElement | null;
+    if (syntaxBtn) {
+        syntaxBtn.disabled = false;
+        syntaxBtn.addEventListener('click', () => {
             const json = editor.stringifyDialog();
             const screenW = Number(window.innerWidth) || 1024;
             const width = Math.max(560, Math.round(screenW * 0.66)); // ~1/3 narrower than editor
@@ -355,6 +355,29 @@ window.addEventListener("DOMContentLoaded", async () => {
                 title: 'Syntax',
                 preload: 'preloadSyntax.js',
                 html: 'syntax.html',
+                data: json
+            });
+        });
+    }
+
+    // Add Custom Code button if present
+    const codeBtn = document.getElementById('dialog-code') as HTMLButtonElement | null;
+    if (codeBtn) {
+        codeBtn.disabled = false;
+        codeBtn.addEventListener('click', () => {
+            const json = editor.stringifyDialog();
+            const screenW = Number(window.innerWidth) || 1024;
+            const width = Math.max(560, Math.round(screenW * 0.66));
+            const height = 520;
+            coms.sendTo('main', 'secondWindow', {
+                width,
+                height,
+                useContentSize: true,
+                autoHideMenuBar: true,
+                backgroundColor: '#ffffff',
+                title: 'Custom code',
+                preload: 'preloadCode.js',
+                html: 'code.html',
                 data: json
             });
         });
@@ -422,6 +445,12 @@ window.addEventListener("DOMContentLoaded", async () => {
         const t = typeof text === 'string' ? text : '';
         dialog.syntax = dialog.syntax || { command: '' };
         dialog.syntax.command = t;
+    });
+
+    // Persist custom JS text coming from Code window
+    coms.on('setDialogCustomJS', (text: unknown) => {
+        const t = typeof text === 'string' ? text : '';
+        dialog.customJS = t;
     });
 
     // Arrange buttons

@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Custom JavaScript Code</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../css/code.css">
+  </head>
+  <body>
+    <div class="code-container">
+      <textarea id="codeText" placeholder="// Write plain JavaScript here.&#10;// Two optional entry points can be defined:&#10;//   function init(ui) { ... }&#10;//   function dispose(ui) { ... }&#10;// Use ui.get/ui.set/ui.text/ui.value/ui.on/ui.show/ui.enable and ui.el/ui.type."></textarea>
+      <div class="code-actions">
+        <button class="custombutton" id="saveCode" type="button">Save & Close</button>
+      </div>
+    </div>
+  </body>
+</html>

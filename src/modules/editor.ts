@@ -1047,6 +1047,7 @@ export const editor: Editor = {
             id: dialog.id,
             properties: { ...dialog.properties },
             syntax: { ...dialog.syntax },
+            customJS: dialog.customJS || '',
             elements: flattened
         };
         return JSON.stringify(result);
@@ -1091,6 +1092,8 @@ export const editor: Editor = {
             // Update dialog properties and UI
             const props = obj.properties as any;
             dialog.properties = { ...props };
+            // Load custom JS if present
+            dialog.customJS = String((obj as any).customJS || '');
             const w = Number(props.width) || 640;
             const h = Number(props.height) || 480;
             dialog.canvas.style.width = w + 'px';

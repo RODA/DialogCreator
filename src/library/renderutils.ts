@@ -58,13 +58,29 @@ export const renderutils: RenderUtils = {
     },
 
     nameidValidChange: function(newId, currentElement) {
+        const n = String(newId || '').trim();
+        if (!n) return false;
+        try {
+            // Prefer authoritative list of top-level elements (wrappers) from dialog.elements
+            const wrappers = Object.values(dialog.elements) as HTMLElement[];
+            if (wrappers && wrappers.length) {
+                const ids = new Set(
+                    wrappers
+                        .filter(w => w && w.id !== currentElement.id)
+                        .map(w => w.dataset?.nameid || '')
+                        .filter(v => v && v.length)
+                );
+                return !ids.has(n);
+            }
+        } catch {}
+        // Fallback: scan DOM but ignore currentElement and anything within it to avoid inner duplicates
         const allIds = new Set(
             Array.from(document.querySelectorAll<HTMLElement>('[data-nameid]'))
-                .map(el => el !== currentElement ? el.dataset.nameid! : null)
-                .filter(id => id !== null)
+                .filter(el => el !== currentElement && !currentElement.contains(el))
+                .map(el => el.dataset.nameid || '')
+                .filter(v => v && v.length)
         );
-
-        return !allIds.has(newId);
+        return !allIds.has(n);
     },
 
 	setInputFilter: function (textbox, inputFilter) {
@@ -271,9 +287,8 @@ export const renderutils: RenderUtils = {
 
         data.id = uuid;
         // Assign unique nameid BEFORE copying properties into dataset so dataset.nameid isn't the template default
-        if (utils.isNotElementOf(data.type, ["Counter", "Label"])) {
-            data.nameid = nameid;
-        }
+        // Ensure all element types receive a unique nameid (including Counter and Label)
+        data.nameid = nameid;
 
         element.style.position = 'absolute';
         element.style.top = data.top + 'px';
@@ -623,6 +638,7 @@ export const renderutils: RenderUtils = {
                         value = element.dataset.nameid || '';
                         showError('Name already exists.');
                     }
+                    break;
 
                 case 'left':
                     if (Number(value) + elementWidth + 10 > dialogW) {

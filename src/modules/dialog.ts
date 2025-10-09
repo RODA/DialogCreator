@@ -12,6 +12,7 @@ export const dialog: Dialog = {
         command: '',
         defaultElements: []
     },
+    customJS: '',
 
     // Dialog =======================================
     // dialog properties: name, title, width, height

@@ -19,6 +19,7 @@ export interface Dialog {
         command: string,
         defaultElements: []
     };
+    customJS: string;
     initialize: (obj: DialogProperties) => void;
     updateElementProperties: (id: string, payload: { [key: string]: string }) => void;
     addElement: (element: HTMLElement) => void;
