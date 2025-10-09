@@ -7,11 +7,42 @@ import { Utils } from '../interfaces/utils';
 
 const TRUE_SET = new Set(['true', 't', '1']); // , 'yes', 'y', 'on'
 const FALSE_SET = new Set(['false', 'f', '0']); // , 'no', 'n', 'off'
-
-
-let __measureCanvas: HTMLCanvasElement | null = null;
+const DECIMAL_REGEX = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/;
+const INT_REGEX = /^[+-]?\d+$/;
 
 export const utils: Utils = {
+    // ---- inline typing necessary below ----
+        isKeyOf: function <T extends object>(obj: T, key: PropertyKey): key is keyof T {
+            return !!obj && key in obj;
+        },
+
+        isOwnKeyOf: function <T extends object>(obj: T, key: PropertyKey): key is keyof T {
+            if (!obj) return false;
+            return Object.prototype.hasOwnProperty.call(obj, key);
+        },
+
+        getKeyValue: function <T extends object, K extends keyof T>(obj: T, key: K): T[K] {
+            return obj[key];
+        },
+
+        // Overloaded primitive type expectation helper
+        expectType: (function() {
+            function expectType<T extends object, K extends string>(obj: T, key: K, kind: 'string'): asserts obj is T & Record<K, string>;
+            function expectType<T extends object, K extends string>(obj: T, key: K, kind: 'number'): asserts obj is T & Record<K, number>;
+            function expectType<T extends object, K extends string>(obj: T, key: K, kind: 'boolean'): asserts obj is T & Record<K, boolean>;
+            function expectType(obj: any, key: string, kind: 'string' | 'number' | 'boolean') {
+                if (!obj || !(key in obj)) {
+                    throw new Error(`Missing property "${key}"`);
+                }
+                const v = obj[key];
+                if (typeof v !== kind || (kind === 'number' && !Number.isFinite(v))) {
+                    throw new Error(`Expected "${key}" to be ${kind}, got ${typeof v}`);
+                }
+            }
+            return expectType;
+        })(),
+    // ---- inline typing necessary above ----
+
     // Generic typing lives in the Utils interface; we keep implementation minimal here.
     getKeys: function (obj) {
         if (!obj) {
@@ -25,79 +56,121 @@ export const utils: Utils = {
     //     return Object.keys(obj);
     // },
 
-    // ---- inline typing necessary below ----
-    isKeyOf: function <T extends object>(obj: T, key: PropertyKey): key is keyof T {
-        return !!obj && key in obj;
-    },
+    isNumeric: function(x) {
+        // True only for finite number primitives or boxed Number objects.
+        if (typeof x === 'number') {
+            return Number.isFinite(x);
+        }
 
-    isOwnKeyOf: function <T extends object>(obj: T, key: PropertyKey): key is keyof T {
-        if (!obj) return false;
-        return Object.prototype.hasOwnProperty.call(obj, key);
-    },
-
-    getKeyValue: function <T extends object, K extends keyof T>(obj: T, key: K): T[K] {
-        return obj[key];
-    },
-
-    // Overloaded primitive type expectation helper
-    expectType: (function() {
-        function expectType<T extends object, K extends string>(obj: T, key: K, kind: 'string'): asserts obj is T & Record<K, string>;
-        function expectType<T extends object, K extends string>(obj: T, key: K, kind: 'number'): asserts obj is T & Record<K, number>;
-        function expectType<T extends object, K extends string>(obj: T, key: K, kind: 'boolean'): asserts obj is T & Record<K, boolean>;
-        function expectType(obj: any, key: string, kind: 'string' | 'number' | 'boolean') {
-            if (!obj || !(key in obj)) {
-                throw new Error(`Missing property "${key}"`);
+        // Accept boxed numbers, ex. let x = new Number(5);
+        if (Object.prototype.toString.call(x) === '[object Number]') {
+            try {
+                const n = (x as unknown as Number).valueOf() as unknown as number;
+                return Number.isFinite(n);
+            } catch {
+                return false;
             }
-            const v = obj[key];
-            if (typeof v !== kind || (kind === 'number' && !Number.isFinite(v))) {
-                throw new Error(`Expected "${key}" to be ${kind}, got ${typeof v}`);
-            }
-        }
-        return expectType;
-    })(),
-    // ---- inline typing necessary above ----
-
-    isNumeric: function (x) {
-        if (utils.missing(x) || x === null || ("" + x).length == 0) {
-            return false;
-        }
-
-        return (
-            Object.prototype.toString.call(x) === "[object Number]" &&
-            !isNaN(parseFloat("" + x)) &&
-            isFinite(utils.asNumeric(x as string))
-        )
-    },
-
-    possibleNumeric: function(x) {
-        if (utils.isNumeric(x)) {
-            return true;
-        }
-        if (
-            utils.isNumeric("" + utils.asNumeric(x)) ||
-            utils.isInteger(utils.asInteger(x))
-        ) {
-            return true;
         }
 
         return false;
     },
 
-    isInteger: function (x) {
-        return parseFloat("" + x) == parseInt("" + x, 10);
+    possibleNumeric: function(x) {
+        // Return true only for full-string finite decimal numeric literals (optionally scientific notation)
+        // Allowed examples: 42, '42', '  -3.14  ', '+1.0', '1e3', '-2.5E-2', '.5', '5.'
+        // Disallowed examples: '5x', '3.2abc', '', 'Infinity', Infinity, true/false, null/undefined, '0x10', '0b1010', '0o77'
+
+        // The global isFinite() is different from Number.isFinite();
+        // it first coerces to number, for instance '42' -> 42
+        // but here asNumeric() attempts this very coercion, minus the edge cases.
+        return isFinite(utils.asNumeric(x));
+    },
+
+    possibleInteger: function (x) {
+        // True if x is an integer-valued numeric under strict decimal/scientific parsing.
+        // Accepts: 3, 3.0, '3', '3.0', '1e3', '+0', '-0', '.0'
+        // Rejects: '3.5', '5x', '', 'Infinity', Infinity, NaN, booleans, null/undefined, '0x10', '0b10', '0o7'
+        return Number.isInteger(utils.asNumeric(x));
     },
 
     asNumeric: function(x) {
-        return parseFloat("" + x);
-    },
+        if (utils.missing(x) || utils.isNull(x)) {
+            return NaN;
+        }
 
-    ensureNumber: function(x, fallback) {
-        const n = Number(x);
-        return Number.isFinite(n) ? n : fallback;
+        if (typeof x === 'number') {
+            return Number.isFinite(x) ? x : NaN;
+        }
+
+        if (Object.prototype.toString.call(x) === '[object Number]') {
+            // boxed numbers, ex. let x = new Number(3);
+            try {
+                const n = (x as unknown as Number).valueOf() as unknown as number;
+                return Number.isFinite(n) ? n : NaN;
+            } catch {
+                return NaN;
+            }
+        }
+
+        if (typeof x === 'string') {
+            const s = x.trim();
+            if (s.length === 0) {
+                return NaN;
+            }
+
+            if (!DECIMAL_REGEX.test(s)) {
+                return NaN;
+            }
+
+            const n = Number(s);
+            return Number.isFinite(n) ? n : NaN;
+        }
+
+        return NaN;
     },
 
     asInteger: function(x) {
-        return parseInt("" + x);
+        if (utils.missing(x) || utils.isNull(x)) {
+            return NaN;
+        }
+
+        if (typeof x === 'number') {
+            return Number.isFinite(x) ? Math.trunc(x) : NaN;
+        }
+
+        if (Object.prototype.toString.call(x) === '[object Number]') {
+            try {
+                const n = (x as unknown as Number).valueOf() as unknown as number;
+                return Number.isFinite(n) ? Math.trunc(n) : NaN;
+            } catch {
+                return NaN;
+            }
+        }
+
+        if (typeof x === 'string') {
+            const s = x.trim();
+            if (s.length === 0) {
+                return NaN;
+            }
+
+            // If strict integer, parse directly; else if valid decimal numeric, truncate; else NaN
+            if (INT_REGEX.test(s)) {
+                return Number(s);
+            }
+
+            if (DECIMAL_REGEX.test(s)) {
+                const n = Number(s);
+                return Number.isFinite(n) ? Math.trunc(n) : NaN;
+            }
+
+            return NaN;
+        }
+
+        return NaN;
+    },
+
+    ensureNumber: function(x, fallback) {
+        return utils.possibleNumeric(x) ? utils.asNumeric(x) : fallback;
     },
 
     isTrue: function(x) {
@@ -213,15 +286,23 @@ export const utils: Utils = {
         if (t.length === 0) return 0;
 
         const size = Number(fontSize) || 12;
+
         // Resolve a usable font-family string
         let family = (fontFamily && String(fontFamily).trim().length) ? String(fontFamily) : '';
-        if (!family && typeof window !== 'undefined' && typeof getComputedStyle === 'function') {
+
+        if (
+            !family &&    // same thing as family === '' because '' is falsy
+            typeof window !== 'undefined' &&
+            typeof getComputedStyle === 'function'
+        ) {
             family = getComputedStyle(document.body || document.documentElement).fontFamily || '';
         }
 
-        if (!family) {
+        // Default generic family if nothing else found
+        if (!family) { // same thing as if (family === '') because '' is falsy
             family = 'Arial, Helvetica, sans-serif';
         }
+
         // Quote family names with spaces that are not already quoted
         const familyNormalized = family
             .split(',')

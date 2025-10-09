@@ -1,6 +1,4 @@
 export interface Utils {
-    getKeys<T extends object>(obj: T | null | undefined): Array<Extract<keyof T, string>>;
-    // getKeys(obj: Record<string, unknown>): Array<string>;
     isKeyOf<T extends object>(obj: T, key: PropertyKey): key is keyof T;
     isOwnKeyOf<T extends object>(obj: T, key: PropertyKey): key is keyof T;
     getKeyValue<T extends object, K extends keyof T>(obj: T, key: K): T[K];
@@ -10,12 +8,14 @@ export interface Utils {
     expectType<T extends object, K extends string>(obj: T, key: K, kind: 'number'): asserts obj is T & Record<K, number>;
     expectType<T extends object, K extends string>(obj: T, key: K, kind: 'boolean'): asserts obj is T & Record<K, boolean>;
 
-    isNumeric: (x: string) => boolean;
-    possibleNumeric: (x: string) => boolean;
-    isInteger: (x: number) => boolean;
-    asNumeric(x: string): number;
+    getKeys<T extends object>(obj: T | null | undefined): Array<Extract<keyof T, string>>;
+    // getKeys(obj: Record<string, unknown>): Array<string>;
+    isNumeric: (x: unknown) => boolean;
+    possibleNumeric: (x: unknown) => boolean;
+    possibleInteger: (x: unknown) => boolean;
+    asNumeric(x: unknown): number;
+    asInteger(x: unknown): number;
     ensureNumber(x: unknown, fallback: number): number;
-    asInteger(x: string): number;
     isTrue: (x: unknown) => boolean;
     isFalse: (x: unknown) => boolean;
     isNull: (x: unknown) => boolean;
