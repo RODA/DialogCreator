@@ -120,3 +120,18 @@ input:focus, select:focus, textarea:focus {
 .preview-canvas .custom-radio:not([aria-disabled="true"]) {
     cursor: pointer !important;
 }
+
+/* Friendly overlay for custom JS errors in Preview */
+.preview-canvas .customjs-error {
+    position: absolute;
+    inset: 8px;
+    overflow: auto;
+    border: 1px solid #d33;
+    background: #fff4f4;
+    color: #900;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 12px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    white-space: pre-wrap;
+}

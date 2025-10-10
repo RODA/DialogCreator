@@ -264,7 +264,14 @@ function buildUI(canvas: HTMLElement): PreviewUI {
             const el = findWrapper(name);
             if (!el) return;
 
-            const h = (ev: Event) => handler(ev, el);
+            const h = (ev: Event) => {
+                try {
+                    handler(ev, el);
+                } catch (e: any) {
+                    const msg = `Custom handler error on ${event} for "${name}": ${String(e && e.message ? e.message : e)}`;
+                    coms.sendTo('editorWindow', 'consolog', msg);
+                }
+            };
             el.addEventListener(event, h);
 
             disposers.push(() => el.removeEventListener(event, h));
@@ -1137,23 +1144,39 @@ function renderPreview(dialog: PreviewDialog) {
         const exports: PreviewScriptExports = {};
 
         // Wrap code in a Function with ui in scope
-        const fn = new Function('ui', 'exports', code);
+        let fn: Function | null = null;
         try {
-            fn(ui, exports);
+            fn = new Function('ui', 'exports', code);
+        } catch (e: any) {
+            const msg = `Code syntax error: ${String(e && e.message ? e.message : e)}`;
+            coms.sendTo('editorWindow', 'consolog', msg);
+            // Show a friendly message in Preview
+            const err = document.createElement('div');
+            err.className = 'customjs-error';
+            err.textContent = msg;
+            canvas.appendChild(err);
+            fn = null;
+        }
+
+        if (fn) {
+            try {
+                fn(ui, exports);
             coms.sendTo(
                 'editorWindow',
                 'consolog',
                 'Preview: customJS executed top-level.'
             );
-        } catch (e: any) {
-            coms.sendTo(
-                'editorWindow',
-                'consolog',
-                `Custom code error: ${String(e && e.message ? e.message : e)}`
-            );
+            } catch (e: any) {
+                const msg = `Custom code runtime error: ${String(e && e.message ? e.message : e)}`;
+                coms.sendTo('editorWindow', 'consolog', msg);
+                const err = document.createElement('div');
+                err.className = 'customjs-error';
+                err.textContent = msg;
+                canvas.appendChild(err);
+            }
         }
 
-        if (typeof exports.init === 'function') {
+        if (fn && typeof exports.init === 'function') {
             try {
                 exports.init(ui);
                 coms.sendTo(
@@ -1162,11 +1185,13 @@ function renderPreview(dialog: PreviewDialog) {
                     'Preview: exports.init() completed.'
                 );
             } catch (e: any) {
-                coms.sendTo(
-                    'editorWindow',
-                    'consolog',
-                    `init() error: ${String(e && e.message ? e.message : e)}`
-                );
+                const msg = `init() error: ${String(e && e.message ? e.message : e)}`;
+                coms.sendTo('editorWindow', 'consolog', msg);
+                const err = document.createElement('div');
+                err.className = 'customjs-error';
+                err.style.cssText = 'position:absolute;inset:8px;overflow:auto;border:1px solid #d33;background:#fff4f4;color:#900;font-family:monospace;padding:8px;border-radius:6px;';
+                err.textContent = msg;
+                canvas.appendChild(err);
                 console.error('init() error:', e);
             }
         }
