@@ -260,4 +260,4 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
     };
 }
 
-(window as any).CM6 = { createCodeEditor };
+window.CM6 = { createCodeEditor };

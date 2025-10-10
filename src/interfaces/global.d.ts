@@ -12,5 +12,25 @@ declare global {
          */
         __userHandlers?: Array<() => void>;
         __nameGlobals?: Record<string, HTMLElement>;
+
+        /**
+         * CodeMirror 6 helper API exposed by the in-app bundle.
+         * Available in windows that load the CM6 bundle (e.g., Code window).
+         */
+        CM6?: {
+            createCodeEditor: (
+                el: HTMLElement,
+                opts?: {
+                    value?: string;
+                    onChange?: (value: string) => void
+                }
+            ) => {
+                view: unknown;
+                getValue(): string;
+                setValue(v: string): void;
+                focus(): void;
+                destroy(): void;
+            }
+        };
     }
 }

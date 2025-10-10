@@ -29,17 +29,7 @@ window.addEventListener('DOMContentLoaded', () => {
         } catch {}
     }
 
-    type CM6Global = {
-        createCodeEditor: (
-            el: HTMLElement,
-            opts?: {
-                value?: string,
-                onChange?: (v: string) => void
-            }
-        ) => any
-    };
-
-    const CM6: CM6Global | undefined = (window as any).CM6;
+    const CM6 = window.CM6;
     let editor: any = null;
 
     coms.on('renderCode', (payload: unknown) => {
