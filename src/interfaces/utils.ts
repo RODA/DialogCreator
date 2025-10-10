@@ -1,4 +1,7 @@
 export interface Utils {
+    isNull<T> (x: T | null | undefined): x is null;
+    isNil<T>(x: T | null | undefined): x is null | undefined;
+    notNil<T>(x: T | null | undefined): x is NonNullable<T>;
     isKeyOf<T extends object>(obj: T, key: PropertyKey): key is keyof T;
     isOwnKeyOf<T extends object>(obj: T, key: PropertyKey): key is keyof T;
     getKeyValue<T extends object, K extends keyof T>(obj: T, key: K): T[K];
@@ -18,7 +21,6 @@ export interface Utils {
     ensureNumber(x: unknown, fallback: number): number;
     isTrue: (x: unknown) => boolean;
     isFalse: (x: unknown) => boolean;
-    isNull: (x: unknown) => boolean;
     missing: (x: unknown) => boolean;
     exists: (x: unknown) => boolean;
     capitalize: (str: string) => string;

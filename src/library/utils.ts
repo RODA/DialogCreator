@@ -12,6 +12,22 @@ const INT_REGEX = /^[+-]?\d+$/;
 
 export const utils: Utils = {
     // ---- inline typing necessary below ----
+        isNull: function<T> (x: T | null | undefined): x is null {
+            // Important: see the complete type guard in the interface
+            // If x's type includes undefined, it remains possibly undefined in the false branch
+            return x === null; // automatically means x is not undefined (so it exists)
+        },
+
+        // Aliases for clarity when checking both null and undefined together
+        isNil: function<T>(x: T | null | undefined): x is null | undefined {
+            return x === null || x === undefined;
+        },
+
+        notNil: function<T>(x: T | null | undefined): x is NonNullable<T> {
+            // NonNullable: x is neither null nor undefined, at the same time
+            return x !== null && x !== undefined;
+        },
+
         isKeyOf: function <T extends object>(obj: T, key: PropertyKey): key is keyof T {
             return !!obj && key in obj;
         },
@@ -41,7 +57,7 @@ export const utils: Utils = {
             }
             return expectType;
         })(),
-    // ---- inline typing necessary above ----
+    // ---- end of necessary inline typing ----
 
     // Generic typing lives in the Utils interface; we keep implementation minimal here.
     getKeys: function (obj) {
@@ -200,10 +216,6 @@ export const utils: Utils = {
             return FALSE_SET.has(s);
         }
         return false;
-    },
-
-    isNull: function(x) {
-        return utils.exists(x) && x === null;
     },
 
     missing: function (x) {
