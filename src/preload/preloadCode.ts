@@ -1,4 +1,5 @@
 import { coms } from "../modules/coms";
+import { utils } from "../library/utils";
 import * as path from "path";
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -10,74 +11,72 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // Ensure the CM6 bundle is loaded into the preload (isolated) context.
     // With contextIsolation=true, globals from page scripts aren't visible here,
-    // so we require the bundle directly when available.
+    // so the bundle directly required, when available.
     const fs = require('fs');
     const candidates: string[] = [];
 
-    // Dev path: dist/preload -> project/src/bundles/codemirror.bundle.js
+    // Dev path: dist/preload -> src/bundles/codemirror.bundle.js
     candidates.push(path.join(__dirname, '..', '..', 'src', 'bundles', 'codemirror.bundle.js'));
 
     // Packaged path: under resources/bundles
-    if (process && (process as any).resourcesPath) {
-    candidates.push(path.join((process as any).resourcesPath, 'bundles', 'codemirror.bundle.js'));
+    if (process && process.resourcesPath) {
+        candidates.push(path.join(process.resourcesPath, 'bundles', 'codemirror.bundle.js'));
     }
 
-    for (const p of candidates) {
-        try {
-            if (p && fs.existsSync(p)) {
-                // eslint-disable-next-line @typescript-eslint/no-var-requires
-                require(p);
-                break;
-            }
-        } catch {}
+    for (const bundle of candidates) {
+        if (bundle && fs.existsSync(bundle)) {
+            require(bundle);
+            break;
+        }
     }
 
     const CM6 = window.CM6;
     let editor: any = null;
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const setStatus = (msg: string) => {
+        if (status) status.textContent = msg;
+    };
 
     coms.on('renderCode', (payload: unknown) => {
-        try {
-            type CodePayload = { customJS?: string };
-            const obj: CodePayload = typeof payload === 'string' ? JSON.parse(payload as string) : (payload as CodePayload);
-            const existing = String(obj?.customJS || '');
-            if (CM6) {
-                editor = CM6.createCodeEditor(
-                    mount,
-                    {
-                        value: existing,
-                        onChange: () => {
+        type CodePayload = { customJS?: string };
+        const obj: CodePayload = typeof payload === 'string' ? JSON.parse(payload as string) : (payload as CodePayload);
+        const existing = String(obj?.customJS || '');
+        if (CM6) {
+            editor = CM6.createCodeEditor(
+                mount,
+                {
+                    value: existing,
+                    onChange: () => {
+                        if (!utils.isNil(debounceTimer)) {
+                            // clear if neither null nor undefined
                             clearTimeout(debounceTimer);
-                            debounceTimer = setTimeout(runSyntaxCheck, 250);
                         }
+                        debounceTimer = setTimeout(runSyntaxCheck, 250);
                     }
-                );
-            } else {
-                // Fallback: textarea (unlikely if bundle loads). Create one on the fly.
-                const ta = document.createElement('textarea');
-                ta.id = 'codeText';
-                mount.appendChild(ta);
-                ta.value = existing;
-                editor = {
-                    getValue: () => ta.value,
-                    setValue: (v: string) => { ta.value = v; },
-                    focus: () => ta.focus(),
-                    destroy: () => {}
-                };
-            }
-            setStatus('Ready');
-        } catch {
-            // ignore parse errors
+                }
+            );
+        } else {
+            // Fallback: textarea (unlikely if bundle loads). Create one on the fly.
+            const ta = document.createElement('textarea');
+            ta.id = 'codeText';
+            mount.appendChild(ta);
+            ta.value = existing;
+            editor = {
+                getValue: () => ta.value,
+                setValue: (v: string) => { ta.value = v; },
+                focus: () => ta.focus(),
+                destroy: () => {}
+            };
         }
+
+        setStatus('Ready');
     });
 
-    const setStatus = (msg: string) => { if (status) status.textContent = msg; };
-
-    let debounceTimer: any = null;
     const runSyntaxCheck = () => {
         const code = (editor?.getValue?.() || '') as string;
         try {
             // Validate syntax using a parser to avoid code generation from strings
-            // eslint-disable-next-line @typescript-eslint/no-var-requires
             const acorn = require('acorn');
             acorn.parse(
                 code,
