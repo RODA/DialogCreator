@@ -59,7 +59,7 @@ function createMainWindow() {
         editorWindow.webContents.openDevTools();
         setTimeout(() => {
             editorWindow.focus();
-        }, 50);
+        }, 300);
     }
 }
 
@@ -79,6 +79,7 @@ function createSecondWindow(args: { [key: string]: any }) {
     //     iconPath = path.join(path.resolve(__dirname), "../../assets/icon.png");
     // }
 
+    const isCodeWindow = args.html === 'code.html';
     secondWindow = new BrowserWindow({
         width: args.width,
         height: args.height,
@@ -99,7 +100,7 @@ function createSecondWindow(args: { [key: string]: any }) {
             sandbox: false,
         },
         autoHideMenuBar: typeof args.autoHideMenuBar === 'boolean' ? args.autoHideMenuBar : (development ? false : true),
-        resizable: false,
+        resizable: isCodeWindow ? true : false,
     });
 
     // and load the index.html of the app.
@@ -150,13 +151,13 @@ function createSecondWindow(args: { [key: string]: any }) {
                 });
                 break;
             case 'preview.html':
-                secondWindow.webContents.send("message-from-main-renderPreview", args.data);
+                secondWindow.webContents.send("renderPreview", args.data);
                 break;
             case 'syntax.html':
-                secondWindow.webContents.send("message-from-main-renderSyntax", args.data);
+                secondWindow.webContents.send("renderSyntax", args.data);
                 break;
             case 'code.html':
-                secondWindow.webContents.send("message-from-main-renderCode", args.data);
+                secondWindow.webContents.send("renderCode", args.data);
                 break;
             default:
                 break;
@@ -249,6 +250,7 @@ function setupIPC() {
                 case 'close-secondWindow':
                 case 'close-conditionsWindow':
                 case 'close-codeWindow':
+                case 'close-previewWindow':
                     secondWindow.close();
                     break;
                 default:

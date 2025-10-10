@@ -4,12 +4,13 @@
   "description": "A dialog creating application",
   "main": "dist/main.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npm run bundle:cm6",
     "watch": "tsc -w",
     "lint": "eslint -c .eslintrc --ext .ts ./src",
     "start": "npm run build && electron ./dist/main.js",
     "dist": "npm run build && electron-builder",
-    "docs:pdf": "node scripts/build-manual-pdf.js"
+    "docs:pdf": "node scripts/build-manual-pdf.js",
+    "bundle:cm6": "esbuild src/vendor/codemirror-entry.ts --bundle --format=iife --outfile=src/vendor/codemirror.bundle.js"
   },
   "author": "RODA",
   "license": "CC0-1.0",
@@ -36,6 +37,10 @@
       {
         "from": "src/assets/",
         "to": "assets"
+      },
+      {
+        "from": "src/vendor/codemirror.bundle.js",
+        "to": "vendor/codemirror.bundle.js"
       }
     ],
     "win": {
@@ -65,6 +70,13 @@
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^8.31.0",
     "@typescript-eslint/parser": "^8.31.0",
+    "@codemirror/commands": "^6.6.1",
+    "@codemirror/lang-javascript": "^6.2.2",
+    "@codemirror/language": "^6.10.2",
+    "@codemirror/lint": "^6.8.0",
+    "@codemirror/state": "^6.4.1",
+    "@codemirror/view": "^6.34.1",
+    "esbuild": "^0.24.0",
     "electron": "^34.0.2",
     "electron-builder": "^26.0.13",
     "eslint": "^9.25.1",
@@ -72,6 +84,7 @@
     "md-to-pdf": "^5.2.4"
   },
   "dependencies": {
+    "acorn": "^8.12.1",
     "sqlite3": "^5.1.7",
     "uuid": "^11.1.0",
     "@jaames/iro": "^5.5.2"

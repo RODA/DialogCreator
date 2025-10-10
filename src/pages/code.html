@@ -6,10 +6,15 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
     <link rel="stylesheet" href="../css/global.css">
     <link rel="stylesheet" href="../css/code.css">
+    <!-- CM6 bundle is loaded from preload to work with contextIsolation -->
   </head>
   <body>
     <div class="code-container">
-      <textarea id="codeText" placeholder="// Write plain JavaScript here.&#10;// Two optional entry points can be defined:&#10;//   function init(ui) { ... }&#10;//   function dispose(ui) { ... }&#10;// Use ui.get/ui.set/ui.text/ui.value/ui.on/ui.show/ui.enable and ui.el/ui.type."></textarea>
+      <div class="code-pane">
+        <div class="code-gutter" id="codeGutter" style="display:none"></div>
+        <div id="codeMount" style="flex:1; min-width:0;"></div>
+      </div>
+      <div class="code-status" id="codeStatus">Ready</div>
       <div class="code-actions">
         <button class="custombutton" id="saveCode" type="button">Save & Close</button>
       </div>
