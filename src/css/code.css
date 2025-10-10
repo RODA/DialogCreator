@@ -10,7 +10,8 @@ html, body {
     height: 100vh;
 }
 
-.code-title { font-size: 16px;
+.code-title {
+    font-size: 16px;
     padding: 8px 12px;
     border-bottom: 1px solid #e5e5e5;
 }

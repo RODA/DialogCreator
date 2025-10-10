@@ -222,18 +222,18 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
                     lineHeight: '1.5',
                     flex: '1 1 auto'
                 },
-                // Lint tooltip styling: Arial and slightly smaller font size
+                // Lint tooltip styling: Arial and slightly larger font size
                 '.cm-tooltip': {
                     fontFamily: 'Arial, Helvetica, sans-serif'
                 },
                 '.cm-tooltip-lint': {
                     fontFamily: 'Arial, Helvetica, sans-serif',
-                    fontSize: '11px',
+                    fontSize: '12px',
                     lineHeight: '1.35'
                 },
                 '.cm-diagnostic': {
                     fontFamily: 'Arial, Helvetica, sans-serif',
-                    fontSize: '11px',
+                    fontSize: '12px',
                     lineHeight: '1.35'
                 }
             })

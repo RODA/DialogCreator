@@ -17,6 +17,8 @@ dist
 
 build/
 package-lock.json
+src/bundles/codemirror.bundle.js
+src/bundles/codemirror.bundle.js.map
 
 # Editor directories and files
 .vscode/*

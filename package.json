@@ -10,7 +10,7 @@
     "start": "npm run build && electron ./dist/main.js",
     "dist": "npm run build && electron-builder",
     "docs:pdf": "node scripts/build-manual-pdf.js",
-    "bundle:cm6": "esbuild src/vendor/codemirror-entry.ts --bundle --format=iife --outfile=src/vendor/codemirror.bundle.js"
+  "bundle:cm6": "esbuild src/library/codemirror-entry.ts --bundle --format=iife --outfile=src/bundles/codemirror.bundle.js"
   },
   "author": "RODA",
   "license": "CC0-1.0",
@@ -39,8 +39,8 @@
         "to": "assets"
       },
       {
-        "from": "src/vendor/codemirror.bundle.js",
-        "to": "vendor/codemirror.bundle.js"
+        "from": "src/bundles/codemirror.bundle.js",
+        "to": "bundles/codemirror.bundle.js"
       }
     ],
     "win": {

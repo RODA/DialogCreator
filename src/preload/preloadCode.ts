@@ -13,12 +13,15 @@ window.addEventListener('DOMContentLoaded', () => {
     // so we require the bundle directly when available.
     const fs = require('fs');
     const candidates: string[] = [];
-    // Dev path: dist/preload -> project/src/vendor/codemirror.bundle.js
-    candidates.push(path.join(__dirname, '../../src/vendor/codemirror.bundle.js'));
-    // Packaged path: under resources/vendor
+
+    // Dev path: dist/preload -> project/src/bundles/codemirror.bundle.js
+    candidates.push(path.join(__dirname, '..', '..', 'src', 'bundles', 'codemirror.bundle.js'));
+
+    // Packaged path: under resources/bundles
     if (process && (process as any).resourcesPath) {
-        candidates.push(path.join((process as any).resourcesPath, 'vendor', 'codemirror.bundle.js'));
+    candidates.push(path.join((process as any).resourcesPath, 'bundles', 'codemirror.bundle.js'));
     }
+
     for (const p of candidates) {
         try {
             if (p && fs.existsSync(p)) {
@@ -52,7 +55,6 @@ window.addEventListener('DOMContentLoaded', () => {
                 // Fallback: textarea (unlikely if bundle loads). Create one on the fly.
                 const ta = document.createElement('textarea');
                 ta.id = 'codeText';
-                ta.style.cssText = 'flex:1;width:100%;padding:12px;border:none;outline:none;resize:none;box-sizing:border-box;line-height:1.5;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:12px;';
                 mount.appendChild(ta);
                 ta.value = existing;
                 editor = {
@@ -77,12 +79,15 @@ window.addEventListener('DOMContentLoaded', () => {
             // Validate syntax using a parser to avoid code generation from strings
             // eslint-disable-next-line @typescript-eslint/no-var-requires
             const acorn = require('acorn');
-            acorn.parse(code, {
-                ecmaVersion: 'latest',
-                sourceType: 'script',
-                allowReturnOutsideFunction: true,
-                allowAwaitOutsideFunction: true
-            } as any);
+            acorn.parse(
+                code,
+                {
+                    ecmaVersion: 'latest',
+                    sourceType: 'script',
+                    allowReturnOutsideFunction: true,
+                    allowAwaitOutsideFunction: true
+                } as any
+            );
             setStatus('No syntax errors');
         } catch (e: any) {
             setStatus('Syntax error: ' + String(e && e.message ? e.message : e));
