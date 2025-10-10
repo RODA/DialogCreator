@@ -32,7 +32,11 @@ export const coms: Communications = {
         const responseChannel = `message-from-main-${channel}`;
 
         if (!registeredChannels.has(channel)) {
+            // Support both the legacy prefixed channel and a clean channel name
             ipcRenderer.on(responseChannel, (_event, ...args) => {
+                messenger.emit(channel, ...args);
+            });
+            ipcRenderer.on(channel, (_event, ...args) => {
                 messenger.emit(channel, ...args);
             });
             registeredChannels.add(channel);
@@ -46,6 +50,9 @@ export const coms: Communications = {
 
         if (!registeredChannels.has(channel)) {
             ipcRenderer.on(responseChannel, (_event, ...args) => {
+                messenger.emit(channel, ...args);
+            });
+            ipcRenderer.on(channel, (_event, ...args) => {
                 messenger.emit(channel, ...args);
             });
             registeredChannels.add(channel);
