@@ -633,11 +633,19 @@ export const renderutils: RenderUtils = {
             const eltop = document.getElementById('eltop') as HTMLInputElement;
 
             switch (key) {
-                case 'nameid':
-                    if (!renderutils.nameidValidChange(value, element)) {
+                case 'nameid': {
+                    const next = String(value || '').trim();
+                    if (renderutils.nameidValidChange(next, element)) {
+                        // Propagate rename in other elements' conditions and in customJS
+                        const prev = String(element.dataset.nameid || '');
+                        if (prev && next && prev !== next) {
+                            renderutils.propagateNameChange(prev, next);
+                        }
+                        value = next;
+                    } else {
                         value = element.dataset.nameid || '';
                         showError('Name already exists.');
-                    }
+                    }}
                     break;
 
                 case 'left':
@@ -1112,6 +1120,66 @@ export const renderutils: RenderUtils = {
             }
         });
 
+    },
+
+    // Propagate an element name change across:
+    // - all elements' dataset.conditions and dataset.groupConditions (word-boundary replace)
+    // - dialog.customJS for ui.on(...) and ui.trigger(...) first argument (identifier or quoted)
+    propagateNameChange: function(oldName: string, newName: string) {
+        const old_name = String(oldName || '').trim();
+        const new_name = String(newName || '').trim();
+
+        if (!old_name || !new_name || old_name === new_name) {
+            return;
+        }
+
+        // Helper: escape regex special chars
+        const escapeName = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const wordRegExp = new RegExp(`\\b${escapeName(old_name)}\\b`, 'g');
+
+        // Update element conditions across all wrappers (including groups)
+        const items = Object.values(dialog.elements) as HTMLElement[];
+
+        for (const el of items) {
+            if (!el || !el.dataset) {
+                continue;
+            }
+
+            if (typeof el.dataset.conditions === 'string' && el.dataset.conditions.length) {
+                const repl = el.dataset.conditions.replace(wordRegExp, new_name);
+                if (repl !== el.dataset.conditions) {
+                    el.dataset.conditions = repl;
+                }
+            }
+
+            if (typeof el.dataset.groupConditions === 'string' && el.dataset.groupConditions.length) {
+                const replG = el.dataset.groupConditions.replace(wordRegExp, new_name);
+                if (replG !== el.dataset.groupConditions) {
+                    el.dataset.groupConditions = replG;
+                }
+            }
+        }
+
+        // Update customJS for common API usages only (ui.on/ui.trigger first arg)
+        const src = String(dialog.customJS || '');
+        if (src) {
+            const escOld = escapeName(old_name);
+            // ui.on(<id>, ...)
+            const onUnquotedRegExp = new RegExp(`\\bui\\.on\\s*\\(\\s*${escOld}\\b`, 'g');
+            const onQuotedRegExp = new RegExp(`\\bui\\.on\\s*\\(\\s*(["'])${escOld}\\1`, 'g');
+            // ui.trigger(<id>, ...)
+            const triggerUnquotedRegExp = new RegExp(`\\bui\\.trigger\\s*\\(\\s*${escOld}\\b`, 'g');
+            const triggerQuotedRegExp = new RegExp(`\\bui\\.trigger\\s*\\(\\s*(["'])${escOld}\\1`, 'g');
+
+            let out = src.replace(onUnquotedRegExp, (word) => word.replace(old_name, new_name));
+            out = out.replace(triggerUnquotedRegExp, (word) => word.replace(old_name, new_name));
+            out = out.replace(onQuotedRegExp, (_word, quote: string) => `ui.on(${quote}${new_name}${quote}`);
+            out = out.replace(triggerQuotedRegExp, (_word, quote: string) => `ui.trigger(${quote}${new_name}${quote}`);
+
+            if (out !== src) {
+                dialog.customJS = out;
+            }
+        }
     },
 
     updateButton: function(
