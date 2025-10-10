@@ -5,6 +5,15 @@ import { conditions as cond } from "../modules/conditions";
 import { AnyElement, StringNumber } from "../interfaces/elements";
 import { PreviewDialog, PreviewScriptExports, PreviewUI } from "../interfaces/preview";
 
+// Controlled set of allowed event names for the custom Preview UI API
+const ALLOWED_EVENTS = new Set<string>(['click', 'change', 'input']);
+
+function normalizeEventName(ev: unknown): string | null {
+    const s = String(ev ?? '').trim().toLowerCase();
+    if (!s || !ALLOWED_EVENTS.has(s)) return null;
+    return s;
+}
+
 
 function buildUI(canvas: HTMLElement): PreviewUI {
     const disposers: Array<() => void> = [];
@@ -264,6 +273,16 @@ function buildUI(canvas: HTMLElement): PreviewUI {
             const el = findWrapper(name);
             if (!el) return;
 
+            const evt = normalizeEventName(event);
+            if (!evt) {
+                coms.sendTo(
+                    'editorWindow',
+                    'consolog',
+                    `Unsupported event "${String(event)}" in ui.on(${name}, …). Allowed: ${Array.from(ALLOWED_EVENTS).join(', ')}`
+                );
+                return;
+            }
+
             const h = (ev: Event) => {
                 try {
                     handler(ev, el);
@@ -272,9 +291,9 @@ function buildUI(canvas: HTMLElement): PreviewUI {
                     coms.sendTo('editorWindow', 'consolog', msg);
                 }
             };
-            el.addEventListener(event, h);
+            el.addEventListener(evt, h);
 
-            disposers.push(() => el.removeEventListener(event, h));
+            disposers.push(() => el.removeEventListener(evt, h));
         },
 
         __disposeAll: () => {
@@ -315,9 +334,19 @@ function buildUI(canvas: HTMLElement): PreviewUI {
         },
 
         // Dispatch a DOM event without altering state
-        trigger: (name: string, event: 'click' | 'change') => {
+        trigger: (name: string, event: 'click' | 'change' | 'input') => {
             const el = findWrapper(name);
             if (!el) return;
+
+            const evt = normalizeEventName(event);
+            if (!evt) {
+                coms.sendTo(
+                    'editorWindow',
+                    'consolog',
+                    `Unsupported event "${String(event)}" in ui.trigger(${name}, …). Allowed: ${Array.from(ALLOWED_EVENTS).join(', ')}`
+                );
+                return;
+            }
 
             // Try to target the most meaningful inner control first
             const innerEl = (() => {
@@ -331,15 +360,21 @@ function buildUI(canvas: HTMLElement): PreviewUI {
 
             const target = (innerEl || el) as HTMLElement;
 
-            if (event === 'click') {
+            if (evt === 'click') {
                 // Pointer-like click that bubbles
                 target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
                 return;
             }
 
-            if (event === 'change') {
+            if (evt === 'change') {
                 // Generic change event that bubbles
                 target.dispatchEvent(new Event('change', { bubbles: true }));
+                return;
+            }
+
+            if (evt === 'input') {
+                // Generic input event that bubbles
+                target.dispatchEvent(new Event('input', { bubbles: true }));
                 return;
             }
         }
@@ -383,6 +418,24 @@ function exposeNameGlobals(canvas: HTMLElement) {
             }
         } else {
             registry[name] = el; // update reference if it changed
+        }
+    }
+}
+
+// Allow bare identifiers for common event names in customJS, e.g., ui.trigger(x, change)
+function exposeEventNameGlobals() {
+    const events = Array.from(ALLOWED_EVENTS);
+    for (const ev of events) {
+        if (!(ev in window)) {
+            try {
+                Object.defineProperty(window, ev, {
+                    configurable: true,
+                    enumerable: false,
+                    get: () => ev
+                });
+            } catch {
+                /* ignore define errors */
+            }
         }
     }
 }
@@ -1113,8 +1166,8 @@ function renderPreview(dialog: PreviewDialog) {
                 (el as HTMLElement).style.display = 'none';
             });
 
-            // Ask main to close the current secondary window (preview)
-            coms.sendTo('main', 'close-secondWindow');
+            // Ask main to close the current Preview window explicitly
+            coms.sendTo('main', 'close-previewWindow');
 
             ev.preventDefault();
             ev.stopPropagation();
@@ -1136,9 +1189,13 @@ function renderPreview(dialog: PreviewDialog) {
     if (code && code.trim().length) {
         const ui = buildUI(canvas);
 
-        // Expose element names as global variables mapping to their own string
+    // Expose element names as global variables mapping to their own string
         // (so ui.value(counter1) works)
         exposeNameGlobals(canvas);
+
+    // Expose common event names as globals mapping to their own string
+    // (so ui.trigger(checkbox1, change) works)
+    exposeEventNameGlobals();
 
         // Provide init/dispose if present
         const exports: PreviewScriptExports = {};
