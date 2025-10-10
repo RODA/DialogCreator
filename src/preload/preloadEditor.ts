@@ -605,10 +605,25 @@ window.addEventListener("DOMContentLoaded", async () => {
         editor.selectAll?.();
     });
 
-    // Clear dialog handler for New menu (select all + remove)
+    // Clear dialog handler for New menu (select all + remove + reset custom code)
     ipcRenderer.on('newDialogClear', () => {
+        // Remove all elements
         editor.selectAll?.();
         editor.removeSelectedElement?.();
+
+        // Reset custom code and syntax text so nothing carries over to the new dialog
+        try {
+            dialog.customJS = '';
+            // Preserve defaultElements array; clear only the command text if initialized
+            if (!dialog.syntax) {
+                // Defensive: ensure syntax object exists
+                dialog.syntax = { command: '', defaultElements: [] };
+            } else {
+                dialog.syntax.command = '';
+            }
+        } catch {
+            // non-fatal; state reset best-effort
+        }
     });
 
     document.getElementById('conditions')?.addEventListener('click', function () {
