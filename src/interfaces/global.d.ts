@@ -30,7 +30,14 @@ declare global {
                 setValue(v: string): void;
                 focus(): void;
                 destroy(): void;
-            }
+            },
+            setDialogMeta?: (meta: {
+                elements: Array<{
+                    name: string;
+                    type: string;
+                    options?: string[];
+                }>
+            } | null | undefined) => void
         };
     }
 }

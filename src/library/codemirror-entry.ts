@@ -31,6 +31,31 @@ type CMOptions = {
     onChange?: (value: string) => void
 };
 
+// Dialog metadata used for semantic linting in the Code window
+type DialogMeta = {
+    elements: Array<{
+        name: string;
+        type: string;
+        options?: string[]; // for Select elements, when known
+    }>;
+};
+
+let currentDialogMeta: DialogMeta | null = null;
+
+function setDialogMeta(meta: DialogMeta | null | undefined) {
+    if (meta && Array.isArray(meta.elements)) {
+        currentDialogMeta = {
+            elements: meta.elements.map(e => ({
+                name: String(e.name || ''),
+                type: String(e.type || ''),
+                options: Array.isArray(e.options) ? e.options.map(v => String(v)) : undefined
+            }))
+        };
+    } else {
+        currentDialogMeta = null;
+    }
+}
+
 function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance {
     const startDoc = options?.value || '';
     const onChange = options?.onChange;
@@ -88,7 +113,15 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
     // Allowed events for UI API (mirror of Preview runtime)
     const allowedEvents = new Set(['click', 'change', 'input']);
 
-    // Linter: warn about unsupported ui.on/ui.trigger events while typing
+    // Helpers for semantic linting
+    const findElement = (name: string | undefined | null) => {
+        if (!name || !currentDialogMeta) return null;
+        const n = String(name).trim();
+        if (!n) return null;
+        return currentDialogMeta.elements.find(e => e.name === n) || null;
+    };
+
+    // Linter: warn about unsupported ui.on/ui.trigger events while typing and dialog-aware issues
     const uiApiLinter = linter((view) => {
         const diagnostics: Diagnostic[] = [];
         const code = view.state.doc.toString();
@@ -138,9 +171,28 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
             const prop = callee.property;
             const isIdent = (x: any, name: string) => x && x.type === 'Identifier' && x.name === name;
             const propName = prop?.type === 'Identifier' ? prop.name : (prop?.type === 'Literal' ? String(prop.value) : '');
-            if (!(isIdent(obj, 'ui') && (propName === 'on' || propName === 'trigger'))) return;
+            if (!(isIdent(obj, 'ui') && (propName === 'on' || propName === 'trigger' || propName === 'select'))) return;
 
             const args = n.arguments || [];
+
+            // Element existence check for ui.on/ui.trigger/ui.select when first arg is provided
+            if (args.length >= 1) {
+                const elNode = args[0];
+                let elName: string | null = null;
+                if (elNode.type === 'Literal' && typeof elNode.value === 'string') {
+                    elName = String(elNode.value);
+                } else if (elNode.type === 'Identifier') {
+                    // In Preview we allow bare identifiers that resolve to their own name
+                    elName = String(elNode.name);
+                }
+                if (elName) {
+                    const el = findElement(elName);
+                    if (!el) {
+                        addDiag(elNode, `Element '${elName}' does not exist in the dialog`);
+                    }
+                }
+            }
+
             if (propName === 'on' && args.length >= 2) {
                 const evNode = args[1];
                 if (evNode.type === 'Literal' && typeof evNode.value === 'string') {
@@ -172,6 +224,26 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
                     }
                 } else {
                     addDiag(evNode, `Event must be a string literal or one of: ${Array.from(allowedEvents).join(', ')}`);
+                }
+            }
+
+            if (propName === 'select' && args.length >= 2) {
+                const elNode = args[0];
+                const valNode = args[1];
+                let elName: string | null = null;
+                if (elNode.type === 'Literal' && typeof elNode.value === 'string') elName = String(elNode.value);
+                else if (elNode.type === 'Identifier') elName = String(elNode.name);
+
+                if (elName) {
+                    const el = findElement(elName);
+                    if (!el) {
+                        addDiag(elNode, `Element '${elName}' does not exist in the dialog`);
+                    } else if (el.type === 'Select' && el.options && valNode.type === 'Literal' && typeof valNode.value === 'string') {
+                        const v = String(valNode.value);
+                        if (!el.options.includes(v)) {
+                            addDiag(valNode, `Option '${v}' not found in Select '${elName}'`);
+                        }
+                    }
                 }
             }
         });
@@ -260,4 +332,4 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
     };
 }
 
-window.CM6 = { createCodeEditor };
+window.CM6 = { createCodeEditor, setDialogMeta };

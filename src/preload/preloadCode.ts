@@ -39,9 +39,28 @@ window.addEventListener('DOMContentLoaded', () => {
     };
 
     coms.on('renderCode', (payload: unknown) => {
-        type CodePayload = { customJS?: string };
-        const obj: CodePayload = typeof payload === 'string' ? JSON.parse(payload as string) : (payload as CodePayload);
+        const obj: any = typeof payload === 'string' ? JSON.parse(payload as string) : (payload as any);
         const existing = String(obj?.customJS || '');
+
+        // Build dialog metadata for the linter from the dialog JSON
+        try {
+            if (CM6?.setDialogMeta && obj && Array.isArray(obj.elements)) {
+                const elements = [] as Array<{ name: string; type: string; options?: string[] }>;
+                for (const e of obj.elements) {
+                    const name = String(e?.nameid || '').trim();
+                    const type = String(e?.type || e?.dataset?.type || '').trim();
+                    if (!name || !type) continue;
+                    const metaEl: { name: string; type: string; options?: string[] } = { name, type };
+                    if (type === 'Select') {
+                        const raw = String(e?.value ?? '');
+                        const tokens = raw.split(/[;,]/).map((s: string) => s.trim()).filter((s: string) => s.length > 0);
+                        metaEl.options = tokens;
+                    }
+                    elements.push(metaEl);
+                }
+                CM6.setDialogMeta({ elements });
+            }
+        } catch { /* non-fatal */ }
         if (CM6) {
             editor = CM6.createCodeEditor(
                 mount,
