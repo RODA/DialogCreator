@@ -187,8 +187,13 @@ function setupIPC() {
                 case 'showDialogMessage':
                     dialog.showMessageBox(editorWindow, {
                         type: args[0],
-                        title: args[1],
-                        message: args[2]
+                        // title: args[1],
+                        // message: args[2]
+                        // On macOS, 'title' isn't shown for sheet dialogs; use 'message' for the visible header
+                        message: String(args[1] ?? ''),
+                        detail: String(args[2] ?? ''),
+                        // Keep 'title' as a fallback for platforms that display it
+                        title: String(args[1] ?? '')
                     });
                     break;
                 case 'secondWindow':
