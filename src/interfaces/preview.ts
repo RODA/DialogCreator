@@ -54,8 +54,27 @@ export interface PreviewUI {
     /** Register an event handler on the wrapper */
     on(name: string, event: string, handler: (ev: Event, el: HTMLElement) => void): void;
 
-    /** Dispatch an event on the element (bubbling), without changing state. Supported: 'click', 'change'. */
-    trigger(name: string, event: 'click' | 'change'): void;
+    /** Dispatch an event on the element (bubbling), without changing state. Supported: 'click', 'change', 'input'. */
+    trigger(name: string, event: 'click' | 'change' | 'input'): void;
+
+    /** Select a value in a Select element (single choice) or select a row in a Container (adds to selection) */
+    select(name: string, value: string): void;
+
+    /** Call a backend service via main process (e.g., 'Reval', 'Rvars'). Returns a Promise with the result. */
+    call(service: string, args?: unknown): Promise<unknown>;
+
+    /** Get or set the items/options of list-like elements.
+     *  - For Select: returns/sets option strings; selection is always single-choice.
+     *  - For Container: returns/sets row labels; selection can be multi-choice.
+     */
+    items(name: string): string[] | undefined;
+    items(name: string, values: string[]): void;
+
+    /** Return selected values.
+     *  - For Select: a single-value array (or empty if nothing selected)
+     *  - For Container: an array of selected row labels (multi-select)
+     */
+    values(name: string): string[];
 
     /** Dispose all registered event handlers (internal use) */
     __disposeAll(): void;

@@ -29,6 +29,20 @@ function buildUI(canvas: HTMLElement): PreviewUI {
         }
     };
 
+    // Surface runtime errors to end users in Preview (not just console)
+    const showRuntimeError = (msg: string) => {
+        // Forward to editor console as well
+        coms.sendTo('editorWindow', 'consolog', msg);
+        // Create or update a visible error box inside the canvas
+        let box = canvas.querySelector('.customjs-error.runtime') as HTMLDivElement | null;
+        if (!box) {
+            box = document.createElement('div');
+            box.className = 'customjs-error runtime';
+            canvas.appendChild(box);
+        }
+        box.textContent = msg;
+    };
+
     const findWrapper = (name: string): HTMLElement | null => {
         const n = String(name || '').trim();
         if (!n) return null;
@@ -271,16 +285,13 @@ function buildUI(canvas: HTMLElement): PreviewUI {
 
         on: (name: string, event: string, handler: (ev: Event, el: HTMLElement) => void) => {
             const el = findWrapper(name);
-            if (!el) return;
+            if (!el) {
+                throw new SyntaxError(`Element not found: ${String(name)}`);
+            }
 
             const evt = normalizeEventName(event);
             if (!evt) {
-                coms.sendTo(
-                    'editorWindow',
-                    'consolog',
-                    `Unsupported event "${String(event)}" in ui.on(${name}, …). Allowed: ${Array.from(ALLOWED_EVENTS).join(', ')}`
-                );
-                return;
+                throw new SyntaxError(`Unsupported event "${String(event)}" in ui.on(${name}, …). Allowed: ${Array.from(ALLOWED_EVENTS).join(', ')}`);
             }
 
             const h = (ev: Event) => {
@@ -288,7 +299,7 @@ function buildUI(canvas: HTMLElement): PreviewUI {
                     handler(ev, el);
                 } catch (e: any) {
                     const msg = `Custom handler error on ${event} for "${name}": ${String(e && e.message ? e.message : e)}`;
-                    coms.sendTo('editorWindow', 'consolog', msg);
+                    showRuntimeError(msg);
                 }
             };
             el.addEventListener(evt, h);
@@ -336,16 +347,13 @@ function buildUI(canvas: HTMLElement): PreviewUI {
         // Dispatch a DOM event without altering state
         trigger: (name: string, event: 'click' | 'change' | 'input') => {
             const el = findWrapper(name);
-            if (!el) return;
+            if (!el) {
+                throw new SyntaxError(`Element not found: ${String(name)}`);
+            }
 
             const evt = normalizeEventName(event);
             if (!evt) {
-                coms.sendTo(
-                    'editorWindow',
-                    'consolog',
-                    `Unsupported event "${String(event)}" in ui.trigger(${name}, …). Allowed: ${Array.from(ALLOWED_EVENTS).join(', ')}`
-                );
-                return;
+                throw new SyntaxError(`Unsupported event "${String(event)}" in ui.trigger(${name}, …). Allowed: ${Array.from(ALLOWED_EVENTS).join(', ')}`);
             }
 
             // Try to target the most meaningful inner control first
@@ -377,6 +385,180 @@ function buildUI(canvas: HTMLElement): PreviewUI {
                 target.dispatchEvent(new Event('input', { bubbles: true }));
                 return;
             }
+        },
+
+        // Select a value in a Select (single choice) or select a row in a Container (adds to selection)
+        select: (name, value) => {
+            const el = findWrapper(name);
+            if (!el) {
+                throw new SyntaxError(`Element not found: ${String(name)}`);
+            }
+
+            const t = typeOf(el);
+            const inn = inner(el);
+
+            if (t === 'Select') {
+                const sel = (el instanceof HTMLSelectElement ? el : (el.querySelector('select') as HTMLSelectElement | null));
+                if (!sel) {
+                    throw new SyntaxError(`Select control not found in element ${name}`);
+                }
+
+                const v = String(value);
+                const exists = Array.from(sel.options).some(o => o.value === v);
+                if (!exists) {
+                    throw new SyntaxError(`Option "${v}" not found in Select ${name}`);
+                }
+                sel.value = v;
+                el.dataset.value = v;
+                return;
+            }
+
+            if (t === 'Container') {
+                const host = inn || el;
+                const rows = Array.from(host.querySelectorAll('.container-row')) as HTMLElement[];
+                const v = String(value);
+
+                const row = rows.find(r => ((r.querySelector('.container-text') as HTMLElement | null)?.textContent || '') === v);
+                if (!row) {
+                    throw new SyntaxError(`Row with label "${v}" not found in Container ${name}`);
+                }
+
+                if (!row.classList.contains('active')) {
+                    row.classList.add('active');
+                }
+
+                return;
+            }
+
+            throw new SyntaxError(`ui.select is not supported for element type ${t}`);
+        },
+
+        // Bridge to main process services (e.g., R adapters). Returns a Promise.
+        call: (service, args?) => {
+            return new Promise((resolve) => {
+                // Correlate requests by a unique id
+                const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+                const replyChannel = `service-reply-${requestId}`;
+
+                coms.once(replyChannel, (result) => {
+                    resolve(result);
+                });
+
+                coms.sendTo(
+                    'main',
+                    'service-call',
+                    requestId,
+                    service,
+                    args ?? null
+                );
+            });
+        },
+
+        // Get/Set items (options/rows) for Select or Container elements
+        items: (name, values?) => {
+            const el = findWrapper(name);
+            if (!el) return;
+
+            const eltype = typeOf(el);
+            const inn = inner(el);
+
+            // Getter
+            if (!Array.isArray(values)) {
+                if (eltype === 'Select') {
+                    const sel = (el instanceof HTMLSelectElement ? el : (el.querySelector('select') as HTMLSelectElement | null));
+                    if (!sel) return;
+
+                    return Array.from(sel.options).map(o => o.value);
+                }
+
+                if (eltype === 'Container') {
+                    const host = inn || el;
+                    const rows = Array.from(host.querySelectorAll('.container-row .container-text')) as HTMLElement[];
+
+                    return rows.map(r => r.textContent || '');
+                }
+
+                return;
+            }
+
+            // Setter
+            const items = values.map(v => String(v));
+            if (eltype === 'Select') {
+                const sel = (el instanceof HTMLSelectElement ? el : (el.querySelector('select') as HTMLSelectElement | null));
+
+                if (sel) {
+                    sel.innerHTML = '';
+
+                    for (const v of items) {
+                        const opt = document.createElement('option');
+                        opt.value = v;
+                        opt.textContent = v;
+                        sel.appendChild(opt);
+                    }
+
+                    // Sync wrapper height to inner control after options change
+                    const r = sel.getBoundingClientRect();
+
+                    if (r.height > 0) {
+                        el.style.height = `${Math.round(r.height)}px`;
+                    }
+
+                    el.dataset.value = String(sel.value || '');
+                }
+
+                return;
+            }
+
+            if (eltype === 'Container') {
+                const host = inn || el;
+                // Replace sample rows with provided items
+                const sample = host.querySelector('.container-sample') as HTMLDivElement | null;
+                const target = sample || host;
+
+                // Clear existing only inside sample if present; else clear host content
+                if (sample) {
+                    sample.innerHTML = '';
+                } else {
+                    host.innerHTML = '';
+                }
+
+                for (const txt of items) {
+                    const row = document.createElement('div');
+                    // Do not preselect; let user click to select rows
+                    row.className = 'container-row';
+                    const label = document.createElement('span');
+                    label.className = 'container-text';
+                    label.textContent = txt;
+                    row.appendChild(label);
+                    target.appendChild(row);
+                }
+
+                return;
+            }
+        },
+
+        // Multi-selection values for Container rows; Select is single-choice in this app
+        values: (name) => {
+            const el = findWrapper(name); if (!el) return [];
+            const eltype = typeOf(el);
+            const inn = inner(el);
+
+            if (eltype === 'Select') {
+                const sel = (el instanceof HTMLSelectElement ? el : (el.querySelector('select') as HTMLSelectElement | null));
+                if (!sel) return [];
+
+                // Select is single-choice; return as single-item array when present
+                return sel.value ? [sel.value] : [];
+            }
+
+            if (eltype === 'Container') {
+                const host = inn || el;
+                const rows = Array.from(host.querySelectorAll('.container-row')) as HTMLElement[];
+                const selected = rows.filter(r => r.classList.contains('active'));
+                return selected.map(r => (r.querySelector('.container-text') as HTMLElement | null)?.textContent || '');
+            }
+
+            return [];
         }
     };
 
@@ -701,6 +883,35 @@ function renderPreview(dialog: PreviewDialog) {
                 document.addEventListener('mousemove', onMove);
                 document.addEventListener('mouseup', onUp);
                 ev.preventDefault();
+            });
+        }
+
+        // Container: make rows toggle selection on click (multi-select)
+        if ((element.dataset?.type || '') === 'Container') {
+            const host = element.firstElementChild as HTMLElement | null || element;
+            const toggleRow = (row: HTMLElement) => {
+                row.classList.toggle('active');
+                // Bubble a change event so user handlers can react
+                element.dispatchEvent(new Event('change', { bubbles: true }));
+            };
+            // Event delegation
+            host.addEventListener('click', (ev: Event) => {
+                try {
+                    const target = ev.target as HTMLElement;
+                    const row = target?.closest?.('.container-row') as HTMLElement | null;
+                    if (row && host.contains(row)) {
+                        toggleRow(row);
+                    }
+                } catch (e: any) {
+                    const msg = `Container click error: ${String(e && e.message ? e.message : e)}`;
+                    // show overlay if available in this scope
+                    try {
+                        // @ts-ignore
+                        (showRuntimeError as any)(msg);
+                    } catch {
+                        coms.sendTo('editorWindow', 'consolog', msg);
+                    }
+                }
             });
         }
 
@@ -1162,11 +1373,21 @@ function renderPreview(dialog: PreviewDialog) {
     document.addEventListener('keydown', (ev: KeyboardEvent) => {
         const key = ev.key || ev.code;
         if (key === 'Escape' || key === 'Esc') {
+            // Dismiss color pickers
             Array.from(document.querySelectorAll('.color-popover')).forEach((el) => {
                 (el as HTMLElement).style.display = 'none';
             });
 
-            // Ask main to close the current Preview window explicitly
+            // If a runtime/customJS error overlay is visible, remove it and stay in Preview
+            const overlay = document.querySelector('.preview-canvas .customjs-error') as HTMLDivElement | null;
+            if (overlay && overlay.parentElement) {
+                overlay.parentElement.removeChild(overlay);
+                ev.preventDefault();
+                ev.stopPropagation();
+                return;
+            }
+
+            // Otherwise, close the Preview window
             coms.sendTo('main', 'close-previewWindow');
 
             ev.preventDefault();
@@ -1218,18 +1439,19 @@ function renderPreview(dialog: PreviewDialog) {
         if (fn) {
             try {
                 fn(ui, exports);
-            coms.sendTo(
-                'editorWindow',
-                'consolog',
-                'Preview: customJS executed top-level.'
-            );
+                coms.sendTo(
+                    'editorWindow',
+                    'consolog',
+                    'Preview: customJS executed top-level.'
+                );
             } catch (e: any) {
                 const msg = `Custom code runtime error: ${String(e && e.message ? e.message : e)}`;
+                // Reuse runtime error overlay
+                const overlay = document.createElement('div');
+                overlay.className = 'customjs-error';
+                overlay.textContent = msg;
+                canvas.appendChild(overlay);
                 coms.sendTo('editorWindow', 'consolog', msg);
-                const err = document.createElement('div');
-                err.className = 'customjs-error';
-                err.textContent = msg;
-                canvas.appendChild(err);
             }
         }
 
@@ -1246,7 +1468,6 @@ function renderPreview(dialog: PreviewDialog) {
                 coms.sendTo('editorWindow', 'consolog', msg);
                 const err = document.createElement('div');
                 err.className = 'customjs-error';
-                err.style.cssText = 'position:absolute;inset:8px;overflow:auto;border:1px solid #d33;background:#fff4f4;color:#900;font-family:monospace;padding:8px;border-radius:6px;';
                 err.textContent = msg;
                 canvas.appendChild(err);
                 console.error('init() error:', e);
@@ -1276,6 +1497,50 @@ window.addEventListener("DOMContentLoaded", () => {
             renderPreview(payload);
         } catch (e) {
             console.error("Failed to parse preview data:", e);
+        }
+    });
+
+    // Renderer adapter executor: run services configured with adapter 'renderer' inside this window
+    coms.on('service-renderer-exec', async (...args: unknown[]) => {
+        const [reqId, moduleName, method, payload] = args as [string, string, string, unknown];
+        // Try dynamic resolution by known names; for WebR, look for a global or lazy import
+        const reply = (result: unknown) => {
+            coms.sendTo('main', 'service-renderer-reply', reqId, result);
+        };
+        try {
+            let mod: any = null;
+            // Allow predefined handler name 'webr' meaning use global WebR
+            if (moduleName.toLowerCase() === 'webr') {
+                mod = (window as any).webR || (window as any).WebR || null;
+                if (!mod) {
+                    // Attempt dynamic import if a loader is available (user may include it via customJS)
+                    try {
+                        // @ts-ignore
+                        mod = await import('webr');
+                    } catch {
+                        reply({ ok: false, error: 'WebR not available in renderer. Load it in customJS or include the script.' });
+                        return;
+                    }
+                }
+            } else if ((window as any)[moduleName]) {
+                mod = (window as any)[moduleName];
+            }
+
+            if (!mod) {
+                reply({ ok: false, error: `Renderer module not found: ${moduleName}` });
+                return;
+            }
+
+            const fn = method && method !== 'default' ? mod[method] : (mod.default || mod);
+            if (typeof fn !== 'function') {
+                reply({ ok: false, error: `Renderer method not found: ${method || 'default'}` });
+                return;
+            }
+
+            const out = await Promise.resolve(fn(payload));
+            reply({ ok: true, data: out });
+        } catch (e: any) {
+            reply({ ok: false, error: String(e?.message || e) });
         }
     });
 });
