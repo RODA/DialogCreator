@@ -4,13 +4,13 @@
   "description": "A dialog creating application",
   "main": "dist/main.js",
   "scripts": {
-    "build": "tsc && npm run bundle:cm6",
+  "build": "tsc && npm run bundle:cm6",
     "watch": "tsc -w",
     "lint": "eslint -c .eslintrc --ext .ts ./src",
     "start": "npm run build && electron ./dist/main.js",
     "dist": "npm run build && electron-builder",
     "docs:pdf": "node scripts/build-manual-pdf.js",
-  "bundle:cm6": "esbuild src/library/codemirror-entry.ts --bundle --format=iife --outfile=src/bundles/codemirror.bundle.js"
+    "bundle:cm6": "node scripts/bundle-cm6-if-needed.js"
   },
   "author": "RODA",
   "license": "CC0-1.0",
