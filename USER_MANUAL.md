@@ -91,28 +91,40 @@ Notes:
 ## Preview window
 - Opens from the File menu (Preview) and renders the dialog with live interactions.
 - Disabled elements remain fully visible, only greyed out (no opacity fade). Native inputs/selects retain the exact same size when disabled.
-- ESC closes popovers (like color pickers) and also closes the Preview window.
+- ESC closes popovers (like color pickers). If a runtime error overlay is visible, ESC dismisses it first; pressing ESC again closes the Preview window.
+
+Selections in Preview
+- Containers support multi-selection. Clicking a row toggles its selection (active state). A `'change'` event is dispatched on the Container so your handlers can react.
+- Select elements are single-choice. Changing the selection dispatches `'change'` like native selects.
+
+Runtime errors in Preview
+- When Custom JS misuses the API (e.g., unsupported event, unknown element, invalid select option), a visible error box appears inside the Preview canvas. This helps spot issues without checking the console.
+- You can dismiss the error box with ESC. The same error is also logged to the Editor console.
 
 ### Custom JS code — quick start
 
 Some dialogs have complex behaviors that require custom JavaScript code. The editor provides a code window for writing and testing such code. This code runs at the top level automatically, with a dedicated, provided `ui` API.
 
-Elements can be referred to by their Name (ID) either quoted or not. For example, `ui.value(input1)` is the same as `ui.value('input1')`. If a name is not found, reads return `null` (or a safe default) and writes are ignored.
+Elements can be referred to by their Name (ID) either quoted or not. For example, `ui.value(input1)` is the same as `ui.value('input1')`.
+
+Notes on missing elements and strict operations:
+- For simple getters/setters (ui.value/ui.text/ui.get/ui.set), if a name is not found, reads return `null` (or a safe default) and writes are ignored.
+- For event-related or selection operations (ui.on, ui.trigger, ui.select), using an unknown element will throw a SyntaxError and show the error overlay in Preview.
 
 Common patterns you can copy/paste:
 
-1) Log an input's value when it changes
+1) Show the input's value in a label on change
 
 ```javascript
-ui.on(input1, 'change', () => {
-  ui.log('input1 changed to:', ui.value(input1));
+ui.onChange(input1, () => {
+  ui.text(statusLabel, 'input1: ' + ui.value(input1));
 });
 ```
 
 2) Show or hide a label when a checkbox is toggled
 
 ```javascript
-ui.on(checkbox1, 'click', () => {
+ui.onClick(checkbox1, () => {
   ui.show(label1, ui.checked(checkbox1));
 });
 ```
@@ -120,7 +132,7 @@ ui.on(checkbox1, 'click', () => {
 Which is equivalent to:
 
 ```javascript
-ui.on(checkbox1, 'click', () => {
+ui.onClick(checkbox1, () => {
   if (ui.checked(checkbox1)) {
     ui.show(label1);
   } else {
@@ -138,10 +150,10 @@ hide if checkbox1 != checked;
 
 Whenever the Conditions and the Custom JS code conflict, the Custom JS code takes precedence.
 
-3) Read a select value
+3) Show a select value in a label
 ```javascript
-ui.on(countrySelect, 'change', () => {
-  ui.log('Country:', ui.value(countrySelect));
+ui.onChange(countrySelect, () => {
+  ui.text(statusLabel, 'Country: ' + ui.value(countrySelect));
 });
 ```
 
@@ -156,40 +168,108 @@ Events:
   - Buttons and custom checkboxes/radios usually use `'click'`.
   - Text inputs can use `'change'` (on blur) or `'input'` (as you type).
   - Selects use `'change'`.
+  - Tip: Prefer the helpers `ui.onClick`, `ui.onChange`, `ui.onInput` for readability; `ui.on(name, event, handler)` is available as a standard alternative.
 
 Programmatic events:
-  - You can simulate user events with `ui.trigger(name, 'click' | 'change')`.
-    - `'click'` on a Checkbox/Radio behaves like a real click: it toggles the control and re-evaluates conditions.
-    - `'change'` dispatches the event to inputs/selects without modifying the current value by itself.
+  - User events can be indicated, for instance with `ui.trigger(name, 'change')`. Only the following events are supported by the API: `click`, `change`, `input`. Using other event names throws a SyntaxError and shows the error overlay in Preview.
+    - `click` on a Checkbox/Radio behaves like a real click: it toggles the control and re-evaluates conditions.
+    - `change` dispatches the event to inputs/selects without modifying the current value by itself.
 
-Advanced (optional): lifecycle hooks
-  - If you define `exports.init = (ui) => { ... }`, it's called after your top‑level code runs.
-  - If you define `exports.dispose = (ui) => { ... }`, it's called when the Preview closes or re-renders.
-  Use it if you set timers or attach your own global listeners.
-  - Handlers added via `ui.on(...)` are cleaned up for you automatically.
 
+Initialization
+- Your top-level custom code runs after the Preview is ready (elements rendered, listeners attached, and Conditions evaluated). You can directly register handlers and set initial state without extra lifecycle wrappers.
+- Event helpers:
+  - `ui.onClick(name, fn)` — same as `ui.on(name, 'click', fn)`
+  - `ui.onChange(name, fn)` — same as `ui.on(name, 'change', fn)`
+  - `ui.onInput(name, fn)` — same as `ui.on(name, 'input', fn)`
 
 ### Scripting API (ui) — reference
 
-Methods
-- ui.el(name): HTMLElement | null
-  - Returns the wrapper (outer) element for a named element.
-  - Example: `const el = ui.el(myLabel);`
+`ui.showMessage(message, detail?, type?)`
+  - Shows an application message dialog via the host app.
+  - message is the visible header; detail is the body text; type (optional) controls icon: 'info' | 'warning' | 'error' | 'question'.
+  - Examples:
+    - `ui.showMessage('Hello')`
+    - `ui.showMessage('Low disk space', 'Please free up 1GB', 'warning')`
+    - `ui.showMessage('Save failed', String(err), 'error')`
 
-- ui.inner(name): HTMLElement | null
-  - Returns the inner element (first child) inside the wrapper. Useful for native inputs/selects hosted inside wrappers.
-  - Example: `const input = ui.inner(myInput);`
+- `ui.text(name)` and `ui.text(name, value)`
+  - Convenience for getting/setting an element's "value/text".
+  - Equivalent to `ui.value(...)`.
 
-- ui.type(name): string | null
-  - Returns the element type, e.g. "Input", "Label", "Select", "Checkbox", "Radio", "Counter", "Slider", "Button".
+- `ui.value(name)` and `ui.value(name, value)`
+  - Same as `ui.text(...)` above. For Checkbox/Radio use `ui.checked(name)` to read state.
+  - For Counter, `ui.value(counter)` returns a number.
 
-- ui.id(name): string | null
-  - Returns the DOM id attribute of the wrapper.
+- `ui.checked(name)`: returns a boolean
+  - For Checkbox/Radio, returns the live checked/selected state.
 
-- ui.log(...args): void
-  - Logs to the Editor console (visible during Preview). Strings and objects are supported.
+- `ui.check(name)` / `ui.uncheck(name)`
+  - Convenience methods for Checkbox and Radio elements to set on/off.
+  - For Radio, `ui.check(name)` also unselects other radios in the same group.
+  - These do not dispatch events by themselves; they only change state. If you want event handlers to run, use `ui.trigger(...)`.
 
-- ui.get(name, prop): unknown
+- `ui.isVisible(name)`: boolean
+  - Returns whether the element is currently visible (display not set to 'none').
+
+- `ui.isEnabled(name)`: boolean
+  - Returns whether the element is currently enabled (not marked as disabled).
+
+- `ui.show(name)` / `ui.show(name, on = true)`
+  - Shows the element by toggling its display. Hidden elements are not interactive.
+
+- `ui.hide(name)`
+  - Hides the element, similar to `ui.show(name, false)`.
+
+- `ui.enable(name)` / `ui.enable(name, on = true)`
+  - Enables the element. Disabled elements remain visible but are non-interactive.
+
+- `ui.disable(name)`
+  - Disables the element, similar to `ui.enable(name, false)`.
+
+- `ui.on(name, event, (ev, el) => { ... })`
+  - Add an event listener to the wrapper element. The handler receives the original event and the wrapper element.
+  - Clean-up is automatic when the window re-renders or closes.
+  - Supported events are strictly: `click`, `change`, `input`. Other values throw at runtime.
+
+- `ui.onClick(name, handler)`
+  - Shortcut for `ui.on(name, 'click', handler)`.
+
+- `ui.onChange(name, handler)`
+  - Shortcut for `ui.on(name, 'change', handler)`.
+
+- `ui.onInput(name, handler)`
+  - Shortcut for `ui.on(name, 'input', handler)`.
+
+- `ui.trigger(name, event)`
+  - Dispatch a synthetic event on the element without directly changing its state.
+  - Supported events: `'click'`, `'change'`, `'input'`.
+  - Notes:
+    - For Checkbox/Radio, triggering `'click'` behaves like a user click (the control toggles via its built-in logic and conditions are re-evaluated).
+    - Triggering `'change'` on inputs/selects notifies listeners but does not change the current value by itself.
+
+- `ui.select(name, value)`
+  - Programmatically select an item.
+  - For Select elements: sets the selected option by value. Selects are single-choice in this app.
+  - For Container elements: finds the row whose label matches the provided value and adds it to the selection (multi-select). If it's already selected, it stays selected.
+  - This function does not dispatch `'change'` automatically. If you need handlers to run, call `ui.trigger(name, 'change')` after selecting.
+  - Throws a SyntaxError if the element doesn't exist, the control is missing, the option/row is not found, or the element type doesn't support selection.
+
+- `ui.items(name)`: returns a string vector (array)
+  - Get the list of items for a Select (option values) or Container (row labels).
+  - Returns: a string vector (array)
+
+- `ui.items(name, values)`
+  - Replace items in a Select or rows in a Container with the provided vector / array of values.
+  - For Select, the control's options are rebuilt; the wrapper height is synced to the inner control.
+  - For Container, rows are rebuilt (not preselected).
+
+- `ui.values(name)`: returns a string vector (array)
+  - Get the current selection values as an array.
+  - For Select, returns a single-item array with the selected value (or empty when nothing selected).
+  - For Container, returns the labels of all selected rows.
+
+- `ui.get(name, prop)`
   - Generic getter. Behavior depends on element type:
     - Input: returns the current text value
     - Label: returns the text content
@@ -209,73 +289,30 @@ Methods
     - Counter: prop = 'value' sets the number within its min/max
   - Unsupported combos are ignored and a one-time warning is logged to the Editor console.
 
-- ui.text(name) and ui.text(name, value)
-  - Convenience for getting/setting an element's "value/text".
-  - Equivalent to `ui.value(...)`.
 
-- ui.value(name) and ui.value(name, value)
-  - Same as `ui.text(...)` above. For Checkbox/Radio use `ui.checked(name)` to read state.
-  - For Counter, `ui.value(counter)` returns a number.
-
-- ui.checked(name): boolean
-  - For Checkbox/Radio, returns the live checked/selected state.
-
-- ui.check(name) / ui.uncheck(name)
-  - Convenience methods for Checkbox and Radio elements to set on/off.
-  - For Radio, `ui.check(name)` also unselects other radios in the same group.
-  - These do not dispatch events by themselves; they only change state. If you want event handlers to run, use `ui.trigger(...)`.
-
-- ui.isVisible(name): boolean
-  - Returns whether the element is currently visible (display not set to 'none').
-
-- ui.isEnabled(name): boolean
-  - Returns whether the element is currently enabled (not marked as disabled).
-
-- ui.show(name) / ui.show(name, on = true)
-  - Shows the element by toggling its display. Hidden elements are not interactive.
-
-- ui.hide(name)
-  - Hides the element, similar to `ui.show(name, false)`.
-
-- ui.enable(name) / ui.enable(name, on = true)
-  - Enables the element. Disabled elements remain visible but are non-interactive.
-
-- ui.disable(name)
-  - Disables the element, similar to `ui.enable(name, false)`.
-
-- ui.on(name, event, (ev, el) => { ... })
-  - Add an event listener to the wrapper element. The handler receives the original event and the wrapper element.
-  - Clean-up is automatic when the window re-renders or closes.
-
-- ui.trigger(name, event)
-  - Dispatch a synthetic event on the element without directly changing its state.
-  - Supported events: `'click'`, `'change'`.
-  - Notes:
-    - For Checkbox/Radio, triggering `'click'` behaves like a user click (the control toggles via its built-in logic and conditions are re-evaluated).
-    - Triggering `'change'` on inputs/selects notifies listeners but does not change the current value by itself.
 
 Element-specific notes and examples
 - Input
-  - Read: `ui.value(myInput)` -> string
+  - Read: `ui.value(myInput)`: returns a string
   - Write: `ui.value(myInput, 'hello')`
   - Events: 'change' (on blur) or 'input' (as you type)
 
 - Label
-  - Read: `ui.text(myLabel)` -> string
+  - Read: `ui.text(myLabel)`: returns a string
   - Write: `ui.text(myLabel, 'New text')`
 
 - Select
-  - Read: `ui.value(mySelect)` -> string
+  - Read: `ui.value(mySelect)`: returns a string
   - Write: `ui.value(mySelect, 'RO')`
   - Event: 'change'
 
 - Checkbox
-  - Read state: `ui.checked(myCheckbox)` -> boolean
+  - Read state: `ui.checked(myCheckbox)`: returns a boolean
   - Write state: `ui.check(myCheckbox)` and `ui.uncheck(myCheckbox)`
   - Event: 'click'
 
 - Radio
-  - Read state: `ui.checked(myRadio)` -> boolean
+  - Read state: `ui.checked(myRadio)`: returns a boolean
   - Write state: `ui.check(myRadio)` and `ui.uncheck(myRadio)`
   - Event: 'click'
 
@@ -293,21 +330,42 @@ Element-specific notes and examples
 Practical patterns
 - Show a panel when a checkbox is checked:
 ```javascript
-ui.on(myCheckbox, 'click', () => {
+ui.onClick(myCheckbox, () => {
   ui.show(myPanel, ui.checked(myCheckbox));
 });
 ```
 
 - Mirror an input's text to a label on change:
 ```javascript
-ui.on(myInput, 'change', () => {
+ui.onChange(myInput, () => {
   ui.text(myLabel, ui.value(myInput));
 });
 ```
 
+- Select a value in a Select (no auto-dispatch), then notify listeners:
+```javascript
+ui.select(countrySelect, 'RO');
+ui.trigger(countrySelect, 'change');
+```
+
+- Add an item to a Container's selection (multi-select) and notify listeners:
+```javascript
+ui.select(variablesContainer, 'Sepal.Width');
+ui.trigger(variablesContainer, 'change');
+```
+
 Notes
 - Conditions and Custom JS can both control visibility/enabled state. If they conflict at runtime, the last action wins; in practice, your Custom JS will take precedence right after it runs.
-- Programmatic state changes (e.g., `ui.check`, `ui.value`, `ui.set`) do not automatically dispatch events. Use `ui.trigger` when you need to notify event handlers.
+- Programmatic state changes (e.g., `ui.check`, `ui.value`, `ui.set`) do not automatically dispatch events. Use `ui.trigger` when you need the dialog to behave as if the user had interacted with the element.
+- Selection helpers (`ui.select`) also do not auto-dispatch; pair them with `ui.trigger(name, 'change')` if you rely on change triggers.
+
+Code window and linting
+- The Code window uses a modern editor with inline linting.
+- It warns about:
+  - Unsupported events in `ui.on` / `ui.trigger` (only `click`, `change`, `input` are allowed).
+  - Unknown element names used with `ui.on` / `ui.trigger` / `ui.select`.
+  - Invalid option values passed to `ui.select` when the Select's options are known.
+- Linting leverages the current dialog's elements, so warnings update as you change element names and Select options.
 
 ## Syntax window
 - Opens from the File menu (Syntax) or via the dedicated button when enabled.
@@ -427,6 +485,9 @@ These actions are disabled when no element is selected.
 - Element Name (ID) must be unique. If a duplicate is entered, it will be rejected and an error shown.
 - Visibility (isVisible) and Enabled (isEnabled) toggles affect how elements render and behave in the editor.
 - Grouping is an editor convenience: when exporting or previewing, groups are flattened and only individual elements (with absolute positions) are saved.
+
+Build notes
+- The Code window uses a CodeMirror bundle that's rebuilt only when its entry source changes. This keeps builds fast during development.
 
 ## Troubleshooting
 

@@ -57,13 +57,7 @@ function buildUI(canvas: HTMLElement): PreviewUI {
     const typeOf = (el: HTMLElement | null) => String(el?.dataset?.type || '');
 
     const api: PreviewUI = {
-        el: (name: string) => findWrapper(name),
-
-        inner: (name: string) => inner(findWrapper(name)),
-
-        type: (name: string) => typeOf(findWrapper(name)),
-
-        id: (name: string) => findWrapper(name)?.id || null,
+    // Element lookup helpers removed from public API for simplicity
 
         // Forward logs to the Editor console for visibility during Preview
         log: (...args: any[]) => {
@@ -72,6 +66,20 @@ function buildUI(canvas: HTMLElement): PreviewUI {
                 'consolog',
                 args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' ')
             );
+        },
+
+        showMessage: (...argsIn: any[]) => {
+            // New convention: (message, detail?, type?)
+            // - First argument is always the visible message (header/title)
+            // - Second argument (optional) is the detail/body
+            // - Third argument (optional) is the type icon: 'info' | 'warning' | 'error' | 'question'
+            const allowed = new Set(['info', 'warning', 'error', 'question']);
+            const message = String(argsIn[0] ?? '');
+            const detail = String(argsIn[1] ?? '');
+            const typeCand = String(argsIn[2] ?? '').toLowerCase();
+            const type = allowed.has(typeCand) ? typeCand : 'info';
+
+            coms.sendTo('main', 'showDialogMessage', type, message, detail);
         },
 
         get: (name: string, prop: string) => {
@@ -307,10 +315,9 @@ function buildUI(canvas: HTMLElement): PreviewUI {
             disposers.push(() => el.removeEventListener(evt, h));
         },
 
-        __disposeAll: () => {
-            disposers.forEach(fn => { fn(); });
-            disposers.length = 0;
-        },
+        onClick: (name: string, handler: (ev: Event, el: HTMLElement) => void) => api.on(name, 'click', handler),
+        onChange: (name: string, handler: (ev: Event, el: HTMLElement) => void) => api.on(name, 'change', handler),
+        onInput: (name: string, handler: (ev: Event, el: HTMLElement) => void) => api.on(name, 'input', handler),
 
         // Convenience: checkbox/radio check/uncheck
         check: (name: string) => {
@@ -434,14 +441,18 @@ function buildUI(canvas: HTMLElement): PreviewUI {
         },
 
         // Bridge to main process services (e.g., R adapters). Returns a Promise.
-        call: (service, args?) => {
+        call: (service, args?, cb?) => {
             return new Promise((resolve) => {
                 // Correlate requests by a unique id
                 const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
                 const replyChannel = `service-reply-${requestId}`;
 
                 coms.once(replyChannel, (result) => {
-                    resolve(result);
+                    try {
+                        if (typeof cb === 'function') cb(result);
+                    } finally {
+                        resolve(result);
+                    }
                 });
 
                 coms.sendTo(
@@ -559,8 +570,15 @@ function buildUI(canvas: HTMLElement): PreviewUI {
             }
 
             return [];
+        },
+
+        __disposeAll: () => {
+            disposers.forEach(fn => { fn(); });
+            disposers.length = 0;
         }
     };
+
+    // Lifecycle helpers removed from public API; top-level custom code runs after Preview is ready.
 
     return api;
 }
@@ -1419,7 +1437,7 @@ function renderPreview(dialog: PreviewDialog) {
     exposeEventNameGlobals();
 
         // Provide init/dispose if present
-        const exports: PreviewScriptExports = {};
+    const exports: PreviewScriptExports = {};
 
         // Wrap code in a Function with ui in scope
         let fn: Function | null = null;
@@ -1476,10 +1494,13 @@ function renderPreview(dialog: PreviewDialog) {
 
         // Register disposer
         window.__userHandlers!.push(() => {
-            if (typeof exports.dispose === 'function') {
-                exports.dispose(ui);
+            try {
+                if (typeof exports.dispose === 'function') {
+                    exports.dispose(ui);
+                }
+            } finally {
+                ui.__disposeAll?.();
             }
-            ui.__disposeAll?.();
         });
     } else {
         coms.sendTo('editorWindow', 'consolog', 'Preview: no customJS to execute');

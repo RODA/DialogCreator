@@ -1,20 +1,15 @@
 import type { Dialog } from './dialog';
 
 export interface PreviewUI {
-    /** Returns the wrapper element (outer div) for the named element */
-    el(name: string): HTMLElement | null;
-
-    /** Returns the inner element (first child) for the named element */
-    inner(name: string): HTMLElement | null;
-
-    /** Element type (dataset.type) for a named element */
-    type(name: string): string | null;
-
-    /** DOM id of the wrapper element */
-    id(name: string): string | null;
-
     /** Log helper (forwards to editor console) */
     log(...args: unknown[]): void;
+
+    /** Show an app message dialog */
+    // New preferred signatures
+    showMessage(message: string, detail?: string, type?: 'info' | 'error' | 'question' | 'warning'): void;
+    // Legacy compatibility signatures (will be normalized internally)
+    showMessage(type: 'info' | 'error' | 'question' | 'warning', title: string, message: string): void;
+    showMessage(type: 'info' | 'error' | 'question' | 'warning', message: string): void;
 
     /** Generic getter (value / dataset-driven) */
     get(name: string, prop: string): unknown;
@@ -54,14 +49,22 @@ export interface PreviewUI {
     /** Register an event handler on the wrapper */
     on(name: string, event: string, handler: (ev: Event, el: HTMLElement) => void): void;
 
+    /** Convenience: onClick/onChange/onInput wrappers */
+    onClick(name: string, handler: (ev: Event, el: HTMLElement) => void): void;
+    onChange(name: string, handler: (ev: Event, el: HTMLElement) => void): void;
+    onInput(name: string, handler: (ev: Event, el: HTMLElement) => void): void;
+
     /** Dispatch an event on the element (bubbling), without changing state. Supported: 'click', 'change', 'input'. */
     trigger(name: string, event: 'click' | 'change' | 'input'): void;
 
     /** Select a value in a Select element (single choice) or select a row in a Container (adds to selection) */
     select(name: string, value: string): void;
 
-    /** Call a backend service via main process (e.g., 'Reval', 'Rvars'). Returns a Promise with the result. */
-    call(service: string, args?: unknown): Promise<unknown>;
+    /**
+     * Call a backend service by name. Returns a Promise, and also supports an optional callback for simplicity.
+     * If a callback is provided, it will be called with the result when available.
+     */
+    call(service: string, args?: unknown, cb?: (result: unknown) => void): Promise<unknown>;
 
     /** Get or set the items/options of list-like elements.
      *  - For Select: returns/sets option strings; selection is always single-choice.
