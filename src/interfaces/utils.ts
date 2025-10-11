@@ -1,4 +1,5 @@
 export interface Utils {
+    isRecord(x: any): x is Record<string, any>;
     isNull<T> (x: T | null | undefined): x is null;
     isNil<T>(x: T | null | undefined): x is null | undefined;
     notNil<T>(x: T | null | undefined): x is NonNullable<T>;
@@ -13,6 +14,7 @@ export interface Utils {
 
     getKeys<T extends object>(obj: T | null | undefined): Array<Extract<keyof T, string>>;
     // getKeys(obj: Record<string, unknown>): Array<string>;
+
     isNumeric: (x: unknown) => boolean;
     possibleNumeric: (x: unknown) => boolean;
     possibleInteger: (x: unknown) => boolean;

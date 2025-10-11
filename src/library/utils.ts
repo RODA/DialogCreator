@@ -12,6 +12,11 @@ const INT_REGEX = /^[+-]?\d+$/;
 
 export const utils: Utils = {
     // ---- inline typing necessary below ----
+
+        isRecord: function(x: any): x is Record<string, any> {
+            return x && typeof x === 'object' && !Array.isArray(x);
+        },
+
         isNull: function<T> (x: T | null | undefined): x is null {
             // Important: see the complete type guard in the interface
             // If x's type includes undefined, it remains possibly undefined in the false branch
