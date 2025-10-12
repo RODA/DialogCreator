@@ -154,7 +154,7 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
             }
         };
 
-        const addDiag = (node: any, message: string) => {
+        const addDiagnostic = (node: any, message: string) => {
             diagnostics.push({
                 from: node.start ?? 0,
                 to: node.end ?? node.start ?? 0,
@@ -166,68 +166,104 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
         walk(ast, (n) => {
             if (n.type !== 'CallExpression') return;
             const callee = n.callee;
-            if (!callee || callee.type !== 'MemberExpression') return;
-            const obj = callee.object;
-            const prop = callee.property;
-            const isIdent = (x: any, name: string) => x && x.type === 'Identifier' && x.name === name;
-            const propName = prop?.type === 'Identifier' ? prop.name : (prop?.type === 'Literal' ? String(prop.value) : '');
-            if (!(isIdent(obj, 'ui') && (propName === 'on' || propName === 'trigger' || propName === 'select'))) return;
+
+            // Determine call shape and name: ui.on(...)/ui.trigger(...)/ui.select(...) OR bare onChange(...), on(...), trigger(...), select(...)
+            let callName = '';
+            if (callee?.type === 'MemberExpression' && callee.object?.type === 'Identifier' && callee.object.name === 'ui') {
+                if (callee.property?.type === 'Identifier') {
+                    callName = callee.property.name;
+                } else if (callee.property?.type === 'Literal') {
+                    callName = String(callee.property.value);
+                }
+            } else if (callee?.type === 'Identifier') {
+                callName = callee.name;
+            } else {
+                return;
+            }
 
             const args = n.arguments || [];
+            // Calls that use element name as first arg
+            const elementFirstArgCalls = new Set([
+                'on', 'onClick', 'onChange', 'onInput', 'trigger', 'select',
+                'get', 'set', 'text', 'value', 'checked', 'check', 'uncheck',
+                'isVisible', 'isEnabled', 'show', 'hide', 'enable', 'disable',
+                'items', 'values'
+            ]);
+            if (!elementFirstArgCalls.has(callName)) return;
 
-            // Element existence check for ui.on/ui.trigger/ui.select when first arg is provided
+            // Element existence for all supported calls when first arg present
             if (args.length >= 1) {
                 const elNode = args[0];
                 let elName: string | null = null;
                 if (elNode.type === 'Literal' && typeof elNode.value === 'string') {
                     elName = String(elNode.value);
                 } else if (elNode.type === 'Identifier') {
-                    // In Preview we allow bare identifiers that resolve to their own name
+                    // Allow bare identifiers (name globals) to represent their own string
                     elName = String(elNode.name);
                 }
                 if (elName) {
                     const el = findElement(elName);
                     if (!el) {
-                        addDiag(elNode, `Element '${elName}' does not exist in the dialog`);
+                        addDiagnostic(elNode, `Element '${elName}' does not exist in the dialog`);
                     }
                 }
             }
 
-            if (propName === 'on' && args.length >= 2) {
+            // Event validation
+            if (callName === 'on' && args.length >= 2) {
                 const evNode = args[1];
                 if (evNode.type === 'Literal' && typeof evNode.value === 'string') {
                     const ev = evNode.value.toLowerCase();
                     if (!allowedEvents.has(ev)) {
-                        addDiag(evNode, `Unsupported event '${ev}'. Allowed: ${Array.from(allowedEvents).join(', ')}`);
+                        addDiagnostic(
+                            evNode,
+                            `Unsupported event '${ev}'. Allowed: ${Array.from(allowedEvents).join(', ')}`
+                        );
                     }
                 } else if (evNode.type === 'Identifier') {
                     const ev = evNode.name.toLowerCase();
                     if (!allowedEvents.has(ev)) {
-                        addDiag(evNode, `Unknown event identifier ${ev}. Use a string like 'click'. Allowed: ${Array.from(allowedEvents).join(', ')}`);
+                        addDiagnostic(
+                            evNode,
+                            `Unknown event identifier ${ev}. Use a string like 'click'. Allowed: ${Array.from(allowedEvents).join(', ')}`
+                        );
                     }
                 } else {
-                    addDiag(evNode, `Event must be a string literal or one of: ${Array.from(allowedEvents).join(', ')}`);
+                    addDiagnostic(
+                        evNode,
+                        `Event must be a string literal or one of: ${Array.from(allowedEvents).join(', ')}`
+                    );
                 }
             }
 
-            if (propName === 'trigger' && args.length >= 2) {
+            if (callName === 'trigger' && args.length >= 2) {
                 const evNode = args[1];
                 if (evNode.type === 'Literal' && typeof evNode.value === 'string') {
                     const ev = evNode.value.toLowerCase();
                     if (!allowedEvents.has(ev)) {
-                        addDiag(evNode, `Unsupported event '${ev}'. Allowed: ${Array.from(allowedEvents).join(', ')}`);
+                        addDiagnostic(
+                            evNode,
+                            `Unsupported event '${ev}'. Allowed: ${Array.from(allowedEvents).join(', ')}`
+                        );
                     }
                 } else if (evNode.type === 'Identifier') {
                     const ev = evNode.name.toLowerCase();
                     if (!allowedEvents.has(ev)) {
-                        addDiag(evNode, `Unknown event identifier ${ev}. Use a string like 'change'. Allowed: ${Array.from(allowedEvents).join(', ')}`);
+                        addDiagnostic(
+                            evNode,
+                            `Unknown event identifier ${ev}. Use a string like 'change'. Allowed: ${Array.from(allowedEvents).join(', ')}`
+                        );
                     }
                 } else {
-                    addDiag(evNode, `Event must be a string literal or one of: ${Array.from(allowedEvents).join(', ')}`);
+                    addDiagnostic(
+                        evNode,
+                        `Event must be a string literal or one of: ${Array.from(allowedEvents).join(', ')}`
+                    );
                 }
             }
 
-            if (propName === 'select' && args.length >= 2) {
+            // select: validate options when dialog meta known
+            if (callName === 'select' && args.length >= 2) {
                 const elNode = args[0];
                 const valNode = args[1];
                 let elName: string | null = null;
@@ -237,11 +273,11 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
                 if (elName) {
                     const el = findElement(elName);
                     if (!el) {
-                        addDiag(elNode, `Element '${elName}' does not exist in the dialog`);
+                        addDiagnostic(elNode, `Element '${elName}' does not exist in the dialog`);
                     } else if (el.type === 'Select' && el.options && valNode.type === 'Literal' && typeof valNode.value === 'string') {
                         const v = String(valNode.value);
                         if (!el.options.includes(v)) {
-                            addDiag(valNode, `Option '${v}' not found in Select '${elName}'`);
+                            addDiagnostic(valNode, `Option '${v}' not found in Select '${elName}'`);
                         }
                     }
                 }

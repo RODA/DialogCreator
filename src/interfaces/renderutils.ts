@@ -48,4 +48,9 @@ export interface RenderUtils {
     getNonPersistKeys: (name: keyof ElementsWithPersist) => string[];
     // Propagate element name changes across conditions and customJS
     propagateNameChange: (oldName: string, newName: string) => void;
+    findWrapper: (name: string, canvas: HTMLElement) => HTMLElement | null;
+    showRuntimeError: (msg: string, canvas: HTMLElement) => void;
+    exposeNameGlobals: (canvas: HTMLElement) => void;
+    exposeEventNameGlobals: () => void;
+    normalizeEventName: (ev: unknown) => string | null;
 }

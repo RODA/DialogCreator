@@ -1,4 +1,5 @@
 import type { Dialog } from './dialog';
+import { StringNumber } from './elements';
 
 export interface PreviewUI {
     /** Log helper (forwards to editor console) */
@@ -81,6 +82,23 @@ export interface PreviewUI {
 
     /** Dispose all registered event handlers (internal use) */
     __disposeAll(): void;
+}
+
+// Lightweight environment adapters so this module stays import-safe everywhere.
+// Nothing here touches DOM/Electron directly until you call createPreviewUI().
+export interface PreviewUIEnv {
+    // Find the element wrapper by name within canvas
+    findWrapper: (name: string) => HTMLElement | null;
+    // Update element properties (delegates to renderutils.updateElement)
+    updateElement: (element: HTMLElement, props: StringNumber) => void;
+    // Surface runtime errors in Preview (already bound to canvas)
+    showRuntimeError: (msg: string) => void;
+    // Forward logs to the Editor console (message already formatted as single string)
+    logToEditor: (msg: string) => void;
+    // Show an app-level dialog message via main process
+    showDialogMessage: (type: 'info' | 'warning' | 'error' | 'question', message: string, detail: string) => void;
+    // Bridge to services; returns a Promise and optionally invokes a callback
+    call: (service: string, args?: unknown, cb?: (result: unknown) => void) => Promise<unknown>;
 }
 
 export interface PreviewScriptExports {

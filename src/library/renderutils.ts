@@ -13,6 +13,7 @@ import {
     StringNumber
 } from "../interfaces/elements";
 import { showError, coms } from '../modules/coms';
+import { EVENT_NAMES } from '../library/api';
 import { v4 as uuidv4 } from 'uuid';
 import * as path from "path";
 import * as fs from "fs";
@@ -1781,5 +1782,97 @@ export const renderutils: RenderUtils = {
         const scope: ParentNode = root || document;
         const buttons = Array.from(scope.querySelectorAll('button.custombutton')) as HTMLButtonElement[];
         buttons.forEach(renderutils.enhanceButton);
+    },
+
+    findWrapper(name, canvas) {
+        const n = String(name || '').trim();
+        if (!n) return null;
+        // Prefer the top-level element that carries a real element type, to avoid matching inner nodes
+        const matches = Array.from(canvas.querySelectorAll<HTMLElement>(`[data-nameid="${n}"]`));
+        if (matches.length === 0) return null;
+        const withType = matches.find(el => (el.dataset?.type || '').length > 0);
+        return withType || matches[0] || null;
+    },
+
+    // Surface runtime errors to end users in Preview (not just console)
+    showRuntimeError: function(msg, canvas) {
+        // Forward to editor console as well
+        coms.sendTo('editorWindow', 'consolog', msg);
+        // Create or update a visible error box inside the canvas
+        let box = canvas.querySelector('.customjs-error.runtime') as HTMLDivElement | null;
+        if (!box) {
+            box = document.createElement('div');
+            box.className = 'customjs-error runtime';
+            canvas.appendChild(box);
+        }
+        box.textContent = msg;
+    },
+
+    // Build the UI facade for user scripts
+    exposeNameGlobals: function(canvas) {
+        const elements = Array.from(canvas.querySelectorAll<HTMLElement>('[data-nameid]'));
+        if (!window.__nameGlobals) {
+            window.__nameGlobals = {} as Record<string, HTMLElement>;
+        }
+
+        const registry = window.__nameGlobals as Record<string, HTMLElement>;
+
+        for (const el of elements) {
+            const name = (el.dataset?.nameid || '').trim();
+            if (!name || !utils.isIdentifier(name)) {
+                continue;
+            }
+
+            // Store element
+            if (!(name in registry)) {
+                registry[name] = el;
+
+                // Define a read-only getter on window if not already defined
+                if (!(name in window)) {
+                    try {
+                        Object.defineProperty(window, name, {
+                            configurable: true,
+                            enumerable: false,
+                            get: () => name, // returns the name string
+                            // The actual element remains accessible via window.__nameGlobals[name].
+                        });
+                    } catch {
+                        /* ignore define errors */
+                    }
+                }
+            } else {
+                registry[name] = el; // update reference if it changed
+            }
+        }
+    },
+
+
+    // Allow bare identifiers for common event names in customJS, e.g., ui.trigger(x, change)
+    exposeEventNameGlobals: function() {
+        const events = Array.from(EVENT_NAMES);
+        for (const ev of events) {
+            if (!(ev in window)) {
+                try {
+                    Object.defineProperty(window, ev, {
+                        configurable: true,
+                        enumerable: false,
+                        get: () => ev
+                    });
+                } catch {
+                    /* ignore define errors */
+                }
+            }
+        }
+    },
+
+    // Normalize an arbitrary event-like value to a supported event name,
+    // or null if unsupported
+    normalizeEventName: function(ev) {
+        const s = String(ev ?? '').trim().toLowerCase();
+        if (!s || !EVENT_NAMES.has(s)) {
+            return null;
+        }
+        return s;
     }
+
 }

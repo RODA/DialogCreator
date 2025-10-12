@@ -3,641 +3,49 @@ import { utils } from "../library/utils";
 import { renderutils } from "../library/renderutils";
 import { conditions as cond } from "../modules/conditions";
 import { AnyElement, StringNumber } from "../interfaces/elements";
-import { PreviewDialog, PreviewScriptExports, PreviewUI } from "../interfaces/preview";
+import { PreviewDialog, PreviewScriptExports, PreviewUI, PreviewUIEnv } from "../interfaces/preview";
 
-// Controlled set of allowed event names for the custom Preview UI API
-const ALLOWED_EVENTS = new Set<string>(['click', 'change', 'input']);
-
-function normalizeEventName(ev: unknown): string | null {
-    const s = String(ev ?? '').trim().toLowerCase();
-    if (!s || !ALLOWED_EVENTS.has(s)) return null;
-    return s;
-}
+import { API_NAMES, EVENT_NAMES, createPreviewUI } from '../library/api';
 
 
 function buildUI(canvas: HTMLElement): PreviewUI {
-    const disposers: Array<() => void> = [];
-    const warnOnce = new Set<string>();
-    const warn = (k: string, msg: string) => {
-        if (!warnOnce.has(k)) {
-            coms.sendTo(
-                'editorWindow',
-                'consolog',
-                'Warning: ' + msg
-            );
-            warnOnce.add(k);
-        }
-    };
+    const env: PreviewUIEnv = {
+        findWrapper: (name: string) => renderutils.findWrapper(name, canvas),
+        updateElement: (el, props) => renderutils.updateElement(el, props),
+        showRuntimeError: (msg: string) => renderutils.showRuntimeError(msg, canvas),
+        logToEditor: (msg: string) => coms.sendTo('editorWindow', 'consolog', msg),
+        showDialogMessage: (type, message, detail) => coms.sendTo(
+            'main',
+            'showDialogMessage',
+            type,
+            message,
+            detail
+        ),
+        call: (service, args, cb) => new Promise((resolve) => {
+            const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+            const replyChannel = `service-reply-${requestId}`;
 
-    // Surface runtime errors to end users in Preview (not just console)
-    const showRuntimeError = (msg: string) => {
-        // Forward to editor console as well
-        coms.sendTo('editorWindow', 'consolog', msg);
-        // Create or update a visible error box inside the canvas
-        let box = canvas.querySelector('.customjs-error.runtime') as HTMLDivElement | null;
-        if (!box) {
-            box = document.createElement('div');
-            box.className = 'customjs-error runtime';
-            canvas.appendChild(box);
-        }
-        box.textContent = msg;
-    };
-
-    const findWrapper = (name: string): HTMLElement | null => {
-        const n = String(name || '').trim();
-        if (!n) return null;
-        // Prefer the top-level element that carries a real element type, to avoid matching inner nodes
-        const matches = Array.from(canvas.querySelectorAll<HTMLElement>(`[data-nameid="${n}"]`));
-        if (matches.length === 0) return null;
-        const withType = matches.find(el => (el.dataset?.type || '').length > 0);
-        return withType || matches[0] || null;
-    };
-
-    const inner = (el: HTMLElement | null) => el?.firstElementChild as HTMLElement | null;
-    const typeOf = (el: HTMLElement | null) => String(el?.dataset?.type || '');
-
-    const api: PreviewUI = {
-    // Element lookup helpers removed from public API for simplicity
-
-        // Forward logs to the Editor console for visibility during Preview
-        log: (...args: any[]) => {
-            coms.sendTo(
-                'editorWindow',
-                'consolog',
-                args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' ')
-            );
-        },
-
-        showMessage: (...argsIn: any[]) => {
-            // New convention: (message, detail?, type?)
-            // - First argument is always the visible message (header/title)
-            // - Second argument (optional) is the detail/body
-            // - Third argument (optional) is the type icon: 'info' | 'warning' | 'error' | 'question'
-            const allowed = new Set(['info', 'warning', 'error', 'question']);
-            const message = String(argsIn[0] ?? '');
-            const detail = String(argsIn[1] ?? '');
-            const typeCand = String(argsIn[2] ?? '').toLowerCase();
-            const type = allowed.has(typeCand) ? typeCand : 'info';
-
-            coms.sendTo('main', 'showDialogMessage', type, message, detail);
-        },
-
-        get: (name: string, prop: string) => {
-            const el = findWrapper(name);
-            const eltype = typeOf(el);
-            const inn = inner(el);
-
-            if (!el) return null;
-
-            switch (eltype) {
-                case 'Input': {
-                    const input = (el instanceof HTMLInputElement ? el : (inn as HTMLInputElement | null));
-                    return input?.value ?? '';
-                }
-
-                case 'Label': return inn?.textContent ?? '';
-
-                case 'Select': {
-                    const sel = (el instanceof HTMLSelectElement ? el : (inn as HTMLSelectElement | null));
-                    return sel?.value ?? '';
-                }
-
-                case 'Checkbox': return el.dataset.isChecked === 'true';
-
-                case 'Radio': return el.dataset.isSelected === 'true';
-
-                case 'Counter': {
-                    if (utils.isNull(prop) || prop === 'value') {
-                        const display = el.querySelector('.counter-value') as HTMLDivElement | null;
-                        const txt = display?.textContent ?? el.dataset.startval ?? '0';
-                        const n = Number(txt);
-                        return Number.isFinite(n) ? n : 0;
-                    }
-                    return el.dataset[prop] ?? null;
-                }
-
-                default:
-                    // generic dataset prop fallback
-                    return el.dataset[prop] ?? null;
-            }
-        },
-
-        set: (name: string, prop: string, value: any) => {
-            const el = findWrapper(name); if (!el) return;
-            const t = typeOf(el); const inn = inner(el);
-            const v = value as any;
-
-            switch (t) {
-                case 'Input':
-                    if (prop === 'value' && inn instanceof HTMLInputElement) {
-                        inn.value = String(v); el.dataset.value = String(v);
-                    } else {
-                        warn(`${name}:${prop}`, `Unsupported set(${t}, ${prop})`);
-                    }
-                    break;
-
-                case 'Label':
-                    if (prop === 'value') {
-                        el.dataset.value = String(v);
-                        renderutils.updateElement(
-                            el, { value: String(v) } as any
-                        );
-                    } else {
-                        warn(`${name}:${prop}`, `Unsupported set(${t}, ${prop})`);
-                    }
-                    break;
-
-                case 'Select':
-                    const sel = (inn instanceof HTMLSelectElement ? inn : (el as HTMLSelectElement));
-                    if (prop === 'value' && sel) {
-                        sel.value = String(v);
-                        el.dataset.value = String(v);
-                    } else {
-                        warn(`${name}:${prop}`, `Unsupported set(${t}, ${prop})`);
-                    }
-                    break;
-
-                case 'Checkbox':
-                    if (prop === 'checked') {
-                        renderutils.updateElement(el, { isChecked: v ? 'true' : 'false' } as any);
-                    } else {
-                        warn(`${name}:${prop}`, `Unsupported set(${t}, ${prop})`);
-                    }
-                    break;
-
-                case 'Radio':
-                    if (prop === 'selected') {
-                        renderutils.updateElement(el, { isSelected: v ? 'true' : 'false' } as any);
-                    } else {
-                        warn(`${name}:${prop}`, `Unsupported set(${t}, ${prop})`);
-                    }
-                    break;
-
-                case 'Counter':
-                    if (prop === 'value') {
-                        const min = Number(el.dataset.startval ?? '0');
-                        const max = Number(el.dataset.maxval ?? String(min));
-                        let n = Number(v);
-
-                        if (!Number.isFinite(n)) {
-                            warn(`${name}:${prop}`, `Invalid number: ${v}`);
-                            return;
-                        }
-
-                        if (n < min) n = min;
-                        if (n > max) n = max;
-
-                        const display = el.querySelector('.counter-value') as HTMLDivElement | null;
-                        if (display) {
-                            display.textContent = String(n);
-                        }
-
-                        el.dataset.startval = String(n);
-                    } else {
-                        warn(`${name}:${prop}`, `Unsupported set(${t}, ${prop})`);
-                    }
-                    break;
-                default:
-                    warn(`${name}:${prop}`, `Unsupported element type ${t} for set()`);
-                    break;
-            }
-        },
-
-        text: (name: string, ...rest: [unknown?]): any => {
-            if (rest.length === 0) {
-                return api.get(name, 'value');
-            }
-            api.set(name, 'value', rest[0]);
-        },
-
-        value: (name: string, ...rest: [unknown?]): any => {
-            if (rest.length === 0) {
-                return api.get(name, 'value');
-            }
-            api.set(name, 'value', rest[0]);
-        },
-
-
-        // Checked sugar for Checkbox/Radio – reads live aria-checked when available
-        checked: (name: string) => {
-            const el = findWrapper(name);
-            if (!el) return false;
-
-            const eltype = typeOf(el);
-
-            if (eltype === 'Checkbox') {
-                const custom = el.querySelector('.custom-checkbox') as HTMLElement | null;
-                if (custom) {
-                    return custom.getAttribute('aria-checked') === 'true';
-                }
-                return el.dataset.isChecked === 'true';
-            }
-
-            if (eltype === 'Radio') {
-                const custom = el.querySelector('.custom-radio') as HTMLElement | null;
-                if (custom) {
-                    return custom.getAttribute('aria-checked') === 'true';
-                }
-                return el.dataset.isSelected === 'true';
-            }
-
-            return false;
-        },
-
-        // Visibility: true when not display:none
-        isVisible: (name: string) => {
-            const el = findWrapper(name);
-            if (!el) return false;
-            const ds = (el.style?.display || '').toLowerCase();
-            return ds !== 'none';
-        },
-
-        // Enabled: true when not carrying the disabled-div class
-        isEnabled: (name: string) => {
-            const el = findWrapper(name);
-            if (!el) return false;
-            return !el.classList.contains('disabled-div');
-        },
-
-        // Show/hide sugar: ui.show(name) shows, ui.hide(name) hides, ui.show(name, on) explicit
-        show: (name: string, on: boolean = true) => {
-            const el = findWrapper(name); if (!el) return;
-            // Direct style mutation for reliability in Preview
-            if (on) {
-                el.dataset.isVisible = 'true';
-                el.style.display = '';
-                el.classList.remove('design-hidden');
-            } else {
-                el.dataset.isVisible = 'false';
-                el.style.display = 'none';
-                el.classList.remove('design-hidden');
-            }
-        },
-
-        hide: (name: string) => {
-            api.show(name, false);
-        },
-
-        // Enable/disable sugar: ui.enable(name) enables, ui.disable(name) disables, ui.enable(name, on) explicit
-        enable: (name: string, on: boolean = true) => {
-            const el = findWrapper(name); if (!el) return;
-            renderutils.updateElement(
-                el,
-                { isEnabled: on ? 'true' : 'false' } as StringNumber
-            );
-        },
-
-        disable: (name: string) => {
-            api.enable(name, false);
-        },
-
-        on: (name: string, event: string, handler: (ev: Event, el: HTMLElement) => void) => {
-            const el = findWrapper(name);
-            if (!el) {
-                throw new SyntaxError(`Element not found: ${String(name)}`);
-            }
-
-            const evt = normalizeEventName(event);
-            if (!evt) {
-                throw new SyntaxError(`Unsupported event "${String(event)}" in ui.on(${name}, …). Allowed: ${Array.from(ALLOWED_EVENTS).join(', ')}`);
-            }
-
-            const h = (ev: Event) => {
+            coms.once(replyChannel, (result) => {
                 try {
-                    handler(ev, el);
-                } catch (e: any) {
-                    const msg = `Custom handler error on ${event} for "${name}": ${String(e && e.message ? e.message : e)}`;
-                    showRuntimeError(msg);
-                }
-            };
-            el.addEventListener(evt, h);
-
-            disposers.push(() => el.removeEventListener(evt, h));
-        },
-
-        onClick: (name: string, handler: (ev: Event, el: HTMLElement) => void) => api.on(name, 'click', handler),
-        onChange: (name: string, handler: (ev: Event, el: HTMLElement) => void) => api.on(name, 'change', handler),
-        onInput: (name: string, handler: (ev: Event, el: HTMLElement) => void) => api.on(name, 'input', handler),
-
-        // Convenience: checkbox/radio check/uncheck
-        check: (name: string) => {
-            const el = findWrapper(name); if (!el) return;
-            const t = typeOf(el);
-            if (t === 'Checkbox') {
-                renderutils.updateElement(el, { isChecked: 'true' } as any);
-            } else if (t === 'Radio') {
-                // Select this radio and unselect others in the same group
-                const custom = el.querySelector('.custom-radio') as HTMLElement | null;
-                const group = custom?.getAttribute('group') || '';
-                if (group) {
-                    document.querySelectorAll(`.custom-radio[group="${group}"]`).forEach((r) => {
-                        const host = (r as HTMLElement).closest('.element-div') as HTMLElement | null;
-                        if (host && host !== el) {
-                            renderutils.updateElement(host, { isSelected: 'false' } as any);
-                        }
-                    });
-                }
-                renderutils.updateElement(el, { isSelected: 'true' } as any);
-            }
-        },
-
-        uncheck: (name: string) => {
-            const el = findWrapper(name); if (!el) return;
-            const t = typeOf(el);
-            if (t === 'Checkbox') {
-                renderutils.updateElement(el, { isChecked: 'false' } as any);
-            } else if (t === 'Radio') {
-                renderutils.updateElement(el, { isSelected: 'false' } as any);
-            }
-        },
-
-        // Dispatch a DOM event without altering state
-        trigger: (name: string, event: 'click' | 'change' | 'input') => {
-            const el = findWrapper(name);
-            if (!el) {
-                throw new SyntaxError(`Element not found: ${String(name)}`);
-            }
-
-            const evt = normalizeEventName(event);
-            if (!evt) {
-                throw new SyntaxError(`Unsupported event "${String(event)}" in ui.trigger(${name}, …). Allowed: ${Array.from(ALLOWED_EVENTS).join(', ')}`);
-            }
-
-            // Try to target the most meaningful inner control first
-            const innerEl = (() => {
-                const t = typeOf(el);
-                if (t === 'Checkbox') return el.querySelector('.custom-checkbox') as HTMLElement | null;
-                if (t === 'Radio') return el.querySelector('.custom-radio') as HTMLElement | null;
-                if (t === 'Select') return (el instanceof HTMLSelectElement ? el : (el.querySelector('select') as HTMLElement | null));
-                if (t === 'Input') return (el instanceof HTMLInputElement ? el : (el.querySelector('input') as HTMLElement | null));
-                return null;
-            })();
-
-            const target = (innerEl || el) as HTMLElement;
-
-            if (evt === 'click') {
-                // Pointer-like click that bubbles
-                target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-                return;
-            }
-
-            if (evt === 'change') {
-                // Generic change event that bubbles
-                target.dispatchEvent(new Event('change', { bubbles: true }));
-                return;
-            }
-
-            if (evt === 'input') {
-                // Generic input event that bubbles
-                target.dispatchEvent(new Event('input', { bubbles: true }));
-                return;
-            }
-        },
-
-        // Select a value in a Select (single choice) or select a row in a Container (adds to selection)
-        select: (name, value) => {
-            const el = findWrapper(name);
-            if (!el) {
-                throw new SyntaxError(`Element not found: ${String(name)}`);
-            }
-
-            const t = typeOf(el);
-            const inn = inner(el);
-
-            if (t === 'Select') {
-                const sel = (el instanceof HTMLSelectElement ? el : (el.querySelector('select') as HTMLSelectElement | null));
-                if (!sel) {
-                    throw new SyntaxError(`Select control not found in element ${name}`);
-                }
-
-                const v = String(value);
-                const exists = Array.from(sel.options).some(o => o.value === v);
-                if (!exists) {
-                    throw new SyntaxError(`Option "${v}" not found in Select ${name}`);
-                }
-                sel.value = v;
-                el.dataset.value = v;
-                return;
-            }
-
-            if (t === 'Container') {
-                const host = inn || el;
-                const rows = Array.from(host.querySelectorAll('.container-row')) as HTMLElement[];
-                const v = String(value);
-
-                const row = rows.find(r => ((r.querySelector('.container-text') as HTMLElement | null)?.textContent || '') === v);
-                if (!row) {
-                    throw new SyntaxError(`Row with label "${v}" not found in Container ${name}`);
-                }
-
-                if (!row.classList.contains('active')) {
-                    row.classList.add('active');
-                }
-
-                return;
-            }
-
-            throw new SyntaxError(`ui.select is not supported for element type ${t}`);
-        },
-
-        // Bridge to main process services (e.g., R adapters). Returns a Promise.
-        call: (service, args?, cb?) => {
-            return new Promise((resolve) => {
-                // Correlate requests by a unique id
-                const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-                const replyChannel = `service-reply-${requestId}`;
-
-                coms.once(replyChannel, (result) => {
-                    try {
-                        if (typeof cb === 'function') cb(result);
-                    } finally {
-                        resolve(result);
+                    if (typeof cb === 'function') {
+                        cb(result);
                     }
-                });
-
-                coms.sendTo(
-                    'main',
-                    'service-call',
-                    requestId,
-                    service,
-                    args ?? null
-                );
+                } finally {
+                    resolve(result);
+                }
             });
-        },
 
-        // Get/Set items (options/rows) for Select or Container elements
-        items: (name, values?) => {
-            const el = findWrapper(name);
-            if (!el) return;
-
-            const eltype = typeOf(el);
-            const inn = inner(el);
-
-            // Getter
-            if (!Array.isArray(values)) {
-                if (eltype === 'Select') {
-                    const sel = (el instanceof HTMLSelectElement ? el : (el.querySelector('select') as HTMLSelectElement | null));
-                    if (!sel) return;
-
-                    return Array.from(sel.options).map(o => o.value);
-                }
-
-                if (eltype === 'Container') {
-                    const host = inn || el;
-                    const rows = Array.from(host.querySelectorAll('.container-row .container-text')) as HTMLElement[];
-
-                    return rows.map(r => r.textContent || '');
-                }
-
-                return;
-            }
-
-            // Setter
-            const items = values.map(v => String(v));
-            if (eltype === 'Select') {
-                const sel = (el instanceof HTMLSelectElement ? el : (el.querySelector('select') as HTMLSelectElement | null));
-
-                if (sel) {
-                    sel.innerHTML = '';
-
-                    for (const v of items) {
-                        const opt = document.createElement('option');
-                        opt.value = v;
-                        opt.textContent = v;
-                        sel.appendChild(opt);
-                    }
-
-                    // Sync wrapper height to inner control after options change
-                    const r = sel.getBoundingClientRect();
-
-                    if (r.height > 0) {
-                        el.style.height = `${Math.round(r.height)}px`;
-                    }
-
-                    el.dataset.value = String(sel.value || '');
-                }
-
-                return;
-            }
-
-            if (eltype === 'Container') {
-                const host = inn || el;
-                // Replace sample rows with provided items
-                const sample = host.querySelector('.container-sample') as HTMLDivElement | null;
-                const target = sample || host;
-
-                // Clear existing only inside sample if present; else clear host content
-                if (sample) {
-                    sample.innerHTML = '';
-                } else {
-                    host.innerHTML = '';
-                }
-
-                for (const txt of items) {
-                    const row = document.createElement('div');
-                    // Do not preselect; let user click to select rows
-                    row.className = 'container-row';
-                    const label = document.createElement('span');
-                    label.className = 'container-text';
-                    label.textContent = txt;
-                    row.appendChild(label);
-                    target.appendChild(row);
-                }
-
-                return;
-            }
-        },
-
-        // Multi-selection values for Container rows; Select is single-choice in this app
-        values: (name) => {
-            const el = findWrapper(name); if (!el) return [];
-            const eltype = typeOf(el);
-            const inn = inner(el);
-
-            if (eltype === 'Select') {
-                const sel = (el instanceof HTMLSelectElement ? el : (el.querySelector('select') as HTMLSelectElement | null));
-                if (!sel) return [];
-
-                // Select is single-choice; return as single-item array when present
-                return sel.value ? [sel.value] : [];
-            }
-
-            if (eltype === 'Container') {
-                const host = inn || el;
-                const rows = Array.from(host.querySelectorAll('.container-row')) as HTMLElement[];
-                const selected = rows.filter(r => r.classList.contains('active'));
-                return selected.map(r => (r.querySelector('.container-text') as HTMLElement | null)?.textContent || '');
-            }
-
-            return [];
-        },
-
-        __disposeAll: () => {
-            disposers.forEach(fn => { fn(); });
-            disposers.length = 0;
-        }
+            coms.sendTo(
+                'main',
+                'service-call',
+                requestId,
+                service,
+                args ?? null
+            );
+        })
     };
 
-    // Lifecycle helpers removed from public API; top-level custom code runs after Preview is ready.
-
-    return api;
-}
-
-
-// Build the UI facade for user scripts
-function exposeNameGlobals(canvas: HTMLElement) {
-    const elements = Array.from(canvas.querySelectorAll<HTMLElement>('[data-nameid]'));
-    if (!window.__nameGlobals) {
-        window.__nameGlobals = {} as Record<string, HTMLElement>;
-    }
-
-    const registry = window.__nameGlobals as Record<string, HTMLElement>;
-
-    for (const el of elements) {
-        const name = (el.dataset?.nameid || '').trim();
-        if (!name || !utils.isIdentifier(name)) {
-            continue;
-        }
-
-        // Store element
-        if (!(name in registry)) {
-            registry[name] = el;
-
-            // Define a read-only getter on window if not already defined
-            if (!(name in window)) {
-                try {
-                    Object.defineProperty(window, name, {
-                        configurable: true,
-                        enumerable: false,
-                        get: () => name, // returns the name string
-                        // The actual element remains accessible via window.__nameGlobals[name].
-                    });
-                } catch {
-                    /* ignore define errors */
-                }
-            }
-        } else {
-            registry[name] = el; // update reference if it changed
-        }
-    }
-}
-
-// Allow bare identifiers for common event names in customJS, e.g., ui.trigger(x, change)
-function exposeEventNameGlobals() {
-    const events = Array.from(ALLOWED_EVENTS);
-    for (const ev of events) {
-        if (!(ev in window)) {
-            try {
-                Object.defineProperty(window, ev, {
-                    configurable: true,
-                    enumerable: false,
-                    get: () => ev
-                });
-            } catch {
-                /* ignore define errors */
-            }
-        }
-    }
+    return createPreviewUI(env);
 }
 
 
@@ -924,8 +332,7 @@ function renderPreview(dialog: PreviewDialog) {
                     const msg = `Container click error: ${String(e && e.message ? e.message : e)}`;
                     // show overlay if available in this scope
                     try {
-                        // @ts-ignore
-                        (showRuntimeError as any)(msg);
+                        renderutils.showRuntimeError(msg, canvas);
                     } catch {
                         coms.sendTo('editorWindow', 'consolog', msg);
                     }
@@ -1385,7 +792,11 @@ function renderPreview(dialog: PreviewDialog) {
         // Initial evaluation
         evaluateAll();
     } catch (e) {
-        console.error('Conditions evaluation failed:', e);
+        coms.sendTo(
+            'editorWindow',
+            'consolog',
+            `Conditions evaluation failed: ${String(utils.isRecord(e) && e.message ? e.message : e)}`
+        );
     }
 
     document.addEventListener('keydown', (ev: KeyboardEvent) => {
@@ -1430,11 +841,11 @@ function renderPreview(dialog: PreviewDialog) {
 
     // Expose element names as global variables mapping to their own string
         // (so ui.value(counter1) works)
-        exposeNameGlobals(canvas);
+        renderutils.exposeNameGlobals(canvas);
 
     // Expose common event names as globals mapping to their own string
     // (so ui.trigger(checkbox1, change) works)
-    exposeEventNameGlobals();
+    renderutils.exposeEventNameGlobals();
 
         // Provide init/dispose if present
     const exports: PreviewScriptExports = {};
@@ -1442,10 +853,20 @@ function renderPreview(dialog: PreviewDialog) {
         // Wrap code in a Function with ui in scope
         let fn: Function | null = null;
         try {
-            fn = new Function('ui', 'exports', code);
+            // Strictly controlled API: expose a curated set of local bindings
+            const preludeList = API_NAMES.join(', ');
+            const bindings = `const { ${preludeList} } = ui;`;
+
+            fn = new Function('ui', 'exports', bindings + '\n' + code);
+
         } catch (e: any) {
             const msg = `Code syntax error: ${String(e && e.message ? e.message : e)}`;
-            coms.sendTo('editorWindow', 'consolog', msg);
+            coms.sendTo(
+                'editorWindow',
+                'consolog',
+                msg
+            );
+
             // Show a friendly message in Preview
             const err = document.createElement('div');
             err.className = 'customjs-error';
@@ -1481,14 +902,13 @@ function renderPreview(dialog: PreviewDialog) {
                     'consolog',
                     'Preview: exports.init() completed.'
                 );
-            } catch (e: any) {
-                const msg = `init() error: ${String(e && e.message ? e.message : e)}`;
+            } catch (e) {
+                const msg = `init() error: ${String(utils.isRecord(e) && e.message ? e.message : e)}`;
                 coms.sendTo('editorWindow', 'consolog', msg);
                 const err = document.createElement('div');
                 err.className = 'customjs-error';
                 err.textContent = msg;
                 canvas.appendChild(err);
-                console.error('init() error:', e);
             }
         }
 
@@ -1503,7 +923,11 @@ function renderPreview(dialog: PreviewDialog) {
             }
         });
     } else {
-        coms.sendTo('editorWindow', 'consolog', 'Preview: no customJS to execute');
+        coms.sendTo(
+            'editorWindow',
+            'consolog',
+            'Preview: no customJS to execute'
+        );
     }
 
     root.appendChild(canvas);
@@ -1517,7 +941,11 @@ window.addEventListener("DOMContentLoaded", () => {
             const payload = typeof data === "string" ? JSON.parse(data as string) : data;
             renderPreview(payload);
         } catch (e) {
-            console.error("Failed to parse preview data:", e);
+            coms.sendTo(
+                'editorWindow',
+                'consolog',
+                `Failed to parse preview data: ${String(utils.isRecord(e) && e.message ? e.message : e)}`
+            );
         }
     });
 
