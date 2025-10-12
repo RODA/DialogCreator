@@ -18,14 +18,28 @@ export interface PreviewUI {
     /** Generic setter */
     set(name: string, prop: string, value: unknown): void;
 
-    /** Convenience alias to get/set value/text content */
-    text(name: string): unknown;
-    text(name: string, value: unknown): void;
-    value(name: string): unknown;
-    value(name: string, value: unknown): void;
+    /** Unified getters/setters */
+    // Returns current value or items depending on element type.
+    // - Input: string
+    // - Label: string
+    // - Select: selected value (string)
+    // - Checkbox: boolean (checked)
+    // - Radio: boolean (selected)
+    // - Counter: number
+    // - Container: array of row labels (items)
+    getValue(name: string): unknown;
+    // Sets value or items depending on element type and value type.
+    // - If value is an array: for Select/Container, sets items/options/rows
+    // - If scalar: sets value for Input/Label/Select/Counter; boolean for Checkbox/Radio
+    setValue(name: string, value: unknown | string[]): void;
+    // Selected values:
+    // - Container: array of selected row labels
+    // - Select: array with single selected value (or empty)
+    getSelected(name: string): string[];
 
     /** Checkbox/Radio convenience for checked/selected */
-    checked(name: string): boolean;
+    isChecked(name: string): boolean;
+    isUnchecked(name: string): boolean;
 
     /** Checkbox/Radio convenience: set checked/selected state to true */
     check(name: string): void;
@@ -35,9 +49,11 @@ export interface PreviewUI {
 
     /** Returns whether the element is currently visible in Preview */
     isVisible(name: string): boolean;
+    isHidden(name: string): boolean;
 
     /** Returns whether the element is currently enabled (interactive) in Preview */
     isEnabled(name: string): boolean;
+    isDisabled(name: string): boolean;
 
     /** Show / hide */
     show(name: string, on?: boolean): void;
@@ -58,27 +74,25 @@ export interface PreviewUI {
     /** Dispatch an event on the element (bubbling), without changing state. Supported: 'click', 'change', 'input'. */
     trigger(name: string, event: 'click' | 'change' | 'input'): void;
 
-    /** Select a value in a Select element (single choice) or select a row in a Container (adds to selection) */
+    /** Set selection: Select elements (single value) or Container rows (accepts string or string[]). */
+    setSelected(name: string, value: string | string[]): void;
+
+    /** Legacy alias (additive for Container). Prefer setSelected for explicit selection. */
     select(name: string, value: string): void;
+
+    /** Add a new row/value to a Container (does nothing for Select). */
+    addValue(name: string, value: string): void;
+
+    /** Delete a row/value from a Container by its label (does nothing for Select). */
+    deleteValue(name: string, value: string): void;
 
     /**
      * Call a backend service by name. Returns a Promise, and also supports an optional callback for simplicity.
      * If a callback is provided, it will be called with the result when available.
      */
-    call(service: string, args?: unknown, cb?: (result: unknown) => void): Promise<unknown>;
+    // call(service: string, args?: unknown, cb?: (result: unknown) => void): Promise<unknown>;
 
-    /** Get or set the items/options of list-like elements.
-     *  - For Select: returns/sets option strings; selection is always single-choice.
-     *  - For Container: returns/sets row labels; selection can be multi-choice.
-     */
-    items(name: string): string[] | undefined;
-    items(name: string, values: string[]): void;
-
-    /** Return selected values.
-     *  - For Select: a single-value array (or empty if nothing selected)
-     *  - For Container: an array of selected row labels (multi-select)
-     */
-    values(name: string): string[];
+    // items() / values() removed in favor of getValue/setValue/getSelected
 
     /** Dispose all registered event handlers (internal use) */
     __disposeAll(): void;
@@ -97,8 +111,8 @@ export interface PreviewUIEnv {
     logToEditor: (msg: string) => void;
     // Show an app-level dialog message via main process
     showDialogMessage: (type: 'info' | 'warning' | 'error' | 'question', message: string, detail: string) => void;
-    // Bridge to services; returns a Promise and optionally invokes a callback
-    call: (service: string, args?: unknown, cb?: (result: unknown) => void) => Promise<unknown>;
+    // Experimental bridge to services; returns a Promise and optionally invokes a callback
+    // call: (service: string, args?: unknown, cb?: (result: unknown) => void) => Promise<unknown>;
 }
 
 export interface PreviewScriptExports {

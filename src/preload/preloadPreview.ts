@@ -5,7 +5,7 @@ import { conditions as cond } from "../modules/conditions";
 import { AnyElement, StringNumber } from "../interfaces/elements";
 import { PreviewDialog, PreviewScriptExports, PreviewUI, PreviewUIEnv } from "../interfaces/preview";
 
-import { API_NAMES, EVENT_NAMES, createPreviewUI } from '../library/api';
+import { API_NAMES, createPreviewUI } from '../library/api';
 
 
 function buildUI(canvas: HTMLElement): PreviewUI {
@@ -21,28 +21,28 @@ function buildUI(canvas: HTMLElement): PreviewUI {
             message,
             detail
         ),
-        call: (service, args, cb) => new Promise((resolve) => {
-            const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-            const replyChannel = `service-reply-${requestId}`;
+        // call: (service, args, cb) => new Promise((resolve) => {
+        //     const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        //     const replyChannel = `service-reply-${requestId}`;
 
-            coms.once(replyChannel, (result) => {
-                try {
-                    if (typeof cb === 'function') {
-                        cb(result);
-                    }
-                } finally {
-                    resolve(result);
-                }
-            });
+        //     coms.once(replyChannel, (result) => {
+        //         try {
+        //             if (typeof cb === 'function') {
+        //                 cb(result);
+        //             }
+        //         } finally {
+        //             resolve(result);
+        //         }
+        //     });
 
-            coms.sendTo(
-                'main',
-                'service-call',
-                requestId,
-                service,
-                args ?? null
-            );
-        })
+        //     coms.sendTo(
+        //         'main',
+        //         'service-call',
+        //         requestId,
+        //         service,
+        //         args ?? null
+        //     );
+        // })
     };
 
     return createPreviewUI(env);

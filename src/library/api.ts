@@ -5,28 +5,38 @@ import type { StringNumber } from '../interfaces/elements';
 import { renderutils } from './renderutils';
 
 // Allowed event names for the custom Preview UI API
-export const EVENT_NAMES = new Set<string>(['click', 'change', 'input']);
+export const EVENT_LIST = ['click', 'change', 'input'] as const;
+export type EventName = typeof EVENT_LIST[number];
+export const EVENT_NAMES = new Set<string>(EVENT_LIST);
 
 // Curated helper names exposed as shorthand in user customJS (prelude)
 export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
     // core
-    'showMessage', 'get', 'set', 'text', 'value',
+    'showMessage', 'getValue', 'setValue',
 
     // checkbox/radio
-    'checked', 'check', 'uncheck',
+    'check', 'isChecked', 'uncheck', 'isUnchecked',
 
     // visibility/enabled
-    'isVisible', 'isEnabled', 'show', 'hide', 'enable', 'disable',
+    'show', 'isVisible', 'hide', 'isHidden', 'enable', 'isEnabled', 'disable', 'isDisabled',
 
     // events
-    'on', 'onClick', 'onChange', 'onInput', 'trigger',
+    'onClick', 'onChange', 'onInput', 'trigger',
 
     // lists & selection
-    'select', 'items', 'values',
-
-    // experimental bridge
-    'call'
+    'setSelected', 'getSelected', 'addValue', 'deleteValue'
 ]);
+
+// Methods that take (elementName, ...) as first argument; used by the linter.
+// Derive from API_NAMES to keep a single source of truth for the public surface,
+// then exclude the non-element-first helpers explicitly (currently just 'showMessage').
+const NEUTRAL_NAMES = new Set<keyof PreviewUI>([
+    'showMessage'
+]);
+export const ELEMENT_FIRST_ARG_CALLS: ReadonlyArray<keyof PreviewUI> = Object.freeze(
+    API_NAMES.filter(n => !NEUTRAL_NAMES.has(n))
+);
+
 
 // Factory: build the Preview UI API bound to a specific canvas and adapters.
 export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
@@ -36,7 +46,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         showRuntimeError,
         logToEditor,
         showDialogMessage,
-        call
+        // call
     } = env;
 
     const disposers: Array<() => void> = [];
@@ -218,22 +228,127 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             }
         },
 
-        text: (name: string, ...rest: [unknown?]): any => {
-            if (rest.length === 0) {
-                return api.get(name, 'value');
+        getValue: (name: string): any => {
+            const el = findWrapper(name);
+            if (!el) return null;
+            const eltype = typeOf(el);
+            const inn = inner(el);
+            if (eltype === 'Input') {
+                const input = (el instanceof HTMLInputElement ? el : (inn as HTMLInputElement | null));
+                return input?.value ?? '';
             }
-
-            api.set(name, 'value', rest[0]);
+            if (eltype === 'Label') return inn?.textContent ?? '';
+            if (eltype === 'Select') {
+                const sel = (el instanceof HTMLSelectElement ? el : (inn as HTMLSelectElement | null));
+                return sel?.value ?? '';
+            }
+            if (eltype === 'Checkbox') return el.dataset.isChecked === 'true';
+            if (eltype === 'Radio') return el.dataset.isSelected === 'true';
+            if (eltype === 'Counter') {
+                const display = el.querySelector('.counter-value') as HTMLDivElement | null;
+                const txt = display?.textContent ?? el.dataset.startval ?? '0';
+                const n = Number(txt);
+                return Number.isFinite(n) ? n : 0;
+            }
+            if (eltype === 'Container') {
+                const host = inn || el;
+                const rows = Array.from(host.querySelectorAll('.container-row .container-text')) as HTMLElement[];
+                return rows.map(r => r.textContent || '');
+            }
+            return (el.dataset as any)['value'] ?? null;
         },
 
-        value: (name: string, ...rest: [unknown?]): any => {
-            if (rest.length === 0) {
-                return api.get(name, 'value');
+        setValue: (name: string, value: any): void => {
+            const el = findWrapper(name);
+            if (!el) return;
+            const eltype = typeOf(el);
+            const inn = inner(el);
+
+            if (Array.isArray(value)) {
+                const items = value.map(v => String(v));
+                if (eltype === 'Select') {
+                    const sel = (el instanceof HTMLSelectElement ? el : (el.querySelector('select') as HTMLSelectElement | null));
+                    if (sel) {
+                        sel.innerHTML = '';
+                        for (const v of items) {
+                            const opt = document.createElement('option');
+                            opt.value = v; opt.textContent = v; sel.appendChild(opt);
+                        }
+                        const r = sel.getBoundingClientRect();
+                        if (r.height > 0) el.style.height = `${Math.round(r.height)}px`;
+                        el.dataset.value = String(sel.value || '');
+                    }
+                    return;
+                }
+                if (eltype === 'Container') {
+                    const host = inn || el;
+                    const sample = host.querySelector('.container-sample') as HTMLDivElement | null;
+                    const target = sample || host;
+                    if (sample) { sample.innerHTML = ''; } else { host.innerHTML = ''; }
+                    for (const txt of items) {
+                        const row = document.createElement('div');
+                        row.className = 'container-row';
+                        const label = document.createElement('span');
+                        label.className = 'container-text';
+                        label.textContent = txt; row.appendChild(label); target.appendChild(row);
+                    }
+                    return;
+                }
+                return; // ignore arrays for other types
             }
-            api.set(name, 'value', rest[0]);
+
+            // Scalar
+            if (eltype === 'Input') {
+                const input = (el instanceof HTMLInputElement ? el : (inn as HTMLInputElement | null));
+                if (input) { input.value = String(value); el.dataset.value = String(value); }
+                return;
+            }
+            if (eltype === 'Label') {
+                el.dataset.value = String(value);
+                updateElement(el, { value: String(value) } as StringNumber);
+                return;
+            }
+            if (eltype === 'Select') {
+                const sel = (el instanceof HTMLSelectElement ? el : (el.querySelector('select') as HTMLSelectElement | null));
+                if (sel) { sel.value = String(value); el.dataset.value = String(value); }
+                return;
+            }
+            if (eltype === 'Checkbox') { updateElement(el, { isChecked: value ? 'true' : 'false' } as StringNumber); return; }
+            if (eltype === 'Radio') { updateElement(el, { isSelected: value ? 'true' : 'false' } as StringNumber); return; }
+            if (eltype === 'Counter') {
+                const min = Number(el.dataset.startval ?? '0');
+                const max = Number(el.dataset.maxval ?? String(min));
+                let n = Number(value);
+                if (!Number.isFinite(n)) { showRuntimeError(`Invalid number: ${value}`); return; }
+                if (n < min) n = min; if (n > max) n = max;
+                const display = el.querySelector('.counter-value') as HTMLDivElement | null;
+                if (display) display.textContent = String(n);
+                el.dataset.startval = String(n);
+                return;
+            }
+            (el.dataset as any)['value'] = String(value);
         },
 
-        checked: (name: string) => {
+        getSelected: (name: string): string[] => {
+            const el = findWrapper(name);
+            if (!el) return [];
+            const eltype = typeOf(el);
+            const inn = inner(el);
+            if (eltype === 'Select') {
+                const sel = (el instanceof HTMLSelectElement ? el : (el.querySelector('select') as HTMLSelectElement | null));
+                return sel && sel.value ? [sel.value] : [];
+            }
+            if (eltype === 'Container') {
+                const host = inn || el;
+                const rows = Array.from(host.querySelectorAll('.container-row')) as HTMLElement[];
+                const selected = rows.filter(r => r.classList.contains('active'));
+                return selected.map(r => (r.querySelector('.container-text') as HTMLElement | null)?.textContent || '');
+            }
+            return [];
+        },
+
+        // New preferred name for checked state
+        isChecked: (name: string) => {
             const el = findWrapper(name);
             if (!el) return false;
 
@@ -251,6 +366,10 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             return false;
         },
 
+        isUnchecked: (name: string) => {
+            return !api.isChecked(name);
+        },
+
         isVisible: (name: string) => {
             const el = findWrapper(name);
             if (!el) return false;
@@ -259,10 +378,20 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             return ds !== 'none';
         },
 
+        isHidden: (name: string) => {
+            return !api.isVisible(name);
+        },
+
         isEnabled: (name: string) => {
             const el = findWrapper(name);
             if (!el) return false;
             return !el.classList.contains('disabled-div');
+        },
+
+        isDisabled: (name: string) => {
+            const el = findWrapper(name);
+            if (!el) return false;
+            return el.classList.contains('disabled-div');
         },
 
         show: (name: string, on: boolean = true) => {
@@ -323,7 +452,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         onChange: (name: string, handler: (ev: Event, el: HTMLElement) => void) => api.on(name, 'change', handler),
         onInput: (name: string, handler: (ev: Event, el: HTMLElement) => void) => api.on(name, 'input', handler),
 
-        trigger: (name: string, event: 'click' | 'change' | 'input') => {
+    trigger: (name: string, event: EventName) => {
             const el = findWrapper(name);
             if (!el) {
                 throw new SyntaxError(`Element not found: ${String(name)}`);
@@ -372,7 +501,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             }
         },
 
-        select: (name, value) => {
+        setSelected: (name, value) => {
             const el = findWrapper(name);
             if (!el) {
                 throw new SyntaxError(`Element not found: ${String(name)}`);
@@ -384,7 +513,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             if (eltype === 'Select') {
                 const sel = (el instanceof HTMLSelectElement ? el : (el.querySelector('select') as HTMLSelectElement | null));
                 if (!sel) throw new SyntaxError(`Select control not found in element ${name}`);
-                const v = String(value);
+                const v = String(Array.isArray(value) ? value[0] : value);
                 const exists = Array.from(sel.options).some(o => o.value === v);
                 if (!exists) throw new SyntaxError(`Option "${v}" not found in Select ${name}`);
                 sel.value = v; el.dataset.value = v; return;
@@ -393,117 +522,92 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             if (eltype === 'Container') {
                 const host = inn || el;
                 const rows = Array.from(host.querySelectorAll('.container-row')) as HTMLElement[];
+                const selValues = Array.isArray(value) ? value.map(v => String(v)) : [String(value)];
+                // Replace selection to exactly match selValues
+                rows.forEach(r => {
+                    const label = (r.querySelector('.container-text') as HTMLElement | null)?.textContent || '';
+                    const shouldSelect = selValues.includes(label);
+                    if (shouldSelect) r.classList.add('active'); else r.classList.remove('active');
+                });
+                return;
+            }
+            throw new SyntaxError(`ui.setSelected is not supported for element type ${eltype}`);
+        },
+
+    // Legacy alias: select(name, value) preserves previous additive behavior for Container
+        select: (name: string, value: string) => {
+            const el = findWrapper(name);
+            if (!el) {
+                throw new SyntaxError(`Element not found: ${String(name)}`);
+            }
+            const eltype = typeOf(el);
+            const inn = inner(el);
+            if (eltype === 'Select') {
+                (api as any).setSelected(name, value);
+                return;
+            }
+            if (eltype === 'Container') {
+                const host = inn || el;
+                const rows = Array.from(host.querySelectorAll('.container-row')) as HTMLElement[];
                 const v = String(value);
                 const row = rows.find(r => ((r.querySelector('.container-text') as HTMLElement | null)?.textContent || '') === v);
-
                 if (!row) {
                     throw new SyntaxError(`Row with label "${v}" not found in Container ${name}`);
                 }
-
                 if (!row.classList.contains('active')) {
                     row.classList.add('active');
                 }
-
                 return;
             }
             throw new SyntaxError(`ui.select is not supported for element type ${eltype}`);
         },
 
-        call: (service, args?, cb?) => call(service, args, cb),
-
-        items: (name, values?) => {
-            const el = findWrapper(name);
-            if (!el) return;
-
-            const eltype = typeOf(el);
-            const inn = inner(el);
-
-            if (!Array.isArray(values)) {
-                if (eltype === 'Select') {
-                    const sel = (el instanceof HTMLSelectElement ? el : (el.querySelector('select') as HTMLSelectElement | null));
-                    if (!sel) return;
-                    return Array.from(sel.options).map(o => o.value);
-                }
-                if (eltype === 'Container') {
-                    const host = inn || el;
-                    const rows = Array.from(host.querySelectorAll('.container-row .container-text')) as HTMLElement[];
-                    return rows.map(r => r.textContent || '');
-                }
-
-                return;
-            }
-
-            const items = values.map(v => String(v));
-            if (eltype === 'Select') {
-                const sel = (el instanceof HTMLSelectElement ? el : (el.querySelector('select') as HTMLSelectElement | null));
-
-                if (sel) {
-                    sel.innerHTML = '';
-                    for (const v of items) {
-                        const opt = document.createElement('option');
-                        opt.value = v; opt.textContent = v; sel.appendChild(opt);
-                    }
-
-                    const r = sel.getBoundingClientRect();
-                    if (r.height > 0) {
-                        el.style.height = `${Math.round(r.height)}px`;
-                    }
-
-                    el.dataset.value = String(sel.value || '');
-                }
-                return;
-            }
-            if (eltype === 'Container') {
-                const host = inn || el;
-                const sample = host.querySelector('.container-sample') as HTMLDivElement | null;
-                const target = sample || host;
-
-                if (sample) {
-                    sample.innerHTML = '';
-                } else {
-                    host.innerHTML = '';
-                }
-
-                for (const txt of items) {
-                    const row = document.createElement('div');
-                    row.className = 'container-row';
-                    const label = document.createElement('span');
-                    label.className = 'container-text';
-                    label.textContent = txt; row.appendChild(label); target.appendChild(row);
-                }
-
-                return;
-            }
-        },
-
-        values: (name) => {
+        addValue: (name: string, value: string) => {
             const el = findWrapper(name);
             if (!el) {
-                return [] as string[];
+                throw new SyntaxError(`Element not found: ${String(name)}`);
             }
-
             const eltype = typeOf(el);
             const inn = inner(el);
-
-            if (eltype === 'Select') {
-                const sel = (el instanceof HTMLSelectElement ? el : (el.querySelector('select') as HTMLSelectElement | null));
-
-                if (!sel) {
-                    return [] as string[];
-                }
-
-                return sel.value ? [sel.value] : [];
+            if (eltype !== 'Container') {
+                throw new SyntaxError(`ui.addValue is only supported for Container elements`);
             }
-
-            if (eltype === 'Container') {
-                const host = inn || el;
-                const rows = Array.from(host.querySelectorAll('.container-row')) as HTMLElement[];
-                const selected = rows.filter(r => r.classList.contains('active'));
-                return selected.map(r => (r.querySelector('.container-text') as HTMLElement | null)?.textContent || '');
-            }
-
-            return [] as string[];
+            const host = inn || el;
+            const sample = host.querySelector('.container-sample') as HTMLDivElement | null;
+            const target = sample || host;
+            const rows = Array.from(target.querySelectorAll('.container-row')) as HTMLElement[];
+            const exists = rows.some(r => ((r.querySelector('.container-text') as HTMLElement | null)?.textContent || '') === String(value));
+            if (exists) return;
+            const row = document.createElement('div');
+            row.className = 'container-row';
+            const label = document.createElement('span');
+            label.className = 'container-text';
+            label.textContent = String(value);
+            row.appendChild(label);
+            target.appendChild(row);
         },
+
+        deleteValue: (name: string, value: string) => {
+            const el = findWrapper(name);
+            if (!el) {
+                throw new SyntaxError(`Element not found: ${String(name)}`);
+            }
+            const eltype = typeOf(el);
+            const inn = inner(el);
+            if (eltype !== 'Container') {
+                throw new SyntaxError(`ui.deleteValue is only supported for Container elements`);
+            }
+            const host = inn || el;
+            const rows = Array.from(host.querySelectorAll('.container-row')) as HTMLElement[];
+            const v = String(value);
+            const row = rows.find(r => ((r.querySelector('.container-text') as HTMLElement | null)?.textContent || '') === v);
+            if (!row) return; // nothing to delete
+            row.remove();
+        },
+
+        // call: (service, args?, cb?) => call(service, args, cb),
+
+        // items() and values() removed in favor of getValue/setValue/getSelected
 
         __disposeAll: () => {
             disposers.forEach(fn => { fn(); });

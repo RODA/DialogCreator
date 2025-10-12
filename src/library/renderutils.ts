@@ -13,7 +13,7 @@ import {
     StringNumber
 } from "../interfaces/elements";
 import { showError, coms } from '../modules/coms';
-import { EVENT_NAMES } from '../library/api';
+import { EVENT_NAMES, EventName } from '../library/api';
 import { v4 as uuidv4 } from 'uuid';
 import * as path from "path";
 import * as fs from "fs";
@@ -1872,7 +1872,7 @@ export const renderutils: RenderUtils = {
         if (!s || !EVENT_NAMES.has(s)) {
             return null;
         }
-        return s;
+        return s as EventName;
     }
 
 }

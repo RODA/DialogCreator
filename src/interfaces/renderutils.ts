@@ -2,6 +2,7 @@ import { AnyElement, AssertOptions, BuildOptions, StringNumber, UniformSchema } 
 import { DialogProperties } from "./dialog";
 // Use relative path to avoid module resolution duplication issues
 import { ElementsWithPersist } from '../modules/elements';
+import { EventName } from '../library/api';
 
 export interface RenderUtils {
     previewWindow: () => boolean;
@@ -52,5 +53,5 @@ export interface RenderUtils {
     showRuntimeError: (msg: string, canvas: HTMLElement) => void;
     exposeNameGlobals: (canvas: HTMLElement) => void;
     exposeEventNameGlobals: () => void;
-    normalizeEventName: (ev: unknown) => string | null;
+    normalizeEventName: (ev: unknown) => EventName | null;
 }

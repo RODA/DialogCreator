@@ -17,6 +17,7 @@ import { javascript } from '@codemirror/lang-javascript';
 import { bracketMatching, indentUnit } from '@codemirror/language';
 import { linter, lintGutter, Diagnostic } from '@codemirror/lint';
 import * as acorn from 'acorn';
+import { API_NAMES, EVENT_NAMES, ELEMENT_FIRST_ARG_CALLS } from './api';
 
 type CMInstance = {
     view: EditorView;
@@ -110,8 +111,8 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
         return true;
     };
 
-    // Allowed events for UI API (mirror of Preview runtime)
-    const allowedEvents = new Set(['click', 'change', 'input']);
+    // SSOT: allowed events exported by api.ts
+    const allowedEvents = new Set(Array.from(EVENT_NAMES));
 
     // Helpers for semantic linting
     const findElement = (name: string | undefined | null) => {
@@ -183,12 +184,25 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
 
             const args = n.arguments || [];
             // Calls that use element name as first arg
-            const elementFirstArgCalls = new Set([
-                'on', 'onClick', 'onChange', 'onInput', 'trigger', 'select',
-                'get', 'set', 'text', 'value', 'checked', 'check', 'uncheck',
-                'isVisible', 'isEnabled', 'show', 'hide', 'enable', 'disable',
-                'items', 'values'
-            ]);
+            const elementFirstArgCalls = new Set(Array.from(ELEMENT_FIRST_ARG_CALLS as readonly string[]));
+
+            // Minimal allowlist of ui API methods for bare identifiers (prelude destructuring)
+            const knownApi = new Set(Array.from(API_NAMES as readonly string[]));
+            // If it's a ui.* call with unknown property, flag it early
+            if (callee?.type === 'MemberExpression' && callee.object?.type === 'Identifier' && callee.object.name === 'ui') {
+                if (callName && !elementFirstArgCalls.has(callName) && !knownApi.has(callName)) {
+                    addDiagnostic(callee.property, `Unknown ui API '${callName}'.`);
+                }
+            } else if (callee?.type === 'Identifier') {
+                // Bare prelude use (const { ... } = ui)
+                if (callName && !knownApi.has(callName)) {
+                    // Heuristically warn only for common mistaken names
+                    if (['get', 'set', 'checked'].includes(callName)) {
+                        addDiagnostic(callee, `Unknown API '${callName}'. Did you mean '${callName === 'checked' ? 'isChecked' : (callName + 'Value')}'?`);
+                    }
+                }
+            }
+
             if (!elementFirstArgCalls.has(callName)) return;
 
             // Element existence for all supported calls when first arg present
