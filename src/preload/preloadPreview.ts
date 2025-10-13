@@ -520,7 +520,9 @@ function renderPreview(dialog: PreviewDialog) {
         try {
             // Strictly controlled API: expose a curated set of local bindings
             const preludeList = API_NAMES.join(', ');
-            const bindings = `const { ${preludeList} } = ui;`;
+            // Expose curated helpers plus a private alias: log -> ui.log (not part of API_NAMES)
+            const bindings = `const { ${preludeList} } = ui;
+            const log = ui.log.bind(ui);`;
 
             fn = new Function('ui', 'exports', bindings + '\n' + code);
 

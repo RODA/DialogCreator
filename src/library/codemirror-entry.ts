@@ -193,6 +193,10 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
                 if (callName && !elementFirstArgCalls.has(callName) && !knownApi.has(callName)) {
                     addDiagnostic(callee.property, `Unknown ui API '${callName}'.`);
                 }
+                // Soft warn for ui.log: available in runtime but considered debug/internal
+                if (callName === 'log') {
+                    addDiagnostic(callee.property, `ui.log is for debugging only and not part of the public API.`);
+                }
             } else if (callee?.type === 'Identifier') {
                 // Bare prelude use (const { ... } = ui)
                 if (callName && !knownApi.has(callName)) {
@@ -200,6 +204,10 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
                     if (['get', 'set', 'checked'].includes(callName)) {
                         addDiagnostic(callee, `Unknown API '${callName}'. Did you mean '${callName === 'checked' ? 'isChecked' : (callName + 'Value')}'?`);
                     }
+                }
+                // Soft warn for bare log: provided as debug alias in Preview only
+                if (callName === 'log') {
+                    addDiagnostic(callee, `log(...) is a debug-only alias in Preview and not part of the public API.`);
                 }
             }
 
