@@ -154,33 +154,30 @@
        d="M 0,0 H 16 V 16 H 0 Z"
        id="gtk-remove"
        inkscape:connector-curvature="0" />
-    <g
-       id="g1"
-       transform="matrix(1.0833333,0,0,1.0833333,-0.54686469,-0.59026402)"
-       style="stroke-width:0.923077">
-      <path
-         id="bod"
-         style="fill:#000000;stroke:none;stroke-width:1.63496;paint-order:stroke fill markers"
-         class="UnoptimicedTransforms"
-         d="M 3,4 3.9101562,14.007812 C 3.9612488,14.569611 4.4319763,15 4.9960938,15 h 6.0078122 c 0.564118,0 1.034845,-0.430389 1.085938,-0.992188 L 13,4 Z m 2.5605469,1.9238281 c 0.2304494,0.035975 0.4060888,0.2262787 0.421875,0.4589844 l 0.3847656,5.6718755 c 0.045139,0.665394 -0.9529083,0.733753 -0.9980469,0.06836 L 4.984375,6.4511719 C 4.9626798,6.1313602 5.2438361,5.8743866 5.5605469,5.9238281 Z m 4.8789061,0 c 0.316711,-0.049441 0.597867,0.207532 0.576172,0.5273438 l -0.384766,5.6718751 c -0.04514,0.665394 -1.0431851,0.597035 -0.9980465,-0.06836 0,0 0.2565103,-3.7812503 0.3847655,-5.6718755 0.01579,-0.2327057 0.191426,-0.4230091 0.421875,-0.4589844 z m -2.5507811,0.00586 C 8.2020238,5.8581208 8.5,6.0965482 8.5,6.4179688 v 5.6718752 c 0,0.666666 -1,0.666666 -1,0 V 6.4179688 C 7.5,6.1844062 7.6609723,5.9816913 7.8886719,5.9296881 Z"
-         sodipodi:nodetypes="cssssccssssssssssssssssss" />
-      <path
-         style="fill:#000000;stroke:none;stroke-width:1.63496;paint-order:stroke fill markers"
-         d="M 2,5 V 4 A 1,1 135 0 1 3,3 h 10 a 1,1 45 0 1 1,1 v 1 z"
-         id="top"
-         sodipodi:nodetypes="ccccc"
-         inkscape:path-effect="#path-effect13041"
-         inkscape:original-d="M 2,5 V 3 h 12 v 2 z" />
-      <path
-         style="fill:#000000;fill-rule:nonzero;stroke:none;stroke-width:0.219334;paint-order:stroke fill markers"
-         d="M 6,2.5 C 6,2.2263797 6.2263797,2 6.5,2 h 3 C 9.7736203,2 10,2.2263797 10,2.5 V 4 l 0.5,-0.5 h -5 L 6,4 Z m 5,2 v -2 C 11,1.6690508 10.330949,1 9.5,1 l -3,0 C 5.6690508,1 5,1.6690508 5,2.5 v 2 z"
-         id="handel"
-         sodipodi:nodetypes="ccccc"
-         inkscape:path-effect="#path-effect11713;#path-effect20976"
-         inkscape:original-d="M 5.5,4 V 1.5 h 5 V 4 Z"
-         inkscape:linked-fill="path20980"
-         class="UnoptimicedTransforms" />
-    </g>
+    <path
+       id="bod"
+       style="fill:#5b915b;stroke:none;stroke-width:1.77121;paint-order:stroke fill markers;fill-opacity:1"
+       class="UnoptimicedTransforms"
+       d="M 2.7031352,3.7430692 3.6891377,14.584865 c 0.05535,0.608616 0.5653051,1.07487 1.1764324,1.07487 h 6.5084629 c 0.611128,0 1.121082,-0.466254 1.176433,-1.07487 L 13.536468,3.7430692 Z m 2.7739257,2.084147 c 0.2496535,0.038973 0.4399296,0.2451353 0.4570313,0.4972331 l 0.4168294,6.1445317 c 0.0489,0.720843 -1.0323173,0.794899 -1.0812175,0.07406 L 4.8528747,6.3985053 C 4.8293716,6.0520427 5.1339576,5.7736546 5.4770609,5.8272162 Z m 5.2854811,0 c 0.343104,-0.053561 0.64769,0.2248264 0.624187,0.5712891 l -0.41683,6.1445307 c -0.0489,0.720844 -1.1301173,0.646788 -1.0812171,-0.07406 0,0 0.2778861,-4.0963545 0.4168291,-6.1445318 0.01711,-0.2520978 0.207378,-0.4582598 0.457031,-0.4972331 z m -2.7633457,0.00635 c 0.3394645,-0.077531 0.6622721,0.1807651 0.6622721,0.5289707 v 6.1445321 c 0,0.722221 -1.0833333,0.722221 -1.0833333,0 V 6.3625353 c 0,-0.2530261 0.1743866,-0.4726339 0.4210612,-0.5289707 z"
+       sodipodi:nodetypes="cssssccssssssssssssssssss" />
+    <path
+       style="fill:#5b915b;stroke:none;stroke-width:1.63496;paint-order:stroke fill markers;fill-opacity:1"
+       d="M 2,5 V 4 A 1,1 135 0 1 3,3 h 10 a 1,1 45 0 1 1,1 v 1 z"
+       id="top"
+       sodipodi:nodetypes="ccccc"
+       inkscape:path-effect="#path-effect13041"
+       inkscape:original-d="M 2,5 V 3 h 12 v 2 z"
+       transform="matrix(1.0833333,0,0,1.0833333,-0.54686469,-0.59026402)" />
+    <path
+       style="fill:#5b915b;fill-rule:nonzero;stroke:none;stroke-width:0.219334;paint-order:stroke fill markers;fill-opacity:1"
+       d="M 6,2.5 C 6,2.2263797 6.2263797,2 6.5,2 h 3 C 9.7736203,2 10,2.2263797 10,2.5 V 4 l 0.5,-0.5 h -5 L 6,4 Z m 5,2 v -2 C 11,1.6690508 10.330949,1 9.5,1 l -3,0 C 5.6690508,1 5,1.6690508 5,2.5 v 2 z"
+       id="handel"
+       sodipodi:nodetypes="ccccc"
+       inkscape:path-effect="#path-effect11713;#path-effect20976"
+       inkscape:original-d="M 5.5,4 V 1.5 h 5 V 4 Z"
+       inkscape:linked-fill="path20980"
+       class="UnoptimicedTransforms"
+       transform="matrix(1.0833333,0,0,1.0833333,-0.54686469,-0.59026402)" />
     <g
        id="g2410"
        inkscape:label="non dest"
@@ -190,7 +187,7 @@
          id="path2396"
          style="display:inline;fill:#ffffff;fill-rule:nonzero;stroke:none;stroke-width:1;paint-order:stroke fill markers"
          class="UnoptimicedTransforms"
-         d="M 10.018116,6.3836979 9.6336547,12.055605 a 0.5,0.5 0 1 0 0.9977103,0.06763 l 0.384461,-5.6719069 a 0.5,0.5 0 1 0 -0.99771,-0.067628 z M 4.9841739,6.4513261 5.368635,12.123233 a 0.50000006,0.50000006 0 1 0 0.9977106,-0.06763 L 5.9818845,6.3836979 A 0.5,0.5 0 1 0 4.9841739,6.4513261 Z M 7.5,6.417512 v 5.671907 a 0.5,0.5 0 1 0 1,0 V 6.417512 a 0.5,0.5 0 1 0 -1,0 z"
+         d="M 10.018116,6.3836979 9.6336547,12.055605 a 0.5,0.5 0 1 0 0.9977103,0.06763 l 0.384461,-5.6719069 a 0.5,0.5 0 1 0 -0.99771,-0.067628 z M 4.9841739,6.4513261 5.368635,12.123233 a 0.5,0.5 0 1 0 0.9977106,-0.06763 L 5.9818845,6.3836979 A 0.5,0.5 0 1 0 4.9841739,6.4513261 Z M 7.5,6.417512 v 5.671907 a 0.5,0.5 0 1 0 1,0 V 6.417512 a 0.5,0.5 0 1 0 -1,0 z"
          inkscape:linked-fill="inside"
          sodipodi:nodetypes="cccccc"
          inkscape:path-effect="#path-effect2400"
