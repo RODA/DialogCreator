@@ -45,7 +45,11 @@ async function main() {
             entryPoints: [entry],
             outfile,
             bundle: true,
-            format: 'iife'
+            format: 'iife',
+            platform: 'browser',
+            target: ['es2020'],
+            // Prevent pulling Node/Electron built-ins into the browser bundle
+            external: ['electron', 'fs', 'path', 'events']
         });
 
         console.log('[bundle:cm6] done:', path.relative(repoRoot, outfile));
