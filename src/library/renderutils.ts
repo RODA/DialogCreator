@@ -1187,9 +1187,9 @@ export const renderutils: RenderUtils = {
     },
 
     updateLabel: function(element, properties) {
-        // element is the wrapper; host is the core inner label element
-        const host = element.firstElementChild as HTMLElement | null;
-        if (!host) return;
+        // In the Editor, element is a wrapper and the actual label is its first child.
+        // In Preview, the label is a single node (no inner child). Fall back to the element itself.
+        const host = (element.firstElementChild as HTMLElement | null) || element;
 
         let dataset = element.dataset;
 
@@ -1256,8 +1256,8 @@ export const renderutils: RenderUtils = {
             host.style.removeProperty('max-height');
         }
 
-        element.style.height = '';
-        host.style.height = '';
+    element.style.height = '';
+    host.style.height = '';
 
         // Measure natural single-line width (no wrapping) using canvas measurement
         const natural = utils.textWidth(text, fontSize, coms.fontFamily);
@@ -1266,20 +1266,22 @@ export const renderutils: RenderUtils = {
         element.style.maxWidth = maxW > 0 ? `${maxW}px` : '';
         element.style.width = `${finalW}px`;
 
-        // Host should fill wrapper
-        host.style.maxWidth = '100%';
-        host.style.width = '100%';
+    // Host should fill wrapper (for Preview, host===element so this is harmless)
+    host.style.maxWidth = '100%';
+    host.style.width = '100%';
         host.style.textAlign = 'left';
 
-        // Keep in canvas bounds
-        const dialogW = dialog.canvas.getBoundingClientRect().width;
-        const elleft = document.getElementById('elleft') as HTMLInputElement | null;
-        const left = Number(element.dataset.left ?? (parseInt(element.style.left || '0', 10) || 0));
-        if (left + finalW + 10 > dialogW) {
-            const newleft = Math.max(10, Math.round(dialogW - finalW - 10));
-            element.style.left = newleft + 'px';
-            element.dataset.left = String(newleft);
-            if (elleft) elleft.value = String(newleft);
+        // Keep in canvas bounds (Editor only). In Preview, do not auto-shift position.
+        if (!renderutils.previewWindow()) {
+            const dialogW = dialog.canvas.getBoundingClientRect().width;
+            const elleft = document.getElementById('elleft') as HTMLInputElement | null;
+            const left = Number(element.dataset.left ?? (parseInt(element.style.left || '0', 10) || 0));
+            if (left + finalW + 10 > dialogW) {
+                const newleft = Math.max(10, Math.round(dialogW - finalW - 10));
+                element.style.left = newleft + 'px';
+                element.dataset.left = String(newleft);
+                if (elleft) elleft.value = String(newleft);
+            }
         }
 
         // Tooltip based on overflow
