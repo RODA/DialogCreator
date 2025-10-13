@@ -47,7 +47,7 @@ export interface RenderUtils {
     assertTypes: (data: Record<string, unknown>, options?: AssertOptions) => void | string[];
     // Return non-persist keys for a given element template name
     getNonPersistKeys: (name: keyof ElementsWithPersist) => string[];
-    // Propagate element name changes across conditions and customJS
+    // Propagate element name changes across customJS
     propagateNameChange: (oldName: string, newName: string) => void;
     findWrapper: (name: string, canvas: HTMLElement) => HTMLElement | null;
     showRuntimeError: (msg: string, canvas: HTMLElement) => void;

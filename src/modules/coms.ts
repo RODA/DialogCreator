@@ -66,7 +66,6 @@ export const coms: Communications = {
         addCover: '../modules/cover',
         removeCover: '../modules/cover',
         addAvailableElementsTo: '../modules/editor',
-        populateConditions: '../modules/conditions',
         previewDialog: '../modules/editor',
     },
 

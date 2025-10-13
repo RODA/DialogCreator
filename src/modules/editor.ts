@@ -983,7 +983,6 @@ export const editor: Editor = {
 
                 // Compute group width/height
                 const rects = members.map(m => m.getBoundingClientRect());
-                const canvasRect = dialog.canvas.getBoundingClientRect();
                 const minLeft = Math.min(...rects.map(r => r.left));
                 const minTop = Math.min(...rects.map(r => r.top));
                 const maxRight = Math.max(...rects.map(r => r.right));
@@ -1001,8 +1000,6 @@ export const editor: Editor = {
                     height,
                     elementIds: members.map(m => m.id),
                 };
-                const gcondsSave = child.dataset?.groupConditions || '';
-                if (gcondsSave) groupObj.groupConditions = String(gcondsSave);
                 flattened.push(groupObj);
 
                 // Save children with absolute coordinates and carry groupConditions for runtime
@@ -1018,7 +1015,6 @@ export const editor: Editor = {
                         }
                         obj[key] = value as unknown;
                     }
-                    if (gcondsSave) obj.groupConditions = String(gcondsSave);
 
                     const mLeftAbs = toNumber(m.getAttribute('data-left') as string, 0) + gLeft;
                     const mTopAbs = toNumber(m.getAttribute('data-top') as string, 0) + gTop;
@@ -1079,6 +1075,10 @@ export const editor: Editor = {
         try {
             const obj = typeof data === 'string' ? JSON.parse(data) : data;
             if (!obj || !obj.properties) return;
+
+            // Before replacing content, clear any current selection and hide properties panel
+            // so stale properties from a previously selected element do not linger.
+            editor.deselectAll();
 
             // Clear existing elements
             const keys = Object.keys(dialog.elements);
@@ -1191,9 +1191,6 @@ export const editor: Editor = {
                 groupEl.id = savedId;
                 dialog.elements[savedId] = groupEl;
                 delete dialog.elements[newId];
-                // Apply group conditions
-                const gconds = String(g.groupConditions || '');
-                if (gconds) groupEl.dataset.groupConditions = gconds;
                 // Move group to saved position if provided
                 const gl = g.left; const gt = g.top;
                 if (gl !== undefined || gt !== undefined) {

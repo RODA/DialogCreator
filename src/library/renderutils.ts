@@ -1123,9 +1123,7 @@ export const renderutils: RenderUtils = {
 
     },
 
-    // Propagate an element name change across:
-    // - all elements' dataset.conditions and dataset.groupConditions (word-boundary replace)
-    // - dialog.customJS for ui.on(...) and ui.trigger(...) first argument (identifier or quoted)
+    // Propagate an element name change across customJS for ui.on(...) and ui.trigger(...) first argument (identifier or quoted)
     propagateNameChange: function(oldName: string, newName: string) {
         const old_name = String(oldName || '').trim();
         const new_name = String(newName || '').trim();
@@ -1136,30 +1134,6 @@ export const renderutils: RenderUtils = {
 
         // Helper: escape regex special chars
         const escapeName = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const wordRegExp = new RegExp(`\\b${escapeName(old_name)}\\b`, 'g');
-
-        // Update element conditions across all wrappers (including groups)
-        const items = Object.values(dialog.elements) as HTMLElement[];
-
-        for (const el of items) {
-            if (!el || !el.dataset) {
-                continue;
-            }
-
-            if (typeof el.dataset.conditions === 'string' && el.dataset.conditions.length) {
-                const repl = el.dataset.conditions.replace(wordRegExp, new_name);
-                if (repl !== el.dataset.conditions) {
-                    el.dataset.conditions = repl;
-                }
-            }
-
-            if (typeof el.dataset.groupConditions === 'string' && el.dataset.groupConditions.length) {
-                const replG = el.dataset.groupConditions.replace(wordRegExp, new_name);
-                if (replG !== el.dataset.groupConditions) {
-                    el.dataset.groupConditions = replG;
-                }
-            }
-        }
 
         // Update customJS for common API usages only (ui.on/ui.trigger first arg)
         const src = String(dialog.customJS || '');

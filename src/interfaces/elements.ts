@@ -14,7 +14,6 @@ export type buttonElementType = {
     isEnabled: boolean;
     isVisible: boolean;
     elementIds: string[];
-    conditions: string;
 }
 export type inputElementType = {
     parentId: string;
@@ -29,7 +28,6 @@ export type inputElementType = {
     isEnabled: boolean;
     isVisible: boolean;
     elementIds: string[];
-    conditions: string;
 }
 export type selectElementType = {
     parentId: string;
@@ -46,7 +44,6 @@ export type selectElementType = {
     isEnabled: boolean;
     isVisible: boolean;
     elementIds: string[];
-    conditions: string;
 }
 export type checkboxElementType = {
     parentId: string;
@@ -62,7 +59,6 @@ export type checkboxElementType = {
     isEnabled: boolean;
     isVisible: boolean;
     elementIds: string[];
-    conditions: string;
 }
 export type radioElementType = {
     parentId: string;
@@ -78,7 +74,6 @@ export type radioElementType = {
     isEnabled: boolean;
     isVisible: boolean;
     elementIds: string[];
-    conditions: string;
 }
 export type counterElementType = {
     parentId: string;
@@ -94,7 +89,6 @@ export type counterElementType = {
     isEnabled: boolean;
     isVisible: boolean;
     elementIds: string[];
-    conditions: string;
 }
 export type sliderElementType = {
     parentId: string;
@@ -114,7 +108,6 @@ export type sliderElementType = {
     handleColor: string;
     handlesize: number;
     elementIds: string[];
-    conditions: string;
 }
 export type labelElementType = {
     parentId: string;
@@ -130,7 +123,6 @@ export type labelElementType = {
     isEnabled?: boolean;
     isVisible: boolean;
     elementIds: string[];
-    conditions: string;
 }
 export type separatorElementType = {
     parentId: string;
@@ -146,7 +138,6 @@ export type separatorElementType = {
     isEnabled?: boolean;
     isVisible: boolean;
     elementIds: string[];
-    conditions: string;
 }
 export type containerElementType = {
     parentId: string;
@@ -167,7 +158,6 @@ export type containerElementType = {
     isEnabled: boolean;
     isVisible: boolean;
     elementIds: string[];
-    conditions: string;
 }
 export type groupElementType = {
     parentId: string;
@@ -179,7 +169,6 @@ export type groupElementType = {
     isEnabled: boolean;
     isVisible: boolean;
     elementIds: string[];
-    conditions: string;
 }
 
 

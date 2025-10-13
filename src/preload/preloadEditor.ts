@@ -187,7 +187,7 @@ coms.on('elementSelected', (id) => {
     //     $("#elcontentType" ).trigger("change");
     // }
 
-    // disable update and remove button | force reselection
+    // enable remove button when an element is selected
     (document.getElementById('removeElement') as HTMLButtonElement).disabled = false;
 
     // Enable/disable group/ungroup toolbar buttons
@@ -303,6 +303,8 @@ coms.on('elementSelectedMultiple', (...args: unknown[]) => {
         groupBtn.disabled = !(selectedCount >= 2);
         ungroupBtn.disabled = true;
     }
+    // Enable remove button for multi-selection as well
+    (document.getElementById('removeElement') as HTMLButtonElement).disabled = false;
 });
 
 
@@ -360,7 +362,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    // Add Custom Code button if present
+    // Add Actions button if present
     const codeBtn = document.getElementById('dialog-code') as HTMLButtonElement | null;
     if (codeBtn) {
         codeBtn.disabled = false;
@@ -375,7 +377,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 useContentSize: true,
                 autoHideMenuBar: true,
                 backgroundColor: '#ffffff',
-                title: 'Custom code',
+                title: 'Actions',
                 preload: 'preloadCode.js',
                 html: 'code.html',
                 data: json
@@ -626,35 +628,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
     });
 
-    document.getElementById('conditions')?.addEventListener('click', function () {
-        const info = renderutils.getDialogInfo();
-
-        if (!info.selected) {
-            showError('Could not find the selected element. Please check the HTML!');
-            return;
-        }
-
-        const dataset = info.selected.dataset;
-        const isGroup = (dataset.type === 'Group') || info.selected.classList.contains('element-group');
-        const condText = isGroup ? (dataset.groupConditions || '') : (dataset.conditions || '');
-
-        coms.sendTo(
-            'main',
-            'secondWindow',
-            {
-                width: 640,
-                height: 310,
-                backgroundColor: '#fff',
-                title: 'Conditions for element: ' + (dataset.nameid || dataset.type || ''),
-                preload: 'preloadConditions.js',
-                html: 'conditions.html',
-                name: dataset.nameid || dataset.type || '',
-                conditions: condText,
-                elements: info.elements,
-                selected: info.selected.id // the id of the selected element
-            }
-        );
-    });
+    // Conditions window removed; no-op
 
     coms.on("propertiesFromDB", (...args: unknown[]) => {
         // TODO: properties do not return from the DB...
@@ -682,27 +656,16 @@ window.addEventListener("DOMContentLoaded", async () => {
     });
 
 
-    coms.on('setElementConditions', (...args: unknown[]) => {
-        const targetId = String(args[0] || '');
-        const text = String(args[1] || '');
-        const element = document.getElementById(targetId) as HTMLElement | null;
-        if (!element) return;
-
-        const isGroup = element.classList.contains('element-group') || String(element.dataset?.type || '') === 'Group';
-        if (isGroup) {
-            // Store separately so it can be applied at runtime to all members, without overwriting per-element rules
-            element.dataset.groupConditions = text;
-        } else {
-            element.dataset.conditions = text;
-        }
-    });
+    // Removed: setElementConditions handler (Conditions feature eliminated)
 
     // When element gets deselected from editor logic
     coms.on('elementDeselected', () => {
         elementSelected = false;
         // Clear stored selection id to avoid updates after deselect
         const propsList = document.getElementById('propertiesList') as HTMLDivElement | null;
-        if (propsList && propsList.dataset) propsList.dataset.currentElementId = '';
+        if (propsList && propsList.dataset) {
+            propsList.dataset.currentElementId = '';
+        }
         (document.getElementById('removeElement') as HTMLButtonElement).disabled = true;
         (document.getElementById('bringToFront') as HTMLButtonElement).disabled = true;
         (document.getElementById('sendToBack') as HTMLButtonElement).disabled = true;
@@ -712,6 +675,38 @@ window.addEventListener("DOMContentLoaded", async () => {
         const ungroupBtn = document.getElementById('ungroupElements') as HTMLButtonElement | null;
         if (groupBtn) groupBtn.disabled = true;
         if (ungroupBtn) ungroupBtn.disabled = true;
+    });
+
+    // Defensive: if properties panel references a non-existent element, hide/reset it.
+    const clearStalePropertiesPanel = () => {
+        const propsList = document.getElementById('propertiesList') as HTMLDivElement | null;
+        const curr = propsList?.dataset.currentElementId || '';
+        if (curr && !document.getElementById(curr)) {
+            // Element no longer exists — clear panel and disable controls
+            (document.getElementById('removeElement') as HTMLButtonElement).disabled = true;
+            (document.getElementById('bringToFront') as HTMLButtonElement).disabled = true;
+            (document.getElementById('sendToBack') as HTMLButtonElement).disabled = true;
+            (document.getElementById('bringForward') as HTMLButtonElement).disabled = true;
+            (document.getElementById('sendBackward') as HTMLButtonElement).disabled = true;
+            propsList!.dataset.currentElementId = '';
+            propsList!.classList.add('hidden');
+            document.querySelectorAll('#propertiesList .element-property').forEach(item => {
+                item.classList.add('hidden-element');
+            });
+            document.querySelectorAll('#propertiesList [id^="el"]').forEach(item => {
+                (item as HTMLInputElement).value = '';
+            });
+            elementSelected = false;
+        }
+    };
+
+    // Run the guard on load events that change the whole dialog
+    ipcRenderer.on('load-dialog-json', () => {
+        // Give the renderer a tick to rebuild, then validate
+        setTimeout(clearStalePropertiesPanel, 0);
+    });
+    ipcRenderer.on('newDialogClear', () => {
+        setTimeout(clearStalePropertiesPanel, 0);
     });
 });
 

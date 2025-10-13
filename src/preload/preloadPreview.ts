@@ -1,7 +1,6 @@
 import { coms } from "../modules/coms";
 import { utils } from "../library/utils";
 import { renderutils } from "../library/renderutils";
-import { conditions as cond } from "../modules/conditions";
 import { AnyElement, StringNumber } from "../interfaces/elements";
 import { PreviewDialog, PreviewScriptExports, PreviewUI, PreviewUIEnv } from "../interfaces/preview";
 
@@ -403,401 +402,67 @@ function renderPreview(dialog: PreviewDialog) {
         }
     }
 
-    // === Conditions engine (preview) ===
-    try {
-        const getByName = (name: string): HTMLElement | null => {
-            return created.find(el => (el.dataset?.nameid || el.id) === name) || null;
-        };
-
-        const getProp = (name: string, propOrNumber: string): unknown => {
-            const el = getByName(name);
-            if (!el) {
-                return false;
-            }
-
-            const type = String(el.dataset?.type || '').toLowerCase();
-            const token = String(propOrNumber).toLowerCase();
-
-            if (token === 'checked') {
-                return utils.isTrue(el.dataset?.isChecked);
-            }
-
-            if (token === 'selected') {
-                return utils.isTrue(el.dataset?.isSelected);
-            }
-
-            if (token === 'visible') {
-                return !el.style.display || el.style.display !== 'none';
-            }
-
-            if (token === 'enabled') {
-                return !el.classList.contains('disabled-div');
-            }
-
-            if (utils.possibleNumeric(propOrNumber)) {
-                switch (type) {
-                    case 'slider': {
-                        const pos = Number(el.dataset?.handlepos ?? 50);
-                        return Math.max(0, Math.min(100, pos)) / 100;
-                    }
-                    case 'counter': {
-                        const disp = el.querySelector('.counter-value') as HTMLDivElement | null;
-                        const n = Number(disp?.textContent ?? el.dataset?.startval ?? 0);
-                        return Number.isFinite(n) ? n : 0;
-                    }
-                    case 'input': {
-                        return Number(el.dataset?.value ?? (el.textContent || '0'));
-                    }
-                    case 'select': {
-                        return Number(el.dataset?.value ?? 0);
-                    }
-                    default:
-                        return 0;
+    // Conditions window and engine removed: interactions now only update datasets and fire change events.
+    // Hook changes on interactive elements to fire change notifications for custom JS
+    created.forEach(el => {
+        const type = String(el.dataset?.type || '').toLowerCase();
+        if (type === 'checkbox') {
+            const custom = el.querySelector('.custom-checkbox') as HTMLElement | null;
+            custom?.addEventListener('click', () => {
+                const now = custom?.getAttribute('aria-checked') === 'true';
+                el.dataset.isChecked = String(now);
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+        } else if (type === 'radio') {
+            const custom = el.querySelector('.custom-radio') as HTMLElement | null;
+            custom?.addEventListener('click', () => {
+                // Update this radio and group mates
+                el.dataset.isSelected = 'true';
+                const group = custom?.getAttribute('group') || '';
+                if (group) {
+                    document.querySelectorAll(`.custom-radio[group="${group}"]`).forEach((r) => {
+                        const host = (r as HTMLElement).closest('.element-div') as HTMLElement | null;
+                        if (host && host !== el) {
+                            host.dataset.isSelected = 'false';
+                        }
+                    });
                 }
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+        } else if (type === 'select') {
+            if (el instanceof HTMLSelectElement) {
+                el.addEventListener('change', () => {
+                    el.dataset.value = String(el.value || '');
+                });
+            } else {
+                const sel = el.querySelector('select') as HTMLSelectElement | null;
+                sel?.addEventListener('change', () => {
+                    el.dataset.value = String(sel.value || '');
+                });
             }
-
-            return false;
-        };
-
-        const evalAtomic = (arr: any[]): boolean => {
-            const [name, op, right] = arr as [string, string, string];
-            const rightLower = String(right).toLowerCase();
-
-            if (
-                rightLower === 'checked' ||
-                rightLower === 'selected' ||
-                rightLower === 'visible' ||
-                rightLower === 'enabled'
-            ) {
-                const value = !!getProp(name, rightLower);
-
-                switch (op) {
-                    case '==': return value === true;
-                    case '!=': return value === false;
-                    default: return false;
-                }
-            }
-
-            // numeric compare
-            const leftVal = Number(getProp(name, 'value'));
-            const rightVal = Number(right);
-
-            if (Number.isNaN(leftVal) || Number.isNaN(rightVal)) {
-                return false;
-            }
-
-            switch (op) {
-                case '==': return leftVal === rightVal;
-                case '!=': return leftVal !== rightVal;
-                case '>=': return leftVal >= rightVal;
-                case '<=': return leftVal <= rightVal;
-                default: return false;
-            }
-        };
-
-        const evalExpr = (expr: any): boolean => {
-            if (!Array.isArray(expr)) {
-                return !!expr;
-            }
-
-            // Simple atomic
-            if (expr.length === 3 && typeof expr[0] === 'string') {
-                return evalAtomic(expr);
-            }
-
-            // Complex [left, '&'|'|', right, ...]
-            let acc = evalExpr(expr[0]);
-            for (let i = 1; i < expr.length; i += 2) {
-                const op = expr[i];
-                const rhs = evalExpr(expr[i + 1]);
-                if (op === '&') {
-                    acc = acc && rhs;
-                } else if (op === '|') {
-                    acc = acc || rhs;
-                }
-            }
-
-            return acc;
-        };
-
-        type Actions = Record<string, any[]>; // action -> list of expressions
-        const parsedByTarget = new Map<HTMLElement, Actions>();
-
-        const mergeParsed = (acc: Actions, text: string | undefined | null) => {
-            const t = String(text || '').trim();
-            if (!t) return;
-            const parsed = cond.parseConditions(t) as any;
-            if (typeof parsed === 'string') return;
-            const result = parsed.result as Record<string, any>;
-            for (const [action, expr] of Object.entries(result)) {
-                if (!acc[action]) acc[action] = [];
-                acc[action].push(expr);
-            }
-        };
-
-        const parseFor = (target: HTMLElement): Actions | null => {
-            const acc: Actions = {};
-            mergeParsed(acc, target.dataset?.conditions);
-            mergeParsed(acc, target.dataset?.groupConditions);
-            // If nothing parsed, return null
-            return Object.keys(acc).length ? acc : null;
-        };
-
-        const setEnabledState = (el: HTMLElement, enabled: boolean) => {
-            // Update visual state via shared util
-            renderutils.updateElement(
-                el,
-                { isEnabled: enabled ? 'true' : 'false' } as StringNumber
-            );
-
-            // Native inputs/selects
-            if (el instanceof HTMLInputElement || el instanceof HTMLSelectElement) {
-                (el as HTMLInputElement | HTMLSelectElement).disabled = !enabled;
-                (el.style as CSSStyleDeclaration).pointerEvents = enabled ? '' : 'none';
-                return;
-            }
-
-            // Inner controls
+        } else if (type === 'input') {
             const input = el.querySelector('input') as HTMLInputElement | null;
-            const select = el.querySelector('select') as HTMLSelectElement | null;
-
-            if (input) {
-                input.disabled = !enabled;
-                input.style.pointerEvents = enabled ? '' : 'none';
-            }
-
-            if (select) {
-                select.disabled = !enabled;
-                select.style.pointerEvents = enabled ? '' : 'none';
-            }
-
-            // Custom checkbox/radio
-            const customCheckbox = el.querySelector('.custom-checkbox') as HTMLElement | null;
-            const customRadio = el.querySelector('.custom-radio') as HTMLElement | null;
-
-            if (customCheckbox) {
-                if (!enabled) {
-                    customCheckbox.setAttribute('aria-disabled', 'true');
-                } else {
-                    customCheckbox.removeAttribute('aria-disabled');
-                }
-
-                customCheckbox.style.pointerEvents = enabled ? '' : 'none';
-            }
-
-            if (customRadio) {
-                if (!enabled) {
-                    customRadio.setAttribute('aria-disabled', 'true');
-                } else {
-                    customRadio.removeAttribute('aria-disabled');
-                }
-
-                customRadio.style.pointerEvents = enabled ? '' : 'none';
-            }
-
-            // Fallback pointer events for other blocks
-            el.style.pointerEvents = enabled ? '' : 'none';
-        };
-
-        const applyAction = (target: HTMLElement, action: string, on: boolean) => {
-            switch (action) {
-                case 'check':
-                    if (on && target.dataset.type === 'Checkbox') {
-                        renderutils.updateElement(
-                            target,
-                            { isChecked: 'true' } as StringNumber
-                        );
-                    }
-                    break;
-
-                case 'uncheck':
-                    if (on && target.dataset.type === 'Checkbox') {
-                        renderutils.updateElement(
-                            target,
-                            { isChecked: 'false' } as StringNumber
-                        );
-                    }
-                    break;
-
-                case 'select':
-                    if (on && target.dataset.type === 'Radio') {
-                        renderutils.updateElement(
-                            target,
-                            { isSelected: 'true' } as StringNumber
-                        );
-                    }
-                    break;
-
-                case 'unselect':
-                    if (on && target.dataset.type === 'Radio') {
-                        renderutils.updateElement(
-                            target,
-                            { isSelected: 'false' } as StringNumber
-                        );
-                    }
-                    break;
-
-                default:
-                    // Parameterized actions
-                    if (on && action.toLowerCase().startsWith('setvalue=')) {
-                        const num = Number(action.split('=')[1]);
-                        if (
-                            Number.isFinite(num) &&
-                            String(target.dataset.type || '').toLowerCase() === 'counter'
-                        ) {
-                            const min = Number(target.dataset.startval ?? 0);
-                            const max = Number(target.dataset.maxval ?? min);
-                            const v = Math.max(min, Math.min(max, num));
-                            const display = target.querySelector('.counter-value') as HTMLDivElement | null;
-                            if (display) {
-                                display.textContent = String(v);
-                            }
-                        }
-                    }
-                    break;
-            }
-        };
-
-        const evaluateAll = () => {
-            for (const target of created) {
-                const parsed = parsedByTarget.get(target) || parseFor(target);
-                if (!parsed) continue;
-                parsedByTarget.set(target, parsed);
-
-                // Resolve visibility and enabled state deterministically
-                let shouldShow: boolean | null = null;
-                let shouldEnable: boolean | null = null;
-                for (const [action, list] of Object.entries(parsed)) {
-                    const exprs = Array.isArray(list) ? list : [list];
-                    for (const expr of exprs) {
-                        const on = evalExpr(expr);
-                        switch (action) {
-                            case 'show':
-                                if (on) shouldShow = true;
-                                break;
-
-                            case 'hide':
-                                if (on) shouldShow = false;
-                                break;
-
-                            case 'enable':
-                                if (on) shouldEnable = true;
-                                break;
-
-                            case 'disable':
-                                if (on) shouldEnable = false;
-                                break;
-
-                            default:
-                                applyAction(target, action, on);
-                                break;
-                        }
-                    }
-                }
-
-                // Apply visibility (hide overrides show)
-                if (!utils.isNull(shouldShow)) {
-                    if (shouldShow) {
-                        target.dataset.isVisible = 'true';
-                        target.style.display = '';
-                        target.classList.remove('design-hidden');
-                    } else {
-                        target.dataset.isVisible = 'false';
-                        target.style.display = 'none';
-                    }
-                }
-
-                // Apply enabled state (disable overrides enable)
-                if (!utils.isNull(shouldEnable)) {
-                    setEnabledState(target, !!shouldEnable);
-                }
-            }
-        };
-
-
-        // Hook changes on interactive elements to re-evaluate
-        created.forEach(el => {
-            const type = String(el.dataset?.type || '').toLowerCase();
-            if (type === 'checkbox') {
-                const custom = el.querySelector('.custom-checkbox') as HTMLElement | null;
-                custom?.addEventListener('click', () => {
-                    const now = custom?.getAttribute('aria-checked') === 'true';
-                    el.dataset.isChecked = String(now);
-                    evaluateAll();
-                    // Also emit a 'change' like native checkbox
-                    el.dispatchEvent(new Event('change', { bubbles: true }));
-                });
-                // 'change' is notification-only; no extra evaluation here
-            } else if (type === 'radio') {
-                const custom = el.querySelector('.custom-radio') as HTMLElement | null;
-                custom?.addEventListener('click', () => {
-                    // Update this radio and group mates
-                    el.dataset.isSelected = 'true';
-                    const group = custom?.getAttribute('group') || '';
-                    if (group) {
-                        document.querySelectorAll(`.custom-radio[group="${group}"]`).forEach((r) => {
-                            const host = (r as HTMLElement).closest('.element-div') as HTMLElement | null;
-                            if (host && host !== el) {
-                                host.dataset.isSelected = 'false';
-                            }
-                        });
-                    }
-                    evaluateAll();
-                    // Also emit a 'change' like native radio
-                    el.dispatchEvent(new Event('change', { bubbles: true }));
-                });
-                // 'change' is notification-only; no extra evaluation here
-            } else if (type === 'select') {
-                if (el instanceof HTMLSelectElement) {
-                    el.addEventListener('change', () => {
-                        el.dataset.value = String(el.value || '');
-                        evaluateAll();
-                    });
-                } else {
-                    const sel = el.querySelector('select') as HTMLSelectElement | null;
-                    sel?.addEventListener('change', () => {
-                        el.dataset.value = String(sel.value || '');
-                        evaluateAll();
-                    });
-                }
-            } else if (type === 'input') {
-                const input = el.querySelector('input') as HTMLInputElement | null;
-                input?.addEventListener('change', () => {
-                    el.dataset.value = String(input.value || '');
-                    evaluateAll();
-                });
-            } else if (type === 'counter') {
-                const display = document.querySelector(`#counter-value-${el.id}`) as HTMLDivElement | null;
-                const inc = document.querySelector(`#counter-increase-${el.id}`) as HTMLDivElement | null;
-                const dec = document.querySelector(`#counter-decrease-${el.id}`) as HTMLDivElement | null;
-                const sync = () => {
-                    el.dataset.startval = String(Number(display?.textContent || el.dataset.startval || 0));
-                    // First let conditions react to the new value
-                    evaluateAll();
-                    // Then notify user handlers; runs after conditions so custom JS can override
-                    el.dispatchEvent(new Event('change', { bubbles: true }));
-                };
-                inc?.addEventListener('click', sync);
-                dec?.addEventListener('click', sync);
-            } else if (type === 'slider') {
-                const handle = el.querySelector('.slider-handle') as HTMLDivElement | null;
-                const onUp = () => {
-                    el.dataset.handlepos = String(el.dataset.handlepos || '50');
-                    evaluateAll();
-                };
-                handle?.addEventListener('mouseup', onUp);
-            }
-        });
-
-        // Initial evaluation
-        evaluateAll();
-    } catch (e) {
-        coms.sendTo(
-            'editorWindow',
-            'consolog',
-            `Conditions evaluation failed: ${String(utils.isRecord(e) && e.message ? e.message : e)}`
-        );
-    }
+            input?.addEventListener('change', () => {
+                el.dataset.value = String(input.value || '');
+            });
+        } else if (type === 'counter') {
+            const display = document.querySelector(`#counter-value-${el.id}`) as HTMLDivElement | null;
+            const inc = document.querySelector(`#counter-increase-${el.id}`) as HTMLDivElement | null;
+            const dec = document.querySelector(`#counter-decrease-${el.id}`) as HTMLDivElement | null;
+            const sync = () => {
+                el.dataset.startval = String(Number(display?.textContent || el.dataset.startval || 0));
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+            };
+            inc?.addEventListener('click', sync);
+            dec?.addEventListener('click', sync);
+        } else if (type === 'slider') {
+            const handle = el.querySelector('.slider-handle') as HTMLDivElement | null;
+            const onUp = () => {
+                el.dataset.handlepos = String(el.dataset.handlepos || '50');
+            };
+            handle?.addEventListener('mouseup', onUp);
+        }
+    });
 
     document.addEventListener('keydown', (ev: KeyboardEvent) => {
         const key = ev.key || ev.code;

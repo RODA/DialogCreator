@@ -142,14 +142,6 @@ function createSecondWindow(args: { [key: string]: any }) {
             case 'defaults.html':
                 secondWindow.webContents.send("addAvailableElementsTo", "defaults");
                 break;
-            case 'conditions.html':
-                secondWindow.webContents.send("populateConditions", {
-                    name: args.name,
-                    conditions: args.conditions,
-                    elements: args.elements,
-                    selected: args.selected
-                });
-                break;
             case 'preview.html':
                 secondWindow.webContents.send("renderPreview", args.data);
                 break;
@@ -205,12 +197,6 @@ function setupIPC() {
                         Math.max(args[1] + 320, 800) // height
                     );
                     break;
-                case 'resize-conditionsWindow':
-                    {
-                        const size = secondWindow.getSize();
-                        secondWindow.setSize(size[0], size[1] + 33);
-                    }
-                    break;
                 case 'getProperties':
                     {
                         const properties = await database.getProperties(args[0] as keyof DBElements);
@@ -253,7 +239,6 @@ function setupIPC() {
                     }
                     break;
                 case 'close-secondWindow':
-                case 'close-conditionsWindow':
                 case 'close-codeWindow':
                 case 'close-previewWindow':
                     secondWindow.close();
