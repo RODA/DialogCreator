@@ -31,9 +31,8 @@ The editor window is divided into four main areas:
    - Drag a selected element to reposition it. Movement is constrained within the canvas with a small padding.
 
 4. Properties panel (right)
-   - Displays properties for the selected element.
-   - Only properties relevant to the selected element type are shown and enabled.
-   - Includes an Actions section with a Conditions button and a Remove button.
+  - Displays properties for the selected element.
+  - Only properties relevant to the selected element type are shown and enabled.
 
 ## Keyboard shortcuts
 
@@ -53,7 +52,6 @@ Movement (nudge):
 
 Global:
 - Cmd/Ctrl + A: Select all elements on the canvas (Editor window)
-  - In the Conditions window, Cmd/Ctrl + A selects only the condition rules textarea.
 
 Notes:
 - Shortcuts only apply when at least one element is selected and focus is not inside a text field (unless stated otherwise).
@@ -141,14 +139,7 @@ onClick(checkbox1, () => {
 });
 ```
 
-Note that this type of logic can also be done with Conditions (no code needed), for example the Conditions for the element label1 could be:
 
-```
-show if checkbox1 == checked;
-hide if checkbox1 != checked;
-```
-
-Whenever the Conditions and the Custom JS code conflict, the Custom JS code takes precedence.
 
 3) Show a select value in a label
 ```javascript
@@ -167,16 +158,16 @@ Events:
   - Text inputs can use `'change'` (on blur) or `'input'` (as you type).
   - Selects use `'change'`.
   - Tip: Prefer the helpers `onClick`, `onChange`, `onInput` for readability.
-  - Note: The generic `on(name, event, handler)` is available as `ui.on(...)` (it's not part of the shorthand prelude).
+  <!-- - Note: The generic `on(name, event, handler)` is available as `ui.on(...)` (it's not part of the shorthand prelude). -->
 
 Programmatic events:
   - User events can be indicated, for instance with `trigger(name, 'change')`. Only the following events are supported by the API: `click`, `change`, `input`. Using other event names throws a SyntaxError and shows the error overlay in Preview.
-    - `click` on a Checkbox/Radio behaves like a real click: it toggles the control and re-evaluates conditions.
+    - `click` on a Checkbox/Radio behaves like a real click: it toggles the control.
     - `change` dispatches the event to inputs/selects without modifying the current value by itself.
 
 
 Initialization
-- Your top-level custom code runs after the Preview is ready (elements rendered, listeners attached, and Conditions evaluated). You can directly register handlers and set initial state without extra lifecycle wrappers.
+- Your top-level custom code runs after the Preview is ready (elements rendered and listeners attached). You can directly register handlers and set initial state without extra lifecycle wrappers.
 - Event helpers:
   - `onClick(name, fn)` — same as `on(name, 'click', fn)`
   - `onChange(name, fn)` — same as `on(name, 'change', fn)`
@@ -254,7 +245,7 @@ Note: You can use all helpers without the `ui.` prefix (recommended for brevity)
   - Dispatch a synthetic event on the element without directly changing its state.
   - Supported events: `'click'`, `'change'`, `'input'`.
   - Notes:
-    - For Checkbox/Radio, triggering `'click'` behaves like a user click (the control toggles via its built-in logic and conditions are re-evaluated).
+    - For Checkbox/Radio, triggering `'click'` behaves like a user click (the control toggles via its built-in logic).
     - Triggering `'change'` on inputs/selects notifies listeners but does not change the current value by itself.
 
 - `setSelected(name, value)`
@@ -335,7 +326,6 @@ deleteValue(variablesContainer, 'Sepal.Width');
 ```
 
 Notes
-- Conditions and Custom JS can both control visibility/enabled state. If they conflict at runtime, the last action wins; in practice, your Custom JS will take precedence right after it runs.
 - Programmatic state changes (e.g., `check`, `setValue`) do not automatically dispatch events. Use `trigger` when you need the dialog to behave as if the user had interacted with the element.
 - Selection helpers (`setSelected`) also do not auto-dispatch; pair them with `trigger(name, 'change')` if you rely on change triggers.
 
@@ -371,9 +361,7 @@ Notes
 ### Ungroup
 - Select the group container and click Ungroup in the toolbar or press Cmd/Ctrl + Shift + G to return the elements to the top level. The former members remain selected.
 
-### Conditions (per element)
-- With an element selected, click Conditions in the Actions section to open the conditions window.
-- Use the conditions window to define dynamic behaviors for the selected element. (Details depend on the project's conditions UI.)
+
 
 ## Dialog-level properties
 
