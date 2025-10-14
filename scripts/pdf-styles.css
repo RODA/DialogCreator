@@ -26,19 +26,54 @@ pre, code {
 }
 
 pre {
-    background: #f8f8f8;
+    /* background: #f8f8f8; */
     border: 1px solid #eee;
-    padding: 8px 10px;
+    /* padding: 8px 10px; */
     border-radius: 4px;
     overflow-x: auto;
-    /* Slightly smaller code blocks */
-    font-size: 0.85em;
-    line-height: 1.4;
+    font-size: 0.9em;
+    line-height: 1.5;
 }
 
 /* Slightly smaller inline code too */
 code {
     font-size: 0.9em;
+    color: #4547ae;
+    font-weight: normal !important;
+}
+
+/* Highlight Dialog Creator API helpers rendered by highlight.js */
+pre code.hljs span.hljs-title.function_ {
+    color: #ae4545 !important;
+    font-weight: normal !important;
+}
+
+/* Built-in/global functions keep the cooler tone */
+pre code.hljs span.hljs-title.function_.hljs-built_in {
+    color: #6f42c1 !important;
+    font-weight: normal !important;
+}
+
+/* Highlight arguments / element names within function calls */
+pre code.hljs span.hljs-params {
+    color: #22863a !important;
+    font-weight: normal !important;
+}
+
+/* Keep string literals inside params green */
+pre code.hljs span.hljs-params span.hljs-string {
+    color: #22863a !important;
+    font-weight: normal !important;
+}
+
+.hljs-keyword { color: #005cc5; font-weight: 600; }
+.hljs-string  { color: #22863a; }
+.hljs-number  { color: #e36209; }
+.hljs-comment { color: #6a737d; font-style: italic; }
+
+pre code.hljs span.api-param {
+    color: #22863a !important;
+    font-weight: normal !important;
 }
 
 img {

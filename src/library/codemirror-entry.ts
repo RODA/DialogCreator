@@ -14,10 +14,11 @@ import {
     indentLess
 } from '@codemirror/commands';
 import { javascript } from '@codemirror/lang-javascript';
-import { bracketMatching, indentUnit } from '@codemirror/language';
+import { bracketMatching, indentUnit, syntaxHighlighting, HighlightStyle } from '@codemirror/language';
 import { linter, lintGutter, Diagnostic } from '@codemirror/lint';
 import * as acorn from 'acorn';
 import { API_NAMES, EVENT_NAMES, ELEMENT_FIRST_ARG_CALLS } from './api';
+import { tags } from '@lezer/highlight';
 
 type CMInstance = {
     view: EditorView;
@@ -42,6 +43,18 @@ type DialogMeta = {
 };
 
 let currentDialogMeta: DialogMeta | null = null;
+
+const dialogHighlightStyle = HighlightStyle.define([
+    { tag: tags.keyword, color: '#005cc5' },
+    { tag: [tags.string, tags.special(tags.string)], color: '#22863a' },
+    { tag: tags.number, color: '#e36209' },
+    { tag: tags.bool, color: '#e36209' },
+    { tag: tags.comment, color: '#6a737d', fontStyle: 'italic' },
+    { tag: [tags.function(tags.variableName), tags.function(tags.propertyName)], color: '#ae4545' },
+    { tag: tags.variableName, color: '#1a7f9d' },
+    { tag: tags.operator, color: '#005cc5' },
+    { tag: tags.punctuation, color: '#6a737d' }
+]);
 
 function setDialogMeta(meta: DialogMeta | null | undefined) {
     if (meta && Array.isArray(meta.elements)) {
@@ -329,6 +342,7 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
             ]),
             bracketMatching(),
             uiApiLinter,
+            syntaxHighlighting(dialogHighlightStyle),
             javascript(),
             EditorView.updateListener.of((v: any) => {
                 if (onChange && v.docChanged) {
@@ -351,6 +365,13 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
                     fontSize: '12px',
                     lineHeight: '1.5',
                     flex: '1 1 auto'
+                },
+                '.cm-content': {
+                    color: '#222'
+                },
+                '.cm-gutters': {
+                    backgroundColor: '#f7f7f7',
+                    color: '#6a737d'
                 },
                 // Lint tooltip styling: Arial and slightly larger font size
                 '.cm-tooltip': {
