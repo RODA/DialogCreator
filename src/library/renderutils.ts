@@ -361,7 +361,6 @@ export const renderutils: RenderUtils = {
 
             element.className = 'custom-select';
             element.style.width = data.width + 'px';
-            element.style.padding = '3px';
             // Set arrow color via inline SVG data URI if provided
             const color = data.arrowColor || '#000000';
             const svg = encodeURIComponent(`
