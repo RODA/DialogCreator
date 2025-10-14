@@ -57,11 +57,11 @@ export interface PreviewUI {
 
     /** Show / hide */
     show(name: string, on?: boolean): void;
-    hide(name: string): void;
+    hide(name: string, on?: boolean): void;
 
     /** Enable / disable */
     enable(name: string, on?: boolean): void;
-    disable(name: string): void;
+    disable(name: string, on?: boolean): void;
 
     /** Register an event handler on the wrapper */
     on(name: string, event: string, handler: (ev: Event, el: HTMLElement) => void): void;

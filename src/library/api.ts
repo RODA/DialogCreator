@@ -404,8 +404,8 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             }
         },
 
-        hide: (name: string) => {
-            api.show(name, false);
+        hide: (name: string, on: boolean = true) => {
+            api.show(name, !on);
         },
 
         enable: (name: string, on: boolean = true) => {
@@ -415,8 +415,8 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             updateElement(el, { isEnabled: on ? 'true' : 'false' } as StringNumber);
         },
 
-        disable: (name: string) => {
-            api.enable(name, false);
+        disable: (name: string, on: boolean = true) => {
+            api.enable(name, !on);
         },
 
         on: (name: string, event: string, handler: (ev: Event, el: HTMLElement) => void) => {
