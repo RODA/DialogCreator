@@ -76,6 +76,7 @@ INSERT INTO elements (element, property, value) VALUES
 ('counterElement', 'top', '15'),
 ('counterElement', 'space', '4'),
 ('counterElement', 'color', '#5b9c5b'),
+('counterElement', 'minval', '1'),
 ('counterElement', 'startval', '1'),
 ('counterElement', 'maxval', '5'),
 ('counterElement', 'isEnabled', 'true'),

@@ -330,6 +330,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     ]);
 
     renderutils.setSignedIntegers([
+        "minval",
         "startval",
         "maxval"
     ]);

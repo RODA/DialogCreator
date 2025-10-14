@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderutils.enhanceButtons(document);
 
     renderutils.setSignedIntegers([
+        "minval",
         "startval",
         "maxval"
     ]);

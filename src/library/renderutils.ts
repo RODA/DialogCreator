@@ -448,7 +448,14 @@ export const renderutils: RenderUtils = {
             const display = document.createElement("div");
             display.className = "counter-value";
             display.id = "counter-value-" + uuid;
-            display.textContent = String(data.startval);
+            const rawMin = Number(data.minval ?? data.startval ?? 0);
+            const rawStart = Number(data.startval ?? rawMin);
+            const rawMax = Number(data.maxval ?? rawStart);
+            const min = Number.isFinite(rawMin) ? rawMin : 0;
+            const max = Number.isFinite(rawMax) ? rawMax : Math.max(min, Number.isFinite(rawStart) ? rawStart : min);
+            const start = Number.isFinite(rawStart) ? rawStart : min;
+            const initial = Math.min(Math.max(start, min), max);
+            display.textContent = String(initial);
 
             display.style.padding = '0px ' + data.space + 'px';
             display.dataset.nameid = nameid;
@@ -467,6 +474,10 @@ export const renderutils: RenderUtils = {
             element.appendChild(decrease);
             element.appendChild(display);
             element.appendChild(increase);
+
+            element.dataset.minval = String(min);
+            element.dataset.maxval = String(max);
+            element.dataset.startval = String(initial);
         } else if (data.type == "Slider") {
 
             element.className = 'separator';
@@ -607,6 +618,7 @@ export const renderutils: RenderUtils = {
         const separator = dataset.type === 'Separator';
         const button = dataset.type === 'Button';
         const label = dataset.type === 'Label';
+        const group = dataset.type === 'Group';
 
         let elementWidth = element.getBoundingClientRect().width;
         const elementHeight = element.getBoundingClientRect().height;
@@ -626,7 +638,7 @@ export const renderutils: RenderUtils = {
 
             const customCheckbox = document.querySelector(`#checkbox-${element.id}`) as HTMLDivElement;
             const customRadio = document.querySelector(`#radio-${element.id}`) as HTMLDivElement;
-            const countervalue = document.querySelector(`#counter-value-${element.id}`) as HTMLDivElement;
+            const countervalue = document.querySelector(`#counter-value-${element.id}`) as HTMLDivElement | null;
             const handle = document.querySelector(`#slider-handle-${element.id}`) as HTMLDivElement;
             const elwidth = document.getElementById('elwidth') as HTMLInputElement;
             const elheight = document.getElementById('elheight') as HTMLInputElement;
@@ -938,26 +950,66 @@ export const renderutils: RenderUtils = {
                         const space = document.getElementById('elspace') as HTMLInputElement;
                         space.value = value;
                     }
-                    countervalue.style.padding = '0px ' + value + 'px';
+                    if (countervalue) {
+                        countervalue.style.padding = '0px ' + value + 'px';
+                    }
                     break;
+                case 'minval': {
+                    const startCandidate = Number(props.startval ?? dataset.startval);
+                    const maxCandidate = Number(props.maxval ?? dataset.maxval);
+                    const candidate = Number(value);
 
-                case 'startval':
-                    if (Number(value) < Number(dataset.maxval)) {
-                        countervalue.textContent = value;
+                    if (Number.isFinite(candidate) && candidate <= startCandidate && candidate < maxCandidate) {
+                        value = String(candidate);
+                        if (countervalue && Number(countervalue.textContent) < candidate) {
+                            countervalue.textContent = String(candidate);
+                        }
+                    } else {
+                        value = dataset.minval ?? dataset.startval;
+                        const minval = document.getElementById('elminval') as HTMLInputElement | null;
+                        if (minval) {
+                            minval.value = value;
+                        }
+                    }
+                    break;
+                }
+
+                case 'startval': {
+                    const minCandidate = Number(props.minval ?? dataset.minval ?? value);
+                    const maxCandidate = Number(props.maxval ?? dataset.maxval);
+                    const candidate = Number(value);
+
+                    if (Number.isFinite(candidate) && candidate >= minCandidate && candidate <= maxCandidate) {
+                        value = String(candidate);
+                        if (countervalue) {
+                            countervalue.textContent = String(candidate);
+                        }
                     } else {
                         value = dataset.startval;
-                        const startval = document.getElementById('elstartval') as HTMLInputElement;
-                        startval.value = value;
+                        const startval = document.getElementById('elstartval') as HTMLInputElement | null;
+                        if (startval) {
+                            startval.value = value;
+                        }
                     }
                     break;
+                }
 
-                case 'maxval':
-                    if (Number(value) <= Number(dataset.startval)) {
+                case 'maxval': {
+                    const minCandidate = Number(props.minval ?? dataset.minval ?? dataset.startval);
+                    const startCandidate = Number(props.startval ?? dataset.startval);
+                    const candidate = Number(value);
+
+                    if (Number.isFinite(candidate) && candidate >= startCandidate && candidate > minCandidate) {
+                        value = String(candidate);
+                    } else {
                         value = dataset.maxval;
-                        const maxval = document.getElementById('elmaxval') as HTMLInputElement;
-                        maxval.value = value;
+                        const maxval = document.getElementById('elmaxval') as HTMLInputElement | null;
+                        if (maxval) {
+                            maxval.value = value;
+                        }
                     }
                     break;
+                }
 
                 case 'contentType':
                     if (container) {
@@ -1049,11 +1101,78 @@ export const renderutils: RenderUtils = {
                     break;
 
                 case 'isEnabled':
-                    if (utils.isTrue(value)) {
+                    {const enabled = utils.isTrue(value);
+                    if (enabled) {
                         element.classList.remove('disabled-div');
+                        if (renderutils.previewWindow()) {
+                            element.style.pointerEvents = '';
+                        }
                     } else {
                         element.classList.add('disabled-div');
+                        if (renderutils.previewWindow()) {
+                            element.style.pointerEvents = 'none';
+                        }
                     }
+
+                    if (input) {
+                        const inputEl = (inner instanceof HTMLInputElement ? inner : element.querySelector('input'));
+                        const actualInput = (element instanceof HTMLInputElement ? element : inputEl) as HTMLInputElement | null;
+                        if (actualInput) {
+                            actualInput.disabled = !enabled;
+                        }
+                    }
+
+                    if (select) {
+                        const selectEl = (inner instanceof HTMLSelectElement ? inner : element.querySelector('select'));
+                        const actualSelect = (element instanceof HTMLSelectElement ? element : selectEl) as HTMLSelectElement | null;
+                        if (actualSelect) {
+                            actualSelect.disabled = !enabled;
+                        }
+                    }
+
+                    if (slider) {
+                        if (inner) {
+                            inner.style.pointerEvents = enabled ? '' : 'none';
+                        }
+                        const sliderHandle = document.querySelector(`#slider-handle-${element.id}`) as HTMLDivElement | null;
+                        if (sliderHandle) {
+                            sliderHandle.style.pointerEvents = enabled ? '' : 'none';
+                        }
+                    }
+
+                    if (counter) {
+                        const arrows = element.querySelectorAll('.counter-arrow') as NodeListOf<HTMLDivElement>;
+                        arrows.forEach(arrow => {
+                            arrow.style.pointerEvents = enabled ? '' : 'none';
+                            if (!enabled) {
+                                arrow.classList.add('disabled');
+                            } else {
+                                arrow.classList.remove('disabled');
+                            }
+                        });
+                    }
+
+                    if (button && inner) {
+                        inner.style.pointerEvents = enabled ? '' : 'none';
+                    }
+
+                    if (label || separator || container || group) {
+                        element.style.pointerEvents = enabled ? '' : 'none';
+                    }
+
+                    const inputEl = (element instanceof HTMLInputElement ? element : (inner as HTMLInputElement | null));
+                    if (inputEl && input) {
+                        inputEl.disabled = !enabled;
+                    }
+
+                    if (checkbox && customCheckbox) {
+                        customCheckbox.setAttribute('aria-disabled', String(!enabled));
+                    }
+
+                    if (radio && customRadio) {
+                        customRadio.setAttribute('aria-disabled', String(!enabled));
+                    }
+                }
                     break;
 
                 case 'isVisible':

@@ -201,13 +201,15 @@ function renderPreview(dialog: PreviewDialog) {
             }
         }
 
-        // Counter: wire increase/decrease within [startval, maxval]
+        // Counter: wire increase/decrease within [minval, maxval]
         if ((element.dataset?.type || '') === 'Counter') {
             const display = element.querySelector('.counter-value') as HTMLDivElement | null;
             const inc = element.querySelector('.counter-arrow.up') as HTMLDivElement | null;
             const dec = element.querySelector('.counter-arrow.down') as HTMLDivElement | null;
-            const min = Number(data.startval ?? 0);
-            const max = Number(data.maxval ?? min);
+            const rawMin = Number(data.minval ?? data.startval ?? 0);
+            const min = Number.isFinite(rawMin) ? rawMin : 0;
+            const rawMax = Number(data.maxval ?? min);
+            const max = Number.isFinite(rawMax) ? rawMax : min;
 
             const getValue = () => Number(display?.textContent ?? min);
             const setValue = (v: number) => { if (display) display.textContent = String(v); };

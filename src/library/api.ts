@@ -196,7 +196,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                     break;
                 case 'Counter':
                     if (prop === 'value') {
-                        const min = Number(el.dataset.startval ?? '0');
+                        const min = Number(el.dataset.minval ?? el.dataset.startval ?? '0');
                         const max = Number(el.dataset.maxval ?? String(min));
                         let n = Number(v);
 
@@ -211,13 +211,9 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                             n = max;
                         }
 
-                        const display = el.querySelector('.counter-value') as HTMLDivElement | null;
-
-                        if (display) {
-                            display.textContent = String(n);
-                        }
-
-                        el.dataset.startval = String(n);
+                        updateElement(el, { startval: String(n) } as StringNumber);
+                    } else if (prop === 'minval' || prop === 'maxval' || prop === 'startval') {
+                        updateElement(el, { [prop]: String(v) } as StringNumber);
                     } else {
                         warn(`${name}:${prop}`, `Unsupported set(${eltype}, ${prop})`);
                     }
@@ -316,14 +312,13 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             if (eltype === 'Checkbox') { updateElement(el, { isChecked: value ? 'true' : 'false' } as StringNumber); return; }
             if (eltype === 'Radio') { updateElement(el, { isSelected: value ? 'true' : 'false' } as StringNumber); return; }
             if (eltype === 'Counter') {
-                const min = Number(el.dataset.startval ?? '0');
+                const min = Number(el.dataset.minval ?? el.dataset.startval ?? '0');
                 const max = Number(el.dataset.maxval ?? String(min));
                 let n = Number(value);
                 if (!Number.isFinite(n)) { showRuntimeError(`Invalid number: ${value}`); return; }
-                if (n < min) n = min; if (n > max) n = max;
-                const display = el.querySelector('.counter-value') as HTMLDivElement | null;
-                if (display) display.textContent = String(n);
-                el.dataset.startval = String(n);
+                if (n < min) n = min;
+                if (n > max) n = max;
+                updateElement(el, { startval: String(n) } as StringNumber);
                 return;
             }
             (el.dataset as any)['value'] = String(value);

@@ -84,6 +84,7 @@ export type counterElementType = {
     top: number;
     space: number;
     color: string;
+    minval: number;
     startval: number;
     maxval: number;
     isEnabled: boolean;
