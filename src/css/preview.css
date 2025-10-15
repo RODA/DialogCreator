@@ -135,3 +135,27 @@ input:focus, select:focus, textarea:focus {
     border-radius: 6px;
     white-space: pre-wrap;
 }
+
+
+.error-in-field {
+    box-shadow: 0 0 4px 1px rgba(255, 0, 0, 0.35)!important;
+    background-color: inherit!important;
+}
+
+.error-in-field:focus {
+    box-shadow: 0 0 6px 2px rgba(255, 0, 0, 0.45)!important;
+}
+
+.error-in-field:disabled{
+    box-shadow: 0 0 4px 1px rgba(255, 0, 0, 0.35)!important;
+}
+
+.error-in-radio {
+    background-color: rgba(255, 0, 0, 0.1)!important;
+    border-radius: 3px!important;
+    padding: 5px!important;
+}
+
+.error-in-radio .form-check-inline {
+    margin-bottom: 0px!important;
+}

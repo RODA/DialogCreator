@@ -28,10 +28,12 @@ export interface PreviewUI {
     // - Counter: number
     // - Container: array of row labels (items)
     getValue(name: string): unknown;
+
     // Sets value or items depending on element type and value type.
     // - If value is an array: for Select/Container, sets items/options/rows
     // - If scalar: sets value for Input/Label/Select/Counter; boolean for Checkbox/Radio
     setValue(name: string, value: unknown | string[]): void;
+
     // Selected values:
     // - Container: array of selected row labels
     // - Select: array with single selected value (or empty)
@@ -62,6 +64,12 @@ export interface PreviewUI {
     /** Enable / disable */
     enable(name: string, on?: boolean): void;
     disable(name: string, on?: boolean): void;
+
+    /** Error helpers */
+    addError(name: string, message: string): void;
+    clearError(name: string, message?: string): void;
+    addGlow(name: string, kind?: 'field' | 'radio'): void;
+    clearGlow(name: string): void;
 
     /** Register an event handler on the wrapper */
     on(name: string, event: string, handler: (ev: Event, el: HTMLElement) => void): void;

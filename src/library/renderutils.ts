@@ -1,6 +1,6 @@
 // Specific utilities for various (renderer) modules
 
-import { RenderUtils } from '../interfaces/renderutils';
+import { RenderUtils, ValidationMessage, ErrorTippy } from '../interfaces/renderutils';
 import { utils } from './utils';
 import { dialog } from '../modules/dialog';
 import { elements } from '../modules/elements';
@@ -17,8 +17,149 @@ import { EVENT_NAMES, EventName } from '../library/api';
 import { v4 as uuidv4 } from 'uuid';
 import * as path from "path";
 import * as fs from "fs";
+import tippy from "tippy.js";
 
 let __uniformSchema: UniformSchema | null = null;
+
+const validation_messages: ValidationMessage = {};
+const error_tippy: ErrorTippy = {};
+
+const CSS_ESCAPE = (value: string) => {
+    if (typeof CSS !== 'undefined' && CSS.escape) {
+        return CSS.escape(value);
+    }
+    return value.replace(/"/g, '\\"');
+};
+
+function withElementList(elementOrElements: string | string[], fn: (name: string) => void) {
+    const list = Array.isArray(elementOrElements) ? elementOrElements : [elementOrElements];
+    list.forEach(name => {
+        const trimmed = String(name ?? '').trim();
+        if (!trimmed) {
+            return;
+        }
+        fn(trimmed);
+    });
+}
+
+function resolveElementHost(name: string): { host: HTMLElement | null; isRadio: boolean } {
+    const escaped = CSS_ESCAPE(name);
+    let host = document.querySelector(`[data-nameid="${escaped}"]`) as HTMLElement | null;
+    let isRadio = false;
+
+    if (!host) {
+        host = document.getElementById(name);
+    }
+
+    if (!host) {
+        const radio = document.getElementsByName(name)[0] as HTMLElement | undefined;
+        if (radio && radio.parentNode && radio.parentNode.parentNode instanceof HTMLElement) {
+            host = radio.parentNode.parentNode as HTMLElement;
+            isRadio = true;
+        }
+    }
+
+    if (host && !isRadio) {
+        const type = String(
+            host.dataset?.type ||
+            host.getAttribute?.('data-type') ||
+            host.firstElementChild?.getAttribute?.('data-type') ||
+            ''
+        );
+        isRadio = type === 'Radio';
+    }
+
+    return { host, isRadio };
+}
+
+function ensureTooltip(name: string, anchor: HTMLElement, content: string) {
+    if (!error_tippy[name]) {
+        error_tippy[name] = [
+            tippy(anchor, {
+                theme: 'light-red',
+                placement: 'top-start',
+                content,
+                arrow: false,
+                allowHTML: true
+            })
+        ];
+    } else {
+        error_tippy[name][0]?.setContent(content);
+    }
+}
+
+function destroyTooltip(name: string) {
+    if (error_tippy[name]) {
+        error_tippy[name][0]?.destroy();
+        delete error_tippy[name];
+    }
+}
+
+export const errorutils = {
+    addTooltip(element: string | string[], message: string) {
+        const text = String(message ?? '');
+        if (!text) return;
+
+        withElementList(element, (name) => {
+            const { host } = resolveElementHost(name);
+            if (!host) return;
+
+            ensureTooltip(name, host, text);
+            if (!validation_messages[name]) {
+                validation_messages[name] = { name, errors: [text] };
+            } else if (!validation_messages[name].errors.includes(text)) {
+                validation_messages[name].errors.push(text);
+            }
+        });
+    },
+
+    clearTooltip(element: string | string[], message?: string) {
+        withElementList(element, (name) => {
+            const existing = validation_messages[name];
+            if (!existing) {
+                destroyTooltip(name);
+                return;
+            }
+
+            if (message) {
+                existing.errors = existing.errors.filter(err => err !== message);
+            } else {
+                existing.errors = [];
+            }
+
+            if (existing.errors.length === 0) {
+                destroyTooltip(name);
+                delete validation_messages[name];
+            } else {
+                const { host } = resolveElementHost(name);
+                if (host) {
+                    ensureTooltip(name, host, existing.errors[0]);
+                }
+            }
+        });
+    },
+
+    addHighlight(element: string | string[], kind?: 'field' | 'radio') {
+        withElementList(element, (name) => {
+            const { host, isRadio } = resolveElementHost(name);
+            if (!host) return;
+
+            const inferredKind = kind ?? ((host.dataset?.type === 'Radio' || isRadio) ? 'radio' : 'field');
+            host.classList.remove('error-in-field', 'error-in-radio');
+            host.classList.add(inferredKind === 'radio' ? 'error-in-radio' : 'error-in-field');
+        });
+    },
+
+    clearHighlight(element: string | string[]) {
+        withElementList(element, (name) => {
+            const { host } = resolveElementHost(name);
+            if (!host) return;
+            host.classList.remove('error-in-field', 'error-in-radio');
+        });
+    }
+};
+
+export const errorhelpers = errorutils;
 
 export const renderutils: RenderUtils = {
     // Determine if current window/context is the Preview window
@@ -1967,6 +2108,21 @@ export const renderutils: RenderUtils = {
             return null;
         }
         return s as EventName;
-    }
+    },
 
+    addErrorTooltip: function(name: string, message: string) {
+        errorutils.addTooltip(name, message);
+    },
+
+    clearErrorTooltip: function(name: string, message?: string) {
+        errorutils.clearTooltip(name, message);
+    },
+
+    addErrorGlow: function(name: string, kind?: 'field' | 'radio') {
+        errorutils.addHighlight(name, kind);
+    },
+
+    clearErrorGlow: function(name: string) {
+        errorutils.clearHighlight(name);
+    }
 }

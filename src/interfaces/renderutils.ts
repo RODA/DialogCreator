@@ -54,4 +54,19 @@ export interface RenderUtils {
     exposeNameGlobals: (canvas: HTMLElement) => void;
     exposeEventNameGlobals: () => void;
     normalizeEventName: (ev: unknown) => EventName | null;
+    addErrorTooltip: (name: string, message: string) => void;
+    clearErrorTooltip: (name: string, message?: string) => void;
+    addErrorGlow: (name: string, kind?: 'field' | 'radio') => void;
+    clearErrorGlow: (name: string) => void;
+}
+
+export interface ValidationMessage {
+    [element: string]: {
+        name: string;
+        errors: string[];
+    }
+}
+
+export interface ErrorTippy {
+    [element: string]: Array<any>
 }

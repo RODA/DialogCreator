@@ -1,8 +1,7 @@
 // Shared API surface bits used by both Preview runtime and Editor (linter/helpers)
 
 import type { PreviewUI, PreviewUIEnv } from '../interfaces/preview';
-import type { StringNumber } from '../interfaces/elements';
-import { renderutils } from './renderutils';
+import { renderutils, errorhelpers } from './renderutils';
 
 // Allowed event names for the custom Preview UI API
 export const EVENT_LIST = ['click', 'change', 'input'] as const;
@@ -24,7 +23,10 @@ export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
     'onClick', 'onChange', 'onInput', 'trigger',
 
     // lists & selection
-    'setSelected', 'getSelected', 'addValue', 'deleteValue'
+    'setSelected', 'getSelected', 'addValue', 'deleteValue',
+
+    // errors
+    'addError', 'clearError', 'addGlow', 'clearGlow'
 ]);
 
 // Methods that take (elementName, ...) as first argument; used by the linter.
@@ -33,10 +35,10 @@ export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
 const NEUTRAL_NAMES = new Set<keyof PreviewUI>([
     'showMessage'
 ]);
+
 export const ELEMENT_FIRST_ARG_CALLS: ReadonlyArray<keyof PreviewUI> = Object.freeze(
     API_NAMES.filter(n => !NEUTRAL_NAMES.has(n))
 );
-
 
 // Factory: build the Preview UI API bound to a specific canvas and adapters.
 export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
@@ -61,21 +63,32 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
     const inner = (el: HTMLElement | null) => el?.firstElementChild as HTMLElement | null;
     const typeOf = (el: HTMLElement | null) => String(el?.dataset?.type || '');
 
+    const coerceName = (value: unknown): string => {
+        const name = String(value ?? '').trim();
+        if (!name) {
+            throw new SyntaxError('Element name cannot be empty');
+        }
+        return name;
+    };
+
     const api: PreviewUI = {
         // Forward logs to the Editor console for visibility during Preview
-        log: (...args: any[]) => {
+        log: (...args) => {
             const msg = args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' ');
             logToEditor(msg);
         },
 
         // Convenience: checkbox/radio check/uncheck
-        check: (name: string) => {
+        check: (name) => {
             const el = findWrapper(name);
             if (!el) return;
 
             const eltype = typeOf(el);
             if (eltype === 'Checkbox') {
-                updateElement(el, { isChecked: 'true' } as StringNumber);
+                updateElement(
+                    el,
+                    { isChecked: 'true' }
+                );
             } else if (eltype === 'Radio') {
                 // Select this radio and unselect others in the same group
                 const custom = el.querySelector('.custom-radio') as HTMLElement | null;
@@ -85,37 +98,49 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                     document.querySelectorAll(`.custom-radio[group="${group}"]`).forEach((r) => {
                         const host = (r as HTMLElement).closest('.element-div') as HTMLElement | null;
                         if (host && host !== el) {
-                            updateElement(host, { isSelected: 'false' } as StringNumber);
+                            updateElement(
+                                host,
+                                { isSelected: 'false' }
+                            );
                         }
                     });
                 }
 
-                updateElement(el, { isSelected: 'true' } as StringNumber);
+                updateElement(
+                    el,
+                    { isSelected: 'true' }
+                );
             }
         },
 
-        uncheck: (name: string) => {
+        uncheck: (name) => {
             const el = findWrapper(name);
             if (!el) return;
-            const t = typeOf(el);
-            if (t === 'Checkbox') {
-                updateElement(el, { isChecked: 'false' } as StringNumber);
-            } else if (t === 'Radio') {
-                updateElement(el, { isSelected: 'false' } as StringNumber);
+            const eltype = typeOf(el);
+            if (eltype === 'Checkbox') {
+                updateElement(
+                    el,
+                    { isChecked: 'false' }
+                );
+            } else if (eltype === 'Radio') {
+                updateElement(
+                    el,
+                    { isSelected: 'false' }
+                );
             }
         },
 
-        showMessage: (...argsIn: any[]) => {
+        showMessage: (...argsIn: unknown[]) => {
             // New convention: (message, detail?, type?)
             const allowed = new Set(['info', 'warning', 'error', 'question']);
             const message = String(argsIn[0] ?? '');
             const detail = String(argsIn[1] ?? '');
-            const typeCand = String(argsIn[2] ?? '').toLowerCase();
-            const type = (allowed.has(typeCand) ? typeCand : 'info') as 'info' | 'warning' | 'error' | 'question';
+            const typearg = String(argsIn[2] ?? '').toLowerCase();
+            const type = (allowed.has(typearg) ? typearg : 'info') as 'info' | 'warning' | 'error' | 'question';
             showDialogMessage(type, message, detail);
         },
 
-        get: (name: string, prop: string) => {
+        get: (name, prop) => {
             const el = findWrapper(name);
             const eltype = typeOf(el);
             const inn = inner(el);
@@ -147,7 +172,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             }
         },
 
-        set: (name: string, prop: string, value: any) => {
+        set: (name, prop, value) => {
             const el = findWrapper(name);
             if (!el) return;
 
@@ -166,7 +191,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 case 'Label':
                     if (prop === 'value') {
                         el.dataset.value = String(v);
-                        updateElement(el, { value: String(v) } as StringNumber);
+                        updateElement(el, { value: String(v) });
                     } else {
                         warn(`${name}:${prop}`, `Unsupported set(${eltype}, ${prop})`);
                     }
@@ -182,14 +207,14 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                     break;
                 case 'Checkbox':
                     if (prop === 'checked') {
-                        updateElement(el, { isChecked: v ? 'true' : 'false' } as StringNumber);
+                        updateElement(el, { isChecked: v ? 'true' : 'false' });
                     } else {
                         warn(`${name}:${prop}`, `Unsupported set(${eltype}, ${prop})`);
                     }
                     break;
                 case 'Radio':
                     if (prop === 'selected') {
-                        updateElement(el, { isSelected: v ? 'true' : 'false' } as StringNumber);
+                        updateElement(el, { isSelected: v ? 'true' : 'false' });
                     } else {
                         warn(`${name}:${prop}`, `Unsupported set(${eltype}, ${prop})`);
                     }
@@ -211,9 +236,10 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                             n = max;
                         }
 
-                        updateElement(el, { startval: String(n) } as StringNumber);
+                        updateElement(el, { startval: String(n) });
+
                     } else if (prop === 'minval' || prop === 'maxval' || prop === 'startval') {
-                        updateElement(el, { [prop]: String(v) } as StringNumber);
+                        updateElement(el, { [prop]: String(v) });
                     } else {
                         warn(`${name}:${prop}`, `Unsupported set(${eltype}, ${prop})`);
                     }
@@ -224,7 +250,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             }
         },
 
-        getValue: (name: string): any => {
+        getValue: (name) => {
             const el = findWrapper(name);
             if (!el) return null;
             const eltype = typeOf(el);
@@ -254,7 +280,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             return (el.dataset as any)['value'] ?? null;
         },
 
-        setValue: (name: string, value: any): void => {
+        setValue: (name, value) => {
             const el = findWrapper(name);
             if (!el) return;
             const eltype = typeOf(el);
@@ -301,30 +327,50 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             }
             if (eltype === 'Label') {
                 el.dataset.value = String(value);
-                updateElement(el, { value: String(value) } as StringNumber);
+                updateElement(el, { value: String(value) });
                 return;
             }
             if (eltype === 'Select') {
                 const sel = (el instanceof HTMLSelectElement ? el : (el.querySelector('select') as HTMLSelectElement | null));
-                if (sel) { sel.value = String(value); el.dataset.value = String(value); }
+                if (sel) {
+                    sel.value = String(value); el.dataset.value = String(value);
+                }
                 return;
             }
-            if (eltype === 'Checkbox') { updateElement(el, { isChecked: value ? 'true' : 'false' } as StringNumber); return; }
-            if (eltype === 'Radio') { updateElement(el, { isSelected: value ? 'true' : 'false' } as StringNumber); return; }
+            if (eltype === 'Checkbox') {
+                updateElement(
+                    el,
+                    { isChecked: value ? 'true' : 'false' }
+                );
+                return;
+            }
+            if (eltype === 'Radio') {
+                updateElement(
+                    el,
+                    { isSelected: value ? 'true' : 'false' }
+                );
+                return;
+            }
             if (eltype === 'Counter') {
                 const min = Number(el.dataset.minval ?? el.dataset.startval ?? '0');
                 const max = Number(el.dataset.maxval ?? String(min));
                 let n = Number(value);
-                if (!Number.isFinite(n)) { showRuntimeError(`Invalid number: ${value}`); return; }
+                if (!Number.isFinite(n)) {
+                    showRuntimeError(`Invalid number: ${value}`);
+                    return;
+                }
                 if (n < min) n = min;
                 if (n > max) n = max;
-                updateElement(el, { startval: String(n) } as StringNumber);
+                updateElement(
+                    el,
+                    { startval: String(n) }
+                );
                 return;
             }
             (el.dataset as any)['value'] = String(value);
         },
 
-        getSelected: (name: string): string[] => {
+        getSelected: (name) => {
             const el = findWrapper(name);
             if (!el) return [];
             const eltype = typeOf(el);
@@ -343,7 +389,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         },
 
         // New preferred name for checked state
-        isChecked: (name: string) => {
+        isChecked: (name) => {
             const el = findWrapper(name);
             if (!el) return false;
 
@@ -361,11 +407,11 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             return false;
         },
 
-        isUnchecked: (name: string) => {
+        isUnchecked: (name) => {
             return !api.isChecked(name);
         },
 
-        isVisible: (name: string) => {
+        isVisible: (name) => {
             const el = findWrapper(name);
             if (!el) return false;
 
@@ -373,23 +419,23 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             return ds !== 'none';
         },
 
-        isHidden: (name: string) => {
+        isHidden: (name) => {
             return !api.isVisible(name);
         },
 
-        isEnabled: (name: string) => {
+        isEnabled: (name) => {
             const el = findWrapper(name);
             if (!el) return false;
             return !el.classList.contains('disabled-div');
         },
 
-        isDisabled: (name: string) => {
+        isDisabled: (name) => {
             const el = findWrapper(name);
             if (!el) return false;
             return el.classList.contains('disabled-div');
         },
 
-        show: (name: string, on: boolean = true) => {
+        show: (name, on = true) => {
             const el = findWrapper(name);
             if (!el) return;
 
@@ -404,22 +450,38 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             }
         },
 
-        hide: (name: string, on: boolean = true) => {
+        hide: (name, on = true) => {
             api.show(name, !on);
         },
 
-        enable: (name: string, on: boolean = true) => {
+        enable: (name, on = true) => {
             const el = findWrapper(name);
             if (!el) return;
 
-            updateElement(el, { isEnabled: on ? 'true' : 'false' } as StringNumber);
+            updateElement(el, { isEnabled: on ? 'true' : 'false' });
         },
 
-        disable: (name: string, on: boolean = true) => {
-            api.enable(name, !on);
+        disable: (name, yes = true) => {
+            api.enable(name, !yes);
         },
 
-        on: (name: string, event: string, handler: (ev: Event, el: HTMLElement) => void) => {
+        addError: (name, message) => {
+            errorhelpers.addTooltip(coerceName(name), String(message ?? ''));
+        },
+
+        clearError: (name, message?) => {
+            errorhelpers.clearTooltip(coerceName(name), message ? String(message) : undefined);
+        },
+
+        addGlow: (name) => {
+            errorhelpers.addHighlight(coerceName(name));
+        },
+
+        clearGlow: (name) => {
+            errorhelpers.clearHighlight(coerceName(name));
+        },
+
+        on: (name, event, handler: (ev: Event, el: HTMLElement) => void) => {
             const el = findWrapper(name);
             if (!el) {
                 throw new SyntaxError(`Element not found: ${String(name)}`);
@@ -443,11 +505,11 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             disposers.push(() => el.removeEventListener(evt, h));
         },
 
-        onClick: (name: string, handler: (ev: Event, el: HTMLElement) => void) => api.on(name, 'click', handler),
-        onChange: (name: string, handler: (ev: Event, el: HTMLElement) => void) => api.on(name, 'change', handler),
-        onInput: (name: string, handler: (ev: Event, el: HTMLElement) => void) => api.on(name, 'input', handler),
+        onClick: (name, handler: (ev: Event, el: HTMLElement) => void) => api.on(name, 'click', handler),
+        onChange: (name, handler: (ev: Event, el: HTMLElement) => void) => api.on(name, 'change', handler),
+        onInput: (name, handler: (ev: Event, el: HTMLElement) => void) => api.on(name, 'input', handler),
 
-    trigger: (name: string, event: EventName) => {
+        trigger: (name, event: EventName) => {
             const el = findWrapper(name);
             if (!el) {
                 throw new SyntaxError(`Element not found: ${String(name)}`);
@@ -529,8 +591,8 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             throw new SyntaxError(`ui.setSelected is not supported for element type ${eltype}`);
         },
 
-    // Legacy alias: select(name, value) preserves previous additive behavior for Container
-        select: (name: string, value: string) => {
+        // Legacy alias: select(name, value) preserves previous additive behavior for Container
+        select: (name, value) => {
             const el = findWrapper(name);
             if (!el) {
                 throw new SyntaxError(`Element not found: ${String(name)}`);
@@ -557,7 +619,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             throw new SyntaxError(`ui.select is not supported for element type ${eltype}`);
         },
 
-        addValue: (name: string, value: string) => {
+        addValue: (name, value) => {
             const el = findWrapper(name);
             if (!el) {
                 throw new SyntaxError(`Element not found: ${String(name)}`);
@@ -582,7 +644,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             target.appendChild(row);
         },
 
-        deleteValue: (name: string, value: string) => {
+        deleteValue: (name, value) => {
             const el = findWrapper(name);
             if (!el) {
                 throw new SyntaxError(`Element not found: ${String(name)}`);
