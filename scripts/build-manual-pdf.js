@@ -30,7 +30,7 @@ const fs = require('fs');
       },
       // Basic styles to improve PDF readability
       stylesheet: [
-        path.join(__dirname, 'pdf-styles.css')
+        path.join(repoRoot, 'src', 'css', 'pdf-styles.css')
       ]
     });
 
