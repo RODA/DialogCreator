@@ -124,29 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 valuelabel.innerText = 'Value';
             }
 
-            // Container defaults: when Content type is Dataset, force Selection to Single and disable
-            if (name === 'containerElement') {
-                const contentSel = document.getElementById('elcontentType') as HTMLSelectElement | null;
-                const selectionSel = document.getElementById('elselection') as HTMLSelectElement | null;
-                const applySelectionLock = () => {
-                    if (!contentSel || !selectionSel) return;
-                    const isDataset = (contentSel.value || '').toLowerCase() === 'dataset';
-                    if (isDataset) {
-                        if (selectionSel.value !== 'single') {
-                            selectionSel.value = 'single';
-                            // Persist immediately so DB stays in sync with the enforced rule
-                            coms.sendTo('main', 'updateProperty', name, 'selection', 'single');
-                        }
-                        selectionSel.disabled = true;
-                    } else {
-                        selectionSel.disabled = false;
-                    }
-                };
-                applySelectionLock();
-                if (contentSel) {
-                    contentSel.addEventListener('change', applySelectionLock);
-                }
-            }
+            // Container defaults: selection is user-controlled; no contentType
         }
     });
 

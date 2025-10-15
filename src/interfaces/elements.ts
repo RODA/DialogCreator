@@ -149,13 +149,11 @@ export type containerElementType = {
     top: number;
     width: number;
     height: number;
-    contentType: string;
     backgroundColor: string;
     fontColor: string;
     activeBackgroundColor: string;
     activeFontColor: string;
     selection: string;
-    variableType: string;
     isEnabled: boolean;
     isVisible: boolean;
     elementIds: string[];

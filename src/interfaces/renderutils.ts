@@ -40,7 +40,6 @@ export interface RenderUtils {
     enhanceButton: (btn: HTMLButtonElement) => void;
     enhanceButtons: (root?: ParentNode) => void;
     handleEvent(eventName: string, ...args: unknown[]): Promise<void>;
-    contentTypeValid: (currentElement: HTMLElement) => boolean;
     collectDialogProperties: () => DialogProperties;
     updateFont: (fontSize: number, fontFamily?: string) => void;
     buildUniformSchema: (opts?: BuildOptions) => UniformSchema;

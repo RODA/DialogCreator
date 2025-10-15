@@ -121,9 +121,7 @@ INSERT INTO elements (element, property, value) VALUES
 ('containerElement', 'top', '15'),
 ('containerElement', 'width', '130'),
 ('containerElement', 'height', '100'),
-('containerElement', 'contentType', 'variable'),
 ('containerElement', 'selection', 'single'),
-('containerElement', 'variableType', ''),
 ('containerElement', 'parentContainer', ''),
 ('containerElement', 'isEnabled', 'true'),
 ('containerElement', 'isVisible', 'true');

@@ -671,13 +671,12 @@ export const renderutils: RenderUtils = {
             element.style.width = data.width + 'px';
             element.style.height = data.height + 'px';
 
-        } else if (data.type == "Container") {
+    } else if (data.type == "Container") {
 
             element.className = 'container';
             element.style.backgroundColor = String((data as any).backgroundColor || '#ffffff');
             element.style.width = data.width + 'px';
             element.style.height = data.height + 'px';
-            element.dataset.contentType = data.contentType;
 
             // Build a simple sample of container contents showing inactive and active rows
             const sample = document.createElement('div');
@@ -1151,23 +1150,7 @@ export const renderutils: RenderUtils = {
                     break;
                 }
 
-                case 'contentType':
-                    if (container) {
-                        const ct = String(value || '').toLowerCase();
-                        const selection = document.getElementById('elselection') as HTMLSelectElement | null;
-                        if (selection) {
-                            if (ct === 'dataset') {
-                                // Force selection to single for datasets
-                                selection.value = 'single';
-                                selection.disabled = true;
-                                // Reflect on dataset and UI consumers
-                                element.dataset.selection = 'single';
-                            } else{
-                                selection.disabled = false;
-                            }
-                        }
-                    }
-                    break;
+                
 
                 case 'direction':
                     // e.g. separator, switch height with width
@@ -1794,14 +1777,7 @@ export const renderutils: RenderUtils = {
         }
     },
 
-    contentTypeValid: function (currentElement: HTMLElement) {
-        const allobjs = new Set(
-            Array.from(document.querySelectorAll<HTMLElement>('[data-obj-view-class]'))
-            .map(el => el !== currentElement ? el.dataset.contentType! : null)
-            .filter(id => id !== null)
-        )
-        return !allobjs.has('dataset');
-    },
+    
 
     collectDialogProperties: function() {
         const properties: NodeListOf<HTMLInputElement> = document.querySelectorAll('#dialog-properties [id^="dialog"]');

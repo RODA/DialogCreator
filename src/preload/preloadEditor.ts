@@ -147,45 +147,14 @@ coms.on('elementSelected', (id) => {
         valuelabel.innerText = 'Value';
     }
 
-    // Container-specific: lock Selection when Content type is Dataset
-    if (dataset.type === 'Container') {
-        const contentType = document.getElementById('elcontentType') as HTMLSelectElement | null;
-        const selection = document.getElementById('elselection') as HTMLSelectElement | null;
-        const applySelectionLock = () => {
-            if (!contentType || !selection) return;
-            const isDataset = (contentType.value || '').toLowerCase() === 'dataset';
-            if (isDataset) {
-                selection.value = 'single';
-                selection.disabled = true;
-                // Reflect change on the element if needed
-                if (element && element.dataset.selection !== 'single') {
-                    renderutils.updateElement(element, { selection: 'single' } as StringNumber);
-                    element.dataset.selection = 'single';
-                }
-            } else {
-                selection.disabled = false;
-            }
-        };
-        // Initial apply based on current values
-        applySelectionLock();
-        // Re-apply on content type change
-        if (contentType) {
-            contentType.addEventListener('change', () => {
-                // propertyUpdate will also run; enforce UI and value here
-                applySelectionLock();
-            });
-        }
-    }
+    // Container-specific: no contentType; selection remains user-controlled
 
 
     // trigger change for the select element source values
     // if (element.dataSource) {
     //     document.getElementById('eldataSource').dispatchEvent(new Event('change'));
     // }
-    // if(element.type === 'Container') {
-    //     // trigger change for container
-    //     $("#elcontentType" ).trigger("change");
-    // }
+    // Content type removed; no container-specific change triggers
 
     // enable remove button when an element is selected
     (document.getElementById('removeElement') as HTMLButtonElement).disabled = false;
