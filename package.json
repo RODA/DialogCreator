@@ -4,12 +4,12 @@
   "description": "A dialog creating application",
   "main": "dist/main.js",
   "scripts": {
-  "build": "tsc && npm run bundle:cm6",
+    "build": "tsc && npm run bundle:cm6",
     "watch": "tsc -w",
     "lint": "eslint -c .eslintrc --ext .ts ./src",
     "start": "npm run build && electron ./dist/main.js",
     "dist": "npm run build && electron-builder",
-    "docs:pdf": "node scripts/build-manual-pdf.js",
+    "docs:pdf": "node scripts/build-pdf-manual.js",
     "bundle:cm6": "node scripts/bundle-cm6-if-needed.js"
   },
   "author": "RODA",
@@ -65,28 +65,29 @@
     }
   },
   "devDependencies": {
-    "@types/emscripten": "^1.40.1",
-    "@types/sqlite3": "^3.1.11",
-    "@types/uuid": "^10.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.31.0",
-    "@typescript-eslint/parser": "^8.31.0",
     "@codemirror/commands": "^6.6.1",
     "@codemirror/lang-javascript": "^6.2.2",
     "@codemirror/language": "^6.10.2",
     "@codemirror/lint": "^6.8.0",
     "@codemirror/state": "^6.4.1",
     "@codemirror/view": "^6.34.1",
-    "esbuild": "^0.24.0",
+    "@types/emscripten": "^1.40.1",
+    "@types/sqlite3": "^3.1.11",
+    "@types/uuid": "^10.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.31.0",
+    "@typescript-eslint/parser": "^8.31.0",
     "electron": "^34.0.2",
     "electron-builder": "^26.0.13",
+    "esbuild": "^0.24.0",
     "eslint": "^9.25.1",
-    "typescript": "^5.2.2",
-    "md-to-pdf": "^5.2.4"
+    "md-to-pdf": "^5.2.4",
+    "typescript": "^5.2.2"
   },
   "dependencies": {
+    "@jaames/iro": "^5.5.2",
     "acorn": "^8.12.1",
     "sqlite3": "^5.1.7",
-    "uuid": "^11.1.0",
-    "@jaames/iro": "^5.5.2"
+    "tippy.js": "^6.3.7",
+    "uuid": "^11.1.0"
   }
 }

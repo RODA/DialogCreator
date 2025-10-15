@@ -135,35 +135,45 @@ Common patterns you can copy/paste:
 
 1. Show the input's value in a label on change
 
-<pre><code class="language-javascript hljs"><span class="hljs-title function_">onChange</span>(<span class="api-param">input1</span>, () => {
-  <span class="hljs-title function_">setValue</span>(<span class="api-param">statusLabel</span>, <span class="hljs-string">"input1: "</span> + <span class="hljs-title function_">getValue</span>(<span class="api-param">input1</span>));
-});</code></pre>
+```javascript
+onChange(input1, () => {
+  setValue(statusLabel, "input1: " + getValue(input1));
+});
+```
 
 2. Show or hide a label when a checkbox is toggled
 
-<pre><code class="language-javascript hljs"><span class="hljs-title function_">onClick</span>(<span class="api-param">checkbox1</span>, () => {
-  <span class="hljs-title function_">show</span>(<span class="api-param">label1</span>, <span class="hljs-title function_">isChecked</span>(<span class="api-param">checkbox1</span>));
-});</code></pre>
+```javascript
+onClick(checkbox1, () => {
+  show(label1, isChecked(checkbox1));
+});
+```
 
 Which is equivalent to:
 
-<pre><code class="language-javascript hljs"><span class="hljs-title function_">onClick</span>(<span class="api-param">checkbox1</span>, () => {
-  if (<span class="hljs-title function_">isChecked</span>(<span class="api-param">checkbox1</span>)) {
-    <span class="hljs-title function_">show</span>(<span class="api-param">label1</span>);
+```javascript
+onClick(checkbox1, () => {
+  if (isChecked(checkbox1)) {
+    show(label1);
   } else {
-    <span class="hljs-title function_">hide</span>(<span class="api-param">label1</span>);
+    hide(label1);
   }
-});</code></pre>
+});
+```
 
 3. Show a select value in a label
 
-<pre><code class="language-javascript hljs"><span class="hljs-title function_">onChange</span>(<span class="api-param">countrySelect</span>, () => {
-  <span class="hljs-title function_">setValue</span>(<span class="api-param">statusLabel</span>, <span class="hljs-string">"Country: "</span> + <span class="hljs-title function_">getValue</span>(<span class="api-param">countrySelect</span>));
-});</code></pre>
+```javascript
+onChange(countrySelect, () => {
+  setValue(statusLabel, "Country: " + getValue(countrySelect));
+});
+```
 
 4. Update text programmatically
 
-<pre><code class="language-javascript hljs"><span class="hljs-title function_">setValue</span>(<span class="api-param">statusLabel</span>, <span class="hljs-string">"Ready"</span>);</code></pre>
+```javascript
+setValue(statusLabel, "Ready");
+```
 
 Events:
 
@@ -188,8 +198,6 @@ Initialization
   - `onInput(name, fn)` — same as `on(name, 'input', fn)`
 
 ### Scripting API — reference
-
-Note: You can use all helpers without the `ui.` prefix (recommended for brevity). The `ui.*` form also works (e.g., `ui.onClick`, `ui.show`).
 
 `showMessage(message, detail?, type?)`
 
@@ -287,6 +295,24 @@ Note: You can use all helpers without the `ui.` prefix (recommended for brevity)
   - Does not dispatch a `change` event automatically. If you need handlers to run, call `trigger(name, 'change')` after changing selection.
   - Throws a SyntaxError if the element doesn't exist, the control is missing, the option/row is not found, or the element type doesn't support selection.
 
+Validation and highlight helpers
+
+- `addError(name, message)`
+
+  - Show a tooltip-like validation message attached to the element. Multiple distinct messages on the same element are de-duplicated and the first one is shown.
+
+- `clearError(name, message?)`
+
+  - Clear a previously added validation message. If `message` is provided, only that message is removed; otherwise, all messages for the element are cleared.
+
+- `addGlow(name)`
+
+  - Visually highlight the element (adds an outline/glow to draw attention). Useful alongside `addError` to signal the field needing attention.
+
+- `clearGlow(name)`
+
+  - Remove any visual highlight added by `addGlow`.
+
 Element-specific notes and examples
 
 - Input
@@ -335,48 +361,61 @@ Practical patterns
 
 - Conditional show a panel when a checkbox is checked:
 
-<pre><code class="language-javascript hljs"><span class="hljs-title function_">onClick</span>(<span class="api-param">myCheckbox</span>, () => {
-  <span class="hljs-title function_">show</span>(<span class="api-param">myPanel</span>, <span class="hljs-title function_">isChecked</span>(<span class="api-param">myCheckbox</span>));
-  // or: <span class="hljs-title function_">hide</span>(<span class="api-param">myPanel</span>, <span class="hljs-title function_">isUnchecked</span>(<span class="api-param">myCheckbox</span>))
-});</code></pre>
+```javascript
+onClick(myCheckbox, () => {
+  show(myPanel, isChecked(myCheckbox));
+  // or: hide(myPanel, isUnchecked(myCheckbox))
+});
+```
 
 - Mirror an input's text to a label on change:
 
-<pre><code class="language-javascript hljs"><span class="hljs-title function_">onChange</span>(<span class="api-param">myInput</span>, () => {
-  <span class="hljs-title function_">setValue</span>(<span class="api-param">myLabel</span>, <span class="hljs-title function_">getValue</span>(<span class="api-param">myInput</span>));
-});</code></pre>
+```javascript
+onChange(myInput, () => {
+  setValue(myLabel, getValue(myInput));
+});
+```
 
 - Select a value in a Select (no auto-dispatch), then notify listeners:
 
-<pre><code class="language-javascript hljs"><span class="hljs-title function_">setSelected</span>(<span class="api-param">countrySelect</span>, <span class="hljs-string">"RO"</span>);
-<span class="hljs-title function_">trigger</span>(<span class="api-param">countrySelect</span>, <span class="hljs-string">"change"</span>);</code></pre>
+```javascript
+setSelected(countrySelect, "RO");
+trigger(countrySelect, "change");
+```
 
 - Conditional enable/disable situations:
 
-<pre><code class="language-javascript hljs"><span class="hljs-title function_">onClick</span>(<span class="api-param">lockCheckbox</span>, () => {
-  <span class="hljs-title function_">disable</span>(<span class="api-param">saveBtn</span>, <span class="hljs-title function_">isChecked</span>(<span class="api-param">lockCheckbox</span>)); // disable when locked
+```javascript
+onClick(lockCheckbox, () => {
+  disable(saveBtn, isChecked(lockCheckbox)); // disable when locked
   // Equivalent forms:
-  // <span class="hljs-title function_">enable</span>(<span class="api-param">saveBtn</span>, <span class="hljs-title function_">isUnchecked</span>(<span class="api-param">lockCheckbox</span>));
+  // enable(saveBtn, isUnchecked(lockCheckbox));
 
   // Unconditional forms:
-  // <span class="hljs-title function_">enable</span>(<span class="api-param">saveBtn</span>);             // just enable
-  // <span class="hljs-title function_">disable</span>(<span class="api-param">saveBtn</span>);            // just disable
-});</code></pre>
+  // enable(saveBtn);             // just enable
+  // disable(saveBtn);            // just disable
+});
+```
 
 - Replace a Container's selection (multi-select) and notify listeners:
 
-<pre><code class="language-javascript hljs"><span class="hljs-title function_">setSelected</span>(<span class="api-param">variablesContainer</span>, [<span class="hljs-string">"Sepal.Width"</span>]);
-<span class="hljs-title function_">trigger</span>(<span class="api-param">variablesContainer</span>, <span class="hljs-string">"change"</span>);</code></pre>
+```javascript
+setSelected(variablesContainer, ["Sepal.Width"]);
+trigger(variablesContainer, "change");
+```
 
 - Add or remove rows in a Container (not supported for Select):
 
-<pre><code class="language-javascript hljs"><span class="hljs-title function_">addValue</span>(<span class="api-param">variablesContainer</span>, <span class="hljs-string">"Sepal.Length"</span>);
-<span class="hljs-title function_">deleteValue</span>(<span class="api-param">variablesContainer</span>, <span class="hljs-string">"Sepal.Width"</span>);</code></pre>
+```javascript
+addValue(variablesContainer, "Sepal.Length");
+deleteValue(variablesContainer, "Sepal.Width");
+```
 
 Notes
 
 - Programmatic state changes (e.g., `check`, `setValue`) do not automatically dispatch events. Use `trigger` when you need the dialog to behave as if the user had interacted with the element.
-- Selection helpers (`setSelected`) also do not auto-dispatch; pair them with `trigger(name, 'change')` if you rely on change triggers.
+- The selection command (`setSelected`) also does not auto-dispatch, but it can be paired with `trigger(name, 'change')` if you rely on change triggers.
+- Validation/highlight helpers (`addError`, `clearError`, `addGlow`, `clearGlow`) are purely visual aids in Preview; they do not block execution or change element values.
 
 ## Syntax window
 
@@ -516,12 +555,3 @@ Build notes
 
 - Property change seems ignored
   - Most properties apply on blur (when the input loses focus). Press Enter or click elsewhere to commit.
-
-## Appendix: Icons used in the toolbar
-
-The toolbar uses SVG icons from `src/assets/`:
-
-- selection-bottom-symbolic.svg — Send to back
-- selection-lower-symbolic.svg — Send backward
-- selection-raise-symbolic.svg — Bring forward
-- selection-top-symbolic.svg — Bring to front

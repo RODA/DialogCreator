@@ -43,35 +43,53 @@ code {
 }
 
 /* Highlight Dialog Creator API helpers rendered by highlight.js */
-pre code.hljs span.hljs-title.function_ {
+/* Apply to both block and inline code */
+pre code.hljs span.hljs-title.function_,
+code.hljs span.hljs-title.function_ {
     color: #ae4545 !important;
     font-weight: normal !important;
 }
 
 /* Built-in/global functions keep the cooler tone */
-pre code.hljs span.hljs-title.function_.hljs-built_in {
+pre code.hljs span.hljs-title.function_.hljs-built_in,
+code.hljs span.hljs-title.function_.hljs-built_in {
     color: #6f42c1 !important;
     font-weight: normal !important;
 }
 
 /* Highlight arguments / element names within function calls */
-pre code.hljs span.hljs-params {
+pre code.hljs span.hljs-params,
+code.hljs span.hljs-params {
     color: #22863a !important;
     font-weight: normal !important;
 }
 
 /* Keep string literals inside params green */
-pre code.hljs span.hljs-params span.hljs-string {
+pre code.hljs span.hljs-params span.hljs-string,
+code.hljs span.hljs-params span.hljs-string {
     color: #22863a !important;
     font-weight: normal !important;
 }
 
-.hljs-keyword { color: #005cc5; font-weight: 600; }
-.hljs-string  { color: #22863a; }
-.hljs-number  { color: #e36209; }
-.hljs-comment { color: #6a737d; font-style: italic; }
+pre code.hljs .hljs-keyword,
+code.hljs .hljs-keyword {
+    color: #000000; /* example */
+    font-weight: normal;
+}
 
-pre code.hljs span.api-param {
+pre code.hljs .hljs-keyword,
+code.hljs .hljs-string {
+    color: #296294; /* example */
+    font-weight: normal;
+}
+
+.hljs-keyword { color: #000000; }
+.hljs-string  { color: #296294; }
+.hljs-number  { color: #e36209; }
+.hljs-comment { color: #296294; font-style: italic; }
+
+pre code.hljs span.api-param,
+code.hljs span.api-param {
     color: #22863a !important;
     font-weight: normal !important;
 }
@@ -86,11 +104,11 @@ header, footer {
 }
 
 @page {
-    @top-left {
+    /* @top-left {
         content: 'Dialog Creator — User Manual';
         font-size: 10px;
         color: #666;
-    }
+    } */
     @bottom-right {
         content: 'Page ' counter(page) ' of ' counter(pages);
         font-size: 10px;
