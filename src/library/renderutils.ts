@@ -23,6 +23,7 @@ let __uniformSchema: UniformSchema | null = null;
 
 const validation_messages: ValidationMessage = {};
 const error_tippy: ErrorTippy = {};
+const enhancedButtons = new WeakSet<HTMLButtonElement>();
 
 const CSS_ESCAPE = (value: string) => {
     if (typeof CSS !== 'undefined' && CSS.escape) {
@@ -1016,10 +1017,10 @@ export const renderutils: RenderUtils = {
                         if (button && inner) {
                             // Color the button text
                             inner.style.color = value;
-                            try {
-                                const span = inner.querySelector('.smart-button-text') as HTMLSpanElement | null;
-                                if (span) span.style.color = value;
-                            } catch {}
+                            const span = inner.querySelector('.smart-button-text') as HTMLSpanElement | null;
+                            if (span) {
+                                span.style.color = value;
+                            }
                         } else if (label && inner) {
                             inner.style.color = value;
                         } else if ((input || select) && inner) {
@@ -1028,12 +1029,10 @@ export const renderutils: RenderUtils = {
                             countervalue.style.color = value;
                         } else if (container) {
                             const host = inner || element;
-                            // Apply new font color to all non-active rows' labels
-                            try {
-                                host.querySelectorAll('.container-item:not(.active) .container-text').forEach((n) => {
-                                    (n as HTMLElement).style.color = String(value);
-                                });
-                            } catch {}
+                            // Apply new font color to all non-active items' labels
+                            host.querySelectorAll('.container-item:not(.active) .container-text').forEach((item) => {
+                                (item as HTMLElement).style.color = String(value);
+                            });
                         } else {
                             element.style.color = value;
                         }
@@ -1201,25 +1200,33 @@ export const renderutils: RenderUtils = {
                     if (container) {
                         const host = inner || element;
                         const kind = String(value || '').toLowerCase();
+
                         if (kind === 'single') {
-                            const rows = Array.from(host.querySelectorAll('.container-item')) as HTMLElement[];
-                            const fg = String(dataset.fontColor || '#000000');
-                            const abg = String(dataset.activeBackgroundColor || '#779B49');
-                            const afg = String(dataset.activeFontColor || '#ffffff');
+                            const items = Array.from(host.querySelectorAll('.container-item')) as HTMLElement[];
+                            const normalFg = String(dataset.fontColor || '#000000');
+                            const activeBg = String(dataset.activeBackgroundColor || '#779B49');
+                            const activeFg = String(dataset.activeFontColor || '#ffffff');
+
                             // Keep the first active row; clear others
                             let kept = false;
-                            rows.forEach(r => {
-                                if (r.classList.contains('active')) {
+
+                            items.forEach(item => {
+                                if (item.classList.contains('active')) {
                                     if (!kept) {
                                         kept = true;
-                                        r.style.backgroundColor = abg;
-                                        const t = r.querySelector('.container-text') as HTMLElement | null;
-                                        if (t) t.style.color = afg;
+                                        item.style.backgroundColor = activeBg;
+
+                                        const txt = item.querySelector('.container-text') as HTMLElement | null;
+                                        if (txt) {
+                                            txt.style.color = activeFg;
+                                        }
                                     } else {
-                                        r.classList.remove('active');
-                                        r.style.backgroundColor = '';
-                                        const t = r.querySelector('.container-text') as HTMLElement | null;
-                                        if (t) t.style.color = fg;
+                                        item.classList.remove('active');
+                                        item.style.backgroundColor = '';
+                                        const txt = item.querySelector('.container-text') as HTMLElement | null;
+                                        if (txt) {
+                                            txt.style.color = normalFg;
+                                        }
                                     }
                                 }
                             });
@@ -1242,16 +1249,18 @@ export const renderutils: RenderUtils = {
                             opt.textContent = '';
                             inner.appendChild(opt);
                         } else {
-                            for (const t of tokens) {
+                            for (const token of tokens) {
                                 const opt = document.createElement('option');
-                                opt.value = t;
-                                opt.textContent = t;
+                                opt.value = token;
+                                opt.textContent = token;
                                 inner.appendChild(opt);
                             }
                         }
                         // Sync wrapper height to the inner control after options change
-                        const r = inner.getBoundingClientRect();
-                        if (r.height > 0) element.style.height = `${Math.round(r.height)}px`;
+                        const inn = inner.getBoundingClientRect();
+                        if (inn.height > 0) {
+                            element.style.height = `${Math.round(inn.height)}px`;
+                        }
                     } else if (label) {
                         element.dataset[key] = value;
                         renderutils.updateLabel(element);
@@ -1260,8 +1269,8 @@ export const renderutils: RenderUtils = {
                     // the Value is metadata only and should not alter visible text.
                     break;
 
-                case 'isEnabled':
-                    {const enabled = utils.isTrue(value);
+                case 'isEnabled': {
+                    const enabled = utils.isTrue(value);
                     if (enabled) {
                         element.classList.remove('disabled-div');
                         if (renderutils.previewWindow()) {
@@ -1331,8 +1340,7 @@ export const renderutils: RenderUtils = {
 
                     if (radio && customRadio) {
                         customRadio.setAttribute('aria-disabled', String(!enabled));
-                    }
-                }
+                    }}
                     break;
 
                 case 'isVisible':
@@ -1629,11 +1637,15 @@ export const renderutils: RenderUtils = {
     // Ungroup a persistent group element back into top-level elements; returns child IDs
     ungroupGroup: function(groupId: string) {
         const group = dialog.getElement(groupId) as HTMLElement | undefined;
-        if (!group) return [];
+        if (!group) {
+            return [];
+        }
+
         const groupLeft = parseInt(group.style.left || '0', 10) || 0;
         const groupTop = parseInt(group.style.top || '0', 10) || 0;
         const children = Array.from(group.children) as HTMLElement[];
         const childIds: string[] = [];
+
         for (const child of children) {
             const cLeft = parseInt(child.style.left || '0', 10) || 0;
             const cTop = parseInt(child.style.top || '0', 10) || 0;
@@ -1646,6 +1658,7 @@ export const renderutils: RenderUtils = {
             dialog.canvas.appendChild(child);
             childIds.push(child.id);
         }
+
         group.remove();
         dialog.removeElement(groupId);
         return childIds;
@@ -1654,11 +1667,16 @@ export const renderutils: RenderUtils = {
     // Create a persistent group from a list of element IDs; returns the new group id or null
     makeGroupFromSelection: function(ids: string[], persistent?: boolean) {
         try {
-            if (!Array.isArray(ids) || ids.length < 2) return null;
+            if (!Array.isArray(ids) || ids.length < 2) {
+                return null;
+            }
+
             const els = ids
                 .map(id => dialog.getElement(id))
                 .filter((el): el is HTMLElement => Boolean(el));
-            if (els.length < 2) return null;
+            if (els.length < 2) {
+                return null;
+            }
 
             const canvasRect = dialog.canvas.getBoundingClientRect();
             const rects = els.map(el => el.getBoundingClientRect());
@@ -1678,7 +1696,10 @@ export const renderutils: RenderUtils = {
             groupEl.classList.add('element-group');
             groupEl.style.width = width + 'px';
             groupEl.style.height = height + 'px';
-            if (persistent) groupEl.dataset.persistent = 'true';
+
+            if (persistent) {
+                groupEl.dataset.persistent = 'true';
+            }
 
             dialog.canvas.appendChild(groupEl);
 
@@ -1704,10 +1725,13 @@ export const renderutils: RenderUtils = {
                 if (groups.length === 1 && groups[0]) {
                     const desired = groups[0];
                     const existing = new Set(renderutils.getDialogInfo().elements);
+
                     let finalName = desired;
                     if (existing.has(finalName)) {
                         let i = 1;
-                        while (existing.has(`${desired}${i}`)) i++;
+                        while (existing.has(`${desired}${i}`)) {
+                            i++;
+                        }
                         finalName = `${desired}${i}`;
                     }
                     groupEl.dataset.nameid = finalName;
@@ -1716,6 +1740,7 @@ export const renderutils: RenderUtils = {
 
             dialog.addElement(groupEl);
             return groupEl.id;
+
         } catch {
             return null;
         }
@@ -1728,28 +1753,37 @@ export const renderutils: RenderUtils = {
             if (outlineEl && outlineEl.parentElement) outlineEl.parentElement.removeChild(outlineEl);
             return null;
         }
+
         const { left, top, width, height } = bounds;
+
         let outline = outlineEl;
         if (!outline) {
             outline = document.createElement('div') as HTMLDivElement;
             outline.className = 'multi-outline';
             canvas.appendChild(outline);
         }
+
         outline.style.left = left + 'px';
         outline.style.top = top + 'px';
         outline.style.width = width + 'px';
         outline.style.height = height + 'px';
+
         return outline;
     },
 
     clearMultiOutline: function(outlineEl?: HTMLDivElement | null) {
-        if (outlineEl && outlineEl.parentElement) outlineEl.parentElement.removeChild(outlineEl);
+        if (outlineEl && outlineEl.parentElement) {
+            outlineEl.parentElement.removeChild(outlineEl);
+        }
         return null;
     },
 
     computeBounds: function(ids: string[]) {
         const els = (ids || []).map(id => dialog.getElement(id)).filter((el): el is HTMLElement => Boolean(el));
-        if (!els || els.length === 0) return null;
+        if (!els || els.length === 0) {
+            return null;
+        }
+
         const canvasRect = dialog.canvas.getBoundingClientRect();
         const rects = els.map(el => el.getBoundingClientRect());
         const minLeft = Math.min(...rects.map(r => r.left));
@@ -1760,17 +1794,23 @@ export const renderutils: RenderUtils = {
         const top = Math.round(minTop - canvasRect.top);
         const width = Math.round(maxRight - minLeft);
         const height = Math.round(maxBottom - minTop);
+
         return { left, top, width, height };
     },
 
     moveElementsBy: function(ids: string[], dx: number, dy: number) {
         for (const id of ids) {
             const el = dialog.getElement(id) as HTMLElement | undefined;
-            if (!el) continue;
+            if (!el) {
+                continue;
+            }
+
             const currentLeft = Number(el.dataset.left ?? (parseInt(el.style.left || '0', 10) || 0));
             const currentTop = Number(el.dataset.top ?? (parseInt(el.style.top || '0', 10) || 0));
             const props: Record<string, number> = { left: currentLeft + dx, top: currentTop + dy };
+
             renderutils.updateElement(el, props as StringNumber);
+
             el.dataset.left = String(props.left);
             el.dataset.top = String(props.top);
         }
@@ -1878,15 +1918,20 @@ export const renderutils: RenderUtils = {
                     break;
 
                 case "Container": {
-                    // Apply font size to container and its inner sample rows
+                    // Apply font size to container and its inner sample items
                     element.style.fontSize = fontSize + 'px';
-                    if (inner) inner.style.fontSize = fontSize + 'px';
-                    try {
-                        const host = inner || element;
-                        const rows = host.querySelectorAll('.container-item') as NodeListOf<HTMLDivElement>;
-                        const rowMinH = Math.max(24, Math.round(fontSize * 2)); // scale row height with font
-                        rows.forEach(r => { r.style.minHeight = rowMinH + 'px'; });
-                    } catch {}
+                    if (inner) {
+                        inner.style.fontSize = fontSize + 'px';
+                    }
+
+                    const host = inner || element;
+                    const items = host.querySelectorAll('.container-item') as NodeListOf<HTMLDivElement>;
+                    const rowMinH = Math.max(24, Math.round(fontSize * 2)); // scale row height with font
+
+                    items.forEach(item => {
+                        item.style.minHeight = rowMinH + 'px';
+                    });
+
                     break;
                 }
 
@@ -1907,34 +1952,56 @@ export const renderutils: RenderUtils = {
 
         const typeMap: Record<string, Set<PrimitiveKind>> = {};
         const allowed = new Set<PrimitiveKind>();
-        if (includeStrings) allowed.add('string');
-        if (includeNumbers) allowed.add('number');
-        if (includeBooleans) allowed.add('boolean');
+
+        if (includeStrings) {
+            allowed.add('string');
+        }
+
+        if (includeNumbers) {
+            allowed.add('number');
+        }
+
+        if (includeBooleans) {
+            allowed.add('boolean');
+        }
 
         for (const tmpl of Object.values(elements)) {
-            if (!tmpl || typeof tmpl !== 'object') continue;
-            for (const [k, v] of Object.entries(tmpl)) {
-            if (skipKeys.includes(k)) continue;
-            const t = typeof v;
-            if (t === 'string' || t === 'number' || t === 'boolean') {
-                if (!allowed.has(t)) continue;
-                if (!typeMap[k]) typeMap[k] = new Set();
-                typeMap[k].add(t);
+            if (!tmpl || typeof tmpl !== 'object') {
+                continue;
             }
+
+            for (const [k, v] of Object.entries(tmpl)) {
+                if (skipKeys.includes(k)) {
+                    continue;
+                }
+
+                const tv = typeof v;
+                if (tv === 'string' || tv === 'number' || tv === 'boolean') {
+                    if (!allowed.has(tv)) {
+                        continue;
+                    }
+
+                    if (!typeMap[k]) {
+                        typeMap[k] = new Set();
+                    }
+
+                    typeMap[k].add(tv);
+                }
             }
         }
 
         const schema: UniformSchema = {};
+
         for (const [k, set] of Object.entries(typeMap)) {
             if (set.size === 1) {
-            schema[k] = [...set][0];
+                schema[k] = [...set][0];
             } else {
-            if (treatMixedAs !== 'skip') {
-                schema[k] = treatMixedAs as PrimitiveKind; // user-forced
-            }
-            // else skip keys with mixed types
-            }
+                if (treatMixedAs !== 'skip') {
+                    schema[k] = treatMixedAs as PrimitiveKind; // user-forced
+                }
+            } // else skip keys with mixed types
         }
+
         return schema;
     },
 
@@ -1958,35 +2025,36 @@ export const renderutils: RenderUtils = {
                 }
                 continue;
             }
+
             const val = data[key];
-            const t = typeof val;
-            if (t !== expected) {
-            // Attempt safe coercions to reduce noisy errors when loading persisted dialogs
-            let coerced = false;
-            if (expected === 'string' && (t === 'boolean' || t === 'number')) {
-                data[key] = String(val);
-                coerced = true;
-            } else if (expected === 'boolean' && t === 'string') {
-                const low = String(val).toLowerCase();
-                if (low === 'true' || low === 'false') {
-                    data[key] = (low === 'true');
+            const tv = typeof val;
+            if (tv !== expected) {
+                // Attempt safe coercions to reduce noisy errors when loading persisted dialogs
+                let coerced = false;
+                if (expected === 'string' && (tv === 'boolean' || tv === 'number')) {
+                    data[key] = String(val);
                     coerced = true;
+                } else if (expected === 'boolean' && tv === 'string') {
+                    const low = String(val).toLowerCase();
+                    if (low === 'true' || low === 'false') {
+                        data[key] = (low === 'true');
+                        coerced = true;
+                    }
+                } else if (expected === 'number' && tv === 'string') {
+                    const num = Number(val);
+                    if (!Number.isNaN(num)) {
+                        data[key] = num;
+                        coerced = true;
+                    }
                 }
-            } else if (expected === 'number' && t === 'string') {
-                const num = Number(val);
-                if (!Number.isNaN(num)) {
-                    data[key] = num;
-                    coerced = true;
+                if (!coerced) {
+                    const msg = `Property "${key}" expected ${expected}, got ${tv}`;
+                    if (collect) {
+                        errors.push(msg);
+                    } else {
+                        throw new Error(msg);
+                    }
                 }
-            }
-            if (!coerced) {
-                const msg = `Property "${key}" expected ${expected}, got ${t}`;
-                if (collect) {
-                    errors.push(msg);
-                } else {
-                    throw new Error(msg);
-                }
-            }
             }
         }
 
@@ -1997,18 +2065,27 @@ export const renderutils: RenderUtils = {
     // (excluding the metadata key $persist itself)
     getNonPersistKeys: function(name) {
         const tmpl = elements[name];
-        if (!tmpl) return [];
+        if (!tmpl) {
+            return [];
+        }
+
         const persistSet = new Set<string>((tmpl.$persist as readonly string[] | undefined) || []);
-        // Non-persist keys are everything not explicitly listed in $persist, including the metadata key '$persist' itself
+
+        // Non-persist keys are everything not explicitly listed in $persist,
+        // including the metadata key '$persist' itself
         return Object.keys(tmpl).filter(k => !persistSet.has(k));
     },
 
     // Add press/hover keyboard feedback to consistent buttons
     enhanceButton: function(btn: HTMLButtonElement) {
-        if (!btn || (btn as any).__enhanced) return;
-        (btn as any).__enhanced = true;
+        if (!btn || enhancedButtons.has(btn)) {
+            return;
+        }
+
+        enhancedButtons.add(btn);
         const press = () => btn.classList.add('btn-active');
         const release = () => btn.classList.remove('btn-active');
+
         btn.addEventListener('mousedown', press);
         btn.addEventListener('mouseup', release);
         btn.addEventListener('mouseleave', release);
@@ -2017,6 +2094,7 @@ export const renderutils: RenderUtils = {
                 press();
             }
         });
+
         btn.addEventListener('keyup', (e: KeyboardEvent) => {
             if (e.key === ' ' || e.key === 'Enter') {
                 release();
@@ -2034,10 +2112,16 @@ export const renderutils: RenderUtils = {
 
     findWrapper(name, canvas) {
         const n = String(name || '').trim();
-        if (!n) return null;
+        if (!n) {
+            return null;
+        }
+
         // Prefer the top-level element that carries a real element type, to avoid matching inner nodes
         const matches = Array.from(canvas.querySelectorAll<HTMLElement>(`[data-nameid="${n}"]`));
-        if (matches.length === 0) return null;
+        if (matches.length === 0) {
+            return null;
+        }
+
         const withType = matches.find(el => (el.dataset?.type || '').length > 0);
         return withType || matches[0] || null;
     },
@@ -2122,20 +2206,4 @@ export const renderutils: RenderUtils = {
         }
         return s as EventName;
     },
-
-    addErrorTooltip: function(name: string, message: string) {
-        errorutils.addTooltip(name, message);
-    },
-
-    clearErrorTooltip: function(name: string, message?: string) {
-        errorutils.clearTooltip(name, message);
-    },
-
-    addErrorGlow: function(name: string, kind?: 'field' | 'radio') {
-        errorutils.addHighlight(name, kind);
-    },
-
-    clearErrorGlow: function(name: string) {
-        errorutils.clearHighlight(name);
-    }
 }

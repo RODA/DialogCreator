@@ -33,7 +33,12 @@ export interface RenderUtils {
     makeGroupFromSelection: (ids: string[], persistent?: boolean) => string | null;
     updateMultiOutline: (canvas: HTMLElement, ids: string[], outlineEl?: HTMLDivElement | null) => HTMLDivElement | null;
     clearMultiOutline: (outlineEl?: HTMLDivElement | null) => null;
-    computeBounds: (ids: string[]) => { left: number; top: number; width: number; height: number } | null;
+    computeBounds: (ids: string[]) => {
+        left: number;
+        top: number;
+        width: number;
+        height: number;
+    } | null;
     moveElementsBy: (ids: string[], dx: number, dy: number) => void;
     updateCheckboxColor: (uuid: string, color: string) => void;
     // Button UX helpers
@@ -53,10 +58,6 @@ export interface RenderUtils {
     exposeNameGlobals: (canvas: HTMLElement) => void;
     exposeEventNameGlobals: () => void;
     normalizeEventName: (ev: unknown) => EventName | null;
-    addErrorTooltip: (name: string, message: string) => void;
-    clearErrorTooltip: (name: string, message?: string) => void;
-    addErrorGlow: (name: string, kind?: 'field' | 'radio') => void;
-    clearErrorGlow: (name: string) => void;
 }
 
 export interface ValidationMessage {

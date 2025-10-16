@@ -77,6 +77,8 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         return name;
     };
 
+    const lastSelectedItem = new WeakMap<HTMLElement, HTMLElement | null>();
+
     const populateContainer = (host: HTMLElement, items: Array<{ text: string; active?: boolean }>) => {
         let target: HTMLElement | null = null;
 
@@ -109,51 +111,67 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
 
         target.replaceChildren();
 
-        items.forEach((row) => {
-            const value = String(row?.text ?? '');
-            const wrapper = document.createElement('div');
-            wrapper.className = 'container-item';
-            wrapper.dataset.value = value;
+        items.forEach((item) => {
+            const value = String(item?.text ?? '');
+            const div = document.createElement('div');
+            div.className = 'container-item';
+            div.dataset.value = value;
 
-            const active = row.active || initialActive.has(value);
-            wrapper.classList.toggle('active', Boolean(active));
-
-            applyItemStyle(host, wrapper, Boolean(active));
+            const active = item.active || initialActive.has(value);
+            div.classList.toggle('active', active);
+            applyItemStyle(host, div, active);
 
             const label = document.createElement('span');
             label.className = 'container-text';
             label.textContent = value;
-            wrapper.appendChild(label);
+            div.appendChild(label);
 
-            wrapper.addEventListener('click', () => {
-                if (multiple) {
-                    const willBeActive = !wrapper.classList.contains('active');
-                    wrapper.classList.toggle('active', willBeActive);
+            div.addEventListener('click', (ev) => {
+                if (multiple && ev instanceof MouseEvent && ev.shiftKey) {
+                    const all = Array.from(target.querySelectorAll<HTMLElement>('.container-item'));
+                    const last = lastSelectedItem.get(host);
+                    const lastIndex = last ? all.indexOf(last) : -1;
+                    const currentIndex = all.indexOf(div);
 
-                    applyItemStyle(host, wrapper, willBeActive);
-
+                    if (lastIndex !== -1 && currentIndex !== -1) {
+                        const [start, end] = lastIndex < currentIndex ? [lastIndex, currentIndex] : [currentIndex, lastIndex];
+                        const shouldActivate = !div.classList.contains('active');
+                        all.slice(start, end + 1).forEach(it => {
+                            it.classList.toggle('active', shouldActivate);
+                            applyItemStyle(host, it, shouldActivate);
+                        });
+                        lastSelectedItem.set(host, div);
+                    } else {
+                        const shouldActivate = !div.classList.contains('active');
+                        div.classList.toggle('active', shouldActivate);
+                        applyItemStyle(host, div, shouldActivate);
+                        lastSelectedItem.set(host, div);
+                    }
+                } else if (multiple) {
+                    const shouldSelect = !div.classList.contains('active');
+                    div.classList.toggle('active', shouldSelect);
+                    applyItemStyle(host, div, shouldSelect);
+                    lastSelectedItem.set(host, div);
                 } else {
-
-                    target.querySelectorAll<HTMLElement>('.container-item.active').forEach(item => {
-                        if (item !== wrapper) {
-                            item.classList.remove('active');
-                            applyItemStyle(host, item, false);
+                    target.querySelectorAll<HTMLElement>('.container-item.active').forEach(other => {
+                        if (other !== div) {
+                            other.classList.remove('active');
+                            applyItemStyle(host, other, false);
                         }
                     });
-
-                    wrapper.classList.add('active');
-
-                    applyItemStyle(host, wrapper, true);
+                    div.classList.add('active');
+                    applyItemStyle(host, div, true);
+                    lastSelectedItem.set(host, div);
                 }
 
-                host.dataset.activeValues = Array.from(
-                    target.querySelectorAll<HTMLElement>('.container-item.active')
-                ).map(item => item.dataset.value || '').join(',');
+                host.dataset.activeValues = Array.from(target.querySelectorAll<HTMLElement>('.container-item.active'))
+                    .map(it => it.dataset.value || '')
+                    .join(',');
 
                 host.dispatchEvent(new Event('change', { bubbles: true }));
             });
 
-            target.appendChild(wrapper);
+            target.appendChild(div);
         });
 
         host.dataset.activeValues = Array.from(
@@ -189,18 +207,18 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         return tokens.map(text => ({ text }));
     };
 
-    const applyItemStyle = (host: HTMLElement, row: HTMLElement, active: boolean) => {
-        const label = row.querySelector('.container-text') as HTMLElement | null;
+    const applyItemStyle = (host: HTMLElement, item: HTMLElement, active: boolean) => {
+        const label = item.querySelector('.container-text') as HTMLElement | null;
         const normalBg = host.dataset.backgroundColor || '#ffffff';
         const normalFg = host.dataset.fontColor || '#000000';
         const activeBg = host.dataset.activeBackgroundColor || '#779B49';
         const activeFg = host.dataset.activeFontColor || '#ffffff';
 
         if (active) {
-            row.style.backgroundColor = activeBg;
+            item.style.backgroundColor = activeBg;
             if (label) label.style.color = activeFg;
         } else {
-            row.style.backgroundColor = normalBg;
+            item.style.backgroundColor = normalBg;
             if (label) label.style.color = normalFg;
         }
     };
@@ -386,8 +404,8 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
 
                 case 'Container':
                     if (prop === 'value') {
-                        const rows = parseContainerValue(v);
-                        populateContainer(el, rows);
+                        const items = parseContainerValue(v);
+                        populateContainer(el, items);
                     } else {
                         warn(`${name}:${prop}`, `Unsupported set(${eltype}, ${prop})`);
                     }
@@ -438,9 +456,9 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             }
 
             if (eltype === 'Container') {
-                const host = el; // rows are direct children of the container element
-                const rows = Array.from(host.querySelectorAll('.container-item .container-text')) as HTMLElement[];
-                return rows.map(r => r.textContent || '');
+                const host = el; // items are direct children of the container element
+                const items = Array.from(host.querySelectorAll('.container-item .container-text')) as HTMLElement[];
+                return items.map(r => r.textContent || '');
             }
 
             return el.dataset['value'] ?? null;
@@ -454,25 +472,27 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             const inn = inner(el);
 
             if (Array.isArray(value)) {
-                const items = value.map(v => String(v));
+                const values = value.map(v => String(v));
                 if (eltype === 'Select') {
                     const sel = (el instanceof HTMLSelectElement ? el : (el.querySelector('select') as HTMLSelectElement | null));
                     if (sel) {
                         sel.innerHTML = '';
-                        for (const v of items) {
+                        for (const v of values) {
                             const opt = document.createElement('option');
                             opt.value = v; opt.textContent = v; sel.appendChild(opt);
                         }
                         const r = sel.getBoundingClientRect();
-                        if (r.height > 0) el.style.height = `${Math.round(r.height)}px`;
+                        if (r.height > 0) {
+                            el.style.height = `${Math.round(r.height)}px`;
+                        }
                         el.dataset.value = String(sel.value || '');
                     }
                     return;
                 }
 
                 if (eltype === 'Container') {
-                    const rows = parseContainerValue(items);
-                    populateContainer(el, rows);
+                    const items = parseContainerValue(values);
+                    populateContainer(el, items);
                     return;
                 }
 
@@ -529,8 +549,8 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             }
 
             if (eltype === 'Container') {
-                const rows = parseContainerValue(value);
-                populateContainer(el, rows);
+                const items = parseContainerValue(value);
+                populateContainer(el, items);
                 return;
             }
 
@@ -838,7 +858,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 const v = String(value);
                 const item = items.find(r => ((r.querySelector('.container-text') as HTMLElement | null)?.textContent || '') === v);
                 if (!item) {
-                    throw new SyntaxError(`Row with label "${v}" not found in Container ${name}`);
+                    throw new SyntaxError(`Item with label "${v}" not found in Container ${name}`);
                 }
                 const h = host as HTMLElement;
 
@@ -857,7 +877,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                         txt.style.color = willActivate ? activeFg : normalFg;
                     }
                 } else {
-                    // Single-select: clear all others then activate this row
+                    // Single-select: clear all others then activate this item
                     const prevs = Array.from(h.querySelectorAll('.container-item.active')) as HTMLElement[];
                     const alreadyActive = item.classList.contains('active');
                     if (!alreadyActive) {

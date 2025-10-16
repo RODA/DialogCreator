@@ -100,6 +100,21 @@ input:focus, select:focus, textarea:focus {
     overflow-x: hidden;
 }
 
+.preview-canvas .container .container-item {
+    padding: 4px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.preview-canvas .container .container-item .container-text {
+    user-select: none;
+    font-size: inherit;
+}
+
+.preview-canvas .container .container-item.active {
+    user-select: none;
+}
+
 /* Ensure native disabled controls remain readable and sized the same */
 .preview-canvas input:disabled,
 .preview-canvas select:disabled,

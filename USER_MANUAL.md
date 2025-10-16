@@ -404,7 +404,7 @@ setSelected(variablesContainer, ["Sepal.Width"]);
 trigger(variablesContainer, "change");
 ```
 
-- Add or remove rows in a Container (not supported for Select):
+- Add or remove items in a Container:
 
 ```javascript
 addValue(variablesContainer, "Sepal.Length");
@@ -416,6 +416,34 @@ Notes
 - Programmatic state changes (e.g., `check`, `setValue`) do not automatically dispatch events. Use `trigger` when you need the dialog to behave as if the user had interacted with the element.
 - The selection command (`setSelected`) also does not auto-dispatch, but it can be paired with `trigger(name, 'change')` if you rely on change triggers.
 - Validation/highlight helpers (`addError`, `clearError`, `addGlow`, `clearGlow`) are purely visual aids in Preview; they do not block execution or change element values.
+
+### Populate container contents
+
+Containers can show rows populated via API. For example:
+
+```javascript
+setValue(datasetsContainer, listDatasets());
+
+onChange(datasetsContainer, () => {
+  const variables = listVariables(getSelected(datasetsContainer));
+
+  if (!variables.length) {
+    addError(datasetsContainer, "Unable to load variables");
+    addGlow(datasetsContainer);
+    return;
+  }
+
+  clearError(datasetsContainer);
+  clearGlow(datasetsContainer);
+  setValue(variablesContainer, variables);
+});
+```
+
+- `setValue(container, array)` accepts an array of strings (or an array of objects with `{ text, active }`) and renders each entry as a row.
+- Rows automatically adopt the container’s `fontColor`, `activeBackgroundColor`, and `activeFontColor`.
+- Containers scroll automatically when the row list exceeds the container height.
+
+Multi-selection containers support range selection: click an item, then Shift-click another to select or deselect the entire range. Single containers toggle a single active row.
 
 ## Syntax window
 

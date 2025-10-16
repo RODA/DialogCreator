@@ -87,16 +87,16 @@ export interface PreviewUI {
     /** Dispatch an event on the element (bubbling), without changing state. Supported: 'click', 'change', 'input'. */
     trigger(name: string, event: 'click' | 'change' | 'input'): void;
 
-    /** Set selection: Select elements (single value) or Container rows (accepts string or string[]). */
+    /** Set selection: Select elements (single value) or Container items (accepts string or string[]). */
     setSelected(name: string, value: string | string[]): void;
 
     /** Legacy alias (additive for Container). Prefer setSelected for explicit selection. */
     select(name: string, value: string): void;
 
-    /** Add a new row/value to a Container (does nothing for Select). */
+    /** Add a new item to a Container (does nothing for Select). */
     addValue(name: string, value: string): void;
 
-    /** Delete a row/value from a Container by its label (does nothing for Select). */
+    /** Delete an item from a Container by its label (does nothing for Select). */
     deleteValue(name: string, value: string): void;
 
     /**
