@@ -2,6 +2,8 @@
 
 import type { PreviewUI, PreviewUIEnv } from '../interfaces/preview';
 import { renderutils, errorhelpers } from './renderutils';
+import { utils } from './utils';
+import { datasets } from './datasets';
 
 // Allowed event names for the custom Preview UI API
 export const EVENT_LIST = ['click', 'change', 'input'] as const;
@@ -26,14 +28,18 @@ export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
     'setSelected', 'getSelected', 'addValue', 'deleteValue',
 
     // errors
-    'addError', 'clearError', 'addGlow', 'clearGlow'
+    'addError', 'clearError', 'addGlow', 'clearGlow',
+
+    // datasets/workspace
+    'listDatasets', 'listVariables'
 ]);
 
 // Methods that take (elementName, ...) as first argument; used by the linter.
 // Derive from API_NAMES to keep a single source of truth for the public surface,
 // then exclude the non-element-first helpers explicitly (currently just 'showMessage').
 const NEUTRAL_NAMES = new Set<keyof PreviewUI>([
-    'showMessage'
+    'showMessage',
+    'listDatasets'
 ]);
 
 export const ELEMENT_FIRST_ARG_CALLS: ReadonlyArray<keyof PreviewUI> = Object.freeze(
@@ -55,7 +61,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
     const warnOnce = new Set<string>();
     const warn = (k: string, msg: string) => {
         if (!warnOnce.has(k)) {
-            logToEditor('Warning: ' + msg);
+            logToEditor(`Warning: ${msg}`);
             warnOnce.add(k);
         }
     };
@@ -69,6 +75,134 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             throw new SyntaxError('Element name cannot be empty');
         }
         return name;
+    };
+
+    const populateContainer = (host: HTMLElement, items: Array<{ text: string; active?: boolean }>) => {
+        let target: HTMLElement | null = null;
+
+        // identify container target
+        const existing = host.querySelector('.container-content');
+        const sample = host.querySelector('.container-sample');
+        if (existing instanceof HTMLElement) {
+            target = existing;
+        } else if (sample instanceof HTMLElement) {
+            target = sample;
+        } else {
+            const target = document.createElement('div');
+            target.className = 'container-content';
+            target.style.width = '100%';
+            target.style.height = '100%';
+            target.style.overflowY = 'auto';
+            target.style.overflowX = 'hidden';
+            host.appendChild(target);
+        }
+
+        const selectionMode = String(host.dataset.selection || 'single').toLowerCase();
+        const multiple = selectionMode === 'multiple';
+        const initialActive = new Set<string>(
+            (host.dataset.activeValues || '').split(',').map(v => v.trim()).filter(Boolean)
+        );
+
+        if (!target) {
+            return;
+        }
+
+        target.replaceChildren();
+
+        items.forEach((row) => {
+            const value = String(row?.text ?? '');
+            const wrapper = document.createElement('div');
+            wrapper.className = 'container-item';
+            wrapper.dataset.value = value;
+
+            const active = row.active || initialActive.has(value);
+            wrapper.classList.toggle('active', Boolean(active));
+
+            applyItemStyle(host, wrapper, Boolean(active));
+
+            const label = document.createElement('span');
+            label.className = 'container-text';
+            label.textContent = value;
+            wrapper.appendChild(label);
+
+            wrapper.addEventListener('click', () => {
+                if (multiple) {
+                    const willBeActive = !wrapper.classList.contains('active');
+                    wrapper.classList.toggle('active', willBeActive);
+
+                    applyItemStyle(host, wrapper, willBeActive);
+
+                } else {
+
+                    target.querySelectorAll<HTMLElement>('.container-item.active').forEach(item => {
+                        if (item !== wrapper) {
+                            item.classList.remove('active');
+                            applyItemStyle(host, item, false);
+                        }
+                    });
+
+                    wrapper.classList.add('active');
+
+                    applyItemStyle(host, wrapper, true);
+                }
+
+                host.dataset.activeValues = Array.from(
+                    target.querySelectorAll<HTMLElement>('.container-item.active')
+                ).map(item => item.dataset.value || '').join(',');
+
+                host.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+
+            target.appendChild(wrapper);
+        });
+
+        host.dataset.activeValues = Array.from(
+            target.querySelectorAll<HTMLElement>('.container-item.active')
+        ).map(item => item.dataset.value || '').join(',');
+
+        Array.from(target.querySelectorAll<HTMLElement>('.container-item')).forEach(item => {
+            applyItemStyle(host, item, item.classList.contains('active'));
+        });
+
+        if (items.length) {
+            host.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    };
+
+    const parseContainerValue = (value: unknown): Array<{ text: string; active?: boolean }> => {
+        if (Array.isArray(value)) {
+            return value.map(v => {
+                if (typeof v === 'object' && v !== null && 'text' in v) {
+                    return {
+                        text: String(v.text ?? ''),
+                        active: Boolean(v.active)
+                    };
+                }
+                return { text: String(v ?? '') };
+            });
+        }
+
+        const tokens = String(value ?? '')
+            .split(/\r?\n/)
+            .map(t => t.trim())
+            .filter(Boolean);
+        return tokens.map(text => ({ text }));
+    };
+
+    const applyItemStyle = (host: HTMLElement, row: HTMLElement, active: boolean) => {
+        const label = row.querySelector('.container-text') as HTMLElement | null;
+        const normalBg = host.dataset.backgroundColor || '#ffffff';
+        const normalFg = host.dataset.fontColor || '#000000';
+        const activeBg = host.dataset.activeBackgroundColor || '#779B49';
+        const activeFg = host.dataset.activeFontColor || '#ffffff';
+
+        if (active) {
+            row.style.backgroundColor = activeBg;
+            if (label) label.style.color = activeFg;
+        } else {
+            row.style.backgroundColor = normalBg;
+            if (label) label.style.color = normalFg;
+        }
     };
 
     const api: PreviewUI = {
@@ -172,7 +306,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             }
         },
 
-        set: (name, prop, value) => {
+        set: (name: string, prop: string, value: any) => {
             const el = findWrapper(name);
             if (!el) return;
 
@@ -188,6 +322,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                         warn(`${name}:${prop}`, `Unsupported set(${eltype}, ${prop})`);
                     }
                     break;
+
                 case 'Label':
                     if (prop === 'value') {
                         el.dataset.value = String(v);
@@ -196,6 +331,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                         warn(`${name}:${prop}`, `Unsupported set(${eltype}, ${prop})`);
                     }
                     break;
+
                 case 'Select':
                     const sel = (inn instanceof HTMLSelectElement ? inn : (el as any as HTMLSelectElement));
                     if (prop === 'value' && sel) {
@@ -205,6 +341,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                         warn(`${name}:${prop}`, `Unsupported set(${eltype}, ${prop})`);
                     }
                     break;
+
                 case 'Checkbox':
                     if (prop === 'checked') {
                         updateElement(el, { isChecked: v ? 'true' : 'false' });
@@ -212,6 +349,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                         warn(`${name}:${prop}`, `Unsupported set(${eltype}, ${prop})`);
                     }
                     break;
+
                 case 'Radio':
                     if (prop === 'selected') {
                         updateElement(el, { isSelected: v ? 'true' : 'false' });
@@ -219,6 +357,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                         warn(`${name}:${prop}`, `Unsupported set(${eltype}, ${prop})`);
                     }
                     break;
+
                 case 'Counter':
                     if (prop === 'value') {
                         const min = Number(el.dataset.minval ?? el.dataset.startval ?? '0');
@@ -244,45 +383,73 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                         warn(`${name}:${prop}`, `Unsupported set(${eltype}, ${prop})`);
                     }
                     break;
+
+                case 'Container':
+                    if (prop === 'value') {
+                        const rows = parseContainerValue(v);
+                        populateContainer(el, rows);
+                    } else {
+                        warn(`${name}:${prop}`, `Unsupported set(${eltype}, ${prop})`);
+                    }
+                    break;
+
                 default:
-                    warn(`${name}:${prop}`, `Unsupported element type ${eltype} for set()`);
+                    warn(`${name}:${prop}`, `Unsupported set(${eltype}, ${prop})`);
                     break;
             }
         },
 
         getValue: (name) => {
             const el = findWrapper(name);
-            if (!el) return null;
+            if (!el) {
+                return null;
+            }
+
             const eltype = typeOf(el);
             const inn = inner(el);
+
             if (eltype === 'Input') {
                 const input = (el instanceof HTMLInputElement ? el : (inn as HTMLInputElement | null));
                 return input?.value ?? '';
             }
-            if (eltype === 'Label') return inn?.textContent ?? '';
+
+            if (eltype === 'Label') {
+                return inn?.textContent ?? '';
+            }
+
             if (eltype === 'Select') {
                 const sel = (el instanceof HTMLSelectElement ? el : (inn as HTMLSelectElement | null));
                 return sel?.value ?? '';
             }
-            if (eltype === 'Checkbox') return el.dataset.isChecked === 'true';
-            if (eltype === 'Radio') return el.dataset.isSelected === 'true';
+
+            if (eltype === 'Checkbox') {
+                return el.dataset.isChecked === 'true';
+            }
+
+            if (eltype === 'Radio') {
+                return el.dataset.isSelected === 'true';
+            }
+
             if (eltype === 'Counter') {
                 const display = el.querySelector('.counter-value') as HTMLDivElement | null;
                 const txt = display?.textContent ?? el.dataset.startval ?? '0';
                 const n = Number(txt);
                 return Number.isFinite(n) ? n : 0;
             }
+
             if (eltype === 'Container') {
-                const host = inn || el;
-                const rows = Array.from(host.querySelectorAll('.container-row .container-text')) as HTMLElement[];
+                const host = el; // rows are direct children of the container element
+                const rows = Array.from(host.querySelectorAll('.container-item .container-text')) as HTMLElement[];
                 return rows.map(r => r.textContent || '');
             }
-            return (el.dataset as any)['value'] ?? null;
+
+            return el.dataset['value'] ?? null;
         },
 
         setValue: (name, value) => {
             const el = findWrapper(name);
             if (!el) return;
+
             const eltype = typeOf(el);
             const inn = inner(el);
 
@@ -302,41 +469,49 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                     }
                     return;
                 }
+
                 if (eltype === 'Container') {
-                    const host = inn || el;
-                    const sample = host.querySelector('.container-sample') as HTMLDivElement | null;
-                    const target = sample || host;
-                    if (sample) { sample.innerHTML = ''; } else { host.innerHTML = ''; }
-                    for (const txt of items) {
-                        const row = document.createElement('div');
-                        row.className = 'container-row';
-                        const label = document.createElement('span');
-                        label.className = 'container-text';
-                        label.textContent = txt; row.appendChild(label); target.appendChild(row);
-                    }
+                    const rows = parseContainerValue(items);
+                    populateContainer(el, rows);
                     return;
                 }
+
                 return; // ignore arrays for other types
             }
 
             // Scalar
             if (eltype === 'Input') {
                 const input = (el instanceof HTMLInputElement ? el : (inn as HTMLInputElement | null));
-                if (input) { input.value = String(value); el.dataset.value = String(value); }
+
+                if (input) {
+                    input.value = String(value);
+                    el.dataset.value = String(value);
+                }
+
                 return;
             }
+
             if (eltype === 'Label') {
                 el.dataset.value = String(value);
-                updateElement(el, { value: String(value) });
+                updateElement(
+                    el,
+                    { value: String(value) }
+                );
+
                 return;
             }
+
             if (eltype === 'Select') {
                 const sel = (el instanceof HTMLSelectElement ? el : (el.querySelector('select') as HTMLSelectElement | null));
+
                 if (sel) {
-                    sel.value = String(value); el.dataset.value = String(value);
+                    sel.value = String(value);
+                    el.dataset.value = String(value);
                 }
+
                 return;
             }
+
             if (eltype === 'Checkbox') {
                 updateElement(
                     el,
@@ -344,6 +519,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 );
                 return;
             }
+
             if (eltype === 'Radio') {
                 updateElement(
                     el,
@@ -351,40 +527,43 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 );
                 return;
             }
-            if (eltype === 'Counter') {
-                const min = Number(el.dataset.minval ?? el.dataset.startval ?? '0');
-                const max = Number(el.dataset.maxval ?? String(min));
-                let n = Number(value);
-                if (!Number.isFinite(n)) {
-                    showRuntimeError(`Invalid number: ${value}`);
-                    return;
-                }
-                if (n < min) n = min;
-                if (n > max) n = max;
-                updateElement(
-                    el,
-                    { startval: String(n) }
-                );
+
+            if (eltype === 'Container') {
+                const rows = parseContainerValue(value);
+                populateContainer(el, rows);
                 return;
             }
-            (el.dataset as any)['value'] = String(value);
+
+            el.dataset['value'] = String(value);
         },
 
         getSelected: (name) => {
             const el = findWrapper(name);
-            if (!el) return [];
+            if (!el) {
+                return [];
+            }
+
             const eltype = typeOf(el);
-            const inn = inner(el);
+
             if (eltype === 'Select') {
                 const sel = (el instanceof HTMLSelectElement ? el : (el.querySelector('select') as HTMLSelectElement | null));
                 return sel && sel.value ? [sel.value] : [];
             }
+
             if (eltype === 'Container') {
-                const host = inn || el;
-                const rows = Array.from(host.querySelectorAll('.container-row')) as HTMLElement[];
-                const selected = rows.filter(r => r.classList.contains('active'));
-                return selected.map(r => (r.querySelector('.container-text') as HTMLElement | null)?.textContent || '');
+                // Compute from DOM on the container element directly
+                const nodes = Array.from(el.querySelectorAll('.container-item.active .container-text')) as HTMLElement[];
+
+                const vals = nodes.map(n => n.textContent || '').map(s => s.trim()).filter(s => s.length > 0);
+                if (vals.length > 0) {
+                    return vals;
+                }
+
+                // Fallback to dataset mirror if present
+                const ds = String((el as HTMLElement).dataset.selected || '').trim();
+                return ds ? ds.split(',').map(s => s.trim()).filter(s => s.length > 0) : [];
             }
+
             return [];
         },
 
@@ -481,6 +660,25 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             errorhelpers.clearHighlight(coerceName(name));
         },
 
+        // Simulated workspace datasets listing (e.g., via R connection)
+        listDatasets: () => {
+            try {
+                return utils.getKeys(datasets);
+            } catch {
+                return [];
+            }
+        },
+
+        // Simulated workspace variables listing
+        listVariables: (x) => {
+            if (x.length != 1) return [];
+            try {
+                return datasets[x[0]];
+            } catch {
+                return [];
+            }
+        },
+
         on: (name, event, handler: (ev: Event, el: HTMLElement) => void) => {
             const el = findWrapper(name);
             if (!el) {
@@ -565,29 +763,58 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             }
 
             const eltype = typeOf(el);
-            const inn = inner(el);
 
             if (eltype === 'Select') {
                 const sel = (el instanceof HTMLSelectElement ? el : (el.querySelector('select') as HTMLSelectElement | null));
-                if (!sel) throw new SyntaxError(`Select control not found in element ${name}`);
+                if (!sel) {
+                    throw new SyntaxError(`Select control not found in element ${name}`);
+                }
+
                 const v = String(Array.isArray(value) ? value[0] : value);
                 const exists = Array.from(sel.options).some(o => o.value === v);
-                if (!exists) throw new SyntaxError(`Option "${v}" not found in Select ${name}`);
-                sel.value = v; el.dataset.value = v; return;
+
+                if (!exists) {
+                    throw new SyntaxError(`Option "${v}" not found in Select ${name}`);
+                }
+
+                sel.value = v;
+                el.dataset.value = v;
+
+                return;
             }
 
             if (eltype === 'Container') {
-                const host = inn || el;
-                const rows = Array.from(host.querySelectorAll('.container-row')) as HTMLElement[];
-                const selValues = Array.isArray(value) ? value.map(v => String(v)) : [String(value)];
+                const host = el; // use the container element directly
+                const items = Array.from(host.querySelectorAll('.container-item')) as HTMLElement[];
+
+                const kind = String(el.dataset.selection || (host as HTMLElement).dataset.selection || 'single').toLowerCase();
+                let selValues = Array.isArray(value) ? value.map(v => String(v)) : [String(value)];
+
+                if (kind === 'single') {
+                    selValues = selValues.length ? [selValues[0]] : [];
+                }
+
                 // Replace selection to exactly match selValues
-                rows.forEach(r => {
-                    const label = (r.querySelector('.container-text') as HTMLElement | null)?.textContent || '';
+                const normalFg = String((host as HTMLElement).dataset.fontColor || '#000000');
+                const activeBg = String((host as HTMLElement).dataset.activeBackgroundColor || '#779B49');
+                const activeFg = String((host as HTMLElement).dataset.activeFontColor || '#ffffff');
+                items.forEach(item => {
+                    const label = (item.querySelector('.container-text') as HTMLElement | null)?.textContent || '';
                     const shouldSelect = selValues.includes(label);
-                    if (shouldSelect) r.classList.add('active'); else r.classList.remove('active');
+                    item.classList.toggle('active', shouldSelect);
+
+                    item.style.backgroundColor = shouldSelect ? activeBg : '';
+                    const txt = item.querySelector('.container-text') as HTMLElement | null;
+                    if (txt) {
+                        txt.style.color = shouldSelect ? activeFg : normalFg;
+                    }
                 });
+
+                // Update dataset mirror
+                (el as HTMLElement).dataset.selected = selValues.join(',');
                 return;
             }
+
             throw new SyntaxError(`ui.setSelected is not supported for element type ${eltype}`);
         },
 
@@ -597,25 +824,75 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             if (!el) {
                 throw new SyntaxError(`Element not found: ${String(name)}`);
             }
+
             const eltype = typeOf(el);
-            const inn = inner(el);
+
             if (eltype === 'Select') {
-                (api as any).setSelected(name, value);
+                api.setSelected(name, value);
                 return;
             }
+
             if (eltype === 'Container') {
-                const host = inn || el;
-                const rows = Array.from(host.querySelectorAll('.container-row')) as HTMLElement[];
+                const host = el; // use the container element directly
+                const items = Array.from(host.querySelectorAll('.container-item')) as HTMLElement[];
                 const v = String(value);
-                const row = rows.find(r => ((r.querySelector('.container-text') as HTMLElement | null)?.textContent || '') === v);
-                if (!row) {
+                const item = items.find(r => ((r.querySelector('.container-text') as HTMLElement | null)?.textContent || '') === v);
+                if (!item) {
                     throw new SyntaxError(`Row with label "${v}" not found in Container ${name}`);
                 }
-                if (!row.classList.contains('active')) {
-                    row.classList.add('active');
+                const h = host as HTMLElement;
+
+                const kind = String(el.dataset.selection || h.dataset.selection || 'single').toLowerCase();
+                const normalFg = String(h.dataset.fontColor || '#000000');
+                const activeBg = String(h.dataset.activeBackgroundColor || '#779B49');
+                const activeFg = String(h.dataset.activeFontColor || '#ffffff');
+
+                if (kind === 'multiple') {
+                    const willActivate = !item.classList.contains('active');
+                    item.classList.toggle('active');
+                    item.style.backgroundColor = willActivate ? activeBg : '';
+
+                    const txt = item.querySelector('.container-text') as HTMLElement | null;
+                    if (txt) {
+                        txt.style.color = willActivate ? activeFg : normalFg;
+                    }
+                } else {
+                    // Single-select: clear all others then activate this row
+                    const prevs = Array.from(h.querySelectorAll('.container-item.active')) as HTMLElement[];
+                    const alreadyActive = item.classList.contains('active');
+                    if (!alreadyActive) {
+                        for (const prev of prevs) {
+                            if (prev === item) {
+                                continue;
+                            }
+
+                            prev.classList.remove('active');
+                            prev.style.backgroundColor = '';
+
+                            const ptxt = prev.querySelector('.container-text') as HTMLElement | null;
+                            if (ptxt) {
+                                ptxt.style.color = normalFg;
+                            }
+                        }
+
+                        item.classList.add('active');
+                        item.style.backgroundColor = activeBg;
+
+                        const txt = item.querySelector('.container-text') as HTMLElement | null;
+                        if (txt) {
+                            txt.style.color = activeFg;
+                        }
+                    }
                 }
+
+                // Update dataset mirror after programmatic select
+                const active = Array.from(h.querySelectorAll('.container-item.active .container-text')) as HTMLElement[];
+                const vals = active.map(n => String(n.textContent || '').trim()).filter(s => s.length > 0);
+
+                el.dataset.selected = vals.join(',');
                 return;
             }
+
             throw new SyntaxError(`ui.select is not supported for element type ${eltype}`);
         },
 
@@ -624,24 +901,91 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             if (!el) {
                 throw new SyntaxError(`Element not found: ${String(name)}`);
             }
+
             const eltype = typeOf(el);
-            const inn = inner(el);
+
             if (eltype !== 'Container') {
                 throw new SyntaxError(`ui.addValue is only supported for Container elements`);
             }
-            const host = inn || el;
+
+            const host = el; // use the container element directly
             const sample = host.querySelector('.container-sample') as HTMLDivElement | null;
             const target = sample || host;
-            const rows = Array.from(target.querySelectorAll('.container-row')) as HTMLElement[];
-            const exists = rows.some(r => ((r.querySelector('.container-text') as HTMLElement | null)?.textContent || '') === String(value));
-            if (exists) return;
-            const row = document.createElement('div');
-            row.className = 'container-row';
+            const items = Array.from(target.querySelectorAll('.container-item')) as HTMLElement[];
+
+            const exists = items.some(r => ((r.querySelector('.container-text') as HTMLElement | null)?.textContent || '') === String(value));
+            if (exists) {
+                return;
+            }
+
+            const item = document.createElement('div');
+            item.className = 'container-item';
             const label = document.createElement('span');
             label.className = 'container-text';
             label.textContent = String(value);
-            row.appendChild(label);
-            target.appendChild(row);
+            // initialize label color to container fontColor
+            try { label.style.color = String((host as HTMLElement).dataset.fontColor || '#000000'); } catch {}
+            item.appendChild(label);
+            target.appendChild(item);
+
+            // Wire click handler same as in setValue
+            try {
+                const h = host as HTMLElement;
+                item.addEventListener('click', () => {
+
+                    const kind = String(el.dataset.selection || h.dataset.selection || 'single').toLowerCase();
+                    const normalFg = String(h.dataset.fontColor || '#000000');
+                    const activeBg = String(h.dataset.activeBackgroundColor || '#779B49');
+                    const activeFg = String(h.dataset.activeFontColor || '#ffffff');
+
+                    let changed = false;
+
+                    if (kind === 'multiple') {
+                        const willActivate = !item.classList.contains('active');
+                        item.classList.toggle('active');
+                        item.style.backgroundColor = willActivate ? activeBg : '';
+
+                        const txt = item.querySelector('.container-text') as HTMLElement | null;
+                        if (txt) {
+                            txt.style.color = willActivate ? activeFg : normalFg;
+                        }
+
+                        changed = true;
+
+                    } else {
+                        const prev = h.querySelector('.container-item.active') as HTMLElement | null;
+
+                        if (prev !== item) {
+                            if (prev) {
+                                prev.classList.remove('active');
+                                prev.style.backgroundColor = '';
+                                const ptxt = prev.querySelector('.container-text') as HTMLElement | null;
+                                if (ptxt) {
+                                    ptxt.style.color = normalFg;
+                                }
+                            }
+
+                            item.classList.add('active');
+                            item.style.backgroundColor = activeBg;
+
+                            const txt = item.querySelector('.container-text') as HTMLElement | null;
+                            if (txt) {
+                                txt.style.color = activeFg;
+                            }
+
+                            changed = true;
+                        }
+                    }
+
+                    if (changed) {
+                        const active = Array.from(h.querySelectorAll('.container-item.active .container-text')) as HTMLElement[];
+                        const vals = active.map(n => String(n.textContent || '').trim()).filter(s => s.length > 0);
+
+                        el.dataset.selected = vals.join(',');
+                        h.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                });
+            } catch {}
         },
 
         deleteValue: (name, value) => {
@@ -649,17 +993,28 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             if (!el) {
                 throw new SyntaxError(`Element not found: ${String(name)}`);
             }
+
             const eltype = typeOf(el);
-            const inn = inner(el);
+
             if (eltype !== 'Container') {
                 throw new SyntaxError(`ui.deleteValue is only supported for Container elements`);
             }
-            const host = inn || el;
-            const rows = Array.from(host.querySelectorAll('.container-row')) as HTMLElement[];
+
+            const host = el; // use the container element directly
+
+            const items = Array.from(host.querySelectorAll('.container-item')) as HTMLElement[];
             const v = String(value);
-            const row = rows.find(r => ((r.querySelector('.container-text') as HTMLElement | null)?.textContent || '') === v);
-            if (!row) return; // nothing to delete
-            row.remove();
+
+            const item = items.find(r => ((r.querySelector('.container-text') as HTMLElement | null)?.textContent || '') === v);
+            if (!item) {
+                return; // nothing to delete
+            }
+
+            item.remove();
+            // Update dataset mirror after deletion
+            const active = Array.from(host.querySelectorAll('.container-item.active .container-text')) as HTMLElement[];
+            const vals = active.map(n => String(n.textContent || '').trim()).filter(s => s.length > 0);
+            el.dataset.selected = vals.join(',');
         },
 
         // call: (service, args?, cb?) => call(service, args, cb),

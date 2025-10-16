@@ -313,32 +313,11 @@ function renderPreview(dialog: PreviewDialog) {
             });
         }
 
-        // Container: make rows toggle selection on click (multi-select)
+        // Container: row interactions are handled by row-level listeners created via ui.setValue()/ui.addValue().
+        // No generic delegated click handler here to avoid interfering with selection mode enforcement.
         if ((element.dataset?.type || '') === 'Container') {
-            const host = element.firstElementChild as HTMLElement | null || element;
-            const toggleRow = (row: HTMLElement) => {
-                row.classList.toggle('active');
-                // Bubble a change event so user handlers can react
-                element.dispatchEvent(new Event('change', { bubbles: true }));
-            };
-            // Event delegation
-            host.addEventListener('click', (ev: Event) => {
-                try {
-                    const target = ev.target as HTMLElement;
-                    const row = target?.closest?.('.container-row') as HTMLElement | null;
-                    if (row && host.contains(row)) {
-                        toggleRow(row);
-                    }
-                } catch (e: any) {
-                    const msg = `Container click error: ${String(e && e.message ? e.message : e)}`;
-                    // show overlay if available in this scope
-                    try {
-                        renderutils.showRuntimeError(msg, canvas);
-                    } catch {
-                        coms.sendTo('editorWindow', 'consolog', msg);
-                    }
-                }
-            });
+            // Optionally, style cursor to indicate interactivity once rows are populated.
+            element.style.cursor = 'default';
         }
 
         // Visibility / Enabled

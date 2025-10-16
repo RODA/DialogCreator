@@ -597,7 +597,7 @@ input {
 .container-sample {
     padding: 0px; /* rows should stretch edge-to-edge */
 }
-.container-row {
+.container-item {
     display: flex;
     align-items: center;
     justify-content: flex-start; /* left-align content */
@@ -609,7 +609,7 @@ input {
     box-sizing: border-box;
     text-align: left;
 }
-.container-row .container-text {
+.container-item .container-text {
     font-size: inherit;
     /* font-weight: 700; */
     color: #000;

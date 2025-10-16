@@ -71,6 +71,11 @@ export interface PreviewUI {
     addGlow(name: string, kind?: 'field' | 'radio'): void;
     clearGlow(name: string): void;
 
+    /** Return list of available dataset names from the connected workspace */
+    listDatasets(): string[];
+    /** Return list of variables specific to a dataset */
+    listVariables(dataset: string[]): string[];
+
     /** Register an event handler on the wrapper */
     on(name: string, event: string, handler: (ev: Event, el: HTMLElement) => void): void;
 

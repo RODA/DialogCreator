@@ -671,41 +671,46 @@ export const renderutils: RenderUtils = {
             element.style.width = data.width + 'px';
             element.style.height = data.height + 'px';
 
-    } else if (data.type == "Container") {
+        } else if (data.type == "Container") {
 
             element.className = 'container';
             element.style.backgroundColor = String((data as any).backgroundColor || '#ffffff');
             element.style.width = data.width + 'px';
             element.style.height = data.height + 'px';
 
-            // Build a simple sample of container contents showing inactive and active rows
-            const sample = document.createElement('div');
-            sample.className = 'container-sample';
+            if (renderutils.previewWindow()) {
+                const content = document.createElement('div');
+                content.className = 'container-content';
+                element.appendChild(content);
+            } else {
+                const sample = document.createElement('div');
+                sample.className = 'container-sample';
 
-            const mkRow = (cls: string, text: string) => {
-                const row = document.createElement('div');
-                row.className = `container-row ${cls}`;
-                const label = document.createElement('span');
-                label.className = 'container-text';
-                label.textContent = text;
-                row.appendChild(label);
-                return { row, label };
-            };
+                const mkRow = (cls: string, text: string) => {
+                    const row = document.createElement('div');
+                    row.className = `container-item ${cls}`;
+                    const label = document.createElement('span');
+                    label.className = 'container-text';
+                    label.textContent = text;
+                    row.appendChild(label);
+                    return { row, label };
+                };
 
-            const inactive = mkRow('inactive', 'unselected');
-            const active = mkRow('active', 'active / selected');
+                const inactive = mkRow('inactive', 'unselected');
+                const active = mkRow('active', 'active / selected');
 
-            const fg = String(data.fontColor) || '#000000';
-            const abg = String(data.activeBackgroundColor) || '#779B49';
-            const afg = String(data.activeFontColor) || '#ffffff';
+                const fg = String(data.fontColor) || '#000000';
+                const abg = String(data.activeBackgroundColor) || '#779B49';
+                const afg = String(data.activeFontColor) || '#ffffff';
 
-            inactive.label.style.color = fg;
-            active.row.style.backgroundColor = abg;
-            active.label.style.color = afg;
+                inactive.label.style.color = fg;
+                active.row.style.backgroundColor = abg;
+                active.label.style.color = afg;
 
-            sample.appendChild(inactive.row);
-            sample.appendChild(active.row);
-            element.appendChild(sample);
+                sample.appendChild(inactive.row);
+                sample.appendChild(active.row);
+                element.appendChild(sample);
+            }
 
         }
 
@@ -996,7 +1001,7 @@ export const renderutils: RenderUtils = {
                         if (utils.isValidColor(value)) {
                             const host = inner || element;
                             host.style.backgroundColor = value;
-                            // const row = host.querySelector('.container-row.inactive') as HTMLDivElement | null;
+                            // const row = host.querySelector('.container-item.inactive') as HTMLDivElement | null;
                             // if (row) row.style.backgroundColor = value;
                         } else {
                             value = dataset.backgroundColor;
@@ -1023,8 +1028,12 @@ export const renderutils: RenderUtils = {
                             countervalue.style.color = value;
                         } else if (container) {
                             const host = inner || element;
-                            const txt = host.querySelector('.container-row.inactive .container-text') as HTMLElement | null;
-                            if (txt) txt.style.color = value;
+                            // Apply new font color to all non-active rows' labels
+                            try {
+                                host.querySelectorAll('.container-item:not(.active) .container-text').forEach((n) => {
+                                    (n as HTMLElement).style.color = String(value);
+                                });
+                            } catch {}
                         } else {
                             element.style.color = value;
                         }
@@ -1039,10 +1048,9 @@ export const renderutils: RenderUtils = {
                     if (container) {
                         if (utils.isValidColor(value)) {
                             const host = inner || element;
-                            const row = host.querySelector('.container-row.active') as HTMLDivElement | null;
-                            if (row) {
-                                row.style.backgroundColor = value;
-                            }
+                            host.querySelectorAll('.container-item.active').forEach((r) => {
+                                (r as HTMLDivElement).style.backgroundColor = String(value);
+                            });
                         } else {
                             value = dataset.activeBackgroundColor;
                             const color = document.getElementById('elactiveBackgroundColor') as HTMLInputElement;
@@ -1055,10 +1063,9 @@ export const renderutils: RenderUtils = {
                     if (container) {
                         if (utils.isValidColor(value)) {
                             const host = inner || element;
-                            const txt = host.querySelector('.container-row.active .container-text') as HTMLElement | null;
-                            if (txt) {
-                                txt.style.color = value;
-                            }
+                            host.querySelectorAll('.container-item.active .container-text').forEach((n) => {
+                                (n as HTMLElement).style.color = String(value);
+                            });
                         } else {
                             value = dataset.activeFontColor;
                             const color = document.getElementById('elactiveFontColor') as HTMLInputElement;
@@ -1150,7 +1157,7 @@ export const renderutils: RenderUtils = {
                     break;
                 }
 
-                
+
 
                 case 'direction':
                     // e.g. separator, switch height with width
@@ -1188,6 +1195,36 @@ export const renderutils: RenderUtils = {
                     element.style.height = height + 'px';
                     elwidth.value = String(width);
                     elheight.value = String(height);
+                    break;
+
+                case 'selection':
+                    if (container) {
+                        const host = inner || element;
+                        const kind = String(value || '').toLowerCase();
+                        if (kind === 'single') {
+                            const rows = Array.from(host.querySelectorAll('.container-item')) as HTMLElement[];
+                            const fg = String(dataset.fontColor || '#000000');
+                            const abg = String(dataset.activeBackgroundColor || '#779B49');
+                            const afg = String(dataset.activeFontColor || '#ffffff');
+                            // Keep the first active row; clear others
+                            let kept = false;
+                            rows.forEach(r => {
+                                if (r.classList.contains('active')) {
+                                    if (!kept) {
+                                        kept = true;
+                                        r.style.backgroundColor = abg;
+                                        const t = r.querySelector('.container-text') as HTMLElement | null;
+                                        if (t) t.style.color = afg;
+                                    } else {
+                                        r.classList.remove('active');
+                                        r.style.backgroundColor = '';
+                                        const t = r.querySelector('.container-text') as HTMLElement | null;
+                                        if (t) t.style.color = fg;
+                                    }
+                                }
+                            });
+                        }
+                    }
                     break;
 
                 case 'value':
@@ -1777,7 +1814,7 @@ export const renderutils: RenderUtils = {
         }
     },
 
-    
+
 
     collectDialogProperties: function() {
         const properties: NodeListOf<HTMLInputElement> = document.querySelectorAll('#dialog-properties [id^="dialog"]');
@@ -1846,7 +1883,7 @@ export const renderutils: RenderUtils = {
                     if (inner) inner.style.fontSize = fontSize + 'px';
                     try {
                         const host = inner || element;
-                        const rows = host.querySelectorAll('.container-row') as NodeListOf<HTMLDivElement>;
+                        const rows = host.querySelectorAll('.container-item') as NodeListOf<HTMLDivElement>;
                         const rowMinH = Math.max(24, Math.round(fontSize * 2)); // scale row height with font
                         rows.forEach(r => { r.style.minHeight = rowMinH + 'px'; });
                     } catch {}
