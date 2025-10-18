@@ -1,6 +1,6 @@
 <br>
 
-# Dialog Creator — User Manual
+# Dialog Creator - User Manual
 
 This document describes how to use the Dialog Creator editor window to design dialogs by adding and arranging UI elements on a canvas.
 

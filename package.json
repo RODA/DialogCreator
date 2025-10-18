@@ -10,6 +10,7 @@
     "start": "npm run build && electron ./dist/main.js",
     "dist": "npm run build && electron-builder",
     "docs:pdf": "node scripts/build-pdf-manual.js",
+    "docs:html": "node scripts/build-html-manual.js",
     "bundle:cm6": "node scripts/bundle-cm6-if-needed.js"
   },
   "author": "RODA",
