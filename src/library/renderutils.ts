@@ -1518,6 +1518,8 @@ export const renderutils: RenderUtils = {
         host.style.overflow = 'hidden';
         host.style.textOverflow = 'ellipsis';
 
+        const singleLineHeight = Math.ceil(fontSize * 1.2);
+
         // Configure clamp/ellipsis behavior
         if (lines > 1) {
             host.style.display = '-webkit-box';
@@ -1530,21 +1532,29 @@ export const renderutils: RenderUtils = {
             host.style.setProperty('-webkit-box-orient', 'vertical');
             element.style.removeProperty('max-height');
             host.style.removeProperty('max-height');
+            element.style.display = 'block';
+            element.style.removeProperty('align-items');
+            element.style.removeProperty('justify-content');
+            element.style.removeProperty('height');
+            host.style.removeProperty('height');
         } else {
-            host.style.display = 'block';
+            host.style.display = 'inline-block';
             host.style.whiteSpace = 'nowrap';
-            host.style.overflow = 'hidden';
-            host.style.textOverflow = 'ellipsis';
-            host.style.removeProperty('word-break');
-            host.style.textAlign = 'left';
             host.style.removeProperty('-webkit-line-clamp');
             host.style.removeProperty('-webkit-box-orient');
-            element.style.removeProperty('max-height');
-            host.style.removeProperty('max-height');
+            host.style.removeProperty('word-break');
+            host.style.maxHeight = singleLineHeight + 'px';
+            host.style.height = singleLineHeight + 'px';
+            host.style.lineHeight = singleLineHeight + 'px';
+            host.style.verticalAlign = 'middle';
+            host.style.position = 'relative';
+            host.style.top = '50%';
+            host.style.transform = 'translateY(-50%)';
+            element.style.height = singleLineHeight + 'px';
+            element.style.display = 'block';
         }
 
-    element.style.height = '';
-    host.style.height = '';
+        host.style.minWidth = '0';
 
         // Measure natural single-line width (no wrapping) using canvas measurement
         const natural = utils.textWidth(text, fontSize, coms.fontFamily);
