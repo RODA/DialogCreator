@@ -48,6 +48,9 @@ const { transformManualMarkdown } = require('./manual/transform-markdown');
       html = html.replace(/<\/body>/i, '</main>\n</body>');
     }
 
+    // Remove md-to-pdf default classes that can override layout
+    html = html.replace(/<main[^>]*class="[^"]*"[^>]*>/i, '<main>');
+
     // Fix asset paths that are relative to docs/ when the manual lives in docs/manual/
     html = html.replace(/src="docs\//g, 'src="../');
 
