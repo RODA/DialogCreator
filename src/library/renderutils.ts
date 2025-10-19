@@ -671,6 +671,8 @@ export const renderutils: RenderUtils = {
             element.className = 'separator';
             element.style.width = data.width + 'px';
             element.style.height = data.height + 'px';
+            element.style.backgroundColor = String(data.color || '#000000');
+            element.dataset.color = String(data.color || '#000000');
 
         } else if (data.type == "Container") {
 
@@ -979,6 +981,9 @@ export const renderutils: RenderUtils = {
                             const increase = document.querySelector(`#counter-increase-${element.id}`) as HTMLDivElement;
                             increase.style.color = value;
                         } else if (button && inner) {
+                            inner.style.backgroundColor = value;
+                        } else if (separator && inner) {
+                            // For separators, apply color to the inner element (the actual separator)
                             inner.style.backgroundColor = value;
                         } else if (!container) {
                             // For most elements, 'color' is background. Container uses 'backgroundColor' instead.
