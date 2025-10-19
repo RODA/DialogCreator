@@ -1,7 +1,7 @@
 import { showMessage, showError, coms } from "./coms";
 import { editorSettings } from './settings';
 import { Editor } from '../interfaces/editor';
-import { Elements, StringNumber } from '../interfaces/elements';
+import { Elements, StringNumber, AnyElement } from '../interfaces/elements';
 import { elements } from './elements';
 import { DialogProperties } from "../interfaces/dialog";
 import { v4 as uuidv4 } from 'uuid';
@@ -9,20 +9,159 @@ import { dialog } from './dialog';
 import { renderutils } from '../library/renderutils';
 import { utils } from '../library/utils';
 
+let lastContextTargetId: string | null = null;
+let contextMenu: HTMLElement | null = null;
+let currentGroupId: string | null = null;
+let contextMenuInitialized = false;
+let multiDragActive = false;
+let dragStart = { x: 0, y: 0 };
+let multiOutline: HTMLDivElement | null = null; // ephemeral group multi-drag state and outline
+
 const multiSelected = new Set<string>();
 const suppressClickFor = new Set<string>();
-let currentGroupId: string | null = null;
-
-// Ephemeral multi-drag state and outline
-let multiDragActive = false;
+const SKIP_KEYS = new Set(['parentId', 'elementIds', 'persistent']);
+const elementPropertyKinds = buildElementPropertyKindMap();
 const multiDragSnapshot = new Map<string, { left: number; top: number; width: number; height: number }>();
-let dragStart = { x: 0, y: 0 };
-let multiOutline: HTMLDivElement | null = null;
+
+type PropertyKind = 'boolean' | 'number' | 'string' | 'array' | 'object';
 
 
-// moved to renderutils.updateMultiOutline(canvas, ids, outline)
+function buildElementPropertyKindMap() {
+    const map = new Map<string, Record<string, PropertyKind>>();
+    for (const template of Object.values(elements)) {
+        const templateRecord = template as unknown as Record<string, unknown>;
+        const typeName = (templateRecord as { type?: string }).type;
+        if (!typeName) continue;
+        map.set(typeName, inferKindsFromTemplate(templateRecord));
+    }
+    return map;
+}
 
-// moved to renderutils.clearMultiOutline(outline)
+function inferKindsFromTemplate(template: Record<string, unknown>) {
+    const kinds: Record<string, PropertyKind> = {};
+    for (const [key, value] of Object.entries(template)) {
+        if (key === '$persist') continue;
+        kinds[key] = derivePropertyKind(value);
+    }
+    return kinds;
+}
+
+function derivePropertyKind(value: unknown): PropertyKind {
+    if (Array.isArray(value)) return 'array';
+    if (value === null) return 'object';
+    switch (typeof value) {
+        case 'boolean':
+            return 'boolean';
+        case 'number':
+            return 'number';
+        case 'string':
+            return 'string';
+        case 'object':
+            return 'object';
+        default:
+            return 'string';
+    }
+}
+
+function resolveTemplateForType(typeName: string | undefined): Record<string, unknown> {
+    if (!typeName) return elements.buttonElement as unknown as Record<string, unknown>;
+    const key = `${typeName.charAt(0).toLowerCase()}${typeName.slice(1)}Element` as keyof Elements;
+    const template = elements[key] ?? elements.buttonElement;
+    return template as unknown as Record<string, unknown>;
+}
+
+function inferKindFromTemplate(template: Record<string, unknown>, key: string): PropertyKind | undefined {
+    const value = template[key];
+    return value === undefined ? undefined : derivePropertyKind(value);
+}
+
+function coerceDatasetValue(raw: string, kind: PropertyKind | undefined, templateValue: unknown): unknown {
+    if (kind === 'boolean') {
+        return utils.isTrue(raw);
+    }
+
+    if (kind === 'number') {
+        const parsed = utils.asNumeric(raw);
+        if (Number.isFinite(parsed)) return parsed;
+        if (typeof templateValue === 'number') return templateValue;
+        return 0;
+    }
+
+    if (kind === 'array') {
+        if (!raw) return Array.isArray(templateValue) ? [...templateValue] : [];
+        return raw.split(',');
+    }
+
+    if (raw === 'true' || raw === 'false') {
+        return raw === 'true';
+    }
+
+    if (utils.possibleNumeric(raw)) {
+        const parsed = utils.asNumeric(raw);
+        if (Number.isFinite(parsed)) {
+            return parsed;
+        }
+    }
+
+    return raw;
+}
+
+function hideContextMenu() {
+    if (!contextMenu) return;
+
+    contextMenu.setAttribute('aria-hidden', 'true');
+    contextMenu.style.top = '';
+    contextMenu.style.left = '';
+    contextMenu.style.visibility = '';
+    lastContextTargetId = null;
+}
+
+function contextMenuHandlers() {
+    if (!contextMenu || contextMenuInitialized) return;
+
+    contextMenuInitialized = true;
+    const duplicateButton = contextMenu.querySelector('[data-action="duplicate"]') as HTMLButtonElement | null;
+
+    duplicateButton?.addEventListener('click', () => {
+        if (!lastContextTargetId) {
+            hideContextMenu();
+            return;
+        }
+        editor.duplicateElement(lastContextTargetId);
+        hideContextMenu();
+    });
+}
+
+function showContextMenu(targetId: string, x: number, y: number) {
+    if (!contextMenu) return;
+    contextMenuHandlers();
+    contextMenu.style.visibility = 'hidden';
+    contextMenu.style.top = '-1000px';
+    contextMenu.style.left = '-1000px';
+    contextMenu.setAttribute('aria-hidden', 'false');
+
+    const menuRect = contextMenu.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    let left = x;
+    let top = y;
+    if (left + menuRect.width > viewportWidth) {
+        left = Math.max(0, viewportWidth - menuRect.width - 4);
+    }
+
+    if (top + menuRect.height > viewportHeight) {
+        top = Math.max(0, viewportHeight - menuRect.height - 4);
+    }
+
+    contextMenu.style.top = `${top}px`;
+    contextMenu.style.left = `${left}px`;
+    contextMenu.style.visibility = 'visible';
+    lastContextTargetId = targetId;
+
+    const firstButton = contextMenu.querySelector('button');
+    firstButton?.focus({ preventScroll: true });
+}
 
 function makeGroupFromSelection(persistent = false) {
     if (multiSelected.size <= 1) {
@@ -151,6 +290,7 @@ export const editor: Editor = {
         dialog.canvas.style.height = editorSettings.dialog.height + 'px';
         dialog.canvas.style.backgroundColor = editorSettings.dialog.background || '#ffffff';
         dialog.canvas.style.border = '1px solid gray';
+        contextMenu = document.getElementById('element-context-menu');
         dialog.canvas.addEventListener('click', (event: MouseEvent) => {
             // Ignore the synthetic click that follows a lasso selection
             if (skipCanvasClickOnce) {
@@ -159,6 +299,7 @@ export const editor: Editor = {
                 event.preventDefault();
                 return;
             }
+            hideContextMenu();
             if ((event.target as HTMLDivElement).id === dialog.id) {
                 // If a property input is active, blur it first to commit changes
                 const active = document.activeElement as HTMLElement | null;
@@ -285,6 +426,18 @@ export const editor: Editor = {
             dialogdiv.append(dialog.canvas);
         }
 
+        document.addEventListener('click', (ev) => {
+            if (!contextMenu || contextMenu.getAttribute('aria-hidden') !== 'false') return;
+            if (contextMenu.contains(ev.target as Node)) return;
+            hideContextMenu();
+        });
+
+        document.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Escape') {
+                hideContextMenu();
+            }
+        });
+
         const properties: NodeListOf<HTMLInputElement> = document.querySelectorAll('#dialog-properties [id^="dialog"]');
 
         properties.forEach((item) => {
@@ -296,6 +449,100 @@ export const editor: Editor = {
 
         dialog.properties = editorSettings.dialog;
 
+    },
+
+    duplicateElement(elementId: string) {
+        if (!elementId) return;
+        const source = dialog.getElement(elementId) as HTMLElement | undefined;
+        if (!source) return;
+
+        // Prevent duplicate for persistent group container; instead duplicate all selected regular elements
+        if (source.classList.contains('element-group')) {
+        const childIds = Array.from(source.querySelectorAll<HTMLElement>('.element-wrapper')).map(el => el.id);
+        childIds.forEach(id => editor.duplicateElement(id));
+            return;
+        }
+
+    const datasetEntries = Object.entries(source.dataset || {});
+    const copy: Record<string, unknown> = {};
+
+    const typeFromDataset = source.dataset.type || source.tagName;
+    const elementKinds = elementPropertyKinds.get(typeFromDataset) || {};
+    const template = resolveTemplateForType(typeFromDataset);
+
+    for (const [key, value] of datasetEntries) {
+        if (value === undefined || SKIP_KEYS.has(key)) continue;
+        const kind = elementKinds[key] ?? inferKindFromTemplate(template, key);
+        const templateValue = template[key];
+        copy[key] = coerceDatasetValue(value, kind, templateValue);
+    }
+
+    const type = String(typeFromDataset);
+    copy.type = type;
+    copy.nameid = renderutils.makeUniqueNameID(copy.nameid ? String(copy.nameid) : type.toLowerCase());
+
+    const left = utils.asNumeric(source.dataset.left) || utils.asNumeric(source.style.left) || source.offsetLeft;
+    const top = utils.asNumeric(source.dataset.top) || utils.asNumeric(source.style.top) || source.offsetTop;
+    copy.left = left;
+    copy.top = top;
+
+    const constructed = renderutils.makeElement({ ...template, ...copy } as AnyElement);
+
+        const wrapper = document.createElement('div');
+        wrapper.classList.add('element-wrapper');
+        wrapper.style.position = 'absolute';
+
+        const origId = constructed.id;
+        wrapper.id = origId;
+        constructed.id = `${origId}-inner`;
+        wrapper.style.left = `${left}px`;
+        wrapper.style.top = `${top}px`;
+
+        for (const [k, v] of Object.entries(constructed.dataset)) {
+            if (typeof v === 'string') {
+                wrapper.dataset[k] = v;
+            }
+        }
+        wrapper.dataset.parentId = dialog.id;
+
+        constructed.style.left = '0px';
+        constructed.style.top = '0px';
+        if (wrapper.dataset.type === 'Button') {
+            constructed.style.position = 'relative';
+        }
+
+        wrapper.appendChild(constructed);
+        dialog.canvas.appendChild(wrapper);
+
+        const innerCover = constructed.querySelector('.elementcover');
+        if (innerCover && innerCover.parentElement) {
+            innerCover.parentElement.removeChild(innerCover);
+        }
+
+        if (!(wrapper.dataset.type === 'Button' || wrapper.dataset.type === 'Label')) {
+            const rect = constructed.getBoundingClientRect();
+            if (rect.width > 0) wrapper.style.width = `${Math.round(rect.width)}px`;
+            if (rect.height > 0) wrapper.style.height = `${Math.round(rect.height)}px`;
+        }
+
+        const cover = document.createElement('div');
+        cover.id = `${wrapper.id}-cover`;
+        cover.className = 'elementcover';
+        wrapper.appendChild(cover);
+
+        editor.addElementListeners(wrapper);
+        dialog.addElement(wrapper);
+
+        if (wrapper.dataset.type === 'Label') {
+            renderutils.updateLabel(wrapper);
+        }
+
+        editor.deselectAll();
+        wrapper.classList.add('selectedElement');
+        multiSelected.add(wrapper.id);
+        dialog.selectedElement = wrapper.id;
+
+        coms.emit('elementSelected', wrapper.id);
     },
 
     updateDialogArea: function (properties) {
@@ -557,6 +804,25 @@ export const editor: Editor = {
                 dialog.selectedElement = element.id;
                 coms.emit('elementSelected', element.id);
             }
+        });
+
+        element.addEventListener('contextmenu', (event: MouseEvent) => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const target = element;
+            if (!target) return;
+
+            const alreadySelected = target.classList.contains('selectedElement');
+            if (!alreadySelected) {
+                editor.deselectAll();
+                target.classList.add('selectedElement');
+                multiSelected.add(target.id);
+                dialog.selectedElement = target.id;
+                coms.emit('elementSelected', target.id);
+            }
+
+            showContextMenu(target.id, event.clientX, event.clientY);
         });
 
         editor.addDragAndDrop(element);

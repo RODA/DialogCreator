@@ -4,7 +4,10 @@ import { Elements } from '../interfaces/elements';
 // are constrained to the keys of that element's own type.
 // The entries of $persist are used to determine which properties to persist in the database.
 
-type ElementEntryWithPersist<T> = T & { $persist?: readonly (keyof T)[] };
+type ElementEntryWithPersist<T> = T & {
+    $persist?: readonly (keyof T)[]
+};
+
 export type ElementsWithPersist = { [K in keyof Elements]: ElementEntryWithPersist<Elements[K]> };
 
 export const elements: ElementsWithPersist = {
@@ -22,7 +25,7 @@ export const elements: ElementsWithPersist = {
         fontColor: '#000000',
         isEnabled: true,
         isVisible: true,
-    elementIds: [],
+        elementIds: [],
         $persist: [
             'nameid','label','left','top','maxWidth','lineClamp','color','fontColor','isEnabled','isVisible'
         ] as const
@@ -39,7 +42,7 @@ export const elements: ElementsWithPersist = {
         valueType: 'String',
         isEnabled: true,
         isVisible: true,
-    elementIds: [],
+        elementIds: [],
         $persist: [
             'nameid','left','top','width','value','valueType','isEnabled','isVisible'
         ] as const
@@ -56,7 +59,7 @@ export const elements: ElementsWithPersist = {
         arrowColor: '#5b9c5b',
         isEnabled: true,
         isVisible: true,
-    elementIds: [],
+        elementIds: [],
         $persist: [
             'nameid','left','top','width','value','arrowColor','isEnabled','isVisible'
         ] as const
@@ -74,7 +77,7 @@ export const elements: ElementsWithPersist = {
         isChecked: false,
         isEnabled: true,
         isVisible: true,
-    elementIds: [],
+        elementIds: [],
         $persist: [
             'nameid','left','top','size','color','fill','isChecked','isEnabled','isVisible'
         ] as const
@@ -92,7 +95,7 @@ export const elements: ElementsWithPersist = {
         isSelected: false,
         isEnabled: true,
         isVisible: true,
-    elementIds: [],
+        elementIds: [],
         $persist: [
             'nameid','group','left','top','size','color','isSelected','isEnabled','isVisible'
         ] as const
@@ -111,7 +114,7 @@ export const elements: ElementsWithPersist = {
         maxval: 5,
         isEnabled: true,
         isVisible: true,
-    elementIds: [],
+        elementIds: [],
         $persist: [
             'nameid','left','top','space','color','minval','startval','maxval','isEnabled','isVisible'
         ] as const
@@ -133,7 +136,7 @@ export const elements: ElementsWithPersist = {
         handleshape: 'triangle',
         handleColor: '#5b9c5b',
         handlesize: 8,
-    elementIds: [],
+        elementIds: [],
         $persist: [
             'nameid','left','top','width','height','direction','color','isEnabled','isVisible','handlepos','handleshape','handleColor','handlesize'
         ] as const
@@ -151,7 +154,7 @@ export const elements: ElementsWithPersist = {
         value: 'Label',
         isEnabled: true,
         isVisible: true,
-    elementIds: [],
+        elementIds: [],
         $persist: [
             'left','top','maxWidth','lineClamp','fontColor','value','isEnabled','isVisible'
         ] as const
@@ -169,7 +172,7 @@ export const elements: ElementsWithPersist = {
         color: '#000000',
         isEnabled: true,
         isVisible: true,
-    elementIds: [],
+        elementIds: [],
         $persist: [
             'left','top','width','height','direction','color','isEnabled','isVisible'
         ] as const
@@ -190,7 +193,7 @@ export const elements: ElementsWithPersist = {
         activeFontColor: '#ffffff',
         isEnabled: true,
         isVisible: true,
-    elementIds: [],
+        elementIds: [],
         $persist: [
             'nameid','left','top','width','height','selection','backgroundColor','fontColor','activeBackgroundColor','activeFontColor','isEnabled','isVisible'
         ] as const
