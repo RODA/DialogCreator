@@ -23,6 +23,7 @@ export interface Editor {
     sendSelectedToBack: () => void;
     bringSelectedForward: () => void;
     sendSelectedBackward: () => void;
+    alignSelection: (mode: 'left' | 'right' | 'top' | 'bottom'| 'middle'  | 'center') => void;
     // grouping actions
     groupSelection: () => void;
     ungroupSelection: () => void;

@@ -1,7 +1,7 @@
 import { showMessage, showError, coms } from "./coms";
 import { editorSettings } from './settings';
 import { Editor } from '../interfaces/editor';
-import { Elements, AnyElement } from '../interfaces/elements';
+import { Elements, StringNumber } from '../interfaces/elements';
 import { elements } from './elements';
 import { DialogProperties } from "../interfaces/dialog";
 import { v4 as uuidv4 } from 'uuid';
@@ -60,6 +60,85 @@ function makeGroupFromSelection(persistent = false) {
 }
 
 export const editor: Editor = {
+    alignSelection: function(mode: 'left' | 'top' | 'middle' | 'right' | 'bottom' | 'center') {
+        const orderedIds = multiSelected.size >= 2
+            ? Array.from(multiSelected)
+            : renderutils.getSelectedIds();
+
+        if (orderedIds.length < 2) {
+            return;
+        }
+
+        const anchorId = orderedIds[0];
+        const anchor = dialog.getElement(anchorId) as HTMLElement | undefined;
+        if (!anchor) {
+            return;
+        }
+
+        const anchorLeft = Number(anchor.dataset.left ?? (parseInt(anchor.style.left || '0', 10) || 0));
+        const anchorTop = Number(anchor.dataset.top ?? (parseInt(anchor.style.top || '0', 10) || 0));
+        const anchorWidth = anchor.offsetWidth;
+        const anchorHeight = anchor.offsetHeight;
+        const targets = orderedIds.slice(1);
+
+        for (const id of targets) {
+            const el = dialog.getElement(id) as HTMLElement | undefined;
+            if (!el) {
+                continue;
+            }
+
+            const currentLeft = Number(el.dataset.left ?? (parseInt(el.style.left || '0', 10) || 0));
+            const currentTop = Number(el.dataset.top ?? (parseInt(el.style.top || '0', 10) || 0));
+            const elWidth = el.offsetWidth;
+            const elHeight = el.offsetHeight;
+            const props: Record<string, number> = {};
+
+            if (mode === 'left' && currentLeft !== anchorLeft) {
+                props.left = anchorLeft;
+            } else if (mode === 'top' && currentTop !== anchorTop) {
+                props.top = anchorTop;
+            } else if (mode === 'right') {
+                const anchorRight = anchorLeft + anchorWidth;
+                const elRight = currentLeft + elWidth;
+                if (elRight !== anchorRight) {
+                    props.left = anchorRight - elWidth;
+                }
+            } else if (mode === 'bottom') {
+                const anchorBottom = anchorTop + anchorHeight;
+                const elBottom = currentTop + elHeight;
+                if (elBottom !== anchorBottom) {
+                    props.top = anchorBottom - elHeight;
+                }
+            } else if (mode === 'center') {
+                const anchorCenter = anchorLeft + Math.round(anchorWidth / 2);
+                const newLeft = anchorCenter - Math.round(elWidth / 2);
+                if (newLeft !== currentLeft) {
+                    props.left = newLeft;
+                }
+            } else if (mode === 'middle') {
+                const anchorCenter = anchorTop + Math.round(anchorHeight / 2);
+                const newTop = anchorCenter - Math.round(elHeight / 2);
+                if (newTop !== currentTop) {
+                    props.top = newTop;
+                }
+            }
+
+            if (utils.getKeys(props).length === 0) {
+                continue;
+            }
+
+            renderutils.updateElement(el, props as StringNumber);
+            if (props.left !== undefined) {
+                el.dataset.left = String(props.left);
+            }
+            if (props.top !== undefined) {
+                el.dataset.top = String(props.top);
+            }
+        }
+
+        coms.emit('elementSelectedMultiple', orderedIds);
+    },
+
 
     makeDialog: () => {
 

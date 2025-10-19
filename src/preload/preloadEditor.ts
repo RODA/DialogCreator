@@ -158,6 +158,22 @@ coms.on('elementSelected', (id) => {
 
     // enable remove button when an element is selected
     (document.getElementById('removeElement') as HTMLButtonElement).disabled = false;
+    const alignLeftBtn = document.getElementById('alignLeft') as HTMLButtonElement | null;
+    const alignRightBtn = document.getElementById('alignRight') as HTMLButtonElement | null;
+    const alignTopBtn = document.getElementById('alignTop') as HTMLButtonElement | null;
+    const alignBottomBtn = document.getElementById('alignBottom') as HTMLButtonElement | null;
+    const alignMiddleBtn = document.getElementById('alignMiddle') as HTMLButtonElement | null;
+    const alignCenterBtn = document.getElementById('alignCenter') as HTMLButtonElement | null;
+
+    const selectedIds = renderutils.getSelectedIds();
+    const multipleSelection = selectedIds.length > 1;
+
+    if (alignLeftBtn) alignLeftBtn.disabled = !multipleSelection;
+    if (alignRightBtn) alignRightBtn.disabled = !multipleSelection;
+    if (alignTopBtn) alignTopBtn.disabled = !multipleSelection;
+    if (alignBottomBtn) alignBottomBtn.disabled = !multipleSelection;
+    if (alignMiddleBtn) alignMiddleBtn.disabled = !multipleSelection;
+    if (alignCenterBtn) alignCenterBtn.disabled = !multipleSelection;
 
     // Enable/disable group/ungroup toolbar buttons
     const groupBtn = document.getElementById('groupElements') as HTMLButtonElement | null;
@@ -263,6 +279,23 @@ coms.on('elementSelectedMultiple', (...args: unknown[]) => {
     (document.getElementById('sendToBack') as HTMLButtonElement).disabled = false;
     (document.getElementById('bringForward') as HTMLButtonElement).disabled = false;
     (document.getElementById('sendBackward') as HTMLButtonElement).disabled = false;
+    const alignLeftBtn = document.getElementById('alignLeft') as HTMLButtonElement | null;
+    const alignTopBtn = document.getElementById('alignTop') as HTMLButtonElement | null;
+    const alignMidBtn = document.getElementById('alignMiddle') as HTMLButtonElement | null;
+    const alignRightBtn = document.getElementById('alignRight') as HTMLButtonElement | null;
+    const alignBottomBtn = document.getElementById('alignBottom') as HTMLButtonElement | null;
+    const alignCenterBtn = document.getElementById('alignCenter') as HTMLButtonElement | null;
+
+    const selectedIds = renderutils.getSelectedIds();
+    const multipleSelection = selectedIds.length > 1;
+
+    if (alignLeftBtn) alignLeftBtn.disabled = !multipleSelection;
+    if (alignTopBtn) alignTopBtn.disabled = !multipleSelection;
+    if (alignMidBtn) alignMidBtn.disabled = !multipleSelection;
+    if (alignRightBtn) alignRightBtn.disabled = !multipleSelection;
+    if (alignBottomBtn) alignBottomBtn.disabled = !multipleSelection;
+    if (alignCenterBtn) alignCenterBtn.disabled = !multipleSelection;
+    if (alignMidBtn) alignMidBtn.disabled = !multipleSelection;
 
     const groupBtn = document.getElementById('groupElements') as HTMLButtonElement | null;
     const ungroupBtn = document.getElementById('ungroupElements') as HTMLButtonElement | null;
@@ -430,6 +463,12 @@ window.addEventListener("DOMContentLoaded", async () => {
     document.getElementById('sendToBack')?.addEventListener('click', editor.sendSelectedToBack);
     document.getElementById('bringForward')?.addEventListener('click', editor.bringSelectedForward);
     document.getElementById('sendBackward')?.addEventListener('click', editor.sendSelectedBackward);
+    document.getElementById('alignLeft')?.addEventListener('click', () => editor.alignSelection('left'));
+    document.getElementById('alignTop')?.addEventListener('click', () => editor.alignSelection('top'));
+    document.getElementById('alignMiddle')?.addEventListener('click', () => editor.alignSelection('middle'));
+    document.getElementById('alignRight')?.addEventListener('click', () => editor.alignSelection('right'));
+    document.getElementById('alignBottom')?.addEventListener('click', () => editor.alignSelection('bottom'));
+    document.getElementById('alignCenter')?.addEventListener('click', () => editor.alignSelection('center'));
 
     // Grouping buttons
     document.getElementById('groupElements')?.addEventListener('click', () => editor.groupSelection());
@@ -641,6 +680,19 @@ window.addEventListener("DOMContentLoaded", async () => {
         (document.getElementById('sendToBack') as HTMLButtonElement).disabled = true;
         (document.getElementById('bringForward') as HTMLButtonElement).disabled = true;
         (document.getElementById('sendBackward') as HTMLButtonElement).disabled = true;
+        const alignLeftBtn = document.getElementById('alignLeft') as HTMLButtonElement | null;
+        const alignTopBtn = document.getElementById('alignTop') as HTMLButtonElement | null;
+        const alignMidBtn = document.getElementById('alignMiddle') as HTMLButtonElement | null;
+        const alignRightBtn = document.getElementById('alignRight') as HTMLButtonElement | null;
+        const alignBottomBtn = document.getElementById('alignBottom') as HTMLButtonElement | null;
+        const alignCenterBtn = document.getElementById('alignCenter') as HTMLButtonElement | null;
+
+        if (alignLeftBtn) alignLeftBtn.disabled = true;
+        if (alignTopBtn) alignTopBtn.disabled = true;
+        if (alignMidBtn) alignMidBtn.disabled = true;
+        if (alignRightBtn) alignRightBtn.disabled = true;
+        if (alignBottomBtn) alignBottomBtn.disabled = true;
+        if (alignCenterBtn) alignCenterBtn.disabled = true;
         const groupBtn = document.getElementById('groupElements') as HTMLButtonElement | null;
         const ungroupBtn = document.getElementById('ungroupElements') as HTMLButtonElement | null;
         if (groupBtn) groupBtn.disabled = true;
@@ -658,6 +710,19 @@ window.addEventListener("DOMContentLoaded", async () => {
             (document.getElementById('sendToBack') as HTMLButtonElement).disabled = true;
             (document.getElementById('bringForward') as HTMLButtonElement).disabled = true;
             (document.getElementById('sendBackward') as HTMLButtonElement).disabled = true;
+            const alignLeftBtn = document.getElementById('alignLeft') as HTMLButtonElement | null;
+            const alignTopBtn = document.getElementById('alignTop') as HTMLButtonElement | null;
+            const alignMidBtn = document.getElementById('alignMiddle') as HTMLButtonElement | null;
+            const alignRightBtn = document.getElementById('alignRight') as HTMLButtonElement | null;
+            const alignBottomBtn = document.getElementById('alignBottom') as HTMLButtonElement | null;
+            const alignCenterBtn = document.getElementById('alignCenter') as HTMLButtonElement | null;
+
+            if (alignLeftBtn) alignLeftBtn.disabled = true;
+            if (alignTopBtn) alignTopBtn.disabled = true;
+            if (alignMidBtn) alignMidBtn.disabled = true;
+            if (alignRightBtn) alignRightBtn.disabled = true;
+            if (alignBottomBtn) alignBottomBtn.disabled = true;
+            if (alignCenterBtn) alignCenterBtn.disabled = true;
             propsList!.dataset.currentElementId = '';
             propsList!.classList.add('hidden');
             document.querySelectorAll('#propertiesList .element-property').forEach(item => {

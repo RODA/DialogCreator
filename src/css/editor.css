@@ -223,6 +223,14 @@ body {
     margin: 0;
 }
 
+.editor-toolbar .toolbar-separator {
+    display: inline-block;
+    width: 1px;
+    height: 20px;
+    background-color: #d0d0d0;
+    margin: 0 4px;
+}
+
 .iconbutton {
     display: inline-flex;
     align-items: center;
@@ -583,6 +591,12 @@ input {
 .element-wrapper {
     position: absolute;
     cursor: grab;
+}
+
+.element-wrapper[data-type="Label"] {
+    display: flex;
+    align-items: center;
+    align-content: center;
 }
 
 /* Ephemeral multi-selection outline */

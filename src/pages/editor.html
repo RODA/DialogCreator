@@ -35,13 +35,39 @@
                         <button type="button" id="bringToFront" class="iconbutton" title="Bring to front (Cmd/Ctrl+Shift+↑)" aria-label="Bring to front" disabled>
                             <img src="../assets/top.svg" width="18" height="18" alt="Bring to front" aria-hidden="true" />
                         </button>
+
+                        <span class="toolbar-separator" aria-hidden="true"></span>
+
                         <button type="button" id="groupElements" class="iconbutton" title="Group (Cmd/Ctrl+G)" aria-label="Group" disabled>
                             <img src="../assets/group.svg" width="18" height="18" alt="Group" aria-hidden="true" />
                         </button>
                         <button type="button" id="ungroupElements" class="iconbutton" title="Ungroup (Cmd/Ctrl+Shift+G)" aria-label="Ungroup" disabled>
                             <img src="../assets/ungroup.svg" width="18" height="18" alt="Ungroup" aria-hidden="true" />
                         </button>
-                        <!-- Preview new Remove icon button -->
+
+                        <span class="toolbar-separator" aria-hidden="true"></span>
+
+                        <button type="button" id="alignLeft" class="iconbutton" title="Align left to first selected" aria-label="Align left" disabled>
+                            <img src="../assets/align-left.svg" width="18" height="18" alt="Align left" aria-hidden="true" />
+                        </button>
+                        <button type="button" id="alignRight" class="iconbutton" title="Align right to first selected" aria-label="Align right" disabled>
+                            <img src="../assets/align-right.svg" width="18" height="18" alt="Align right" aria-hidden="true" />
+                        </button>
+                        <button type="button" id="alignTop" class="iconbutton" title="Align top to first selected" aria-label="Align top" disabled>
+                            <img src="../assets/align-top.svg" width="18" height="18" alt="Align top" aria-hidden="true" />
+                        </button>
+                        <button type="button" id="alignBottom" class="iconbutton" title="Align bottom to first selected" aria-label="Align bottom" disabled>
+                            <img src="../assets/align-bottom.svg" width="18" height="18" alt="Align bottom" aria-hidden="true" />
+                        </button>
+                        <button type="button" id="alignMiddle" class="iconbutton" title="Vertical center relative to first selected" aria-label="Align middle" disabled>
+                            <img src="../assets/align-middle.svg" width="18" height="18" alt="Align middle" aria-hidden="true" />
+                        </button>
+                        <button type="button" id="alignCenter" class="iconbutton" title="Horizontal center relative to first selected" aria-label="Align horizontal center" disabled>
+                            <img src="../assets/align-center.svg" width="18" height="18" alt="Align horizontal center" aria-hidden="true" />
+                        </button>
+
+                        <span class="toolbar-separator" aria-hidden="true"></span>
+
                         <button type="button" id="removeElement" class="iconbutton" title="Remove (Del/Backspace)" aria-label="Remove" disabled>
                             <img src="../assets/delete.svg" width="18" height="18" alt="Remove" aria-hidden="true" />
                         </button>
@@ -164,7 +190,7 @@
                                 <input name="height" type="text" id="elheight" />
                             </div>
 
-                            
+
 
                             <div class="element-property hidden-element">
                                 <label for="elselection">Selection</label>
