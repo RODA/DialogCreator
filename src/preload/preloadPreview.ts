@@ -77,135 +77,144 @@ function renderPreview(dialog: PreviewDialog) {
 
     window.__userHandlers = [] as Array<() => void>;
     for (const data of dialog.elements || []) {
-        const element = renderutils.makeElement({ ...data } as AnyElement);
+        const core = renderutils.makeElement({ ...data } as AnyElement);
 
-        // Restore original id and nameid to avoid factory renaming for preview
-        if (data.id) {
-            element.id = String(data.id);
-        }
+        const wrapper = document.createElement('div');
+        wrapper.className = 'element-wrapper';
+        wrapper.style.position = 'absolute';
 
-        if (data.nameid) {
-            element.dataset.nameid = String(data.nameid);
-        }
+        const desiredId = String(data.id || core.id);
+        const desiredType = String(data.type || core.dataset.type || '').trim();
+        const desiredNameId = String(data.nameid || core.dataset.nameid || '');
+
+        const left = Number(data.left ?? core.dataset.left ?? 0);
+        const top = Number(data.top ?? core.dataset.top ?? 0);
+
+        wrapper.id = desiredId;
+        wrapper.style.left = `${left}px`;
+        wrapper.style.top = `${top}px`;
+        wrapper.dataset.left = String(left);
+        wrapper.dataset.top = String(top);
+        if (desiredType) wrapper.dataset.type = desiredType;
+        if (desiredNameId) wrapper.dataset.nameid = desiredNameId;
+        wrapper.dataset.parentId = String(data.parentId || dialog.id || '');
+
+        core.id = `${desiredId}-inner`;
+        core.style.left = '0px';
+        core.style.top = '0px';
+        if (desiredType === 'Button') core.style.position = 'relative';
 
         // Ensure child control ids track the restored wrapper id (so helpers that query by id work)
         try {
-            const eid = element.id;
-            const etype = String(element.dataset?.type || '');
-            if (etype === 'Checkbox') {
-                const custom = element.querySelector('.custom-checkbox') as HTMLElement | null;
-                if (custom) custom.id = `checkbox-${eid}`;
-            } else if (etype === 'Radio') {
-                const custom = element.querySelector('.custom-radio') as HTMLElement | null;
-                if (custom) custom.id = `radio-${eid}`;
-            } else if (etype === 'Counter') {
-                const display = element.querySelector('.counter-value') as HTMLDivElement | null;
-                const inc = element.querySelector('.counter-arrow.up') as HTMLDivElement | null;
-                const dec = element.querySelector('.counter-arrow.down') as HTMLDivElement | null;
-                if (display) display.id = `counter-value-${eid}`;
-                if (inc) inc.id = `counter-increase-${eid}`;
-                if (dec) dec.id = `counter-decrease-${eid}`;
-            } else if (etype === 'Slider') {
-                const handle = element.querySelector('.slider-handle') as HTMLDivElement | null;
-                if (handle) handle.id = `slider-handle-${eid}`;
+            if (desiredType === 'Checkbox') {
+                const custom = core.querySelector('.custom-checkbox') as HTMLElement | null;
+                if (custom) custom.id = `checkbox-${desiredId}`;
+            } else if (desiredType === 'Radio') {
+                const custom = core.querySelector('.custom-radio') as HTMLElement | null;
+                if (custom) custom.id = `radio-${desiredId}`;
+            } else if (desiredType === 'Counter') {
+                const display = core.querySelector('.counter-value') as HTMLDivElement | null;
+                const inc = core.querySelector('.counter-arrow.up') as HTMLDivElement | null;
+                const dec = core.querySelector('.counter-arrow.down') as HTMLDivElement | null;
+                if (display) display.id = `counter-value-${desiredId}`;
+                if (inc) inc.id = `counter-increase-${desiredId}`;
+                if (dec) dec.id = `counter-decrease-${desiredId}`;
+            } else if (desiredType === 'Slider') {
+                const handle = core.querySelector('.slider-handle') as HTMLDivElement | null;
+                if (handle) handle.id = `slider-handle-${desiredId}`;
             }
         } catch {}
 
         // Remove the drag-protection overlay used in the editor so interactions work in preview
-        const cover = element.querySelector('.elementcover');
+        const cover = core.querySelector('.elementcover');
         if (cover && cover.parentElement) {
             cover.parentElement.removeChild(cover);
         }
 
-        // Ensure left/top are applied (makeElement already does this when provided)
-        if (utils.exists(data.left)) {
-            element.style.left = String(data.left) + 'px';
-        }
-        if (utils.exists(data.top)) {
-            element.style.top = String(data.top) + 'px';
-        }
+        wrapper.appendChild(core);
+        canvas.appendChild(wrapper);
+        created.push(wrapper);
+
+        const element = wrapper;
 
         // Select: populate options from value (comma/semicolon separated)
-        if (element instanceof HTMLSelectElement) {
-            const raw = data.value ?? '';
-            const text = String(raw);
-            const tokens = text.split(/[;,]/).map(s => s.trim()).filter(s => s.length > 0);
-            element.innerHTML = '';
-            if (tokens.length === 0) {
-                const opt = document.createElement('option');
-                opt.value = '';
-                opt.textContent = '';
-                element.appendChild(opt);
-            } else {
-                for (const t of tokens) {
+        if (desiredType === 'Select') {
+            const select = core.querySelector('select') as HTMLSelectElement | null;
+            if (select) {
+                const raw = data.value ?? '';
+                const text = String(raw);
+                const tokens = text.split(/[;,]/).map(s => s.trim()).filter(s => s.length > 0);
+                select.innerHTML = '';
+                if (tokens.length === 0) {
                     const opt = document.createElement('option');
-                    opt.value = t;
-                    opt.textContent = t;
-                    element.appendChild(opt);
+                    opt.value = '';
+                    opt.textContent = '';
+                    select.appendChild(opt);
+                } else {
+                    for (const t of tokens) {
+                        const opt = document.createElement('option');
+                        opt.value = t;
+                        opt.textContent = t;
+                        select.appendChild(opt);
+                    }
                 }
-                // If a single value should also be the selected value, keep first by default
             }
         }
 
         // Checkbox: reflect isChecked
-        if ((element.dataset?.type || '') === 'Checkbox') {
-            const custom = element.querySelector('.custom-checkbox') as HTMLElement | null;
+        if (desiredType === 'Checkbox') {
+            const custom = core.querySelector('.custom-checkbox') as HTMLElement | null;
             if (custom) {
                 const checked = utils.isTrue(data.isChecked);
                 custom.setAttribute('aria-checked', String(checked));
-                if (checked) custom.classList.add('checked'); else custom.classList.remove('checked');
-                // Keyboard accessibility in preview (space/enter)
+                custom.classList.toggle('checked', checked);
                 custom.addEventListener('keydown', (e: KeyboardEvent) => {
-                if (e.key === ' ' || e.key === 'Enter') {
-                    e.preventDefault();
-                    (e.currentTarget as HTMLElement).click();
-                }
+                    if (e.key === ' ' || e.key === 'Enter') {
+                        e.preventDefault();
+                        (e.currentTarget as HTMLElement).click();
+                    }
                 });
             }
         }
 
         // Radio: reflect isSelected and make it interactive in preview
-        if ((element.dataset?.type || '') === 'Radio') {
-            const custom = element.querySelector('.custom-radio') as HTMLElement | null;
+        if (desiredType === 'Radio') {
+            const custom = core.querySelector('.custom-radio') as HTMLElement | null;
             if (custom) {
                 const selected = utils.isTrue(data.isSelected);
                 custom.setAttribute('aria-checked', String(selected));
-                if (selected) {
-                    custom.classList.add('selected');
-                } else {
-                    custom.classList.remove('selected');
-                }
-
+                custom.classList.toggle('selected', selected);
                 const selectThis = () => {
-                const group = custom.getAttribute('group') || '';
-                if (group) {
-                    document.querySelectorAll(`.custom-radio[group="${group}"]`).forEach((el) => {
-                        const r = el as HTMLElement;
-                        r.setAttribute('aria-checked', 'false');
-                        r.classList.remove('selected');
-                    });
-                }
-                custom.setAttribute('aria-checked', 'true');
-                custom.classList.add('selected');
+                    const group = custom.getAttribute('group') || '';
+                    if (group) {
+                        document.querySelectorAll(`.custom-radio[group="${group}"]`).forEach((el) => {
+                            const host = (el as HTMLElement).closest('.element-wrapper') as HTMLElement | null;
+                            if (host) {
+                                host.dataset.isSelected = 'false';
+                            }
+                            el.setAttribute('aria-checked', 'false');
+                            el.classList.remove('selected');
+                        });
+                    }
+                    wrapper.dataset.isSelected = 'true';
+                    custom.setAttribute('aria-checked', 'true');
+                    custom.classList.add('selected');
                 };
-
-                // Click to select this radio and unselect others in the same group
                 custom.addEventListener('click', selectThis);
-                // Keyboard accessibility
                 custom.addEventListener('keydown', (e: KeyboardEvent) => {
-                if (e.key === ' ' || e.key === 'Enter') {
-                    e.preventDefault();
-                    selectThis();
-                }
+                    if (e.key === ' ' || e.key === 'Enter') {
+                        e.preventDefault();
+                        selectThis();
+                    }
                 });
             }
         }
 
         // Counter: wire increase/decrease within [minval, maxval]
-        if ((element.dataset?.type || '') === 'Counter') {
-            const display = element.querySelector('.counter-value') as HTMLDivElement | null;
-            const inc = element.querySelector('.counter-arrow.up') as HTMLDivElement | null;
-            const dec = element.querySelector('.counter-arrow.down') as HTMLDivElement | null;
+        if (desiredType === 'Counter') {
+            const display = core.querySelector('.counter-value') as HTMLDivElement | null;
+            const inc = core.querySelector('.counter-arrow.up') as HTMLDivElement | null;
+            const dec = core.querySelector('.counter-arrow.down') as HTMLDivElement | null;
             const rawMin = Number(data.minval ?? data.startval ?? 0);
             const min = Number.isFinite(rawMin) ? rawMin : 0;
             const rawMax = Number(data.maxval ?? min);
@@ -226,74 +235,57 @@ function renderPreview(dialog: PreviewDialog) {
         }
 
         // Button: prevent text selection and add pressed/click feedback
-        if ((element.dataset?.type || '') === 'Button') {
-            const doPress = () => element.classList.add('btn-active');
-            const clearPress = () => element.classList.remove('btn-active');
-            element.addEventListener('mousedown', doPress);
-            element.addEventListener('mouseup', clearPress);
-            element.addEventListener('mouseleave', clearPress);
-            element.addEventListener('click', () => {
+        if (desiredType === 'Button') {
+            const doPress = () => core.classList.add('btn-active');
+            const clearPress = () => core.classList.remove('btn-active');
+            core.addEventListener('mousedown', doPress);
+            core.addEventListener('mouseup', clearPress);
+            core.addEventListener('mouseleave', clearPress);
+            core.addEventListener('click', () => {
                 if (!utils.isTrue(data.isEnabled)) return;
                 const action = String(data.onClick || 'run');
                 switch (action) {
-                case 'reset':
-                    // showMessage('info', 'Preview', `Reset action for "${data.nameid || 'Button'}"`);
-                    coms.sendTo(
-                        'editorWindow',
-                        'consolog',
-                        `Reset action for "${data.nameid || 'Button'}"`
-                    );
-                    break;
-                case 'run':
-                default:
-                    coms.sendTo(
-                        'editorWindow',
-                        'consolog',
-                        `Run action for "${data.nameid || 'Button'}"`
-                    );
-                    break;
+                    case 'reset':
+                        coms.sendTo('editorWindow', 'consolog', `Reset action for "${data.nameid || 'Button'}"`);
+                        break;
+                    case 'run':
+                    default:
+                        coms.sendTo('editorWindow', 'consolog', `Run action for "${data.nameid || 'Button'}"`);
+                        break;
                 }
             });
         }
 
         // Slider: make handle draggable within the track in preview
-        if ((element.dataset?.type || '') === 'Slider') {
-            const handle = element.querySelector('.slider-handle') as HTMLDivElement | null;
-            if (!handle) {
-                continue;
-            }
+        if (desiredType === 'Slider') {
+            const handle = core.querySelector('.slider-handle') as HTMLDivElement | null;
+            if (!handle) continue;
 
             let dragging = false;
-            const direction = (element.dataset.direction || 'horizontal').toLowerCase();
+            const direction = (core.dataset.direction || 'horizontal').toLowerCase();
 
             const onMove = (ev: MouseEvent) => {
                 if (!dragging) return;
-                const rect = element.getBoundingClientRect();
-                if (rect.width <= 0 || rect.height <= 0) {
-                    return;
-                }
+                const rect = core.getBoundingClientRect();
+                if (rect.width <= 0 || rect.height <= 0) return;
                 let percent = 0;
                 if (direction === 'vertical') {
-                    const relY = (ev.clientY - rect.top);
+                    const relY = ev.clientY - rect.top;
                     const clamped = Math.max(0, Math.min(rect.height, relY));
-                    // handlepos is 0..100 where 100 is top; updateHandleStyle uses (100 - handlepos) for top
                     percent = Math.round(100 - (clamped / rect.height) * 100);
                 } else {
-                    const relX = (ev.clientX - rect.left);
+                    const relX = ev.clientX - rect.left;
                     const clamped = Math.max(0, Math.min(rect.width, relX));
                     percent = Math.round((clamped / rect.width) * 100);
                 }
-                element.dataset.handlepos = String(percent);
-                renderutils.updateHandleStyle(
-                    handle,
-                    {
-                        handleshape: element.dataset.handleshape || 'triangle',
-                        direction: element.dataset.direction || 'horizontal',
-                        handlesize: element.dataset.handlesize || '8',
-                        handleColor: element.dataset.handleColor || '#75c775',
-                        handlepos: String(percent)
-                    } as StringNumber
-                );
+                wrapper.dataset.handlepos = String(percent);
+                renderutils.updateHandleStyle(handle, {
+                    handleshape: core.dataset.handleshape || 'triangle',
+                    direction: core.dataset.direction || 'horizontal',
+                    handlesize: core.dataset.handlesize || '8',
+                    handleColor: core.dataset.handleColor || '#75c775',
+                    handlepos: String(percent)
+                } as StringNumber);
             };
 
             const onUp = () => {
@@ -303,9 +295,7 @@ function renderPreview(dialog: PreviewDialog) {
             };
 
             handle.addEventListener('mousedown', (ev: MouseEvent) => {
-                if (element.classList.contains('disabled-div') || !utils.isTrue(data.isEnabled)) {
-                    return;
-                }
+                if (core.classList.contains('disabled-div') || !utils.isTrue(data.isEnabled)) return;
                 dragging = true;
                 document.addEventListener('mousemove', onMove);
                 document.addEventListener('mouseup', onUp);
@@ -313,73 +303,16 @@ function renderPreview(dialog: PreviewDialog) {
             });
         }
 
-        // Container: row interactions are handled by row-level listeners created via ui.setValue()/ui.addValue().
-        // No generic delegated click handler here to avoid interfering with selection mode enforcement.
-        if ((element.dataset?.type || '') === 'Container') {
-            // Optionally, style cursor to indicate interactivity once rows are populated.
-            element.style.cursor = 'default';
-        }
+        // Container remains as-is for now
 
         // Visibility / Enabled
         if (!utils.isTrue(data.isVisible)) {
-            // In preview, hidden elements should not be visible at all
-            element.style.display = 'none';
+            wrapper.style.display = 'none';
         }
 
         if (!utils.isTrue(data.isEnabled)) {
-            element.classList.add('disabled-div');
-            // In preview, disabled elements should not be interactive
-            element.style.pointerEvents = 'none';
-            if (
-                element instanceof HTMLInputElement ||
-                element instanceof HTMLSelectElement ||
-                (
-                    window.HTMLTextAreaElement &&
-                    element instanceof window.HTMLTextAreaElement
-                )
-            ) {
-                element.disabled = true;
-            } else {
-                const customCheckbox = element.querySelector('.custom-checkbox') as HTMLElement | null;
-                if (customCheckbox) {
-                    customCheckbox.setAttribute('aria-disabled', 'true');
-                }
-
-                const customRadio = element.querySelector('.custom-radio') as HTMLElement | null;
-                if (customRadio) {
-                    customRadio.setAttribute('aria-disabled', 'true');
-                }
-            }
-        }
-
-        canvas.appendChild(element);
-        created.push(element);
-
-        // After the element is in DOM: enforce valueType for Input
-        if (element instanceof HTMLInputElement) {
-            const valueType = String(data.valueType || element.dataset?.valueType || '').toLowerCase();
-
-            switch (valueType) {
-                case 'integer':
-                    renderutils.setIntegers([element], '');
-                    break;
-
-                case 'signed integer':
-                    renderutils.setSignedIntegers([element], '');
-                    break;
-
-                case 'double':
-                    renderutils.setDouble([element], '');
-                    break;
-
-                case 'signed double':
-                    renderutils.setSignedDouble([element], '');
-                    break;
-
-                default:
-                    // String or unknown: no filter
-                    break;
-            }
+            wrapper.classList.add('disabled-div');
+            core.style.pointerEvents = 'none';
         }
     }
 

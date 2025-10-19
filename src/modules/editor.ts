@@ -481,8 +481,10 @@ export const editor: Editor = {
     copy.type = type;
     copy.nameid = renderutils.makeUniqueNameID(copy.nameid ? String(copy.nameid) : type.toLowerCase());
 
-    const left = utils.asNumeric(source.dataset.left) || utils.asNumeric(source.style.left) || source.offsetLeft;
-    const top = utils.asNumeric(source.dataset.top) || utils.asNumeric(source.style.top) || source.offsetTop;
+    const leftRaw = source.dataset.left ?? source.style.left ?? '';
+    const topRaw = source.dataset.top ?? source.style.top ?? '';
+    const left = utils.asNumeric(leftRaw) || parseInt(String(leftRaw).replace(/px$/, ''), 10) || source.offsetLeft;
+    const top = utils.asNumeric(topRaw) || parseInt(String(topRaw).replace(/px$/, ''), 10) || source.offsetTop;
     copy.left = left;
     copy.top = top;
 
@@ -497,6 +499,8 @@ export const editor: Editor = {
         constructed.id = `${origId}-inner`;
         wrapper.style.left = `${left}px`;
         wrapper.style.top = `${top}px`;
+        wrapper.dataset.left = String(left);
+        wrapper.dataset.top = String(top);
 
         for (const [k, v] of Object.entries(constructed.dataset)) {
             if (typeof v === 'string') {
