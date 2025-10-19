@@ -1785,13 +1785,50 @@ export const renderutils: RenderUtils = {
         }
 
         const canvasRect = dialog.canvas.getBoundingClientRect();
-        const rects = els.map(el => el.getBoundingClientRect());
-        const minLeft = Math.min(...rects.map(r => r.left));
-        const minTop = Math.min(...rects.map(r => r.top));
-        const maxRight = Math.max(...rects.map(r => r.right));
-        const maxBottom = Math.max(...rects.map(r => r.bottom));
-        const left = Math.round(minLeft - canvasRect.left);
-        const top = Math.round(minTop - canvasRect.top);
+
+        const parseAxis = (el: HTMLElement, axis: 'left' | 'top') => {
+            const datasetValue = el.dataset[axis];
+            if (datasetValue !== undefined) {
+                const numeric = Number(datasetValue);
+                if (!Number.isNaN(numeric)) {
+                    return numeric;
+                }
+            }
+
+            const styleValue = (el.style[axis] || '').trim();
+            if (styleValue.endsWith('px')) {
+                const numeric = Number(styleValue.slice(0, -2));
+                if (!Number.isNaN(numeric)) {
+                    return numeric;
+                }
+            }
+
+            const rect = el.getBoundingClientRect();
+            const canvasOffset = axis === 'left' ? canvasRect.left : canvasRect.top;
+            return rect[axis] - canvasOffset;
+        };
+
+        let minLeft = Number.POSITIVE_INFINITY;
+        let minTop = Number.POSITIVE_INFINITY;
+        let maxRight = Number.NEGATIVE_INFINITY;
+        let maxBottom = Number.NEGATIVE_INFINITY;
+
+        for (const el of els) {
+            const left = parseAxis(el, 'left');
+            const top = parseAxis(el, 'top');
+            const width = el.offsetWidth;
+            const height = el.offsetHeight;
+            const right = left + width;
+            const bottom = top + height;
+
+            if (left < minLeft) minLeft = left;
+            if (top < minTop) minTop = top;
+            if (right > maxRight) maxRight = right;
+            if (bottom > maxBottom) maxBottom = bottom;
+        }
+
+        const left = Math.round(minLeft);
+        const top = Math.round(minTop);
         const width = Math.round(maxRight - minLeft);
         const height = Math.round(maxBottom - minTop);
 
