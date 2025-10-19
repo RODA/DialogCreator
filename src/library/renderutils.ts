@@ -468,6 +468,8 @@ export const renderutils: RenderUtils = {
 
             element.className = 'smart-button';
             element.style.backgroundColor = data.color;
+            element.style.borderColor = data.borderColor;
+            element.dataset.borderColor = data.borderColor;
             element.style.maxWidth = data.maxWidth + 'px';
 
             const lineHeight = coms.fontSize * 1.2;
@@ -649,6 +651,7 @@ export const renderutils: RenderUtils = {
             // Default to single-line unless lineClamp > 1
             const clampInit = Number(data.lineClamp) || 1;
             const maxWInit = Number(data.maxWidth) || 0;
+
             if (clampInit > 1) {
                 element.style.display = '-webkit-box';
                 (element.style).setProperty('-webkit-line-clamp', String(clampInit));
@@ -664,6 +667,7 @@ export const renderutils: RenderUtils = {
                 element.style.removeProperty('-webkit-box-orient');
                 element.style.maxHeight = Math.round(coms.fontSize * 1.2) + 'px';
             }
+
             if (maxWInit > 0) element.style.maxWidth = maxWInit + 'px';
 
         } else if (data.type == "Separator") {
@@ -677,7 +681,9 @@ export const renderutils: RenderUtils = {
         } else if (data.type == "Container") {
 
             element.className = 'container';
-            element.style.backgroundColor = String((data as any).backgroundColor || '#ffffff');
+            element.style.backgroundColor = data.backgroundColor;
+            element.style.borderColor = data.borderColor;
+            element.dataset.borderColor = data.borderColor;
             element.style.width = data.width + 'px';
             element.style.height = data.height + 'px';
 
@@ -1044,6 +1050,25 @@ export const renderutils: RenderUtils = {
                     } else {
                         value = dataset.fontColor;
                         const color = document.getElementById('elfontColor') as HTMLInputElement;
+                        color.value = value;
+                    }
+                    break;
+
+                case 'borderColor':
+                    if (utils.isValidColor(value)) {
+                        if (button && inner) {
+                            // Apply border color to button
+                            inner.style.borderColor = value;
+                        } else if (container && inner) {
+                            // Apply border color to container
+                            inner.style.borderColor = value;
+                        } else if (button || container) {
+                            // Fallback for wrapper-level styling
+                            element.style.borderColor = value;
+                        }
+                    } else {
+                        value = dataset.border;
+                        const color = document.getElementById('elborderColor') as HTMLInputElement;
                         color.value = value;
                     }
                     break;

@@ -11,6 +11,7 @@ export type buttonElementType = {
     lineClamp: number;
     color: string;
     fontColor: string;
+    borderColor: string;
     isEnabled: boolean;
     isVisible: boolean;
     elementIds: string[];
@@ -153,6 +154,7 @@ export type containerElementType = {
     fontColor: string;
     activeBackgroundColor: string;
     activeFontColor: string;
+    borderColor: string;
     selection: string;
     isEnabled: boolean;
     isVisible: boolean;

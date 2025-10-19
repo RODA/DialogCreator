@@ -23,11 +23,12 @@ export const elements: ElementsWithPersist = {
         lineClamp: 1,
         color: '#efefef',
         fontColor: '#000000',
+        borderColor: '#727272',
         isEnabled: true,
         isVisible: true,
         elementIds: [],
         $persist: [
-            'nameid','label','left','top','maxWidth','lineClamp','color','fontColor','isEnabled','isVisible'
+            'nameid','label','left','top','maxWidth','lineClamp','color','fontColor','borderColor','isEnabled','isVisible'
         ] as const
     },
     inputElement: {
@@ -191,11 +192,12 @@ export const elements: ElementsWithPersist = {
         fontColor: '#000000',
         activeBackgroundColor: '#779B49',
         activeFontColor: '#ffffff',
+        borderColor: '#b8b8b8',
         isEnabled: true,
         isVisible: true,
         elementIds: [],
         $persist: [
-            'nameid','left','top','width','height','selection','backgroundColor','fontColor','activeBackgroundColor','activeFontColor','isEnabled','isVisible'
+            'nameid','left','top','width','height','selection','backgroundColor','fontColor','activeBackgroundColor','activeFontColor','borderColor','isEnabled','isVisible'
         ] as const
     },
     groupElement: {
