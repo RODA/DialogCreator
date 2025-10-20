@@ -631,7 +631,6 @@ input {
 .element-wrapper[data-type="Label"] {
     display: flex;
     align-items: center;
-    align-content: center;
 }
 
 /* Ephemeral multi-selection outline */
