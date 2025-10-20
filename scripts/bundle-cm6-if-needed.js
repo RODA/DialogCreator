@@ -10,6 +10,11 @@ const repoRoot = path.resolve(__dirname, '..');
 const entry = path.join(repoRoot, 'src', 'library', 'codemirror-entry.ts');
 const outdir = path.join(repoRoot, 'src', 'bundles');
 const outfile = path.join(outdir, 'codemirror.bundle.js');
+const dependentSources = [
+    entry,
+    path.join(repoRoot, 'src', 'library', 'api.ts'),
+    path.join(repoRoot, 'src', 'interfaces', 'preview.ts')
+];
 
 async function main() {
     try {
@@ -19,12 +24,18 @@ async function main() {
             }
 
             try {
-                // Compare file modification times (mtimeMs)
-                const entryStat = fs.statSync(entry);
                 const bundleStat = fs.statSync(outfile);
-                return (
-                    entryStat.mtimeMs > bundleStat.mtimeMs
-                );
+                let newestSourceMtime = 0;
+
+                for (const file of dependentSources) {
+                    if (!fs.existsSync(file)) continue;
+                    const stat = fs.statSync(file);
+                    if (stat.mtimeMs > newestSourceMtime) {
+                        newestSourceMtime = stat.mtimeMs;
+                    }
+                }
+
+                return newestSourceMtime > bundleStat.mtimeMs;
             } catch {
                 return true;
             }

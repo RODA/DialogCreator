@@ -39,7 +39,8 @@ export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
 // then exclude the non-element-first helpers explicitly (currently just 'showMessage').
 const NEUTRAL_NAMES = new Set<keyof PreviewUI>([
     'showMessage',
-    'listDatasets'
+    'listDatasets',
+    'listVariables'
 ]);
 
 export const ELEMENT_FIRST_ARG_CALLS: ReadonlyArray<keyof PreviewUI> = Object.freeze(
