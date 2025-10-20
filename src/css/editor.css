@@ -507,28 +507,30 @@ input {
 
 
 .smart-button {
-    padding: 3px 10px;
+    /* Tighter horizontal padding to reduce overly large left/right margins around the label */
+    padding: 3px 4px;
     border: 1px solid black;
     border-radius: 2px;
     background-color: #efefef;
     color: #000;
-    max-width: 200px;
     cursor: pointer;
     box-sizing: border-box;
     overflow: hidden;
     line-height: 1.2;
+    text-align: center;
+    display: block;
 }
 
 .smart-button-text {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
+    display: block;
     overflow: hidden;
     text-overflow: ellipsis;
-    word-break: break-word;
-    white-space: normal;
+    white-space: nowrap;
     line-height: 1.2;
     -webkit-user-select: none;
     user-select: none;
+    /* Avoid extra default margins */
+    margin: 0;
 }
 
 /* Prevent selecting the button container text on double click */

@@ -188,15 +188,25 @@ export const renderutils: RenderUtils = {
         );
     },
 
-    makeUniqueNameID: function(nameid) {
+    makeUniqueNameID: function(baseName) {
+        // Generate the next sequential nameid for a given base (typically the element type in lowercase).
+        // Example: existing [label1, label2, label5] -> makeUniqueNameID('label') returns 'label6'.
         const existingIds = renderutils.getDialogInfo().elements;
+        const base = String(baseName || 'el');
 
-        let candidate: string;
-        let number = 1;
-        do {
-            candidate = `${nameid}${number++}`;
-        } while (utils.isElementOf(candidate, existingIds));
+        let max = 0;
+        for (const id of existingIds) {
+            if (typeof id !== 'string') continue;
+            if (!id.startsWith(base)) continue;
+            const suffix = id.slice(base.length);
+            if (/^\d+$/.test(suffix)) {
+                const n = Number(suffix);
+                if (Number.isFinite(n) && n > max) max = n;
+            }
+        }
 
+        const next = max + 1;
+        const candidate = `${base}${next}`;
         return candidate;
     },
 
@@ -419,7 +429,12 @@ export const renderutils: RenderUtils = {
         }
 
         const uuid = uuidv4();
-        const nameid = renderutils.makeUniqueNameID(data.nameid);
+        // Determine effective nameid: if provided with digits, preserve as-is (e.g., from duplicate or JSON);
+        // if empty or base without digits, generate the next sequential id for that base.
+        const provided = String((data as any).nameid || '').trim();
+        const nameid = (/\d$/.test(provided) && provided)
+            ? provided
+            : renderutils.makeUniqueNameID(provided || String(data.type || 'el').toLowerCase());
 
         let eltype = 'div';
         if (utils.isElementOf(data.type, ["Input", "Select"])) {
@@ -470,7 +485,9 @@ export const renderutils: RenderUtils = {
             element.style.backgroundColor = data.color;
             element.style.borderColor = data.borderColor;
             element.dataset.borderColor = data.borderColor;
-            element.style.maxWidth = data.maxWidth + 'px';
+            element.style.width = data.width + 'px';
+            element.style.maxWidth = data.width + 'px';
+            element.dataset.width = String(data.width);
 
             const lineHeight = coms.fontSize * 1.2;
             const paddingY = 3; // px
@@ -480,6 +497,9 @@ export const renderutils: RenderUtils = {
             const span = document.createElement('span');
             span.className = 'smart-button-text';
             span.style.fontFamily = coms.fontFamily;
+            span.style.overflow = 'hidden';
+            span.style.textOverflow = 'ellipsis';
+            span.style.whiteSpace = 'nowrap';
             /* --- textContent instead of innerHTML or innerText --- */
             span.textContent = data.label;
 
@@ -490,7 +510,7 @@ export const renderutils: RenderUtils = {
                 data.label,
                 coms.fontSize,
                 data.lineClamp,
-                data.maxWidth
+                data.width
             )
 
         } else if (data.type == "Input" && element instanceof HTMLInputElement) {
@@ -637,7 +657,7 @@ export const renderutils: RenderUtils = {
             ) as { [key: string]: string };
             renderutils.updateHandleStyle(handle, handleConfig);
 
-        } else if (data.type == "Label") {
+    } else if (data.type == "Label") {
 
             // Initial label setup: single span-like behavior within the core node
             element.textContent = data.value || '';
@@ -650,7 +670,8 @@ export const renderutils: RenderUtils = {
             element.style.position = 'relative';
             // Default to single-line unless lineClamp > 1
             const clampInit = Number(data.lineClamp) || 1;
-            const maxWInit = Number(data.maxWidth) || 0;
+            // Prefer width over legacy maxWidth; fall back for backward compatibility
+            const maxWInit = Number(data.maxWidth ?? data.maxWidth ?? 0);
 
             if (clampInit > 1) {
                 element.style.display = '-webkit-box';
@@ -882,47 +903,44 @@ export const renderutils: RenderUtils = {
                 case 'width':
                     if (Number(value) > dialogW - 20) {
                         value = String(Math.round(dialogW - 20));
+                        const width = document.getElementById('elwidth') as HTMLInputElement;
+                        width.value = value;
                     }
 
                     if (select && Number(value) < 100) {
                         value = '100';
                     }
 
-                    element.style.width = value + 'px';
+                    if (button && inner) {
+                        // For buttons, apply width to wrapper and make inner button fill it
+                        element.style.width = value + 'px';
+                        element.style.setProperty('width', value + 'px', 'important');
+                        inner.style.width = '100%';
+                        inner.style.setProperty('width', '100%', 'important');
+                        inner.style.maxWidth = '100%';
+                        inner.style.setProperty('max-width', '100%', 'important');
+                        inner.style.minWidth = '0';
+                        inner.style.setProperty('min-width', '0', 'important');
+                        // Allow wrapper to auto-size vertically
+                        element.style.height = '';
 
-                    // Ensure the visible child reflects width for contentful elements
-                    if (inner && (input || select || container || separator || slider || checkbox || radio)) {
-                        inner.style.width = value + 'px';
-                        // Also resize the custom control node if present
-                        if (checkbox && customCheckbox) customCheckbox.style.width = value + 'px';
-                        if (radio && customRadio) customRadio.style.width = value + 'px';
+                    } else if (label) {
+                        element.dataset[key] = value;
+                        renderutils.updateLabel(element);
+                    } else {
+                        // For other elements, apply width to wrapper
+                        element.style.width = value + 'px';
+                        if (inner && (input || select || container || separator || slider || checkbox || radio)) {
+                            inner.style.width = value + 'px';
+                            if (checkbox && customCheckbox) customCheckbox.style.width = value + 'px';
+                            if (radio && customRadio) customRadio.style.width = value + 'px';
+                        }
                     }
 
                     if (Number(elleft.value) + Number(value) + 10 > dialogW) {
                         const newleft = String(Math.round(dialogW - Number(value) - 10));
                         elleft.value = newleft;
                         element.style.left = newleft + 'px';
-                    }
-                    break;
-
-                case 'maxWidth':
-                    if (Number(value) > dialogW - 20) {
-                        value = String(Math.round(dialogW - 20));
-                        const maxWidth = document.getElementById('elmaxWidth') as HTMLInputElement;
-                        maxWidth.value = value;
-                    }
-
-                    if (button && inner) {
-                        inner.style.maxWidth = value + 'px';
-                        // Allow wrapper to auto-size vertically
-                        element.style.height = '';
-                    } else if (label) {
-                        element.dataset[key] = value;
-                        renderutils.updateLabel(element);
-                    } else {
-                        // TODO: if the structure consists of a wrapper (here, the "element") and an inner (here, "inner"), then
-                        // why do I apply maxWidth to the wrapper for non-button / label?
-                        element.style.maxWidth = value + 'px';
                     }
                     break;
 
@@ -1479,9 +1497,12 @@ export const renderutils: RenderUtils = {
         text,
         fontSize,
         lineClamp,
-        maxWidth
+        width
     ) {
-        button.style.maxWidth = maxWidth + 'px';
+        button.style.width = width + 'px';
+        button.style.setProperty('width', width + 'px', 'important');
+        button.style.maxWidth = width + 'px';
+        button.style.setProperty('max-width', width + 'px', 'important');
 
         const lineHeight = fontSize * 1.2;
         const paddingY = 3; // px
@@ -1491,6 +1512,9 @@ export const renderutils: RenderUtils = {
         const span = button.querySelector('.smart-button-text') as HTMLSpanElement;
         span.style.fontSize = fontSize + 'px';
         span.style.lineHeight = '1.2';
+        span.style.overflow = 'hidden';
+        span.style.textOverflow = 'ellipsis';
+        span.style.whiteSpace = 'nowrap';
         // Use CSS property setter for vendor-prefixed line clamp
         span.style.setProperty('-webkit-line-clamp', String(lineClamp));
 

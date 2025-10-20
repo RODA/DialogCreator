@@ -479,7 +479,9 @@ export const editor: Editor = {
 
     const type = String(typeFromDataset);
     copy.type = type;
-    copy.nameid = renderutils.makeUniqueNameID(copy.nameid ? String(copy.nameid) : type.toLowerCase());
+    // Use type-wide base for sequential nameid (e.g., 'label' -> next labelN)
+    const base = type.toLowerCase();
+    copy.nameid = renderutils.makeUniqueNameID(base);
 
     const leftRaw = source.dataset.left ?? source.style.left ?? '';
     const topRaw = source.dataset.top ?? source.style.top ?? '';
@@ -682,9 +684,9 @@ export const editor: Editor = {
                 innerCover.parentElement.removeChild(innerCover);
             }
 
-            // Set wrapper size for most elements; for auto-sized ones (Button, Label), avoid fixing width/height
-            // because the wrapper auto-sizes to the content
-            if (!(wrapper.dataset.type === 'Button' || wrapper.dataset.type === 'Label')) {
+            // Set wrapper size for most elements; for auto-sized ones (Label), avoid fixing width/height
+            // because the wrapper auto-sizes to the content. Buttons now have fixed width.
+            if (!(wrapper.dataset.type === 'Label')) {
                 const rect = core.getBoundingClientRect();
                 if (rect.width > 0) wrapper.style.width = `${Math.round(rect.width)}px`;
                 if (rect.height > 0) wrapper.style.height = `${Math.round(rect.height)}px`;

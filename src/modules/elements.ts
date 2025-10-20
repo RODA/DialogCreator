@@ -19,7 +19,7 @@ export const elements: ElementsWithPersist = {
         label: 'Button',
         left: 15,
         top: 15,
-        maxWidth: 100,
+        width: 60,
         lineClamp: 1,
         color: '#efefef',
         fontColor: '#000000',
@@ -28,7 +28,7 @@ export const elements: ElementsWithPersist = {
         isVisible: true,
         elementIds: [],
         $persist: [
-            'nameid','label','left','top','maxWidth','lineClamp','color','fontColor','borderColor','isEnabled','isVisible'
+            'nameid','label','left','top','width','lineClamp','color','fontColor','borderColor','isEnabled','isVisible'
         ] as const
     },
     inputElement: {

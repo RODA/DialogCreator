@@ -7,7 +7,7 @@ export type buttonElementType = {
     label: string;
     left: number;
     top: number;
-    maxWidth: number;
+    width: number;
     lineClamp: number;
     color: string;
     fontColor: string;
