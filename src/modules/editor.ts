@@ -714,6 +714,12 @@ export const editor: Editor = {
         element.addEventListener('click', (event: MouseEvent) => {
             event.stopPropagation();
 
+            // If a property input is active (e.g., nameid), blur it to commit before changing selection
+            const activeProp = document.activeElement as HTMLElement | null;
+            if (activeProp && activeProp.closest('#propertiesList')) {
+                activeProp.blur();
+            }
+
             // Prefer selecting the group if this element is inside one
             const groupAncestor = element.classList.contains('element-group')
                 ? element
@@ -743,6 +749,11 @@ export const editor: Editor = {
                         dialog.selectedElement = groupAncestor.id;
                         currentGroupId = groupAncestor.id;
                         coms.emit('elementSelected', groupAncestor.id);
+                        // Focus nameid input for newly selected group
+                        setTimeout(() => {
+                            const ni = document.getElementById('elnameid') as HTMLInputElement | null;
+                            if (ni) { ni.focus(); ni.select(); }
+                        }, 0);
                     }
                     makeGroupFromSelection();
                     return;
@@ -760,6 +771,11 @@ export const editor: Editor = {
                 dialog.selectedElement = groupAncestor.id;
                 currentGroupId = groupAncestor.id;
                 coms.emit('elementSelected', groupAncestor.id);
+                // Focus nameid input for newly selected group
+                setTimeout(() => {
+                    const ni = document.getElementById('elnameid') as HTMLInputElement | null;
+                    if (ni) { ni.focus(); ni.select(); }
+                }, 0);
                 return;
             }
 
@@ -790,6 +806,11 @@ export const editor: Editor = {
             multiSelected.add(element.id);
             dialog.selectedElement = element.id;
             coms.emit('elementSelected', element.id);
+            // Focus nameid input for newly selected element
+            setTimeout(() => {
+                const ni = document.getElementById('elnameid') as HTMLInputElement | null;
+                if (ni) { ni.focus(); ni.select(); }
+            }, 0);
         })
 
         // Double-click inside a group should select the individual element (not the group)
@@ -849,6 +870,11 @@ export const editor: Editor = {
 
         // Event listeners for mouse down, move, and up events
         element.addEventListener('mousedown', (event) => {
+            // Commit any in-progress property edits before starting drag/select
+            const active = document.activeElement as HTMLElement | null;
+            if (active && active.closest('#propertiesList')) {
+                active.blur();
+            }
             // If this element is inside a group, drag the group instead of the child
             const containerAncestor = (element.classList.contains('element-group') || element.classList.contains('element-wrapper'))
                 ? element
