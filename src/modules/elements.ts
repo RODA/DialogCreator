@@ -153,11 +153,12 @@ export const elements: ElementsWithPersist = {
         lineClamp: 1,
         fontColor: '#000000',
         value: 'Label',
+        align: 'left',
         isEnabled: true,
         isVisible: true,
         elementIds: [],
         $persist: [
-            'left','top','maxWidth','lineClamp','fontColor','value','isEnabled','isVisible'
+            'left','top','maxWidth','lineClamp','fontColor','value','align','isEnabled','isVisible'
         ] as const
     },
     separatorElement: {

@@ -672,6 +672,8 @@ export const renderutils: RenderUtils = {
             const clampInit = Number(data.lineClamp) || 1;
             // Prefer width over legacy maxWidth; fall back for backward compatibility
             const maxWInit = Number(data.maxWidth ?? data.maxWidth ?? 0);
+            // Apply text alignment (default to left)
+            element.style.textAlign = data.align || 'left';
 
             if (clampInit > 1) {
                 element.style.display = '-webkit-box';
@@ -1440,6 +1442,13 @@ export const renderutils: RenderUtils = {
                     }
                     break;
 
+                case 'align':
+                    if (label) {
+                        element.dataset[key] = value;
+                        renderutils.updateLabel(element);
+                    }
+                    break;
+
                 default:
                     break;
             }
@@ -1574,38 +1583,52 @@ export const renderutils: RenderUtils = {
 
         const singleLineHeight = Math.ceil(fontSize * 1.2);
 
-        // Configure clamp/ellipsis behavior
+        // Apply text alignment
+        const align = dataset.align || 'left';
+        host.style.textAlign = align;
+
+        // Configure clamp/ellipsis behavior and vertical centering
         if (lines > 1) {
+            // Multi-line: use flexbox for vertical centering
             host.style.display = '-webkit-box';
             host.style.whiteSpace = 'normal';
             host.style.overflow = 'hidden';
             host.style.textOverflow = 'ellipsis';
             host.style.wordBreak = 'break-word';
-            host.style.textAlign = 'left';
             host.style.setProperty('-webkit-line-clamp', String(lines));
             host.style.setProperty('-webkit-box-orient', 'vertical');
-            element.style.removeProperty('max-height');
             host.style.removeProperty('max-height');
-            element.style.display = 'block';
-            element.style.removeProperty('align-items');
-            element.style.removeProperty('justify-content');
-            element.style.removeProperty('height');
             host.style.removeProperty('height');
+            host.style.removeProperty('position');
+            host.style.removeProperty('top');
+            host.style.removeProperty('transform');
+            host.style.removeProperty('vertical-align');
+            
+            // Set up wrapper for vertical centering
+            element.style.display = 'flex';
+            element.style.alignItems = 'center';
+            element.style.justifyContent = 'flex-start';
+            element.style.removeProperty('height');
+            element.style.removeProperty('max-height');
         } else {
-            host.style.display = 'inline-block';
+            // Single line: use flexbox for vertical centering
+            host.style.display = 'block';
             host.style.whiteSpace = 'nowrap';
             host.style.removeProperty('-webkit-line-clamp');
             host.style.removeProperty('-webkit-box-orient');
             host.style.removeProperty('word-break');
-            host.style.maxHeight = singleLineHeight + 'px';
-            host.style.height = singleLineHeight + 'px';
-            host.style.lineHeight = singleLineHeight + 'px';
-            host.style.verticalAlign = 'middle';
-            host.style.position = 'relative';
-            host.style.top = '50%';
-            host.style.transform = 'translateY(-50%)';
-            element.style.height = singleLineHeight + 'px';
-            element.style.display = 'block';
+            host.style.removeProperty('max-height');
+            host.style.removeProperty('height');
+            host.style.removeProperty('position');
+            host.style.removeProperty('top');
+            host.style.removeProperty('transform');
+            host.style.removeProperty('vertical-align');
+            
+            // Set up wrapper for vertical centering
+            element.style.display = 'flex';
+            element.style.alignItems = 'center';
+            element.style.justifyContent = 'flex-start';
+            element.style.removeProperty('max-height');
         }
 
         host.style.minWidth = '0';
@@ -1617,10 +1640,9 @@ export const renderutils: RenderUtils = {
         element.style.maxWidth = maxW > 0 ? `${maxW}px` : '';
         element.style.width = `${finalW}px`;
 
-    // Host should fill wrapper (for Preview, host===element so this is harmless)
-    host.style.maxWidth = '100%';
-    host.style.width = '100%';
-        host.style.textAlign = 'left';
+        // Host should fill wrapper (for Preview, host===element so this is harmless)
+        host.style.maxWidth = '100%';
+        host.style.width = '100%';
 
         // Keep in canvas bounds (Editor only). In Preview, do not auto-shift position.
         if (!renderutils.previewWindow()) {

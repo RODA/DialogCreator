@@ -122,6 +122,7 @@ export type labelElementType = {
     lineClamp: number;
     fontColor: string;
     value: string;
+    align: string;
     isEnabled?: boolean;
     isVisible: boolean;
     elementIds: string[];
