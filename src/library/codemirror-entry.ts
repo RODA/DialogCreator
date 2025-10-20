@@ -15,7 +15,7 @@ import {
 } from '@codemirror/commands';
 import { javascript } from '@codemirror/lang-javascript';
 import { bracketMatching, indentUnit, syntaxHighlighting, HighlightStyle } from '@codemirror/language';
-import { linter, lintGutter, Diagnostic } from '@codemirror/lint';
+import { linter, lintGutter, Diagnostic, forceLinting } from '@codemirror/lint';
 import * as acorn from 'acorn';
 import { API_NAMES, EVENT_NAMES, ELEMENT_FIRST_ARG_CALLS } from './api';
 import { tags } from '@lezer/highlight';
@@ -139,6 +139,7 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
     const uiApiLinter = linter((view) => {
         const diagnostics: Diagnostic[] = [];
         const code = view.state.doc.toString();
+        const doc = view.state.doc;
         let ast: any = null;
         try {
             ast = acorn.parse(code, {
@@ -147,8 +148,17 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
                 allowReturnOutsideFunction: true,
                 allowAwaitOutsideFunction: true
             } as any);
-        } catch {
-            // Syntax errors handled by status bar; skip lint on parse failure
+        } catch (syntaxError: any) {
+            // Report syntax errors via lint diagnostics so gutter markers render
+            const message = String(syntaxError && syntaxError.message ? syntaxError.message : syntaxError);
+            const position = typeof syntaxError?.pos === 'number' ? syntaxError.pos : 0;
+            const line = doc.lineAt(Math.min(Math.max(position, 0), doc.length));
+            diagnostics.push({
+                from: line.from,
+                to: line.to,
+                severity: 'error',
+                message: `Syntax error: ${message}`
+            });
             return diagnostics;
         }
 
@@ -411,4 +421,13 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
     };
 }
 
-window.CM6 = { createCodeEditor, setDialogMeta };
+window.CM6 = {
+    createCodeEditor,
+    setDialogMeta,
+    requestLint: (instance: { view?: unknown } | null | undefined) => {
+        const view = instance?.view;
+        if (!view) return;
+        if (!(view instanceof EditorView)) return;
+        forceLinting(view);
+    }
+};

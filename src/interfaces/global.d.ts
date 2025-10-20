@@ -37,7 +37,8 @@ declare global {
                     type: string;
                     options?: string[];
                 }>
-            } | null | undefined) => void
+            } | null | undefined) => void,
+            requestLint?: (instance: { view?: unknown } | null | undefined) => void
         };
     }
 }

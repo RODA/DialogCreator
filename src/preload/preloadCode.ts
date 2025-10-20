@@ -38,6 +38,32 @@ window.addEventListener('DOMContentLoaded', () => {
         if (status) status.textContent = msg;
     };
 
+    const runSyntaxCheck = () => {
+        const code = (editor?.getValue?.() || '') as string;
+        try {
+            // Validate syntax using a parser to avoid code generation from strings
+            const acorn = require('acorn');
+            acorn.parse(
+                code,
+                {
+                    ecmaVersion: 'latest',
+                    sourceType: 'script',
+                    allowReturnOutsideFunction: true,
+                    allowAwaitOutsideFunction: true
+                } as any
+            );
+            setStatus('No syntax errors');
+        } catch (e: any) {
+            setStatus('Syntax error: ' + String(e && e.message ? e.message : e));
+        }
+
+        if (typeof CM6?.requestLint === 'function') {
+            try {
+                CM6.requestLint(editor);
+            } catch { /* non-fatal */ }
+        }
+    };
+
     coms.on('renderCode', (payload: unknown) => {
         const obj: any = typeof payload === 'string' ? JSON.parse(payload as string) : (payload as any);
         const existing = String(obj?.customJS || '');
@@ -61,6 +87,7 @@ window.addEventListener('DOMContentLoaded', () => {
                 CM6.setDialogMeta({ elements });
             }
         } catch { /* non-fatal */ }
+
         if (CM6) {
             editor = CM6.createCodeEditor(
                 mount,
@@ -90,29 +117,13 @@ window.addEventListener('DOMContentLoaded', () => {
         }
 
         setStatus('Ready');
+
+        // Validate immediately on load so existing syntax issues surface without requiring edits
+        runSyntaxCheck();
+        setTimeout(runSyntaxCheck, 10);
     });
 
-    const runSyntaxCheck = () => {
-        const code = (editor?.getValue?.() || '') as string;
-        try {
-            // Validate syntax using a parser to avoid code generation from strings
-            const acorn = require('acorn');
-            acorn.parse(
-                code,
-                {
-                    ecmaVersion: 'latest',
-                    sourceType: 'script',
-                    allowReturnOutsideFunction: true,
-                    allowAwaitOutsideFunction: true
-                } as any
-            );
-            setStatus('No syntax errors');
-        } catch (e: any) {
-            setStatus('Syntax error: ' + String(e && e.message ? e.message : e));
-        }
-    };
-
-    // Initial syntax check after load
+    // Initial syntax check after load (in case the editor is created via fallback textarea first)
     setTimeout(runSyntaxCheck, 10);
 
     btn.addEventListener('click', () => {
