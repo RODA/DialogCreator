@@ -11,23 +11,28 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // Ensure the CM6 bundle is loaded into the preload (isolated) context.
     // With contextIsolation=true, globals from page scripts aren't visible here,
-    // so the bundle directly required, when available.
+    // so the bundle must be required directly when available.
     const fs = require('fs');
     const candidates: string[] = [];
 
-    // Dev path: dist/preload -> src/bundles/codemirror.bundle.js
+    // Common dev layouts relative to dist/preload
     candidates.push(path.join(__dirname, '..', '..', 'src', 'bundles', 'codemirror.bundle.js'));
-
+    candidates.push(path.join(__dirname, '..', '..', 'bundles', 'codemirror.bundle.js'));
+    candidates.push(path.join(__dirname, '..', 'bundles', 'codemirror.bundle.js'));
+    // Project root fallback (when running directly from repo root)
+    candidates.push(path.join(process.cwd?.() || '.', 'src', 'bundles', 'codemirror.bundle.js'));
     // Packaged path: under resources/bundles
     if (process && process.resourcesPath) {
         candidates.push(path.join(process.resourcesPath, 'bundles', 'codemirror.bundle.js'));
     }
 
     for (const bundle of candidates) {
-        if (bundle && fs.existsSync(bundle)) {
-            require(bundle);
-            break;
-        }
+        try {
+            if (bundle && fs.existsSync(bundle)) {
+                require(bundle);
+                break;
+            }
+        } catch { /* non-fatal */ }
     }
 
     const CM6 = window.CM6;
@@ -36,6 +41,19 @@ window.addEventListener('DOMContentLoaded', () => {
 
     const setStatus = (msg: string) => {
         if (status) status.textContent = msg;
+    };
+
+    const updateDiagCount = () => {
+        try {
+            if (!status || !mount) return;
+            const n1 = mount.querySelectorAll('.cm-lintPoint').length;
+            const n2 = mount.querySelectorAll('.cm-diagnosticRange, .cm-lintRange').length;
+            const n3 = mount.querySelectorAll('.cm-diagnostic').length; // visible tooltip items
+            const n4 = mount.querySelectorAll('.cm-lintMarker').length; // gutter markers
+            const total = n1 + n2 + n3 + n4;
+            const suffix = ` | warnings: ${total}`;
+            // status.textContent = statusBase + suffix;
+        } catch { /* non-fatal */ }
     };
 
     const runSyntaxCheck = () => {
@@ -60,9 +78,37 @@ window.addEventListener('DOMContentLoaded', () => {
         if (typeof CM6?.requestLint === 'function') {
             try {
                 CM6.requestLint(editor);
+                setTimeout(updateDiagCount, 350);
             } catch { /* non-fatal */ }
         }
     };
+
+    // Create editor immediately so we know if CM6 is active even before data arrives
+
+    if (CM6) {
+        editor = CM6.createCodeEditor(mount, {
+            value: '',
+            onChange: () => {
+                if (!utils.isNil(debounceTimer)) clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(runSyntaxCheck, 250);
+            }
+        });
+        setStatus('Ready (CM6)');
+        // initial diag count shortly after mount
+        setTimeout(updateDiagCount, 350);
+    } else {
+        const ta = document.createElement('textarea');
+        ta.id = 'codeText';
+        mount.appendChild(ta);
+        ta.value = '';
+        editor = {
+            getValue: () => ta.value,
+            setValue: (v: string) => { ta.value = v; },
+            focus: () => ta.focus(),
+            destroy: () => {}
+        };
+        setStatus('Ready (fallback)');
+    }
 
     coms.on('renderCode', (payload: unknown) => {
         const obj: any = typeof payload === 'string' ? JSON.parse(payload as string) : (payload as any);
@@ -95,43 +141,21 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         } catch { /* non-fatal */ }
 
-        if (CM6) {
-            editor = CM6.createCodeEditor(
-                mount,
-                {
-                    value: existing,
-                    onChange: () => {
-                        if (!utils.isNil(debounceTimer)) {
-                            // clear if neither null nor undefined
-                            clearTimeout(debounceTimer);
-                        }
-                        debounceTimer = setTimeout(runSyntaxCheck, 250);
-                    }
-                }
-            );
-        } else {
-            // Fallback: textarea (unlikely if bundle loads). Create one on the fly.
-            const ta = document.createElement('textarea');
-            ta.id = 'codeText';
-            mount.appendChild(ta);
-            ta.value = existing;
-            editor = {
-                getValue: () => ta.value,
-                setValue: (v: string) => { ta.value = v; },
-                focus: () => ta.focus(),
-                destroy: () => {}
-            };
-        }
-
-        setStatus('Ready');
+        try {
+            if (editor && typeof editor.setValue === 'function') {
+                editor.setValue(existing);
+            }
+        } catch { /* non-fatal */ }
 
         // Validate immediately on load so existing syntax issues surface without requiring edits
         runSyntaxCheck();
         setTimeout(runSyntaxCheck, 10);
+        setTimeout(updateDiagCount, 400);
     });
 
     // Initial syntax check after load (in case the editor is created via fallback textarea first)
     setTimeout(runSyntaxCheck, 10);
+    setTimeout(updateDiagCount, 400);
 
     btn.addEventListener('click', () => {
         const text = (editor?.getValue?.() || '') as string;

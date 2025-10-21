@@ -40,7 +40,13 @@ declare global {
                 }>;
                 radioGroups?: string[];
             } | null | undefined) => void,
-            requestLint?: (instance: { view?: unknown } | null | undefined) => void
+            requestLint?: (instance: { view?: unknown } | null | undefined) => void,
+            setDiagnostics?: (instance: { view?: unknown } | null | undefined, diags: Array<{
+                from: number;
+                to: number;
+                severity?: 'info' | 'warning' | 'error';
+                message: string;
+            }>) => void
         };
     }
 }

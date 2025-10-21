@@ -15,7 +15,8 @@ import {
 } from '@codemirror/commands';
 import { javascript } from '@codemirror/lang-javascript';
 import { bracketMatching, indentUnit, syntaxHighlighting, HighlightStyle } from '@codemirror/language';
-import { linter, lintGutter, Diagnostic, forceLinting } from '@codemirror/lint';
+import { linter, lintGutter, Diagnostic, forceLinting, setDiagnostics } from '@codemirror/lint';
+import { autocompletion, Completion, CompletionContext } from '@codemirror/autocomplete';
 import * as acorn from 'acorn';
 import { API_NAMES, EVENT_NAMES, ELEMENT_FIRST_ARG_CALLS } from './api';
 import { tags } from '@lezer/highlight';
@@ -222,6 +223,34 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
             });
         };
 
+        // Tiny edit distance for typo suggestions (Levenshtein)
+        const editDistance = (a: string, b: string) => {
+            const dp = Array.from({ length: a.length + 1 }, () => new Array<number>(b.length + 1).fill(0));
+            for (let i = 0; i <= a.length; i++) dp[i][0] = i;
+            for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+            for (let i = 1; i <= a.length; i++) {
+                for (let j = 1; j <= b.length; j++) {
+                    const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+                    dp[i][j] = Math.min(
+                        dp[i - 1][j] + 1,      // deletion
+                        dp[i][j - 1] + 1,      // insertion
+                        dp[i - 1][j - 1] + cost // substitution
+                    );
+                }
+            }
+            return dp[a.length][b.length];
+        };
+
+        const suggestClosestApi = (name: string): string | null => {
+            let best: { name: string; dist: number } | null = null;
+            for (const api of API_NAMES) {
+                const d = editDistance(name, String(api));
+                if (!best || d < best.dist) best = { name: String(api), dist: d };
+            }
+            // Offer suggestion for small typos only
+            return (best && best.dist <= 2) ? best.name : null;
+        };
+
         walk(ast, (n) => {
             if (n.type !== 'CallExpression') return;
             const callee = n.callee;
@@ -258,9 +287,14 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
             } else if (callee?.type === 'Identifier') {
                 // Bare prelude use (const { ... } = ui)
                 if (callName && !knownApi.has(callName)) {
-                    // Heuristically warn only for common mistaken names
+                    // Specific helpers for common half-typed names
                     if (['get', 'set', 'checked'].includes(callName)) {
                         addDiagnostic(callee, `Unknown API '${callName}'. Did you mean '${callName === 'checked' ? 'isChecked' : (callName + 'Value')}'?`);
+                    } else {
+                        const close = suggestClosestApi(callName);
+                        if (close) {
+                            addDiagnostic(callee, `Unknown API '${callName}'. Did you mean '${close}'?`);
+                        }
                     }
                 }
                 // Soft warn for bare log: provided as debug alias in Preview only
@@ -390,6 +424,69 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
         return diagnostics;
     }, { delay: 250 });
 
+    // Autocomplete: offer ui.* API, event names, and known element names
+    const uiApiCompletions = Array.from(API_NAMES).map((name): Completion => ({
+        label: String(name),
+        type: 'function',
+        boost: 100
+    }));
+
+    const eventCompletions = Array.from(EVENT_NAMES).map(ev => ({
+        label: ev,
+        type: 'enum',
+        boost: 90
+    } as Completion));
+
+    const elementCompletions = (): Completion[] => {
+        if (!currentDialogMeta) return [];
+        return currentDialogMeta.elements.map(e => ({
+            label: e.name,
+            type: 'variable',
+            info: e.type,
+            boost: 80
+        } as Completion));
+    };
+
+    const completionSource = (context: CompletionContext) => {
+        const { state, pos } = context;
+        const line = state.doc.lineAt(pos);
+        const before = line.text.slice(0, pos - line.from);
+
+        // If typing after 'ui.' suggest API
+        const uiDot = before.lastIndexOf('ui.');
+        if (uiDot !== -1 && uiDot >= before.length - 20) {
+            const from = line.from + uiDot + 3; // after 'ui.'
+            return { from, options: uiApiCompletions };
+        }
+
+        // If inside first argument string of common calls, suggest element names
+        const elementArgPattern = /(?:\b(?:ui\.)?(?:onClick|onChange|onInput|on|trigger|getValue|setValue|get|set|select|setSelected|addValue|deleteValue)\(\s*)(['"])([^'"]*)$/;
+        const mEl = before.match(elementArgPattern);
+        if (mEl) {
+            const quote = mEl[1];
+            const start = before.lastIndexOf(quote);
+            if (start !== -1) {
+                const from = line.from + start + 1;
+                return { from, options: elementCompletions() };
+            }
+        }
+
+        // If inside second argument of on()/trigger(), suggest events
+        const eventArgPattern = /(?:\b(?:ui\.)?(?:on|trigger)\(\s*[^,]*,\s*)(['"])([^'"]*)$/;
+        const mEv = before.match(eventArgPattern);
+        if (mEv) {
+            const quote = mEv[1];
+            const start = before.lastIndexOf(quote);
+            if (start !== -1) {
+                const from = line.from + start + 1;
+                return { from, options: eventCompletions };
+            }
+        }
+
+        // Default: no custom completions
+        return null;
+    };
+
     const state = EditorState.create({
         doc: startDoc,
         extensions: [
@@ -412,6 +509,7 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
             uiApiLinter,
             syntaxHighlighting(dialogHighlightStyle),
             javascript(),
+            autocompletion({ override: [completionSource] }),
             EditorView.updateListener.of((v: any) => {
                 if (onChange && v.docChanged) {
                     onChange(v.state.doc.toString());
@@ -487,5 +585,29 @@ window.CM6 = {
         if (!view) return;
         if (!(view instanceof EditorView)) return;
         forceLinting(view);
+    },
+    // Optional: allow external code to set diagnostics directly (for debugging/testing)
+    setDiagnostics: (
+        instance: { view?: unknown } | null | undefined,
+        diags: Array<{ from: number; to: number; severity?: 'info' | 'warning' | 'error'; message: string }>
+    ) => {
+        const view = instance?.view;
+        if (!view) return;
+        if (!(view instanceof EditorView)) return;
+        const mapped: Diagnostic[] = diags.map(d => ({
+            from: d.from,
+            to: d.to,
+            message: d.message,
+            severity: (d.severity ?? 'warning') as 'info' | 'warning' | 'error'
+        }));
+        // Accept both EditorView and EditorState per typings
+        try {
+            // @ts-ignore - support older/newer signatures
+            setDiagnostics(view, mapped);
+        } catch {
+            // Fallback to state-based API shape
+            // @ts-ignore
+            setDiagnostics(view.state, mapped);
+        }
     }
 };
