@@ -2,16 +2,16 @@
 const { mdToPdf } = require('md-to-pdf');
 const path = require('path');
 const fs = require('fs');
-const { transformManualMarkdown } = require('./manual/transform-markdown');
+const { transformManualMarkdown } = require('./transform-markdown');
 
 (async function main() {
-  const repoRoot = path.resolve(__dirname, '..');
-  const input = path.join(repoRoot, 'USER_MANUAL.md');
+  const repoRoot = path.resolve(__dirname, '../..');
+  const input = path.join(repoRoot, 'DialogCreator.md');
   const outputDir = path.join(repoRoot, 'docs', 'manual');
   const output = path.join(outputDir, 'DialogCreator.pdf');
 
   if (!fs.existsSync(input)) {
-    console.error('USER_MANUAL.md not found at', input);
+    console.error('DialogCreator.md not found at', input);
     process.exit(1);
   }
 

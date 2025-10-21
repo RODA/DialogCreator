@@ -183,8 +183,8 @@
 <li>Buttons and custom checkboxes/radios usually use <code class="hljs"><span class="hljs-string">'click'</span></code>.</li>
 <li>Text inputs can use <code class="hljs"><span class="hljs-string">'change'</span></code> (on blur) or <code class="hljs"><span class="hljs-string">'input'</span></code> (as you type).</li>
 <li>Selects use <code class="hljs"><span class="hljs-string">'change'</span></code>.</li>
-<li>Tip: Prefer the helpers <code class="hljs"><span class="hljs-title function_">onClick</span></code>, <code class="hljs"><span class="hljs-title function_">onChange</span></code>, <code class="hljs"><span class="hljs-title function_">onInput</span></code> for readability.<!-- - Note: The generic <code class="hljs"><span class="hljs-title function_">on</span>(<span class="api-param">name</span>, <span class="api-param">event</span>, <span class="api-param">handler</span>)</code> is available as <code class="hljs">ui.<span class="hljs-title function_">on</span>(<span class="api-param">...</span>)</code> (it's not part of the shorthand prelude). --></li>
-<li>Radio groups: pass the group name to <code class="hljs"><span class="hljs-title function_">onChange</span>(<span class="api-param">groupName</span>, <span class="api-param">handler</span>)</code> to attach the handler to every radio in that group. Valid identifier names (e.g. <code class="hljs">radiogroup1</code>) can be used without quotes.</li>
+<li>Tip: Prefer the helpers <code class="hljs"><span class="hljs-title function_">onClick</span></code>, <code class="hljs"><span class="hljs-title function_">onChange</span></code>, <code class="hljs"><span class="hljs-title function_">onInput</span></code> for readability.</li>
+<li>Radio groups: pass the group name to <code class="hljs"><span class="hljs-title function_">onChange</span>(<span class="api-param">groupName</span>, <span class="api-param">handler</span>)</code> to attach a handler to every radio in that group. If the group name is a valid identifier (e.g. <code class="hljs"><span class="api-param">radiogroup1</span></code>), you may omit quotes.<!-- - Note: The generic <code class="hljs"><span class="hljs-title function_">on</span>(<span class="api-param">name</span>, <span class="api-param">event</span>, <span class="api-param">handler</span>)</code> is available as <code class="hljs">ui.<span class="hljs-title function_">on</span>(<span class="api-param">...</span>)</code> (it's not part of the shorthand prelude). --></li>
 </ul>
 <p>Programmatic events:</p>
 <ul>
@@ -455,7 +455,7 @@ onChange(datasetsContainer, () =&gt; {
 
   <span class="hljs-keyword">if</span> (!variables.length) {
     <span class="hljs-title function_">addError</span>(<span class="api-param">datasetsContainer</span>, <span class="hljs-string">"Unable to load variables"</span>);
-<span class="hljs-title function_">addError</span>(<span class="api-param">datasetsContainer</span>, <span class="hljs-string">'Select at least one dataset'</span>);
+    <span class="hljs-title function_">addError</span>(<span class="api-param">datasetsContainer</span>, <span class="hljs-string">"Select at least one dataset"</span>);
     <span class="hljs-keyword">return</span>;
   }
 
@@ -627,7 +627,7 @@ onChange(datasetsContainer, () =&gt; {
 </li>
 </ul>
 
-
+	
 
 </main>
 </body></html>
