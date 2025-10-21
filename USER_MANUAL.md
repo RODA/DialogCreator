@@ -299,19 +299,11 @@ Validation and highlight helpers
 
 - `addError(name, message)`
 
-  - Show a tooltip-like validation message attached to the element. Multiple distinct messages on the same element are de-duplicated and the first one is shown.
+  - Show a tooltip-like validation message attached to the element and apply a visual highlight (glow). Multiple distinct messages on the same element are de-duplicated and the first one is shown. The highlight is removed automatically when all messages are cleared.
 
 - `clearError(name, message?)`
 
   - Clear a previously added validation message. If `message` is provided, only that message is removed; otherwise, all messages for the element are cleared.
-
-- `addGlow(name)`
-
-  - Visually highlight the element (adds an outline/glow to draw attention). Useful alongside `addError` to signal the field needing attention.
-
-- `clearGlow(name)`
-
-  - Remove any visual highlight added by `addGlow`.
 
 Element-specific notes and examples
 

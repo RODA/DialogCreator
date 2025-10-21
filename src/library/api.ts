@@ -28,7 +28,7 @@ export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
     'setSelected', 'getSelected', 'addValue', 'deleteValue',
 
     // errors
-    'addError', 'clearError', 'addGlow', 'clearGlow',
+    'addError', 'clearError',
 
     // datasets/workspace
     'listDatasets', 'listVariables'
@@ -666,19 +666,18 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         },
 
         addError: (name, message) => {
-            errorhelpers.addTooltip(coerceName(name), String(message ?? ''));
+            const key = coerceName(name);
+            const text = String(message ?? '');
+            if (!text) {
+                return;
+            }
+
+            errorhelpers.addTooltip(key, text);
         },
 
         clearError: (name, message?) => {
-            errorhelpers.clearTooltip(coerceName(name), message ? String(message) : undefined);
-        },
-
-        addGlow: (name) => {
-            errorhelpers.addHighlight(coerceName(name));
-        },
-
-        clearGlow: (name) => {
-            errorhelpers.clearHighlight(coerceName(name));
+            const key = coerceName(name);
+            errorhelpers.clearTooltip(key, message ? String(message) : undefined);
         },
 
         // Simulated workspace datasets listing (e.g., via R connection)

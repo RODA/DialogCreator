@@ -323,22 +323,12 @@
 <ul>
 <li><p><code class="hljs"><span class="hljs-title function_">addError</span>(<span class="api-param">name</span>, <span class="api-param">message</span>)</code></p>
 <ul>
-<li>Show a tooltip-like validation message attached to the element. Multiple distinct messages on the same element are de-duplicated and the first one is shown.</li>
+<li>Show a tooltip-like validation message attached to the element and apply a visual highlight (glow). Multiple distinct messages on the same element are de-duplicated and the first one is shown. The highlight is removed automatically when all messages are cleared.</li>
 </ul>
 </li>
 <li><p><code class="hljs"><span class="hljs-title function_">clearError</span>(<span class="api-param">name</span>, <span class="api-param">message?</span>)</code></p>
 <ul>
 <li>Clear a previously added validation message. If <code class="hljs"><span class="api-param">message</span></code> is provided, only that message is removed; otherwise, all messages for the element are cleared.</li>
-</ul>
-</li>
-<li><p><code class="hljs"><span class="hljs-title function_">addGlow</span>(<span class="api-param">name</span>)</code></p>
-<ul>
-<li>Visually highlight the element (adds an outline/glow to draw attention). Useful alongside <code class="hljs"><span class="hljs-title function_">addError</span></code> to signal the field needing attention.</li>
-</ul>
-</li>
-<li><p><code class="hljs"><span class="hljs-title function_">clearGlow</span>(<span class="api-param">name</span>)</code></p>
-<ul>
-<li>Remove any visual highlight added by <code class="hljs"><span class="hljs-title function_">addGlow</span></code>.</li>
 </ul>
 </li>
 </ul>

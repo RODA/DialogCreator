@@ -68,8 +68,6 @@ export interface PreviewUI {
     /** Error helpers */
     addError(name: string, message: string): void;
     clearError(name: string, message?: string): void;
-    addGlow(name: string, kind?: 'field' | 'radio'): void;
-    clearGlow(name: string): void;
 
     /** Return list of available dataset names from the connected workspace */
     listDatasets(): string[];

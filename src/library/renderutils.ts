@@ -23,6 +23,8 @@ let __uniformSchema: UniformSchema | null = null;
 
 const validation_messages: ValidationMessage = {};
 const error_tippy: ErrorTippy = {};
+const auto_highlight = new Set<string>();
+const highlight_targets = new Map<string, Set<HTMLElement>>();
 const enhancedButtons = new WeakSet<HTMLButtonElement>();
 
 const CSS_ESCAPE = (value: string) => {
@@ -96,6 +98,19 @@ function destroyTooltip(name: string) {
     }
 }
 
+function removeHighlightClasses(node: HTMLElement | null | undefined) {
+    if (!node) return;
+    node.classList.remove('error-in-field', 'error-in-radio');
+}
+
+function clearStoredHighlight(name: string) {
+    const stored = highlight_targets.get(name);
+    if (stored) {
+        stored.forEach(target => removeHighlightClasses(target));
+        highlight_targets.delete(name);
+    }
+}
+
 export const errorutils = {
     addTooltip(element: string | string[], message: string) {
         const text = String(message ?? '');
@@ -108,6 +123,8 @@ export const errorutils = {
             ensureTooltip(name, host, text);
             if (!validation_messages[name]) {
                 validation_messages[name] = { name, errors: [text] };
+                errorutils.addHighlight(name);
+                auto_highlight.add(name);
             } else if (!validation_messages[name].errors.includes(text)) {
                 validation_messages[name].errors.push(text);
             }
@@ -119,6 +136,7 @@ export const errorutils = {
             const existing = validation_messages[name];
             if (!existing) {
                 destroyTooltip(name);
+                clearStoredHighlight(name);
                 return;
             }
 
@@ -131,6 +149,9 @@ export const errorutils = {
             if (existing.errors.length === 0) {
                 destroyTooltip(name);
                 delete validation_messages[name];
+
+                clearStoredHighlight(name);
+                auto_highlight.delete(name);
             } else {
                 const { host } = resolveElementHost(name);
                 if (host) {
@@ -146,16 +167,28 @@ export const errorutils = {
             if (!host) return;
 
             const inferredKind = kind ?? ((host.dataset?.type === 'Radio' || isRadio) ? 'radio' : 'field');
-            host.classList.remove('error-in-field', 'error-in-radio');
-            host.classList.add(inferredKind === 'radio' ? 'error-in-radio' : 'error-in-field');
+            const highlightClass = inferredKind === 'radio' ? 'error-in-radio' : 'error-in-field';
+
+            const target = highlightClass === 'error-in-radio'
+                ? (host.querySelector('.custom-radio') as HTMLElement | null)
+                : (host.querySelector('input, select, textarea, button') as HTMLElement | null);
+
+            const node = target || host;
+
+            clearStoredHighlight(name);
+
+            node.classList.add(highlightClass);
+
+            const store = new Set<HTMLElement>();
+            store.add(node);
+            highlight_targets.set(name, store);
         });
     },
 
     clearHighlight(element: string | string[]) {
         withElementList(element, (name) => {
-            const { host } = resolveElementHost(name);
-            if (!host) return;
-            host.classList.remove('error-in-field', 'error-in-radio');
+            clearStoredHighlight(name);
+            auto_highlight.delete(name);
         });
     }
 };
@@ -1603,7 +1636,7 @@ export const renderutils: RenderUtils = {
             host.style.removeProperty('top');
             host.style.removeProperty('transform');
             host.style.removeProperty('vertical-align');
-            
+
             // Set up wrapper for vertical centering
             element.style.display = 'flex';
             element.style.alignItems = 'center';
@@ -1623,7 +1656,7 @@ export const renderutils: RenderUtils = {
             host.style.removeProperty('top');
             host.style.removeProperty('transform');
             host.style.removeProperty('vertical-align');
-            
+
             // Set up wrapper for vertical centering
             element.style.display = 'flex';
             element.style.alignItems = 'center';
