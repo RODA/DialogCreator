@@ -232,14 +232,32 @@ export const renderutils: RenderUtils = {
     },
 
     unselectRadioGroup: function(element) {
-        const group = element.getAttribute('group');
+        const group = element?.getAttribute?.('group') || '';
         if (!group) return;
 
+        // In Preview window, operate purely on the Preview DOM; do not touch editor state
+        if (renderutils.previewWindow()) {
+            const escaped = CSS_ESCAPE(group);
+            const radios = Array.from(document.querySelectorAll<HTMLElement>(`.custom-radio[group="${escaped}"]`));
+            radios.forEach(node => {
+                if (node === element) return;
+                const wrapper = getRadioWrapperFromNode(node);
+                if (!wrapper) return;
+                node.setAttribute('aria-checked', 'false');
+                node.classList.remove('selected');
+                try { wrapper.dataset.isSelected = 'false'; } catch {}
+                const native = wrapper.querySelector('input[type="radio"]') as HTMLInputElement | null;
+                if (native) native.checked = false;
+            });
+            return;
+        }
+
+        // Editor window: previous behavior using editor dialog structure
         const radios = Array.from(document.querySelectorAll<HTMLElement>(`[group="${group}"]`));
         radios.forEach(radio => {
             const id = radio.id.slice(6);
             const native = document.getElementById(`native-radio-${id}`) as HTMLInputElement | null;
-            dialog.elements[id].dataset.isSelected = 'false';
+            try { dialog.elements[id].dataset.isSelected = 'false'; } catch {}
             radio.setAttribute('aria-checked', 'false');
             radio.classList.remove('selected');
             if (native) {
