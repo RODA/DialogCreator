@@ -356,9 +356,46 @@ function renderPreview(dialog: PreviewDialog) {
             }
         } else if (type === 'input') {
             const input = el.querySelector('input') as HTMLInputElement | null;
-            input?.addEventListener('change', () => {
-                el.dataset.value = String(input.value || '');
-            });
+            if (input) {
+                let focusValue = input.value;
+                let pendingSyntheticChange = false;
+
+                input.addEventListener('focus', () => {
+                    focusValue = input.value;
+                    pendingSyntheticChange = false;
+                });
+
+                input.addEventListener('change', () => {
+                    el.dataset.value = String(input.value || '');
+                    focusValue = input.value;
+                    pendingSyntheticChange = false;
+                });
+
+                input.addEventListener('keydown', (ev: KeyboardEvent) => {
+                    if (ev.key !== 'Enter' || ev.isComposing) {
+                        return;
+                    }
+
+                    ev.preventDefault();
+                    ev.stopPropagation();
+
+                    const currentValue = input.value;
+                    const valueChanged = currentValue !== focusValue;
+
+                    pendingSyntheticChange = valueChanged;
+                    input.blur();
+
+                    if (valueChanged) {
+                        queueMicrotask(() => {
+                            if (!pendingSyntheticChange) {
+                                return;
+                            }
+                            pendingSyntheticChange = false;
+                            input.dispatchEvent(new Event('change', { bubbles: true }));
+                        });
+                    }
+                });
+            }
         } else if (type === 'counter') {
             const display = document.querySelector(`#counter-value-${el.id}`) as HTMLDivElement | null;
             const inc = document.querySelector(`#counter-increase-${el.id}`) as HTMLDivElement | null;
