@@ -181,6 +181,7 @@ Events:
 - Text inputs can use `'change'` (on blur) or `'input'` (as you type).
 - Selects use `'change'`.
 - Tip: Prefer the helpers `onClick`, `onChange`, `onInput` for readability.
+- Radio groups: pass the group name to `onChange(groupName, handler)` to attach a handler to every radio in that group. If the group name is a valid identifier (e.g. `radiogroup1`), you may omit quotes.
 <!-- - Note: The generic `on(name, event, handler)` is available as `ui.on(...)` (it's not part of the shorthand prelude). -->
 
 Programmatic events:
@@ -407,7 +408,7 @@ Notes
 
 - Programmatic state changes (e.g., `check`, `setValue`) do not automatically dispatch events. Use `trigger` when you need the dialog to behave as if the user had interacted with the element.
 - The selection command (`setSelected`) also does not auto-dispatch, but it can be paired with `trigger(name, 'change')` if you rely on change triggers.
-- Validation/highlight helpers (`addError`, `clearError`, `addGlow`, `clearGlow`) are purely visual aids in Preview; they do not block execution or change element values.
+- Validation helpers (`addError`, `clearError`) are purely visual aids in Preview; they do not block execution or change element values.
 
 ### Populate container contents
 
@@ -421,7 +422,7 @@ onChange(datasetsContainer, () => {
 
   if (!variables.length) {
     addError(datasetsContainer, "Unable to load variables");
-    addGlow(datasetsContainer);
+    addError(datasetsContainer, "Select at least one dataset");
     return;
   }
 

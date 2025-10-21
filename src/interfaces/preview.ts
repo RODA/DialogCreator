@@ -114,6 +114,8 @@ export interface PreviewUI {
 export interface PreviewUIEnv {
     // Find the element wrapper by name within canvas
     findWrapper: (name: string) => HTMLElement | null;
+    // Locate radio group members by group name
+    findRadioGroupMembers: (group: string) => HTMLElement[];
     // Update element properties (delegates to renderutils.updateElement)
     updateElement: (element: HTMLElement, props: StringNumber) => void;
     // Surface runtime errors in Preview (already bound to canvas)

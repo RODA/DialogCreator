@@ -10,6 +10,7 @@ import { API_NAMES, createPreviewUI } from '../library/api';
 function buildUI(canvas: HTMLElement): PreviewUI {
     const env: PreviewUIEnv = {
         findWrapper: (name: string) => renderutils.findWrapper(name, canvas),
+        findRadioGroupMembers: (group: string) => renderutils.findRadioGroupMembers(group, canvas),
         updateElement: (el, props) => renderutils.updateElement(el, props),
         showRuntimeError: (msg: string) => renderutils.showRuntimeError(msg, canvas),
         logToEditor: (msg: string) => coms.sendTo('editorWindow', 'consolog', msg),
@@ -179,33 +180,56 @@ function renderPreview(dialog: PreviewDialog) {
 
         // Radio: reflect isSelected and make it interactive in preview
         if (desiredType === 'Radio') {
+            const desiredGroup = String(data.group || core.dataset.group || '').trim();
+            if (desiredGroup) {
+                wrapper.dataset.group = desiredGroup;
+            }
             const custom = core.querySelector('.custom-radio') as HTMLElement | null;
+            const native = core.querySelector('input[type="radio"]') as HTMLInputElement | null;
+
+            const syncState = (checked: boolean) => {
+                const flag = checked ? 'true' : 'false';
+                wrapper.dataset.isSelected = flag;
+                custom?.setAttribute('aria-checked', flag);
+                custom?.classList.toggle('selected', checked);
+            };
+
+            const ensureGroupConsistency = () => {
+                const group = custom?.getAttribute('group') || native?.name || '';
+                if (!group) return;
+                document.querySelectorAll(`.custom-radio[group="${group}"]`).forEach((el) => {
+                    const node = el as HTMLElement;
+                    if (node === custom) return;
+                    node.setAttribute('aria-checked', 'false');
+                    node.classList.remove('selected');
+                    const host = node.closest('.element-wrapper') as HTMLElement | null;
+                    if (host) host.dataset.isSelected = 'false';
+                });
+            };
+
+            const selected = utils.isTrue(data.isSelected);
+            if (native) {
+                native.checked = selected;
+            }
+            syncState(selected);
+            ensureGroupConsistency();
+
             if (custom) {
-                const selected = utils.isTrue(data.isSelected);
-                custom.setAttribute('aria-checked', String(selected));
-                custom.classList.toggle('selected', selected);
-                const selectThis = () => {
-                    const group = custom.getAttribute('group') || '';
-                    if (group) {
-                        document.querySelectorAll(`.custom-radio[group="${group}"]`).forEach((el) => {
-                            const host = (el as HTMLElement).closest('.element-wrapper') as HTMLElement | null;
-                            if (host) {
-                                host.dataset.isSelected = 'false';
-                            }
-                            el.setAttribute('aria-checked', 'false');
-                            el.classList.remove('selected');
-                        });
-                    }
-                    wrapper.dataset.isSelected = 'true';
-                    custom.setAttribute('aria-checked', 'true');
-                    custom.classList.add('selected');
-                };
-                custom.addEventListener('click', selectThis);
                 custom.addEventListener('keydown', (e: KeyboardEvent) => {
                     if (e.key === ' ' || e.key === 'Enter') {
                         e.preventDefault();
-                        selectThis();
+                        native?.click();
                     }
+                });
+            }
+
+            if (native) {
+                native.addEventListener('change', () => {
+                    ensureGroupConsistency();
+                    syncState(native.checked);
+                });
+                native.addEventListener('click', () => {
+                    // click already handled by change; no-op to avoid duplicate triggers
                 });
             }
         }
@@ -328,21 +352,13 @@ function renderPreview(dialog: PreviewDialog) {
                 el.dispatchEvent(new Event('change', { bubbles: true }));
             });
         } else if (type === 'radio') {
-            const custom = el.querySelector('.custom-radio') as HTMLElement | null;
-            custom?.addEventListener('click', () => {
-                // Update this radio and group mates
-                el.dataset.isSelected = 'true';
-                const group = custom?.getAttribute('group') || '';
-                if (group) {
-                    document.querySelectorAll(`.custom-radio[group="${group}"]`).forEach((r) => {
-                        const host = (r as HTMLElement).closest('.element-div') as HTMLElement | null;
-                        if (host && host !== el) {
-                            host.dataset.isSelected = 'false';
-                        }
-                    });
-                }
-                el.dispatchEvent(new Event('change', { bubbles: true }));
-            });
+            const native = el.querySelector('input[type="radio"]') as HTMLInputElement | null;
+            if (native) {
+                native.addEventListener('change', () => {
+                    el.dataset.isSelected = String(native.checked);
+                    el.dispatchEvent(new Event('change', { bubbles: true }));
+                });
+            }
         } else if (type === 'select') {
             if (el instanceof HTMLSelectElement) {
                 el.addEventListener('change', () => {

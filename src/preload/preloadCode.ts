@@ -72,6 +72,7 @@ window.addEventListener('DOMContentLoaded', () => {
         try {
             if (CM6?.setDialogMeta && obj && Array.isArray(obj.elements)) {
                 const elements = [] as Array<{ name: string; type: string; options?: string[] }>;
+                const radioGroups = new Set<string>();
                 for (const e of obj.elements) {
                     const name = String(e?.nameid || '').trim();
                     const type = String(e?.type || e?.dataset?.type || '').trim();
@@ -82,9 +83,15 @@ window.addEventListener('DOMContentLoaded', () => {
                         const tokens = raw.split(/[;,]/).map((s: string) => s.trim()).filter((s: string) => s.length > 0);
                         metaEl.options = tokens;
                     }
+                    if (type === 'Radio') {
+                        const group = String(e?.group || e?.dataset?.group || '').trim();
+                        if (group) {
+                            radioGroups.add(group);
+                        }
+                    }
                     elements.push(metaEl);
                 }
-                CM6.setDialogMeta({ elements });
+                CM6.setDialogMeta({ elements, radioGroups: Array.from(radioGroups) });
             }
         } catch { /* non-fatal */ }
 

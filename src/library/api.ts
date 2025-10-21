@@ -51,6 +51,7 @@ export const ELEMENT_FIRST_ARG_CALLS: ReadonlyArray<keyof PreviewUI> = Object.fr
 export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
     const {
         findWrapper,
+        findRadioGroupMembers,
         updateElement,
         showRuntimeError,
         logToEditor,
@@ -724,7 +725,59 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         },
 
         onClick: (name, handler: (ev: Event, el: HTMLElement) => void) => api.on(name, 'click', handler),
-        onChange: (name, handler: (ev: Event, el: HTMLElement) => void) => api.on(name, 'change', handler),
+        onChange: (name, handler: (ev: Event, el: HTMLElement) => void) => {
+            const key = coerceName(name);
+
+            const direct = findWrapper(key);
+            if (direct) {
+                api.on(key, 'change', handler);
+                return;
+            }
+
+            const groupMembers = findRadioGroupMembers(key);
+
+            if (groupMembers.length > 0) {
+                const handledEvents = new WeakSet<Event>();
+                const visited = new Set<HTMLElement>();
+                groupMembers.forEach(member => {
+                    const native = member.querySelector('input[type="radio"]');
+                    const handlerWrapper = (ev: Event) => {
+                        if (handledEvents.has(ev)) {
+                            return;
+                        }
+                        handledEvents.add(ev);
+
+                        if (!native || ev.target !== native) {
+                            return;
+                        }
+
+                        if (member.dataset?.isSelected !== 'true') {
+                            return;
+                        }
+
+                        handler(ev, member);
+                    };
+
+                    if (visited.has(member)) {
+                        return;
+                    }
+
+                    visited.add(member);
+
+                    const memberName = member.dataset?.nameid || member.id;
+                    if (!memberName) {
+                        return;
+                    }
+
+                    member.addEventListener('change', handlerWrapper);
+                    disposers.push(() => member.removeEventListener('change', handlerWrapper));
+                });
+
+                return;
+            }
+
+            api.on(key, 'change', handler);
+        },
         onInput: (name, handler: (ev: Event, el: HTMLElement) => void) => api.on(name, 'input', handler),
 
         trigger: (name, event: EventName) => {

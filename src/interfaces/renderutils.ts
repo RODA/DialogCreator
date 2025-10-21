@@ -54,8 +54,10 @@ export interface RenderUtils {
     // Propagate element name changes across customJS
     propagateNameChange: (oldName: string, newName: string) => void;
     findWrapper: (name: string, canvas: HTMLElement) => HTMLElement | null;
+    findRadioGroupMembers: (groupName: string, canvas: HTMLElement) => HTMLElement[];
     showRuntimeError: (msg: string, canvas: HTMLElement) => void;
     exposeNameGlobals: (canvas: HTMLElement) => void;
+    exposeRadioGroupGlobals: (canvas: HTMLElement) => void;
     exposeEventNameGlobals: () => void;
     normalizeEventName: (ev: unknown) => EventName | null;
 }

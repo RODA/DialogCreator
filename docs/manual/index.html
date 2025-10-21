@@ -184,6 +184,7 @@
 <li>Text inputs can use <code class="hljs"><span class="hljs-string">'change'</span></code> (on blur) or <code class="hljs"><span class="hljs-string">'input'</span></code> (as you type).</li>
 <li>Selects use <code class="hljs"><span class="hljs-string">'change'</span></code>.</li>
 <li>Tip: Prefer the helpers <code class="hljs"><span class="hljs-title function_">onClick</span></code>, <code class="hljs"><span class="hljs-title function_">onChange</span></code>, <code class="hljs"><span class="hljs-title function_">onInput</span></code> for readability.<!-- - Note: The generic <code class="hljs"><span class="hljs-title function_">on</span>(<span class="api-param">name</span>, <span class="api-param">event</span>, <span class="api-param">handler</span>)</code> is available as <code class="hljs">ui.<span class="hljs-title function_">on</span>(<span class="api-param">...</span>)</code> (it's not part of the shorthand prelude). --></li>
+<li>Radio groups: pass the group name to <code class="hljs"><span class="hljs-title function_">onChange</span>(<span class="api-param">groupName</span>, <span class="api-param">handler</span>)</code> to attach the handler to every radio in that group. Valid identifier names (e.g. <code class="hljs">radiogroup1</code>) can be used without quotes.</li>
 </ul>
 <p>Programmatic events:</p>
 <ul>
@@ -443,7 +444,7 @@
 <ul>
 <li>Programmatic state changes (e.g., <code class="hljs"><span class="hljs-title function_">check</span></code>, <code class="hljs"><span class="hljs-title function_">setValue</span></code>) do not automatically dispatch events. Use <code class="hljs"><span class="hljs-title function_">trigger</span></code> when you need the dialog to behave as if the user had interacted with the element.</li>
 <li>The selection command (<code class="hljs"><span class="hljs-title function_">setSelected</span></code>) also does not auto-dispatch, but it can be paired with <code class="hljs"><span class="hljs-title function_">trigger</span>(<span class="api-param">name</span>, <span class="hljs-string">'change'</span>)</code> if you rely on change triggers.</li>
-<li>Validation/highlight helpers (<code class="hljs"><span class="hljs-title function_">addError</span></code>, <code class="hljs"><span class="hljs-title function_">clearError</span></code>, <code class="hljs"><span class="hljs-title function_">addGlow</span></code>, <code class="hljs"><span class="hljs-title function_">clearGlow</span></code>) are purely visual aids in Preview; they do not block execution or change element values.</li>
+<li>Validation helpers (<code class="hljs"><span class="hljs-title function_">addError</span></code>, <code class="hljs"><span class="hljs-title function_">clearError</span></code>) are purely visual aids in Preview; they do not block execution or change element values.</li>
 </ul>
 <h3 id="populate-container-contents">Populate container contents</h3>
 <p>Containers can show rows populated via API. For example:</p>
@@ -454,7 +455,7 @@ onChange(datasetsContainer, () =&gt; {
 
   <span class="hljs-keyword">if</span> (!variables.length) {
     <span class="hljs-title function_">addError</span>(<span class="api-param">datasetsContainer</span>, <span class="hljs-string">"Unable to load variables"</span>);
-    <span class="hljs-title function_">addGlow</span>(<span class="api-param">datasetsContainer</span>);
+<span class="hljs-title function_">addError</span>(<span class="api-param">datasetsContainer</span>, <span class="hljs-string">'Select at least one dataset'</span>);
     <span class="hljs-keyword">return</span>;
   }
 

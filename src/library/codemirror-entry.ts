@@ -34,12 +34,20 @@ type CMOptions = {
 };
 
 // Dialog metadata used for semantic linting in the Code window
+type DialogMetaElement = {
+    name: string;
+    type: string;
+    options?: string[]; // for Select elements, when known
+};
+
+type DialogMetaInput = {
+    elements?: Array<DialogMetaElement>;
+    radioGroups?: string[];
+};
+
 type DialogMeta = {
-    elements: Array<{
-        name: string;
-        type: string;
-        options?: string[]; // for Select elements, when known
-    }>;
+    elements: DialogMetaElement[];
+    radioGroups: Set<string>;
 };
 
 let currentDialogMeta: DialogMeta | null = null;
@@ -56,18 +64,32 @@ const dialogHighlightStyle = HighlightStyle.define([
     { tag: tags.punctuation, color: '#6a737d' }
 ]);
 
-function setDialogMeta(meta: DialogMeta | null | undefined) {
+function setDialogMeta(meta: DialogMetaInput | null | undefined) {
     if (meta && Array.isArray(meta.elements)) {
-        currentDialogMeta = {
-            elements: meta.elements.map(e => ({
-                name: String(e.name || ''),
-                type: String(e.type || ''),
-                options: Array.isArray(e.options) ? e.options.map(v => String(v)) : undefined
-            }))
-        };
-    } else {
-        currentDialogMeta = null;
+        const elements = meta.elements
+            .map(e => {
+                const name = String(e?.name ?? '').trim();
+                const type = String(e?.type ?? '').trim();
+                const options = Array.isArray(e?.options) ? e.options.map(v => String(v)) : undefined;
+                return { name, type, options };
+            })
+            .filter(e => e.name.length > 0 && e.type.length > 0);
+
+        const radioGroups = new Set<string>();
+        if (Array.isArray(meta.radioGroups)) {
+            for (const g of meta.radioGroups) {
+                const name = String(g ?? '').trim();
+                if (name) {
+                    radioGroups.add(name);
+                }
+            }
+        }
+
+        currentDialogMeta = { elements, radioGroups };
+        return;
     }
+
+    currentDialogMeta = null;
 }
 
 function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance {
@@ -133,6 +155,19 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
         const n = String(name).trim();
         if (!n) return null;
         return currentDialogMeta.elements.find(e => e.name === n) || null;
+    };
+
+    const radioGroupExists = (name: string | undefined | null) => {
+        if (!name || !currentDialogMeta) {
+            return false;
+        }
+
+        const nm = String(name).trim();
+        if (!nm) {
+            return false;
+        }
+
+        return currentDialogMeta.radioGroups.has(nm);
     };
 
     // Linter: warn about unsupported ui.on/ui.trigger events while typing and dialog-aware issues
@@ -234,7 +269,7 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
                 }
             }
 
-            if (!elementFirstArgCalls.has(callName)) return;
+            if (!elementFirstArgCalls.has(callName) && callName !== 'onChange') return;
 
             // Element existence for all supported calls when first arg present
             if (args.length >= 1) {
@@ -247,9 +282,32 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
                     elName = String(elNode.name);
                 }
                 if (elName) {
-                    const el = findElement(elName);
-                    if (!el) {
-                        addDiagnostic(elNode, `Element '${elName}' does not exist in the dialog`);
+                    if (callName === 'onChange') {
+                        // Accept either element names or radio groups
+                        const el = findElement(elName);
+                        if (el) {
+                            // ok
+                        } else if (!radioGroupExists(elName)) {
+                            addDiagnostic(
+                                elNode,
+                                `Element or radio group '${elName}' does not exist in the dialog`
+                            );
+                        }
+                    } else {
+                        const el = findElement(elName);
+                        if (!el) {
+                            if (radioGroupExists(elName)) {
+                                addDiagnostic(
+                                    elNode,
+                                    `Radio groups are not supported with ${callName}.`
+                                );
+                            } else {
+                                addDiagnostic(
+                                    elNode,
+                                    `Element '${elName}' does not exist in the dialog`
+                                );
+                            }
+                        }
                     }
                 }
             }

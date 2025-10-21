@@ -34,6 +34,27 @@ const CSS_ESCAPE = (value: string) => {
     return value.replace(/"/g, '\\"');
 };
 
+function getRadioWrapperFromNode(node: Element | null | undefined): HTMLElement | null {
+    if (!(node instanceof HTMLElement)) {
+        return null;
+    }
+
+    const directType = String(node.dataset?.type || '').trim();
+    if (directType === 'Radio') {
+        return node;
+    }
+
+    const wrapper = node.closest('.element-wrapper');
+    if (wrapper instanceof HTMLElement) {
+        const wrapperType = String(wrapper.dataset?.type || '').trim();
+        if (wrapperType === 'Radio') {
+            return wrapper;
+        }
+    }
+
+    return null;
+}
+
 function withElementList(elementOrElements: string | string[], fn: (name: string) => void) {
     const list = Array.isArray(elementOrElements) ? elementOrElements : [elementOrElements];
     list.forEach(name => {
@@ -211,14 +232,20 @@ export const renderutils: RenderUtils = {
     },
 
     unselectRadioGroup: function(element) {
-        document.querySelectorAll(`[group="${element.getAttribute("group")}"]`).forEach(
-            (radio) => {
-                const id = radio.id.slice(6);
-                dialog.elements[id].dataset.isSelected = 'false';
-                radio.setAttribute('aria-checked', 'false');
-                radio.classList.remove('selected');
+        const group = element.getAttribute('group');
+        if (!group) return;
+
+        const radios = Array.from(document.querySelectorAll<HTMLElement>(`[group="${group}"]`));
+        radios.forEach(radio => {
+            const id = radio.id.slice(6);
+            const native = document.getElementById(`native-radio-${id}`) as HTMLInputElement | null;
+            dialog.elements[id].dataset.isSelected = 'false';
+            radio.setAttribute('aria-checked', 'false');
+            radio.classList.remove('selected');
+            if (native) {
+                native.checked = false;
             }
-        );
+        });
     },
 
     makeUniqueNameID: function(baseName) {
@@ -616,19 +643,46 @@ export const renderutils: RenderUtils = {
             element.style.width = data.size + 'px';
             element.style.height = data.size + 'px';
 
-            const customRadio = document.createElement('div');
-            customRadio.id = "radio-" + uuid;
+            const wrapperLabel = document.createElement('label');
+            wrapperLabel.className = 'custom-radio-wrapper';
+            wrapperLabel.dataset.group = String(data.group || '');
+
+            const nativeRadio = document.createElement('input');
+            nativeRadio.type = 'radio';
+            nativeRadio.name = data.group || '';
+            nativeRadio.id = `native-radio-${uuid}`;
+            nativeRadio.className = 'native-radio';
+            nativeRadio.dataset.color = data.color;
+            nativeRadio.style.position = 'absolute';
+            nativeRadio.style.opacity = '0';
+            nativeRadio.style.pointerEvents = 'auto';
+
+            const customRadio = document.createElement('span');
+            customRadio.id = `radio-${uuid}`;
             customRadio.className = 'custom-radio';
             customRadio.setAttribute('role', 'radio');
-            customRadio.setAttribute('tabindex', '0');
             customRadio.setAttribute('aria-checked', 'false');
-            customRadio.setAttribute('group', data.group);
+            customRadio.setAttribute('group', data.group || '');
             customRadio.style.setProperty('--radio-color', data.color);
 
+            wrapperLabel.appendChild(nativeRadio);
+            wrapperLabel.appendChild(customRadio);
+            element.appendChild(wrapperLabel);
+
+            if (data.group) {
+                element.dataset.group = String(data.group);
+            }
+
+            nativeRadio.addEventListener('focus', () => {
+                element.classList.add('radio-focus');
+            });
+            nativeRadio.addEventListener('blur', () => {
+                element.classList.remove('radio-focus');
+            });
+
             const cover = document.createElement('div');
-            cover.id = "cover-" + uuid;
+            cover.id = `cover-${uuid}`;
             cover.className = 'elementcover';
-            element.appendChild(customRadio);
             element.appendChild(cover);
 
         } else if (data.type == "Counter") {
@@ -1458,6 +1512,18 @@ export const renderutils: RenderUtils = {
                     }
                     break;
 
+                case 'group':
+                    element.dataset.group = String(value ?? '');
+                    if (customRadio) {
+                        customRadio.setAttribute('group', String(value ?? ''));
+                        if (utils.isTrue(props.isSelected) || customRadio.classList.contains('selected')) {
+                            renderutils.unselectRadioGroup(customRadio);
+                            customRadio.setAttribute('aria-checked', 'true');
+                            customRadio.classList.add('selected');
+                        }
+                    }
+                    break;
+
                 case 'isChecked':
                     if (customCheckbox) {
                         customCheckbox.setAttribute('aria-checked', String(value));
@@ -2282,6 +2348,29 @@ export const renderutils: RenderUtils = {
         return withType || matches[0] || null;
     },
 
+    findRadioGroupMembers(groupName, canvas) {
+        const gnm = String(groupName || '').trim();
+        if (!gnm) {
+            return [];
+        }
+
+        const all = Array.from(canvas.querySelectorAll<HTMLElement>(`.custom-radio[group="${CSS_ESCAPE(gnm)}"]`));
+        if (!all.length) {
+            const wrappers = Array.from(canvas.querySelectorAll<HTMLElement>(`.element-wrapper[data-group="${CSS_ESCAPE(gnm)}"]`));
+            return wrappers.filter(el => String(el.dataset?.type || '').trim() === 'Radio');
+        }
+
+        const wrappers = new Set<HTMLElement>();
+        all.forEach(node => {
+            const wrapper = getRadioWrapperFromNode(node);
+            if (wrapper) {
+                wrappers.add(wrapper);
+            }
+        });
+
+        return Array.from(wrappers);
+    },
+
     // Surface runtime errors to end users in Preview (not just console)
     showRuntimeError: function(msg, canvas) {
         // Forward to editor console as well
@@ -2330,6 +2419,60 @@ export const renderutils: RenderUtils = {
                 }
             } else {
                 registry[name] = el; // update reference if it changed
+            }
+        }
+
+        // Automatically expose radio group names as globals referencing their string identifiers.
+        renderutils.exposeRadioGroupGlobals(canvas);
+    },
+
+    exposeRadioGroupGlobals: function(canvas) {
+        const groups = new Set<string>();
+
+        const customRadios = Array.from(canvas.querySelectorAll<HTMLElement>('.custom-radio[group]'));
+        customRadios.forEach(node => {
+            const value = (node.getAttribute('group') || '').trim();
+            if (value) {
+                groups.add(value);
+            }
+        });
+
+        const wrappers = Array.from(canvas.querySelectorAll<HTMLElement>('.element-wrapper[data-group]'));
+        wrappers.forEach(wrapper => {
+            const type = String(wrapper.dataset?.type || '').trim();
+            if (type !== 'Radio') {
+                return;
+            }
+            const value = (wrapper.dataset.group || '').trim();
+            if (value) {
+                groups.add(value);
+            }
+        });
+
+        if (!window.__radioGroupGlobals) {
+            window.__radioGroupGlobals = {} as Record<string, string>;
+        }
+
+        const registry = window.__radioGroupGlobals as Record<string, string>;
+
+        for (const group of groups) {
+            if (!(group in registry)) {
+                registry[group] = group;
+            }
+
+            if (!(group in window)) {
+                if (!utils.isIdentifier(group)) {
+                    continue;
+                }
+                try {
+                    Object.defineProperty(window, group, {
+                        configurable: true,
+                        enumerable: false,
+                        get: () => registry[group]
+                    });
+                } catch {
+                    /* ignore define errors */
+                }
             }
         }
     },

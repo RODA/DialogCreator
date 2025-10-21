@@ -12,6 +12,7 @@ declare global {
          */
         __userHandlers?: Array<() => void>;
         __nameGlobals?: Record<string, HTMLElement>;
+        __radioGroupGlobals?: Record<string, string>;
 
         /**
          * CodeMirror 6 helper API exposed by the in-app bundle.
@@ -36,7 +37,8 @@ declare global {
                     name: string;
                     type: string;
                     options?: string[];
-                }>
+                }>;
+                radioGroups?: string[];
             } | null | undefined) => void,
             requestLint?: (instance: { view?: unknown } | null | undefined) => void
         };
