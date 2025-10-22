@@ -22,7 +22,7 @@ export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
     'show', 'isVisible', 'hide', 'isHidden', 'enable', 'isEnabled', 'disable', 'isDisabled',
 
     // events
-    'onClick', 'onChange', 'onInput',
+    'onClick', 'onChange', 'onInput', 'triggerChange', 'triggerClick',
 
     // lists & selection
     'setSelected', 'getSelected', 'addValue', 'clearValue', 'clearContainer', 'clearInput',

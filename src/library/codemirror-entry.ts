@@ -271,14 +271,16 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
 
             const args = n.arguments || [];
             // Calls that use element name as first arg
-            const elementFirstArgCalls = new Set(Array.from(ELEMENT_FIRST_ARG_CALLS as readonly string[]));
+        const elementFirstArgCalls = new Set(Array.from(ELEMENT_FIRST_ARG_CALLS as readonly string[]));
 
             // Minimal allowlist of ui API methods for bare identifiers (prelude destructuring)
             const knownApi = new Set(Array.from(API_NAMES as readonly string[]));
             // If it's a ui.* call with unknown property, flag it early
             if (callee?.type === 'MemberExpression' && callee.object?.type === 'Identifier' && callee.object.name === 'ui') {
-                if (callName && !elementFirstArgCalls.has(callName) && !knownApi.has(callName)) {
-                    addDiagnostic(callee.property, `Unknown ui API '${callName}'.`);
+                if (callName === 'trigger') {
+                    addDiagnostic(callee.property, `trigger() is internal. Use triggerChange(...) or triggerClick(...) instead.`);
+                } else if (callName && !elementFirstArgCalls.has(callName) && !knownApi.has(callName)) {
+                    addDiagnostic(callee.property, `Unknown API command '${callName}'.`);
                 }
                 // Soft warn for ui.log: available in runtime but considered debug/internal
                 if (callName === 'log') {
@@ -286,7 +288,9 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
                 }
             } else if (callee?.type === 'Identifier') {
                 // Bare prelude use (const { ... } = ui)
-                if (callName && !knownApi.has(callName)) {
+                if (callName === 'trigger') {
+                    addDiagnostic(callee, `trigger(...) is internal. Use triggerChange(...) or triggerClick(...).`);
+                } else if (callName && !knownApi.has(callName)) {
                     // Specific helpers for common half-typed names
                     if (['get', 'set', 'checked'].includes(callName)) {
                         addDiagnostic(callee, `Unknown API '${callName}'. Did you mean '${callName === 'checked' ? 'isChecked' : (callName + 'Value')}'?`);
