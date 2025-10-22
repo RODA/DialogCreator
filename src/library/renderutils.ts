@@ -1504,6 +1504,14 @@ export const renderutils: RenderUtils = {
                         element.classList.remove('design-hidden');
                         element.style.removeProperty('display');
                         element.style.removeProperty('visibility');
+                        
+                        // Also ensure the inner element is visible
+                        const inner = element.firstElementChild as HTMLElement | null;
+                        if (inner) {
+                            inner.classList.remove('design-hidden');
+                            inner.style.removeProperty('display');
+                            inner.style.removeProperty('visibility');
+                        }
                     } else {
                         if (renderutils.previewWindow()) {
                             element.style.display = 'none';
