@@ -25,7 +25,7 @@ export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
     'onClick', 'onChange', 'onInput',
 
     // lists & selection
-    'setSelected', 'getSelected', 'addValue', 'deleteValue', 'clearContainer',
+    'setSelected', 'getSelected', 'addValue', 'clearValue', 'clearContainer',
 
     // errors
     'addError', 'clearError',
@@ -1100,7 +1100,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             } catch {}
         },
 
-        deleteValue: (name, value) => {
+        clearValue: (name, value) => {
             const el = findWrapper(name);
             if (!el) {
                 throw new SyntaxError(`Element not found: ${String(name)}`);
@@ -1109,7 +1109,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             const eltype = typeOf(el);
 
             if (eltype !== 'Container') {
-                throw new SyntaxError(`deleteValue is only supported for Container elements`);
+                throw new SyntaxError(`clearValue is only supported for Container elements`);
             }
 
             const host = el; // use the container element directly
@@ -1119,11 +1119,11 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
 
             const item = items.find(r => ((r.querySelector('.container-text') as HTMLElement | null)?.textContent || '') === v);
             if (!item) {
-                return; // nothing to delete
+                return; // nothing to clear
             }
 
             item.remove();
-            // Update dataset mirror after deletion
+            // Update dataset mirror after clearing
             const active = Array.from(host.querySelectorAll('.container-item.active .container-text')) as HTMLElement[];
             const vals = active.map(n => String(n.textContent || '').trim()).filter(s => s.length > 0);
             el.dataset.selected = vals.join(',');
