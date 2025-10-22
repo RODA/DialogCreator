@@ -22,7 +22,7 @@ export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
     'show', 'isVisible', 'hide', 'isHidden', 'enable', 'isEnabled', 'disable', 'isDisabled',
 
     // events
-    'onClick', 'onChange', 'onInput', 'trigger',
+    'onClick', 'onChange', 'onInput',
 
     // lists & selection
     'setSelected', 'getSelected', 'addValue', 'deleteValue',
@@ -840,6 +840,9 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             }
         },
 
+        triggerChange: (name) => api.trigger(name, 'change'),
+        triggerClick: (name) => api.trigger(name, 'click'),
+
         setSelected: (name, value) => {
             const el = findWrapper(name);
             if (!el) {
@@ -989,7 +992,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             const eltype = typeOf(el);
 
             if (eltype !== 'Container') {
-                throw new SyntaxError(`ui.addValue is only supported for Container elements`);
+                throw new SyntaxError(`addValue is only supported for Container elements`);
             }
 
             const host = el; // use the container element directly
@@ -997,7 +1000,8 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             const target = sample || host;
             const items = Array.from(target.querySelectorAll('.container-item')) as HTMLElement[];
 
-            const exists = items.some(r => ((r.querySelector('.container-text') as HTMLElement | null)?.textContent || '') === String(value));
+            const exists = items.some(item => ((item.querySelector('.container-text') as HTMLElement | null)?.textContent || '') === String(value));
+
             if (exists) {
                 return;
             }
@@ -1008,7 +1012,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             label.className = 'container-text';
             label.textContent = String(value);
             // initialize label color to container fontColor
-            try { label.style.color = String((host as HTMLElement).dataset.fontColor || '#000000'); } catch {}
+            label.style.color = String(host.dataset.fontColor || '#000000');
             item.appendChild(label);
             target.appendChild(item);
 

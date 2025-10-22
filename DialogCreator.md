@@ -129,7 +129,7 @@ Elements can be referred to by their Name (ID) either quoted or not. For example
 Notes on missing elements and strict operations:
 
 - For simple getters/setters (getValue/setValue), if a name is not found, reads return `null` (or a safe default) and writes are ignored.
-- For event-related or selection operations (on, trigger, select), using an unknown element will throw a SyntaxError and show the error overlay in Preview.
+- For event-related or selection operations (on, select), using an unknown element will throw a SyntaxError and show the error overlay in Preview.
 
 Common patterns you can copy/paste:
 
@@ -185,9 +185,7 @@ Events:
 
 Programmatic events:
 
-- User events can be indicated, for instance with `trigger(name, 'change')` or simply `trigger(name)` (defaults to 'change'). Only the following events are supported by the API: `click`, `change`, `input`. Using other event names throws a SyntaxError and shows the error overlay in Preview.
-  - `click` on a Checkbox/Radio behaves like a real click: it toggles the control.
-  - `change` dispatches the event to inputs/selects without modifying the current value by itself.
+- Convenience functions: `triggerChange(name)` and `triggerClick(name)` are shortcuts for triggering 'change' and 'click' events respectively.
 
 Initialization
 
@@ -228,7 +226,7 @@ Initialization
 
 - Convenience methods for Checkbox and Radio elements to set on/off.
 - For Radio, `check(name)` also unselects other radios in the same group.
-- These do not dispatch events by themselves; if you want handlers to run, use `trigger(...)`.
+- These do not dispatch events by themselves; if you want handlers to run, use `triggerChange()` or `triggerClick()`.
 
 `getSelected(name)`
 
@@ -280,19 +278,11 @@ Initialization
 
   - Shortcut for `on(name, 'input', handler)`.
 
-- `trigger(name, event)`
-
-  - Dispatch a synthetic event on the element without directly changing its state.
-  - Supported events: `'click'`, `'change'`, `'input'`.
-  - Notes:
-    - For Checkbox/Radio, triggering `'click'` behaves like a user click (the control toggles via its built-in logic).
-    - Triggering `'change'` on inputs/selects notifies listeners but does not change the current value by itself.
-
 - `setSelected(name, value)`
   - Programmatically set selection.
   - For Select elements: sets the selected option by value (single-choice).
   - For Container elements: accepts a string or array of strings and replaces the current selection with exactly those labels.
-  - Does not dispatch a `change` event automatically. If you need handlers to run, call `trigger(name, 'change')` after changing selection.
+  - Does not dispatch a `change` event automatically. If you need handlers to run, call `triggerChange(name)` after changing selection.
   - Throws a SyntaxError if the element doesn't exist, the control is missing, the option/row is not found, or the element type doesn't support selection.
 
 Validation and highlight helpers
@@ -372,7 +362,7 @@ onChange(myInput, () => {
 
 ```javascript
 setSelected(countrySelect, "RO");
-trigger(countrySelect, "change");
+triggerChange(countrySelect);
 ```
 
 - Conditional enable/disable situations:
@@ -393,7 +383,7 @@ onClick(lockCheckbox, () => {
 
 ```javascript
 setSelected(variablesContainer, ["Sepal.Width"]);
-trigger(variablesContainer, "change");
+triggerChange(variablesContainer);
 ```
 
 - Add or remove items in a Container:
@@ -405,8 +395,8 @@ deleteValue(variablesContainer, "Sepal.Width");
 
 Notes
 
-- Programmatic state changes (e.g., `check`, `setValue`) do not automatically dispatch events. Use `trigger` when you need the dialog to behave as if the user had interacted with the element.
-- The selection command (`setSelected`) also does not auto-dispatch, but it can be paired with `trigger(name, 'change')` if you rely on change triggers.
+- Programmatic state changes (e.g., `check`, `setValue`) do not automatically dispatch events. Use `triggerChange()` or `triggerClick()` when you need the dialog to behave as if the user had interacted with the element.
+- The selection command (`setSelected`) also does not auto-dispatch, but it can be paired with `triggerChange(name)` if you rely on change triggers.
 - Validation helpers (`addError`, `clearError`) are purely visual aids in Preview; they do not block execution or change element values.
 
 ### Populate container contents

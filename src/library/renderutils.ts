@@ -532,7 +532,11 @@ export const renderutils: RenderUtils = {
 
         const errs = (renderutils.assertTypes(data, { collect: true }) || []) as string[];
         if (errs.length) {
-            console.log('Element creation aborted due to invalid or missing properties:\n' + errs.join('\n'));
+            coms.sendTo(
+                'editorWindow',
+                'consolog',
+                'Element creation aborted due to invalid or missing properties:\n' + errs.join('\n')
+            );
         }
 
         function toDatasetValue(v: unknown): string | undefined {
@@ -1504,7 +1508,7 @@ export const renderutils: RenderUtils = {
                         element.classList.remove('design-hidden');
                         element.style.removeProperty('display');
                         element.style.removeProperty('visibility');
-                        
+
                         // Also ensure the inner element is visible
                         const inner = element.firstElementChild as HTMLElement | null;
                         if (inner) {

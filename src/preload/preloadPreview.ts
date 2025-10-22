@@ -270,11 +270,11 @@ function renderPreview(dialog: PreviewDialog) {
                 const action = String(data.onClick || 'run');
                 switch (action) {
                     case 'reset':
-                        coms.sendTo('editorWindow', 'consolog', `Reset action for "${data.nameid || 'Button'}"`);
+                        // coms.sendTo('editorWindow', 'consolog', `Reset action for "${data.nameid || 'Button'}"`);
                         break;
                     case 'run':
                     default:
-                        coms.sendTo('editorWindow', 'consolog', `Run action for "${data.nameid || 'Button'}"`);
+                        // coms.sendTo('editorWindow', 'consolog', `Run action for "${data.nameid || 'Button'}"`);
                         break;
                 }
             });
