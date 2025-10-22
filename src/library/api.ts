@@ -642,8 +642,19 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
 
             if (on) {
                 el.dataset.isVisible = 'true';
-                el.style.display = '';
+                el.style.removeProperty('display');
                 el.classList.remove('design-hidden');
+                
+                // Also check and fix the inner element if it exists
+                const inner = el.firstElementChild as HTMLElement | null;
+                if (inner && inner.style.display === 'none') {
+                    inner.style.removeProperty('display');
+                }
+                
+                // Force visibility by setting display to block if still hidden
+                if (el.style.display === 'none' || getComputedStyle(el).display === 'none') {
+                    el.style.display = 'block';
+                }
             } else {
                 el.dataset.isVisible = 'false';
                 el.style.display = 'none';
