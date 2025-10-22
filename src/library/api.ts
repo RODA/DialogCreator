@@ -996,18 +996,39 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             }
 
             const host = el; // use the container element directly
-            const sample = host.querySelector('.container-sample') as HTMLDivElement | null;
-            const target = sample || host;
+
+            // Use the same target logic as populateContainer
+            let target: HTMLElement | null = null;
+            const existing = host.querySelector('.container-content');
+            const sample = host.querySelector('.container-sample');
+            if (existing instanceof HTMLElement) {
+                target = existing;
+            } else if (sample instanceof HTMLElement) {
+                target = sample;
+            } else {
+                const target = document.createElement('div');
+                target.className = 'container-content';
+                target.style.width = '100%';
+                target.style.height = '100%';
+                target.style.overflowY = 'auto';
+                target.style.overflowX = 'hidden';
+                host.appendChild(target);
+            }
+
+            if (!target) {
+                return;
+            }
+
             const items = Array.from(target.querySelectorAll('.container-item')) as HTMLElement[];
 
             const exists = items.some(item => ((item.querySelector('.container-text') as HTMLElement | null)?.textContent || '') === String(value));
-
             if (exists) {
                 return;
             }
 
             const item = document.createElement('div');
             item.className = 'container-item';
+            item.dataset.value = String(value);
             const label = document.createElement('span');
             label.className = 'container-text';
             label.textContent = String(value);
@@ -1015,6 +1036,9 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             label.style.color = String(host.dataset.fontColor || '#000000');
             item.appendChild(label);
             target.appendChild(item);
+
+            // Apply initial styling like in populateContainer
+            applyItemStyle(host, item, false);
 
             // Wire click handler same as in setValue
             try {
