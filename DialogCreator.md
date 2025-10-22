@@ -137,16 +137,15 @@ Common patterns you can copy/paste:
 
 ```javascript
 onChange(input1, () => {
-  setValue(statusLabel, "input1: " + getValue(input1));
+  const value = "input1: " + getValue(input1);
+  setValue(statusLabel, value);
 });
 ```
 
 2. Show or hide a label when a checkbox is toggled
 
 ```javascript
-onClick(checkbox1, () => {
-  show(label1, isChecked(checkbox1));
-});
+onClick(checkbox1, () => show(label1, isChecked(checkbox1)) );
 ```
 
 Which is equivalent to:
@@ -353,9 +352,7 @@ onClick(myCheckbox, () => {
 - Mirror an input's text to a label on change:
 
 ```javascript
-onChange(myInput, () => {
-  setValue(myLabel, getValue(myInput));
-});
+onChange(myInput, () => setValue(myLabel, getValue(myInput)) );
 ```
 
 - Select a value in a Select (no auto-dispatch), then notify listeners:
@@ -390,7 +387,7 @@ triggerChange(variablesContainer);
 
 ```javascript
 addValue(variablesContainer, "Sepal.Length");
-deleteValue(variablesContainer, "Sepal.Width");
+clearValue(variablesContainer, "Sepal.Width");
 ```
 
 Notes

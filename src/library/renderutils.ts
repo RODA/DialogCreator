@@ -539,25 +539,23 @@ export const renderutils: RenderUtils = {
             );
         }
 
-        function toDatasetValue(v: unknown): string | undefined {
-            if (v == null) return undefined;
-            if (Array.isArray(v)) return v.map(String).join(',');
-            return String(v);
+        function valueToDataset(value: unknown): string | undefined {
+            if (utils.isNull(value)) return undefined;
+            if (Array.isArray(value)) return value.map(String).join(',');
+            return String(value);
         }
 
-        const bag = data as Record<string, unknown>;
-        const keys = utils.getKeys(bag);
+        const recordata = data as Record<string, unknown>;
+        const keys = utils.getKeys(recordata);
         keys.forEach((key) => {
-            if (key === '$persist' || key.startsWith('$')) return;
-            if (!/^[$A-Za-z_][\w$]*$/.test(key)) return;
+            if (
+                key.startsWith('$') ||
+                !/^[$A-Za-z_][\w$]*$/.test(key) // test if not(!) a valid identifier (nameid)
+            ) return;
 
-            const v = toDatasetValue(bag[key]);
-            if (v !== undefined) {
-                try {
-                    element.dataset[key] = v;
-                } catch {
-                    /* silently ignore invalid dataset assignments */
-                }
+            const value = valueToDataset(recordata[key]);
+            if (utils.notNil(value)) {
+                element.dataset[key] = value;
             }
         });
 
