@@ -182,7 +182,6 @@ Events:
 - Selects use `'change'`.
 - Tip: Prefer the helpers `onClick`, `onChange`, `onInput` for readability.
 - Radio groups: pass the group name to `onChange(groupName, handler)` to attach a handler to every radio in that group. If the group name is a valid identifier (e.g. `radiogroup1`), you may omit quotes.
-<!-- - Note: The generic `on(name, event, handler)` is available as `ui.on(...)` (it's not part of the shorthand prelude). -->
 
 Programmatic events:
 
