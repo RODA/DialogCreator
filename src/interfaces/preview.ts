@@ -106,6 +106,9 @@ export interface PreviewUI {
     /** Clear all items from a Container element. */
     clearContainer(name: string): void;
 
+    /** Clear the value of an Input element. */
+    clearInput(name: string): void;
+
     /**
      * Call a backend service by name. Returns a Promise, and also supports an optional callback for simplicity.
      * If a callback is provided, it will be called with the result when available.

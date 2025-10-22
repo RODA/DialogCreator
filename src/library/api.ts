@@ -25,7 +25,7 @@ export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
     'onClick', 'onChange', 'onInput',
 
     // lists & selection
-    'setSelected', 'getSelected', 'addValue', 'clearValue', 'clearContainer',
+    'setSelected', 'getSelected', 'addValue', 'clearValue', 'clearContainer', 'clearInput',
 
     // errors
     'addError', 'clearError',
@@ -1155,6 +1155,27 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
 
             // Update dataset mirror after clearing
             el.dataset.selected = '';
+        },
+
+        clearInput: (name) => {
+            const el = findWrapper(name);
+            if (!el) {
+                throw new SyntaxError(`Element not found: ${String(name)}`);
+            }
+
+            const eltype = typeOf(el);
+
+            if (eltype !== 'Input') {
+                throw new SyntaxError(`clearInput() can only be applied to input elements`);
+            }
+
+            const inn = inner(el);
+            const input = (el instanceof HTMLInputElement ? el : (inn as HTMLInputElement | null));
+
+            if (input) {
+                input.value = '';
+                el.dataset.value = '';
+            }
         },
 
         // call: (service, args?, cb?) => call(service, args, cb),
