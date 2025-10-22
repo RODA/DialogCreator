@@ -186,7 +186,7 @@ Events:
 
 Programmatic events:
 
-- User events can be indicated, for instance with `trigger(name, 'change')`. Only the following events are supported by the API: `click`, `change`, `input`. Using other event names throws a SyntaxError and shows the error overlay in Preview.
+- User events can be indicated, for instance with `trigger(name, 'change')` or simply `trigger(name)` (defaults to 'change'). Only the following events are supported by the API: `click`, `change`, `input`. Using other event names throws a SyntaxError and shows the error overlay in Preview.
   - `click` on a Checkbox/Radio behaves like a real click: it toggles the control.
   - `change` dispatches the event to inputs/selects without modifying the current value by itself.
 

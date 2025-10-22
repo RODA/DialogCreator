@@ -188,7 +188,7 @@
 </ul>
 <p>Programmatic events:</p>
 <ul>
-<li>User events can be indicated, for instance with <code class="hljs"><span class="hljs-title function_">trigger</span>(<span class="api-param">name</span>, <span class="hljs-string">'change'</span>)</code>. Only the following events are supported by the API: <code class="hljs"><span class="api-param">click</span></code>, <code class="hljs"><span class="api-param">change</span></code>, <code class="hljs"><span class="api-param">input</span></code>. Using other event names throws a SyntaxError and shows the error overlay in Preview.<ul>
+<li>User events can be indicated, for instance with <code class="hljs"><span class="hljs-title function_">trigger</span>(<span class="api-param">name</span>, <span class="hljs-string">'change'</span>)</code> or simply <code class="hljs"><span class="hljs-title function_">trigger</span>(<span class="api-param">name</span>)</code> (defaults to 'change'). Only the following events are supported by the API: <code class="hljs"><span class="api-param">click</span></code>, <code class="hljs"><span class="api-param">change</span></code>, <code class="hljs"><span class="api-param">input</span></code>. Using other event names throws a SyntaxError and shows the error overlay in Preview.<ul>
 <li><code class="hljs"><span class="api-param">click</span></code> on a Checkbox/Radio behaves like a real click: it toggles the control.</li>
 <li><code class="hljs"><span class="api-param">change</span></code> dispatches the event to inputs/selects without modifying the current value by itself.</li>
 </ul>

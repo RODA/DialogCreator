@@ -644,13 +644,13 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 el.dataset.isVisible = 'true';
                 el.style.removeProperty('display');
                 el.classList.remove('design-hidden');
-                
+
                 // Also check and fix the inner element if it exists
                 const inner = el.firstElementChild as HTMLElement | null;
                 if (inner && inner.style.display === 'none') {
                     inner.style.removeProperty('display');
                 }
-                
+
                 // Force visibility by setting display to block if still hidden
                 if (el.style.display === 'none' || getComputedStyle(el).display === 'none') {
                     el.style.display = 'block';
@@ -791,7 +791,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         },
         onInput: (name, handler: (ev: Event, el: HTMLElement) => void) => api.on(name, 'input', handler),
 
-        trigger: (name, event: EventName) => {
+        trigger: (name, event: EventName = 'change') => {
             const el = findWrapper(name);
             if (!el) {
                 throw new SyntaxError(`Element not found: ${String(name)}`);

@@ -82,8 +82,8 @@ export interface PreviewUI {
     onChange(name: string, handler: (ev: Event, el: HTMLElement) => void): void;
     onInput(name: string, handler: (ev: Event, el: HTMLElement) => void): void;
 
-    /** Dispatch an event on the element (bubbling), without changing state. Supported: 'click', 'change', 'input'. */
-    trigger(name: string, event: 'click' | 'change' | 'input'): void;
+    /** Dispatch an event on the element (bubbling), without changing state. Supported: 'click', 'change', 'input'. Defaults to 'change'. */
+    trigger(name: string, event?: 'click' | 'change' | 'input'): void;
 
     /** Set selection: Select elements (single value) or Container items (accepts string or string[]). */
     setSelected(name: string, value: string | string[]): void;
