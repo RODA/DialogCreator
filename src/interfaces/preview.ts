@@ -103,6 +103,9 @@ export interface PreviewUI {
     /** Delete an item from a Container by its label (does nothing for Select). */
     deleteValue(name: string, value: string): void;
 
+    /** Clear all items from a Container element. */
+    clearContainer(name: string): void;
+
     /**
      * Call a backend service by name. Returns a Promise, and also supports an optional callback for simplicity.
      * If a callback is provided, it will be called with the result when available.

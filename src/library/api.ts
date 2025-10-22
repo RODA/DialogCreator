@@ -25,7 +25,7 @@ export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
     'onClick', 'onChange', 'onInput',
 
     // lists & selection
-    'setSelected', 'getSelected', 'addValue', 'deleteValue',
+    'setSelected', 'getSelected', 'addValue', 'deleteValue', 'clearContainer',
 
     // errors
     'addError', 'clearError',
@@ -1109,7 +1109,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             const eltype = typeOf(el);
 
             if (eltype !== 'Container') {
-                throw new SyntaxError(`ui.deleteValue is only supported for Container elements`);
+                throw new SyntaxError(`deleteValue is only supported for Container elements`);
             }
 
             const host = el; // use the container element directly
@@ -1127,6 +1127,34 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             const active = Array.from(host.querySelectorAll('.container-item.active .container-text')) as HTMLElement[];
             const vals = active.map(n => String(n.textContent || '').trim()).filter(s => s.length > 0);
             el.dataset.selected = vals.join(',');
+        },
+
+        clearContainer: (name) => {
+            const el = findWrapper(name);
+            if (!el) {
+                throw new SyntaxError(`Element not found: ${String(name)}`);
+            }
+
+            const eltype = typeOf(el);
+
+            if (eltype !== 'Container') {
+                throw new SyntaxError(`clearContainer() can only be applied to container elements`);
+            }
+
+            const host = el; // use the container element directly
+            const items = Array.from(host.querySelectorAll('.container-item')) as HTMLElement[];
+
+            // Apply deleteValue to all items
+            items.forEach(item => {
+                const textElement = item.querySelector('.container-text') as HTMLElement | null;
+                const value = textElement?.textContent || '';
+                if (value) {
+                    item.remove();
+                }
+            });
+
+            // Update dataset mirror after clearing
+            el.dataset.selected = '';
         },
 
         // call: (service, args?, cb?) => call(service, args, cb),
