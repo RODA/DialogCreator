@@ -1,4 +1,5 @@
 import { coms } from "../modules/coms";
+import { ipcRenderer } from 'electron';
 import { utils } from "../library/utils";
 import * as path from "path";
 
@@ -157,13 +158,38 @@ window.addEventListener('DOMContentLoaded', () => {
     setTimeout(runSyntaxCheck, 10);
     setTimeout(updateDiagCount, 400);
 
-    btn.addEventListener('click', () => {
+    const saveOnly = () => {
         const text = (editor?.getValue?.() || '') as string;
-
-        // Send to the editor window to persist in dialog.syntax.customJS
         coms.sendTo('editorWindow', 'setDialogCustomJS', text);
+        try {
+            if (status) {
+                const prev = status.textContent || '';
+                status.textContent = 'Saved';
+                setTimeout(() => { try { status.textContent = prev || 'Ready'; } catch {} }, 1200);
+            }
+        } catch { /* non-fatal */ }
+    };
 
+    btn.addEventListener('click', () => {
+        saveOnly();
         // Explicit close channel for the Code window
         coms.sendTo('main', 'close-codeWindow');
+    });
+
+    // Keyboard shortcut: Cmd/Ctrl + S should save without closing
+    window.addEventListener('keydown', (ev: KeyboardEvent) => {
+        try {
+            const isSave = (ev.key || '').toLowerCase() === 's' && (ev.metaKey || ev.ctrlKey);
+            if (isSave) {
+                ev.preventDefault();
+                ev.stopPropagation();
+                saveOnly();
+            }
+        } catch { /* ignore */ }
+    }, { capture: true });
+
+    // Allow main process to trigger a save-only action and suppress app menu Save
+    ipcRenderer.on('code-save-only', () => {
+        try { saveOnly(); } catch { /* ignore */ }
     });
 });

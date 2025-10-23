@@ -109,6 +109,24 @@ function createSecondWindow(args: { [key: string]: any }) {
     // and load the index.html of the app.
     secondWindow.loadFile(path.join(__dirname, "../src/pages", args.html));
 
+    // Intercept Cmd/Ctrl+S in the Code window to save code without closing
+    if (isCodeWindow) {
+        try {
+            secondWindow.webContents.on('before-input-event', (event: any, input: any) => {
+                try {
+                    const key = String(input?.key || '').toLowerCase();
+                    if ((input?.meta || input?.control) && key === 's') {
+                        event.preventDefault();
+                        // Tell the code window to perform a save-only (no close)
+                        if (secondWindow && !secondWindow.isDestroyed() && !secondWindow.webContents.isDestroyed()) {
+                            secondWindow.webContents.send('code-save-only');
+                        }
+                    }
+                } catch { /* noop */ }
+            });
+        } catch { /* noop */ }
+    }
+
     // Garbage collection handle
     secondWindow.on('closed', function() {
         if (
