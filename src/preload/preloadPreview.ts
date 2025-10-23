@@ -55,14 +55,22 @@ function renderPreview(dialog: PreviewDialog) {
     });
 
     window.__userHandlers = [] as Array<() => void>;
-    for (const data of dialog.elements || []) {
+    // First pass: render only non-Group elements. Groups are reconstructed after.
+    const allElements = Array.from((dialog as any).elements || []) as AnyElement[];
+    for (const data of allElements) {
+        const t = String((data as any)?.type || '').trim();
+        if (t === 'Group') {
+            continue; // skip groups in first pass
+        }
+        // Preserve the saved id from JSON; makeElement mutates data.id to a new uuid
+        const savedId = String((data as any)?.id || '');
         const core = renderutils.makeElement({ ...data } as AnyElement);
 
         const wrapper = document.createElement('div');
         wrapper.className = 'element-wrapper';
         wrapper.style.position = 'absolute';
 
-        const desiredId = String(data.id || core.id);
+        const desiredId = savedId || String(core.id);
         const desiredType = String(data.type || core.dataset.type || '').trim();
         const desiredNameId = String(data.nameid || core.dataset.nameid || '');
 
@@ -120,7 +128,7 @@ function renderPreview(dialog: PreviewDialog) {
         if (desiredType === 'Select') {
             const select = core.querySelector('select') as HTMLSelectElement | null;
             if (select) {
-                const raw = data.value ?? '';
+                const raw = core.dataset.value ?? '';
                 const text = String(raw);
                 const tokens = text.split(/[;,]/).map(s => s.trim()).filter(s => s.length > 0);
                 select.innerHTML = '';
@@ -144,7 +152,7 @@ function renderPreview(dialog: PreviewDialog) {
         if (desiredType === 'Checkbox') {
             const custom = core.querySelector('.custom-checkbox') as HTMLElement | null;
             if (custom) {
-                const checked = utils.isTrue(data.isChecked);
+                const checked = utils.isTrue(core.dataset.isChecked);
                 custom.setAttribute('aria-checked', String(checked));
                 custom.classList.toggle('checked', checked);
                 custom.addEventListener('keydown', (e: KeyboardEvent) => {
@@ -158,7 +166,7 @@ function renderPreview(dialog: PreviewDialog) {
 
         // Radio: reflect isSelected and make it interactive in preview
         if (desiredType === 'Radio') {
-            const desiredGroup = String(data.group || core.dataset.group || '').trim();
+            const desiredGroup = String(core.dataset.group || '').trim();
             if (desiredGroup) {
                 wrapper.dataset.group = desiredGroup;
             }
@@ -185,7 +193,7 @@ function renderPreview(dialog: PreviewDialog) {
                 });
             };
 
-            const selected = utils.isTrue(data.isSelected);
+            const selected = utils.isTrue(core.dataset.isSelected);
             if (native) {
                 native.checked = selected;
             }
@@ -217,9 +225,9 @@ function renderPreview(dialog: PreviewDialog) {
             const display = core.querySelector('.counter-value') as HTMLDivElement | null;
             const inc = core.querySelector('.counter-arrow.up') as HTMLDivElement | null;
             const dec = core.querySelector('.counter-arrow.down') as HTMLDivElement | null;
-            const rawMin = Number(data.minval ?? data.startval ?? 0);
+            const rawMin = Number(core.dataset.minval ?? core.dataset.startval ?? 0);
             const min = Number.isFinite(rawMin) ? rawMin : 0;
-            const rawMax = Number(data.maxval ?? min);
+            const rawMax = Number(core.dataset.maxval ?? min);
             const max = Number.isFinite(rawMax) ? rawMax : min;
 
             const getValue = () => Number(display?.textContent ?? min);
@@ -243,19 +251,6 @@ function renderPreview(dialog: PreviewDialog) {
             core.addEventListener('mousedown', doPress);
             core.addEventListener('mouseup', clearPress);
             core.addEventListener('mouseleave', clearPress);
-            core.addEventListener('click', () => {
-                if (!utils.isTrue(data.isEnabled)) return;
-                const action = String(data.onClick || 'run');
-                switch (action) {
-                    case 'reset':
-                        // coms.sendTo('editorWindow', 'consolog', `Reset action for "${data.nameid || 'Button'}"`);
-                        break;
-                    case 'run':
-                    default:
-                        // coms.sendTo('editorWindow', 'consolog', `Run action for "${data.nameid || 'Button'}"`);
-                        break;
-                }
-            });
         }
 
         // Slider: make handle draggable within the track in preview
@@ -317,6 +312,72 @@ function renderPreview(dialog: PreviewDialog) {
             core.style.pointerEvents = 'none';
         }
     }
+
+    // Recreate persistent groups after individual elements exist in the DOM
+    try {
+        const groups = (allElements || []).filter((e: any) => String(e?.type || '').trim() === 'Group');
+        for (const g of groups) {
+            const elementIds: string[] = Array.isArray((g as any).elementIds)
+                ? (g as any).elementIds
+                : String((g as any).elementIds || '')
+                    .split(',')
+                    .map((s: string) => s.trim())
+                    .filter((s: string) => s.length > 0);
+
+            if (!elementIds.length) continue;
+
+            const gl = Number((g as any).left ?? 0);
+            const gt = Number((g as any).top ?? 0);
+            const gid = String((g as any).id || `group-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+            const gname = String((g as any).nameid || '').trim();
+
+            const group = document.createElement('div');
+            group.id = gid;
+            group.className = 'element-group';
+            group.style.position = 'absolute';
+            group.style.left = `${gl}px`;
+            group.style.top = `${gt}px`;
+            group.dataset.type = 'Group';
+            if (gname) group.dataset.nameid = gname;
+            group.dataset.left = String(gl);
+            group.dataset.top = String(gt);
+
+            // Move each child under the group container; convert to relative positions
+            let moved = 0;
+            elementIds.forEach(cid => {
+                // Look up within the unattached canvas subtree
+                let child = canvas.querySelector(`[id="${cid}"]`) as HTMLElement | null;
+                if (!child) {
+                    const inner = canvas.querySelector(`[id="${cid}-inner"]`) as HTMLElement | null;
+                    if (inner) child = inner.closest('.element-wrapper') as HTMLElement | null;
+                }
+                if (!child) return;
+                const absLeft = Number(child.dataset.left ?? (parseInt(child.style.left || '0', 10) || 0));
+                const absTop = Number(child.dataset.top ?? (parseInt(child.style.top || '0', 10) || 0));
+                const relLeft = absLeft - gl;
+                const relTop = absTop - gt;
+                child.style.left = `${relLeft}px`;
+                child.style.top = `${relTop}px`;
+                child.dataset.left = String(relLeft);
+                child.dataset.top = String(relTop);
+                group.appendChild(child);
+                moved++;
+            });
+
+            // Optionally compute group size to wrap children
+            try {
+                const bounds = renderutils.computeBounds(elementIds);
+                if (bounds) {
+                    group.style.width = `${bounds.width}px`;
+                    group.style.height = `${bounds.height}px`;
+                }
+            } catch { /* ignore sizing issues */ }
+
+            canvas.appendChild(group);
+        }
+    } catch { /* ignore group reconstruction errors */ }
+
+    // Note: customJS runs later (post-render block below)
 
     // Conditions window and engine removed: interactions now only update datasets and fire change events.
     // Hook changes on interactive elements to fire change notifications for custom JS
@@ -434,119 +495,54 @@ function renderPreview(dialog: PreviewDialog) {
         }
     }, true);
 
-    // Run custom user code, if any
-    // Support both new top-level customJS and legacy syntax.customJS
-    const rawTop = dialog?.customJS;
-    const code = String(typeof rawTop === 'string' && rawTop.length ? rawTop : '');
-
-    // Forward a small debug note to BOTH the Preview (local console) and the Editor console
-    coms.sendTo(
-        'editorWindow',
-        'consolog',
-        `Preview: customJS detected (${code.trim().length} chars)`
-    );
-
-    if (code && code.trim().length) {
-        const ui = buildUI(canvas);
-
-    // Expose element names as global variables mapping to their own string
-        // (so ui.value(counter1) works)
-        renderutils.exposeNameGlobals(canvas);
-
-    // Expose common event names as globals mapping to their own string
-    // (so ui.trigger(checkbox1, change) works)
-    renderutils.exposeEventNameGlobals();
-
-        // Provide init/dispose if present
-    const exports: PreviewScriptExports = {};
-
-        // Wrap code in a Function with ui in scope
-        let fn: Function | null = null;
-        try {
-            // Strictly controlled API: expose a curated set of local bindings
-            const preludeList = API_NAMES.join(', ');
-            // Expose curated helpers plus a private alias: log -> ui.log (not part of API_NAMES)
-            const bindings = `const { ${preludeList} } = ui;
-            const log = ui.log.bind(ui);`;
-
-            fn = new Function('ui', 'exports', bindings + '\n' + code);
-
-        } catch (e: any) {
-            const msg = `Code syntax error: ${String(e && e.message ? e.message : e)}`;
-            coms.sendTo(
-                'editorWindow',
-                'consolog',
-                msg
-            );
-
-            // Show a friendly message in Preview
-            const err = document.createElement('div');
-            err.className = 'customjs-error';
-            err.textContent = msg;
-            canvas.appendChild(err);
-            fn = null;
-        }
-
-        if (fn) {
-            try {
-                fn(ui, exports);
-                coms.sendTo(
-                    'editorWindow',
-                    'consolog',
-                    'Preview: customJS executed top-level.'
-                );
-            } catch (e: any) {
-                const msg = `Action code runtime error: ${String(e && e.message ? e.message : e)}`;
-                // Reuse runtime error overlay
-                const overlay = document.createElement('div');
-                overlay.className = 'customjs-error';
-                overlay.textContent = msg;
-                canvas.appendChild(overlay);
-                coms.sendTo(
-                    'editorWindow',
-                    'consolog',
-                    msg
-                );
-            }
-        }
-
-        if (fn && typeof exports.init === 'function') {
-            try {
-                exports.init(ui);
-                coms.sendTo(
-                    'editorWindow',
-                    'consolog',
-                    'Preview: exports.init() completed.'
-                );
-            } catch (e) {
-                const msg = `init() error: ${String(utils.isRecord(e) && e.message ? e.message : e)}`;
-                coms.sendTo('editorWindow', 'consolog', msg);
-                const err = document.createElement('div');
-                err.className = 'customjs-error';
-                err.textContent = msg;
-                canvas.appendChild(err);
-            }
-        }
-
-        // Register disposer
-        window.__userHandlers!.push(() => {
-            try {
-                if (typeof exports.dispose === 'function') {
-                    exports.dispose(ui);
-                }
-            } finally {
-                ui.__disposeAll?.();
-            }
-        });
-    } else {
-        coms.sendTo(
-            'editorWindow',
-            'consolog',
-            'Preview: no customJS to execute'
-        );
-    }
-
+    // Attach canvas to DOM before executing custom code, so style/computedStyle work reliably
     root.appendChild(canvas);
+
+    // Execute custom code after elements (and groups) are in the DOM
+    try {
+        const rawTop = (dialog as any)?.customJS;
+        const code = String(typeof rawTop === 'string' && rawTop.length ? rawTop : '');
+        coms.sendTo('editorWindow', 'consolog', `Preview: customJS detected (${code.trim().length} chars, post-render)`);
+        if (code && code.trim().length) {
+            const ui = buildUI(canvas);
+            renderutils.exposeNameGlobals(canvas);
+            renderutils.exposeEventNameGlobals();
+
+            const exports: PreviewScriptExports = {};
+            const preludeList = API_NAMES.join(', ');
+            const bindings = `const { ${preludeList} } = ui;\nconst log = ui.log.bind(ui);`;
+            let fn: Function | null = null;
+            try {
+                fn = new Function('ui', 'exports', bindings + '\n' + code);
+            } catch (e: any) {
+                const msg = `Code syntax error: ${String(e && e.message ? e.message : e)}`;
+                coms.sendTo('editorWindow', 'consolog', msg);
+            }
+
+            if (fn) {
+                try {
+                    fn(ui, exports);
+                    coms.sendTo('editorWindow', 'consolog', 'Preview: customJS executed after render.');
+                } catch (e: any) {
+                    const msg = `Action code runtime error: ${String(e && e.message ? e.message : e)}`;
+                    const overlay = document.createElement('div');
+                    overlay.className = 'customjs-error';
+                    overlay.textContent = msg;
+                    canvas.appendChild(overlay);
+                }
+            }
+
+            if (fn && typeof exports.init === 'function') {
+                try { exports.init(ui); } catch {}
+            }
+
+            window.__userHandlers!.push(() => {
+                try { if (typeof exports.dispose === 'function') exports.dispose(ui); } finally { ui.__disposeAll?.(); }
+            });
+        } else {
+            coms.sendTo('editorWindow', 'consolog', 'Preview: no customJS to execute (post-render).');
+        }
+    } catch {}
 }
 
 
