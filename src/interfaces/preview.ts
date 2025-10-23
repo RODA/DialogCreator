@@ -12,6 +12,12 @@ export interface PreviewUI {
     showMessage(type: 'info' | 'error' | 'question' | 'warning', title: string, message: string): void;
     showMessage(type: 'info' | 'error' | 'question' | 'warning', message: string): void;
 
+    /**
+     * Simulate sending a constructed command to an external runtime (e.g., R).
+     * This is a no-op stub in Preview that logs the command to the Editor console.
+     */
+    run(command: string): void;
+
     /** Generic getter (value / dataset-driven) */
     get(name: string, prop: string): unknown;
 
@@ -108,6 +114,9 @@ export interface PreviewUI {
 
     /** Clear the value of an Input element. */
     clearInput(name: string): void;
+
+    /** Clear content of supported elements (Input, Container). */
+    clearContent(name: string): void;
 
     /**
      * Call a backend service by name. Returns a Promise, and also supports an optional callback for simplicity.

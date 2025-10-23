@@ -233,64 +233,82 @@ Initialization
 - For Select, returns a single-item array (or empty array if nothing selected).
 - For Container, returns labels of all selected rows.
 
-- `isVisible(name)`: boolean
+`isVisible(name)`: boolean
 
   - Returns whether the element is currently visible (display not set to 'none').
 
-- `isHidden(name)`: boolean
+`isHidden(name)`: boolean
 
   - Logical complement of `isVisible(name)`.
 
-- `isEnabled(name)`: boolean
+`isEnabled(name)`: boolean
 
   - Returns whether the element is currently enabled (not marked as disabled).
 
-- `isDisabled(name)`: boolean
+`isDisabled(name)`: boolean
 
   - Logical complement of `isEnabled(name)`.
 
-- `show(name, on = true)`
+`show(name, on = true)`
 
   - Show or hide by boolean. Use `show(name, true)` to show; `show(name, false)` to hide.
 
-- `hide(name, on = true)`
+`hide(name, on = true)`
 
   - Convenience inverse of show: `hide(name)` hides, `hide(name, false)` shows. Internally calls `show(name, !on)`.
 
-- `enable(name, on = true)`
+`enable(name, on = true)`
 
   - Enable or disable by boolean. Use `enable(name, true)` to enable; `enable(name, false)` to disable.
 
-- `disable(name, on = true)`
+`disable(name, on = true)`
 
   - Convenience inverse of enable: `disable(name)` disables, `disable(name, false)` enables. Internally calls `enable(name, !on)`.
 
-- `onClick(name, handler)`
+`onClick(name, handler)`
 
   - Shortcut for `on(name, 'click', handler)`.
 
-- `onChange(name, handler)`
+`onChange(name, handler)`
 
   - Shortcut for `on(name, 'change', handler)`.
 
-- `onInput(name, handler)`
+`onInput(name, handler)`
 
   - Shortcut for `on(name, 'input', handler)`.
 
-- `setSelected(name, value)`
+`setSelected(name, value)`
+
   - Programmatically set selection.
   - For Select elements: sets the selected option by value (single-choice).
   - For Container elements: accepts a string or array of strings and replaces the current selection with exactly those labels.
   - Does not dispatch a `change` event automatically. If you need handlers to run, call `triggerChange(name)` after changing selection.
   - Throws a SyntaxError if the element doesn't exist, the control is missing, the option/row is not found, or the element type doesn't support selection.
 
+`clearContent(element)`
+
+  - Clears the content/value of supported elements.
+  - Supported: Input (clears the text), Container (removes all rows).
+  - Throws an error if used on unsupported types.
+
+`run(command)`
+
+  - Sends a built command string to an external runtime in a real app; in Preview this is a no‑op but users can use showMessage() to display the command.
+  - Example:
+```javascript
+const sel = getSelected(radiogroup1);
+const cmd = do_something(sel);
+run(cmd);
+```
+
+
 Validation and highlight helpers
 
-- `addError(name, message)`
+`addError(name, message)`
 
   - Show a tooltip-like validation message attached to the element and apply a visual highlight (glow). Multiple distinct messages on the same element are de-duplicated and the first one is shown. The highlight is removed automatically when all messages are cleared.
 
-- `clearError(name, message?)`
+`clearError(name, message?)`
 
   - Clear a previously added validation message. If `message` is provided, only that message is removed; otherwise, all messages for the element are cleared.
 
@@ -337,6 +355,7 @@ Element-specific notes and examples
 
 - Slider
   - Dragging is supported in Preview. To react to changes, listen on the wrapper or the handle's mouseup.
+
 
 Practical patterns
 
@@ -401,21 +420,13 @@ Notes
 Containers can show rows populated via API. For example:
 
 ```javascript
-setValue(datasetsContainer, listDatasets());
 
-onChange(datasetsContainer, () => {
-  const variables = listVariables(getSelected(datasetsContainer));
+setValue(container1, listDatasets());
 
-  if (!variables.length) {
-    addError(datasetsContainer, "Unable to load variables");
-    addError(datasetsContainer, "Select at least one dataset");
-    return;
-  }
-
-  clearError(datasetsContainer);
-  clearGlow(datasetsContainer);
-  setValue(variablesContainer, variables);
-});
+onChange(container1, () => setValue(
+  container2,
+  listVariables(getSelected(container1))
+));
 ```
 
 - `setValue(container, array)` accepts an array of strings (or an array of objects with `{ text, active }`) and renders each entry as a row.

@@ -405,10 +405,13 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
                         const el = findElement(elName);
                         if (!el) {
                             if (radioGroupExists(elName)) {
-                                addDiagnostic(
-                                    elNode,
-                                    `Radio groups are not supported with ${callName}.`
-                                );
+                                // Allow radio group names for getSelected
+                                if (callName !== 'getSelected') {
+                                    addDiagnostic(
+                                        elNode,
+                                        `Radio groups are not supported with ${callName}.`
+                                    );
+                                }
                             } else {
                                 // For element-first APIs (like getSelected, setValue etc.),
                                 // treat the first argument as an element name only.
@@ -421,6 +424,14 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
                                 if (elNode.type === 'Identifier' && typeof elNode.start === 'number') {
                                     skipUndefinedAt.add(elNode.start);
                                 }
+                            }
+                        } else {
+                            // Element exists; add a hint if API usage is semantically mismatched.
+                            if (callName === 'getSelected' && el.type === 'Radio') {
+                                addDiagnostic(
+                                    elNode,
+                                    `Use isChecked('${elName}') for Radio elements; getSelected supports Select, Container, and radio groups.`
+                                );
                             }
                         }
                     }

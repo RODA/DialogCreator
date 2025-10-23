@@ -13,7 +13,7 @@ export const EVENT_NAMES = new Set<string>(EVENT_LIST);
 // Curated helper names exposed as shorthand in user customJS (prelude)
 export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
     // core
-    'showMessage', 'getValue', 'setValue',
+    'showMessage', 'getValue', 'setValue', 'run',
 
     // checkbox/radio
     'check', 'isChecked', 'uncheck', 'isUnchecked',
@@ -25,7 +25,7 @@ export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
     'onClick', 'onChange', 'onInput', 'triggerChange', 'triggerClick',
 
     // lists & selection
-    'setSelected', 'getSelected', 'addValue', 'clearValue', 'clearContainer', 'clearInput',
+    'setSelected', 'getSelected', 'addValue', 'clearValue', 'clearContainer', 'clearInput', 'clearContent',
 
     // errors
     'addError', 'clearError',
@@ -40,7 +40,8 @@ export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
 const NEUTRAL_NAMES = new Set<keyof PreviewUI>([
     'showMessage',
     'listDatasets',
-    'listVariables'
+    'listVariables',
+    'run'
 ]);
 
 export const ELEMENT_FIRST_ARG_CALLS: ReadonlyArray<keyof PreviewUI> = Object.freeze(
@@ -292,6 +293,11 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             const typearg = String(argsIn[2] ?? '').toLowerCase();
             const type = (allowed.has(typearg) ? typearg : 'info') as 'info' | 'warning' | 'error' | 'question';
             showDialogMessage(type, message, detail);
+        },
+
+        run: (command: string) => {
+            // Simulate running a constructed command to an external runtime
+            // (e.g., R). In Preview, this is a no-op.
         },
 
         get: (name, prop) => {
@@ -560,8 +566,39 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         },
 
         getSelected: (name) => {
+            // Try direct element first
             const el = findWrapper(name);
+
             if (!el) {
+                // If not a direct element, treat the name as a radio group identifier
+                const members = findRadioGroupMembers(String(name));
+                if (members && members.length > 0) {
+                    const selected = (() => {
+                        // Prefer dataset mirror
+                        const ds = members.find(m => String(m.dataset?.isSelected || '') === 'true');
+                        if (ds) return ds;
+                        // Fallback to native input checked
+                        const n = members.find(m => {
+                            const input = m.querySelector('input[type="radio"]') as HTMLInputElement | null;
+                            return !!input?.checked;
+                        });
+                        if (n) return n;
+                        // Fallback to custom node aria-checked
+                        const c = members.find(m => {
+                            const custom = m.querySelector('.custom-radio') as HTMLElement | null;
+                            return custom?.getAttribute('aria-checked') === 'true';
+                        });
+                        return c || null;
+                    })();
+
+                    if (selected) {
+                        const nm = String(selected.dataset?.nameid || selected.id || '').trim();
+                        return nm ? [nm] : [];
+                    }
+
+                    return [];
+                }
+
                 return [];
             }
 
@@ -585,6 +622,9 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 const ds = String((el as HTMLElement).dataset.selected || '').trim();
                 return ds ? ds.split(',').map(s => s.trim()).filter(s => s.length > 0) : [];
             }
+
+            // Radios are handled via radio group names; for a single Radio element,
+            // prefer isChecked(name) instead of getSelected(name).
 
             return [];
         },
@@ -1176,6 +1216,35 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 input.value = '';
                 el.dataset.value = '';
             }
+        },
+
+        clearContent: (name) => {
+            const el = findWrapper(name);
+            if (!el) {
+                throw new SyntaxError(`Element not found: ${String(name)}`);
+            }
+
+            const eltype = typeOf(el);
+
+            if (eltype === 'Input') {
+                const inn = inner(el);
+                const input = (el instanceof HTMLInputElement ? el : (inn as HTMLInputElement | null));
+                if (input) {
+                    input.value = '';
+                    el.dataset.value = '';
+                }
+                return;
+            }
+
+            if (eltype === 'Container') {
+                const host = el; // use the container element directly
+                const items = Array.from(host.querySelectorAll('.container-item')) as HTMLElement[];
+                items.forEach(item => item.remove());
+                el.dataset.selected = '';
+                return;
+            }
+
+            throw new SyntaxError(`clearContent() supports only Input and Container elements`);
         },
 
         // call: (service, args?, cb?) => call(service, args, cb),
