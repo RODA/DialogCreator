@@ -215,30 +215,43 @@ function showContextMenu(targetId: string, x: number, y: number) {
     const firstButton = contextMenu.querySelector('button');
     firstButton?.focus({ preventScroll: true });
     try {
-        const dupl = contextMenu.querySelector('[data-action="duplicate"]') as HTMLButtonElement | null;
-        const ungr = contextMenu.querySelector('[data-action="ungroup"]') as HTMLButtonElement | null;
-        if (dupl && !dupl.dataset.bound) {
-            dupl.addEventListener('click', function() {
-                if (!lastContextTargetId) { hideContextMenu(); return; }
+        const duplicate = contextMenu.querySelector('[data-action="duplicate"]') as HTMLButtonElement | null;
+        const ungroup = contextMenu.querySelector('[data-action="ungroup"]') as HTMLButtonElement | null;
+        if (duplicate && !duplicate.dataset.bound) {
+            duplicate.addEventListener('click', function() {
+                if (!lastContextTargetId) {
+                    hideContextMenu();
+                    return;
+                }
                 editor.duplicateElement(lastContextTargetId);
                 hideContextMenu();
             });
-            dupl.dataset.bound = 'true';
+            duplicate.dataset.bound = 'true';
         }
-        if (ungr && !ungr.dataset.bound) {
-            ungr.addEventListener('click', function() {
-                if (!lastContextTargetId) { hideContextMenu(); return; }
+
+        if (ungroup && !ungroup.dataset.bound) {
+            ungroup.addEventListener('click', function() {
+                if (!lastContextTargetId) {
+                    hideContextMenu();
+                    return;
+                }
+
                 const node = dialog.getElement(lastContextTargetId) as HTMLElement | undefined;
-                if (!node || !node.classList.contains('element-group')) { hideContextMenu(); return; }
+                if (!node || !node.classList.contains('element-group')) {
+                    hideContextMenu();
+                    return;
+                }
+
                 const children = renderutils.ungroupGroup(lastContextTargetId);
                 if (children && children.length) {
                     applySelection(children);
                 } else {
                     applySelection([]);
                 }
+
                 hideContextMenu();
             });
-            ungr.dataset.bound = 'true';
+            ungroup.dataset.bound = 'true';
         }
     } catch { /* noop */ }
 }
@@ -427,7 +440,7 @@ export const editor: Editor = {
         dialog.canvas.style.height = editorSettings.dialog.height + 'px';
         dialog.canvas.style.backgroundColor = editorSettings.dialog.background || '#ffffff';
         dialog.canvas.style.border = '1px solid gray';
-        contextMenu = document.getElementById('element-context-menu');
+
         dialog.canvas.addEventListener('click', (event: MouseEvent) => {
             // Ignore the synthetic click that follows a lasso selection
             if (skipCanvasClickOnce) {
@@ -503,18 +516,30 @@ export const editor: Editor = {
             const top = Math.min(endY, lassoStart.y);
             const width = Math.abs(endX - lassoStart.x);
             const height = Math.abs(endY - lassoStart.y);
-            if (lassoDiv && lassoDiv.parentElement) lassoDiv.parentElement.removeChild(lassoDiv);
+
+            if (lassoDiv && lassoDiv.parentElement) {
+                lassoDiv.parentElement.removeChild(lassoDiv);
+            }
+
             lassoDiv = null;
             lassoActive = false;
             if (width < 3 && height < 3 && !additive) {
                 applySelection([]);
                 return;
             }
-            const selRectangle = { left, top, right: left + width, bottom: top + height };
+
+            const selRectangle = {
+                left,
+                top,
+                right: left + width,
+                bottom: top + height
+            };
+
             const next = additive ? selectionOrder.slice() : [];
             const children = Array.from(dialog.canvas.children) as HTMLElement[];
             children.forEach(el => {
                 if (el.classList.contains('lasso-rect')) return;
+
                 const rect = el.getBoundingClientRect();
                 const canvasRect = dialog.canvas.getBoundingClientRect();
                 const rel = {
@@ -523,15 +548,19 @@ export const editor: Editor = {
                     top: rect.top - canvasRect.top,
                     bottom: rect.bottom - canvasRect.top
                 };
+
                 const contained = (
                     rel.left >= selRectangle.left &&
                     rel.right <= selRectangle.right &&
                     rel.top >= selRectangle.top &&
                     rel.bottom <= selRectangle.bottom
                 );
+
                 if (!contained) return;
+
                 const id = el.id;
                 const idx = next.indexOf(id);
+
                 if (additive) {
                     if (idx >= 0) {
                         next.splice(idx, 1);
@@ -544,9 +573,11 @@ export const editor: Editor = {
                     }
                 }
             });
+
             skipCanvasClickOnce = true;
             applySelection(next);
         };
+
         document.addEventListener('mouseup', endLasso);
 
         const dialogdiv = document.getElementById('dialog') as HTMLDivElement;
@@ -554,9 +585,15 @@ export const editor: Editor = {
             dialogdiv.append(dialog.canvas);
         }
 
+        contextMenu = document.getElementById('element-context-menu');
         document.addEventListener('click', (ev) => {
-            if (!contextMenu || contextMenu.getAttribute('aria-hidden') !== 'false') return;
+            if (
+                !contextMenu ||
+                contextMenu.getAttribute('aria-hidden') !== 'false'
+            ) return;
+
             if (contextMenu.contains(ev.target as Node)) return;
+
             hideContextMenu();
         });
 
@@ -903,6 +940,7 @@ export const editor: Editor = {
             if (!selectionOrder.includes(targetId)) {
                 applySelection([targetId], { emit: true });
             }
+
             showContextMenu(targetId, event.clientX, event.clientY);
         });
 
@@ -960,10 +998,15 @@ export const editor: Editor = {
                 // Prepare for ephemeral multi-drag: snapshot positions
                 multiDragActive = true;
                 multiDragSnapshot.clear();
-                dragStart = { x: event.clientX, y: event.clientY };
+                dragStart = {
+                    x: event.clientX,
+                    y: event.clientY
+                };
+
                 for (const id of multiSelected) {
                     const el = dialog.getElement(id);
                     if (!el) continue;
+
                     const rect = el.getBoundingClientRect();
                     const canvasRect = dialog.canvas.getBoundingClientRect();
                     const left0 = rect.left - canvasRect.left;
@@ -1007,18 +1050,22 @@ export const editor: Editor = {
                 for (const id of multiSelected) {
                     const el = dialog.getElement(id);
                     if (!el) continue;
+
                     const snap = multiDragSnapshot.get(id);
                     if (!snap) continue;
+
                     let nleft = snap.left + dx;
                     let ntop = snap.top + dy;
                     const w = snap.width;
                     const h = snap.height;
                     const maxLeft = dialogW - w - 10;
                     const maxTop = dialogH - h - 10;
+
                     if (nleft > maxLeft) nleft = maxLeft;
                     if (nleft < 10) nleft = 10;
                     if (ntop > maxTop) ntop = maxTop;
                     if (ntop < 10) ntop = 10;
+
                     el.style.left = Math.round(nleft) + 'px';
                     el.style.top = Math.round(ntop) + 'px';
                 }
@@ -1031,14 +1078,26 @@ export const editor: Editor = {
             left = event.clientX - canvasRect.left - offsetX;
             top = event.clientY - canvasRect.top - offsetY;
 
-            if (left + elementWidth + 10 > dialogW) { left = dialogW - elementWidth - 10; }
-            if (left < 10) { left = 10; }
-            if (top + elementHeight + 10 > dialogH) { top = dialogH - elementHeight - 10; }
-            if (top < 10) { top = 10; }
+            if (left + elementWidth + 10 > dialogW) {
+                left = dialogW - elementWidth - 10;
+            }
+
+            if (left < 10) {
+                left = 10;
+            }
+
+            if (top + elementHeight + 10 > dialogH) {
+                top = dialogH - elementHeight - 10;
+            }
+
+            if (top < 10) {
+                top = 10;
+            }
 
             // Apply the new position to the drag target
             top = Math.round(top);
             left = Math.round(left);
+
             dragTarget.style.left = left + 'px';
             dragTarget.style.top = top + 'px';
             isMoved = true;
@@ -1056,6 +1115,7 @@ export const editor: Editor = {
                     for (const id of multiSelected) {
                         const el = dialog.getElement(id);
                         if (!el) continue;
+
                         const leftNum = Math.round(parseInt(el.style.left || '0', 10) || 0);
                         const topNum = Math.round(parseInt(el.style.top || '0', 10) || 0);
                         el.dataset.left = String(leftNum);
@@ -1066,15 +1126,21 @@ export const editor: Editor = {
                 } else {
                     if (isCheckboxDrag) {
                         const size = Number(dragTarget.dataset.size);
-                        if (top < 10 + size * 0.25) { top = 10 + size * 0.25; }
+                        if (top < 10 + size * 0.25) {
+                            top = 10 + size * 0.25;
+                        }
                     }
+
                     dragTarget.style.top = top + 'px';
                     dragTarget.dataset.left = String(left);
                     dragTarget.dataset.top = String(top);
 
                     dialog.updateElementProperties(
                         dragTarget.id,
-                        { top: String(top), left: String(left) }
+                        {
+                            top: String(top),
+                            left: String(left)
+                        }
                     );
 
                     // Suppress the click that follows mouseup for the moved target and its children (if group)
@@ -1371,6 +1437,7 @@ export const editor: Editor = {
                     top: gTop,
                     width,
                     height,
+                    nameid: (child.dataset.nameid || ''),
                     elementIds: members.map(m => m.id),
                 };
                 flattened.push(groupObj);
@@ -1471,11 +1538,21 @@ export const editor: Editor = {
             const h = Number(props.height) || 480;
             dialog.canvas.style.width = w + 'px';
             dialog.canvas.style.height = h + 'px';
-            const wEl = document.getElementById('dialogWidth') as HTMLInputElement | null; if (wEl) wEl.value = String(props.width || '');
-            const hEl = document.getElementById('dialogHeight') as HTMLInputElement | null; if (hEl) hEl.value = String(props.height || '');
-            const nEl = document.getElementById('dialogName') as HTMLInputElement | null; if (nEl) nEl.value = String(props.name || '');
-            const tEl = document.getElementById('dialogTitle') as HTMLInputElement | null; if (tEl) tEl.value = String(props.title || '');
-            const fEl = document.getElementById('dialogFontSize') as HTMLInputElement | null; if (fEl) fEl.value = String(props.fontSize || '');
+
+            const dwidth = document.getElementById('dialogWidth') as HTMLInputElement | null;
+            if (dwidth) dwidth.value = String(props.width || '');
+
+            const dheight = document.getElementById('dialogHeight') as HTMLInputElement | null;
+            if (dheight) dheight.value = String(props.height || '');
+
+            const dname = document.getElementById('dialogName') as HTMLInputElement | null;
+            if (dname) dname.value = String(props.name || '');
+
+            const dtitle = document.getElementById('dialogTitle') as HTMLInputElement | null;
+            if (dtitle) dtitle.value = String(props.title || '');
+
+            const dfont = document.getElementById('dialogFontSize') as HTMLInputElement | null;
+            if (dfont) dfont.value = String(props.fontSize || '');
 
             // Recreate elements
             const arr = Array.isArray(obj.elements) ? obj.elements : [];
@@ -1511,39 +1588,65 @@ export const editor: Editor = {
                     const val = typeof value === 'string' ? value : String(value);
                     wrapper.dataset[key] = val;
                 }
+
                 wrapper.dataset.type = desiredType;
-                if (desiredNameId) wrapper.dataset.nameid = desiredNameId;
+                if (desiredNameId) {
+                    wrapper.dataset.nameid = desiredNameId;
+                }
                 wrapper.dataset.parentId = dialog.id;
 
                 // Inner element positioned relative to wrapper
                 core.style.left = '0px';
                 core.style.top = '0px';
-                if (desiredType === 'Button') core.style.position = 'relative';
+                if (desiredType === 'Button') {
+                    core.style.position = 'relative';
+                }
 
                 wrapper.appendChild(core);
 
                 // Normalize inner element IDs to reflect the wrapper id so update routines work
                 const wid = wrapper.id;
-                const r = core.querySelector('.custom-radio') as HTMLElement | null; if (r) r.id = `radio-${wid}`;
-                const cb = core.querySelector('.custom-checkbox') as HTMLElement | null; if (cb) cb.id = `checkbox-${wid}`;
-                const cv = core.querySelector('.counter-value') as HTMLDivElement | null; if (cv) cv.id = `counter-value-${wid}`;
-                const inc = core.querySelector('.counter-arrow.up') as HTMLDivElement | null; if (inc) inc.id = `counter-increase-${wid}`;
-                const dec = core.querySelector('.counter-arrow.down') as HTMLDivElement | null; if (dec) dec.id = `counter-decrease-${wid}`;
-                const sh = core.querySelector('.slider-handle') as HTMLDivElement | null; if (sh) sh.id = `slider-handle-${wid}`;
+
+                const r = core.querySelector('.custom-radio') as HTMLElement | null;
+                if (r) r.id = `radio-${wid}`;
+
+                const cb = core.querySelector('.custom-checkbox') as HTMLElement | null;
+                if (cb) cb.id = `checkbox-${wid}`;
+
+                const cv = core.querySelector('.counter-value') as HTMLDivElement | null;
+                if (cv) cv.id = `counter-value-${wid}`;
+
+                const inc = core.querySelector('.counter-arrow.up') as HTMLDivElement | null;
+                if (inc) inc.id = `counter-increase-${wid}`;
+
+                const dec = core.querySelector('.counter-arrow.down') as HTMLDivElement | null;
+                if (dec) dec.id = `counter-decrease-${wid}`;
+
+                const sh = core.querySelector('.slider-handle') as HTMLDivElement | null;
+                if (sh) sh.id = `slider-handle-${wid}`;
 
                 dialog.canvas.appendChild(wrapper);
 
                 // Remove inner cover and add outer cover
                 const innerCover = core.querySelector('.elementcover');
                 innerCover && innerCover.parentElement?.removeChild(innerCover);
-                const cover = document.createElement('div'); cover.id = `cover-${wrapper.id}`; cover.className = 'elementcover'; wrapper.appendChild(cover);
+
+                const cover = document.createElement('div');
+                cover.id = `cover-${wrapper.id}`;
+                cover.className = 'elementcover';
+                wrapper.appendChild(cover);
 
                 // Size wrapper: fix to core's rendered size for most
                 // (Button, Label should auto-size)
                 if (desiredType !== 'Button' && desiredType !== 'Label') {
                     const rect = core.getBoundingClientRect();
-                    if (rect.width > 0) wrapper.style.width = `${Math.round(rect.width)}px`;
-                    if (rect.height > 0) wrapper.style.height = `${Math.round(rect.height)}px`;
+                    if (rect.width > 0) {
+                        wrapper.style.width = `${Math.round(rect.width)}px`;
+                    }
+
+                    if (rect.height > 0) {
+                        wrapper.style.height = `${Math.round(rect.height)}px`;
+                    }
                 }
 
                 editor.addElementListeners(wrapper);
@@ -1555,15 +1658,19 @@ export const editor: Editor = {
                 const ids: string[] = Array.isArray(g.elementIds)
                     ? g.elementIds
                     : String(g.elementIds || '').split(',').map((s: string) => s.trim()).filter((s: string) => s.length);
+
                 const newId = renderutils.makeGroupFromSelection(ids, true);
                 if (!newId) continue;
+
                 const groupEl = dialog.getElement(newId) as HTMLElement | undefined;
                 if (!groupEl) continue;
+
                 const savedId = String(g.id || newId);
                 // Set group id to saved id
                 groupEl.id = savedId;
                 dialog.elements[savedId] = groupEl;
                 delete dialog.elements[newId];
+
                 // Move group to saved position if provided
                 const gl = g.left; const gt = g.top;
                 if (gl !== undefined || gt !== undefined) {

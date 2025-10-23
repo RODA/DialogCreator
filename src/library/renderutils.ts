@@ -90,6 +90,7 @@ function resolveElementHost(name: string): { host: HTMLElement | null; isRadio: 
             host.firstElementChild?.getAttribute?.('data-type') ||
             ''
         );
+
         isRadio = type === 'Radio';
     }
 
@@ -1919,6 +1920,12 @@ export const renderutils: RenderUtils = {
                 groupEl.dataset.persistent = 'true';
             }
 
+            // Ensure groups have a stable nameid so custom code can refer to them
+            if (!groupEl.dataset.nameid || !groupEl.dataset.nameid.trim()) {
+                const unique = renderutils.makeUniqueNameID('group');
+                groupEl.dataset.nameid = unique;
+            }
+
             dialog.canvas.appendChild(groupEl);
 
             for (let idx = 0; idx < els.length; idx++) {
@@ -2112,8 +2119,6 @@ export const renderutils: RenderUtils = {
             showError(`Error handling ${eventName}: ${error.message}`);
         }
     },
-
-
 
     collectDialogProperties: function() {
         const properties: NodeListOf<HTMLInputElement> = document.querySelectorAll('#dialog-properties [id^="dialog"]');
