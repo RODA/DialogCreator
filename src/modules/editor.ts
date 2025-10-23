@@ -183,6 +183,7 @@ function contextMenuHandlers() {
         editor.duplicateElement(lastContextTargetId);
         hideContextMenu();
     });
+    if (duplicateButton) duplicateButton.dataset.bound = 'true';
 }
 
 function showContextMenu(targetId: string, x: number, y: number) {
@@ -216,6 +217,7 @@ function showContextMenu(targetId: string, x: number, y: number) {
     firstButton?.focus({ preventScroll: true });
     try {
         const duplicate = contextMenu.querySelector('[data-action="duplicate"]') as HTMLButtonElement | null;
+        const group = contextMenu.querySelector('[data-action="group"]') as HTMLButtonElement | null;
         const ungroup = contextMenu.querySelector('[data-action="ungroup"]') as HTMLButtonElement | null;
         if (duplicate && !duplicate.dataset.bound) {
             duplicate.addEventListener('click', function() {
@@ -227,6 +229,15 @@ function showContextMenu(targetId: string, x: number, y: number) {
                 hideContextMenu();
             });
             duplicate.dataset.bound = 'true';
+        }
+
+        if (group && !group.dataset.bound) {
+            group.addEventListener('click', function() {
+                // Group current multi-selection into a persistent group
+                editor.groupSelection();
+                hideContextMenu();
+            });
+            group.dataset.bound = 'true';
         }
 
         if (ungroup && !ungroup.dataset.bound) {
@@ -252,6 +263,18 @@ function showContextMenu(targetId: string, x: number, y: number) {
                 hideContextMenu();
             });
             ungroup.dataset.bound = 'true';
+        }
+
+        // Toggle which actions are visible based on context
+        const node = dialog.getElement(targetId) as HTMLElement | undefined;
+        const isPersistentGroup = !!(node && node.classList.contains('element-group'));
+        const hasEphemeralMultiSelect = !isPersistentGroup && selectionOrder.length >= 2;
+
+        if (group) {
+            group.style.display = hasEphemeralMultiSelect ? '' : 'none';
+        }
+        if (ungroup) {
+            ungroup.style.display = isPersistentGroup ? '' : 'none';
         }
     } catch { /* noop */ }
 }
