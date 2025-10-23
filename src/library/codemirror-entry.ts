@@ -198,18 +198,18 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
             return diagnostics;
         }
 
-        const walk = (node: any, fn: (n: any) => void) => {
-            fn(node);
+        const walk = (node: any, fn: (n: any, parent?: any) => void, parent?: any) => {
+            fn(node, parent);
             for (const k in node) {
                 if (k === 'start' || k === 'end') continue;
                 const v = (node as any)[k];
                 if (!v) continue;
                 if (Array.isArray(v)) {
                     for (const it of v) {
-                        if (it && typeof it.type === 'string') walk(it, fn);
+                        if (it && typeof it.type === 'string') walk(it, fn, node);
                     }
                 } else if (v && typeof v.type === 'string') {
-                    walk(v, fn);
+                    walk(v, fn, node);
                 }
             }
         };
@@ -251,7 +251,73 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
             return (best && best.dist <= 2) ? best.name : null;
         };
 
-        walk(ast, (n) => {
+        // Build a set of declared identifiers in the code (single pass collection)
+        const declared = new Set<string>();
+
+        const addFromPattern = (pat: any) => {
+            if (!pat) return;
+            if (pat.type === 'Identifier') {
+                declared.add(String(pat.name));
+            } else if (pat.type === 'ObjectPattern') {
+                for (const prop of pat.properties || []) {
+                    if (prop) addFromPattern(prop.value || prop.argument || prop);
+                }
+            } else if (pat.type === 'ArrayPattern') {
+                for (const el of pat.elements || []) {
+                    if (el) addFromPattern(el);
+                }
+            } else if (pat.type === 'AssignmentPattern') {
+                addFromPattern(pat.left);
+            }
+        };
+
+        const collect = (node: any) => {
+            if (!node) return;
+            if (node.type === 'VariableDeclaration') {
+                for (const d of node.declarations || []) addFromPattern(d.id);
+            } else if (node.type === 'FunctionDeclaration') {
+                if (node.id?.name) declared.add(String(node.id.name));
+                for (const p of node.params || []) addFromPattern(p);
+            } else if (node.type === 'FunctionExpression' || node.type === 'ArrowFunctionExpression') {
+                for (const p of node.params || []) addFromPattern(p);
+            } else if (node.type === 'ClassDeclaration') {
+                if (node.id?.name) declared.add(String(node.id.name));
+            } else if (node.type === 'CatchClause') {
+                addFromPattern(node.param);
+            }
+        };
+
+        walk(ast, (n) => collect(n));
+
+        // Allow built-ins + dialog-known globals
+        const allowed = new Set<string>([ 
+            'window','globalThis','console','Math','Date','JSON','Number','String','Boolean','Array','Object','RegExp','Error','Promise',
+            'setTimeout','clearTimeout','setInterval','clearInterval','undefined','NaN','Infinity', 'ui', 'exports', 'module', 'require', 'log'
+        ]);
+        for (const api of API_NAMES as readonly string[]) allowed.add(String(api));
+        if (currentDialogMeta) {
+            for (const e of currentDialogMeta.elements) allowed.add(e.name);
+            for (const g of currentDialogMeta.radioGroups) allowed.add(g);
+        }
+
+        const isIdentifierUse = (node: any, parent: any): boolean => {
+            if (!parent) return true;
+            // left-hand declarations
+            if (parent.type === 'VariableDeclarator' && parent.id === node) return false;
+            if ((parent.type === 'FunctionDeclaration' || parent.type === 'FunctionExpression') && parent.id === node) return false;
+            if ((parent.type === 'ClassDeclaration' || parent.type === 'ClassExpression') && parent.id === node) return false;
+            if (parent.type === 'CatchClause' && parent.param === node) return false;
+            if (parent.type === 'MemberExpression' && parent.property === node && parent.computed === false) return false;
+            if (parent.type === 'Property' && parent.key === node && parent.computed === false) return false;
+            if ((parent.type === 'ImportSpecifier' || parent.type === 'ImportDefaultSpecifier' || parent.type === 'ImportNamespaceSpecifier')) return false;
+            return true;
+        };
+
+        // Track identifiers we already warned to avoid duplicate "is not defined" on the same token
+        const unknownFunctionAt = new Set<number>();
+        const skipUndefinedAt = new Set<number>();
+
+        walk(ast, (n, parent) => {
             if (n.type !== 'CallExpression') return;
             const callee = n.callee;
 
@@ -273,18 +339,18 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
             // Calls that use element name as first arg
         const elementFirstArgCalls = new Set(Array.from(ELEMENT_FIRST_ARG_CALLS as readonly string[]));
 
-            // Minimal allowlist of ui API methods for bare identifiers (prelude destructuring)
-            const knownApi = new Set(Array.from(API_NAMES as readonly string[]));
+        // Minimal allowlist of ui API methods for bare identifiers (prelude destructuring)
+        const knownApi = new Set(Array.from(API_NAMES as readonly string[]));
             // If it's a ui.* call with unknown property, flag it early
             if (callee?.type === 'MemberExpression' && callee.object?.type === 'Identifier' && callee.object.name === 'ui') {
                 if (callName === 'trigger') {
                     addDiagnostic(callee.property, `trigger() is internal. Use triggerChange(...) or triggerClick(...) instead.`);
-                } else if (callName && !elementFirstArgCalls.has(callName) && !knownApi.has(callName)) {
+                } else if (callName && !knownApi.has(callName)) {
                     addDiagnostic(callee.property, `Unknown API command '${callName}'.`);
                 }
                 // Soft warn for ui.log: available in runtime but considered debug/internal
                 if (callName === 'log') {
-                    addDiagnostic(callee.property, `ui.log is for debugging only and not part of the public API.`);
+                    addDiagnostic(callee.property, `log is for debugging only and not part of the public API.`);
                 }
             } else if (callee?.type === 'Identifier') {
                 // Bare prelude use (const { ... } = ui)
@@ -307,10 +373,8 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
                 }
             }
 
-            if (!elementFirstArgCalls.has(callName) && callName !== 'onChange') return;
-
-            // Element existence for all supported calls when first arg present
-            if (args.length >= 1) {
+            const requiresElementLookup = elementFirstArgCalls.has(callName) || callName === 'onChange';
+            if (requiresElementLookup && args.length >= 1) {
                 const elNode = args[0];
                 let elName: string | null = null;
                 if (elNode.type === 'Literal' && typeof elNode.value === 'string') {
@@ -326,10 +390,16 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
                         if (el) {
                             // ok
                         } else if (!radioGroupExists(elName)) {
+                            // For onChange, either an element or a radio group must exist.
+                            // Emit a single diagnostic and suppress a duplicate undefined warning
+                            // when the arg is a bare identifier that isn't declared.
                             addDiagnostic(
                                 elNode,
                                 `Element or radio group '${elName}' does not exist in the dialog`
                             );
+                            if (elNode.type === 'Identifier' && !declared.has(elName) && !allowed.has(elName) && typeof elNode.start === 'number') {
+                                skipUndefinedAt.add(elNode.start);
+                            }
                         }
                     } else {
                         const el = findElement(elName);
@@ -340,10 +410,17 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
                                     `Radio groups are not supported with ${callName}.`
                                 );
                             } else {
+                                // For element-first APIs (like getSelected, setValue etc.),
+                                // treat the first argument as an element name only.
+                                // Emit only the element-not-found message and skip a duplicate
+                                // undefined-variable warning for this token.
                                 addDiagnostic(
                                     elNode,
                                     `Element '${elName}' does not exist in the dialog`
                                 );
+                                if (elNode.type === 'Identifier' && typeof elNode.start === 'number') {
+                                    skipUndefinedAt.add(elNode.start);
+                                }
                             }
                         }
                     }
@@ -422,6 +499,25 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
                         }
                     }
                 }
+            }
+        });
+
+        // Pass 2b: undefined identifier checks (simple)
+        walk(ast, (n, parent) => {
+            if (n.type === 'CallExpression' && n.callee?.type === 'Identifier') {
+                const name = String(n.callee.name);
+                if (!declared.has(name) && !allowed.has(name)) {
+                    addDiagnostic(n.callee, `Unknown function '${name}'.`);
+                    if (typeof n.callee.start === 'number') unknownFunctionAt.add(n.callee.start);
+                }
+            }
+
+            if (n.type === 'Identifier') {
+                const name = String(n.name);
+                if (!isIdentifierUse(n, parent)) return;
+                if (typeof n.start === 'number' && (unknownFunctionAt.has(n.start) || skipUndefinedAt.has(n.start))) return; // avoid double-reporting
+                if (declared.has(name) || allowed.has(name)) return;
+                addDiagnostic(n, `'${name}' is not defined.`);
             }
         });
 
