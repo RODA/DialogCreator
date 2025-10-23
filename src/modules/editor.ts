@@ -214,6 +214,33 @@ function showContextMenu(targetId: string, x: number, y: number) {
 
     const firstButton = contextMenu.querySelector('button');
     firstButton?.focus({ preventScroll: true });
+    try {
+        const dupl = contextMenu.querySelector('[data-action="duplicate"]') as HTMLButtonElement | null;
+        const ungr = contextMenu.querySelector('[data-action="ungroup"]') as HTMLButtonElement | null;
+        if (dupl && !dupl.dataset.bound) {
+            dupl.addEventListener('click', function() {
+                if (!lastContextTargetId) { hideContextMenu(); return; }
+                editor.duplicateElement(lastContextTargetId);
+                hideContextMenu();
+            });
+            dupl.dataset.bound = 'true';
+        }
+        if (ungr && !ungr.dataset.bound) {
+            ungr.addEventListener('click', function() {
+                if (!lastContextTargetId) { hideContextMenu(); return; }
+                const node = dialog.getElement(lastContextTargetId) as HTMLElement | undefined;
+                if (!node || !node.classList.contains('element-group')) { hideContextMenu(); return; }
+                const children = renderutils.ungroupGroup(lastContextTargetId);
+                if (children && children.length) {
+                    applySelection(children);
+                } else {
+                    applySelection([]);
+                }
+                hideContextMenu();
+            });
+            ungr.dataset.bound = 'true';
+        }
+    } catch { /* noop */ }
 }
 
 function makeGroupFromSelection(persistent = false) {
