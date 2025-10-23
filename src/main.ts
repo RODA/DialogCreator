@@ -69,6 +69,20 @@ function createMainWindow() {
 app.whenReady().then(() => {
     createMainWindow();
     setupIPC();
+    // Intercept OS-level quits (e.g., Cmd+Q) to prompt for save when dirty
+    app.on('before-quit', async (e) => {
+        try {
+            if (quittingInProgress) return; // allow actual quit to proceed
+            const ok = await confirmQuitIfDirty();
+            if (!ok) {
+                e.preventDefault();
+                return;
+            }
+            quittingInProgress = true;
+        } catch {
+            // on error, allow quit
+        }
+    });
 });
 
 app.on("window-all-closed", () => {
@@ -111,20 +125,20 @@ function createSecondWindow(args: { [key: string]: any }) {
 
     // Intercept Cmd/Ctrl+S in the Code window to save code without closing
     if (isCodeWindow) {
-        try {
-            secondWindow.webContents.on('before-input-event', (event: any, input: any) => {
-                try {
-                    const key = String(input?.key || '').toLowerCase();
-                    if ((input?.meta || input?.control) && key === 's') {
-                        event.preventDefault();
-                        // Tell the code window to perform a save-only (no close)
-                        if (secondWindow && !secondWindow.isDestroyed() && !secondWindow.webContents.isDestroyed()) {
-                            secondWindow.webContents.send('code-save-only');
-                        }
-                    }
-                } catch { /* noop */ }
-            });
-        } catch { /* noop */ }
+        secondWindow.webContents.on('before-input-event', (event: any, input: any) => {
+            const key = String(input?.key || '').toLowerCase();
+            if ((input?.meta || input?.control) && key === 's') {
+                event.preventDefault();
+                // Tell the code window to perform a save-only (no close)
+                if (
+                    secondWindow &&
+                    !secondWindow.isDestroyed() &&
+                    !secondWindow.webContents.isDestroyed()
+                ) {
+                    secondWindow.webContents.send('code-save-only');
+                }
+            }
+        });
     }
 
     // Garbage collection handle
@@ -332,6 +346,76 @@ let lastSavedJson = '';
 let currentFilePath: string | null = null;
 let dialogModified = false;
 let pendingCanonicalUpdate = false; // next JSON update should reset baseline
+let quittingInProgress = false; // guard to avoid re-entrant quit prompts
+
+// Prompt to save changes if dialog is dirty. Returns true if app should quit.
+async function confirmQuitIfDirty(): Promise<boolean> {
+    try {
+        if (!dialogModified) return true;
+        if (!editorWindow || editorWindow.isDestroyed()) return true;
+
+        const res = await dialog.showMessageBox(editorWindow, {
+            type: 'question',
+            buttons: ['Save', "Don't Save", 'Cancel'],
+            defaultId: 0,
+            cancelId: 2,
+            message: 'Do you want to save changes to this dialog before quitting?'
+        });
+
+        if (res.response === 2) return false; // Cancel
+
+        if (res.response === 1) {
+            // Don't Save
+            return true;
+        }
+
+        // Save path
+        return await new Promise<boolean>((resolve) => {
+            const onJson = async (_ev: any, json: string) => {
+                ipcMain.removeListener('send-to', onSendTo);
+                try {
+                    const fs = require('fs');
+                    const data = json || '';
+                    if (currentFilePath && currentFilePath.length > 0) {
+                        fs.writeFileSync(currentFilePath, data, 'utf-8');
+                        lastSavedJson = data;
+                        dialogModified = false;
+                        updateWindowTitle();
+                        resolve(true);
+                        return;
+                    }
+                    const { canceled, filePath } = await dialog.showSaveDialog(editorWindow, {
+                        title: 'Save dialog',
+                        filters: [{ name: 'Dialog JSON', extensions: ['json'] }],
+                        defaultPath: 'dialog.json'
+                    });
+                    if (canceled || !filePath) {
+                        resolve(false);
+                        return;
+                    }
+                    fs.writeFileSync(filePath, data, 'utf-8');
+                    lastSavedJson = data;
+                    setCurrentDialogPath(filePath);
+                    dialogModified = false;
+                    updateWindowTitle();
+                    resolve(true);
+                } catch (e: any) {
+                    dialog.showErrorBox('Save failed', String((e && e.message) ? e.message : e));
+                    resolve(false);
+                }
+            };
+            const onSendTo = (_event: any, window: string, channel: string, ...args: any[]) => {
+                if (window === 'main' && channel === 'dialog-json') {
+                    onJson(null, args[0] as string);
+                }
+            };
+            ipcMain.on('send-to', onSendTo);
+            editorWindow.webContents.send('request-dialog-json');
+        });
+    } catch {
+        return true;
+    }
+}
 
 const mainMenuTemplate: MenuItemConstructorOptions[] = [
     {
@@ -524,8 +608,14 @@ const mainMenuTemplate: MenuItemConstructorOptions[] = [
                 label: 'Quit',
                 accelerator: 'CommandOrControl+Q',
                 click: () => {
-                    // Only fires when app/menu focused (Electron menu accelerator semantics)
-                    quitApp();
+                    // Respect dirty state before quitting via menu/accelerator
+                    (async () => {
+                        const ok = await confirmQuitIfDirty();
+                        if (ok) {
+                            quittingInProgress = true;
+                            quitApp();
+                        }
+                    })();
                 }
             }
         ]
