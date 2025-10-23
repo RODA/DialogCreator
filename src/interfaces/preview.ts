@@ -118,6 +118,12 @@ export interface PreviewUI {
     /** Clear content of supported elements (Input, Container). */
     clearContent(name: string): void;
 
+    /** Set the visible label text of a Button element. */
+    setLabel(name: string, label: string): void;
+
+    /** Change the label of a specific item within a Container. */
+    changeValue(name: string, oldValue: string, newValue: string): void;
+
     /**
      * Call a backend service by name. Returns a Promise, and also supports an optional callback for simplicity.
      * If a callback is provided, it will be called with the result when available.

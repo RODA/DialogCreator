@@ -291,6 +291,18 @@ Initialization
   - Supported: Input (clears the text), Container (removes all rows).
   - Throws an error if used on unsupported types.
 
+`setLabel(name, label)`
+
+  - Set the visible label text of a Button element.
+  - Throws a SyntaxError if the element doesn't exist or isn't a Button.
+
+`changeValue(name, oldValue, newValue)`
+
+  - Rename a specific item within a Container from `oldValue` to `newValue`.
+  - If the item is currently selected, the container's selection mirror is updated accordingly.
+  - No event is dispatched automatically; call `triggerChange(name)` if you want change handlers to run.
+  - Throws a SyntaxError if the element doesn't exist or isn't a Container.
+
 `run(command)`
 
   - Sends a built command string to an external runtime in a real app; in Preview this is a no‑op but users can use showMessage() to display the command.
@@ -407,6 +419,13 @@ triggerChange(variablesContainer);
 ```javascript
 addValue(variablesContainer, "Sepal.Length");
 clearValue(variablesContainer, "Sepal.Width");
+```
+
+- Update a Button label and rename a Container item:
+
+```javascript
+setLabel(runBtn, "Run Analysis");
+changeValue(variablesContainer, "Sepal.Length", "Sepal Len");
 ```
 
 Notes

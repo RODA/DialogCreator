@@ -26,6 +26,8 @@ export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
 
     // lists & selection
     'setSelected', 'getSelected', 'addValue', 'clearValue', 'clearContainer', 'clearInput', 'clearContent',
+    // label and item updates
+    'setLabel', 'changeValue',
 
     // errors
     'addError', 'clearError',
@@ -1245,6 +1247,64 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             }
 
             throw new SyntaxError(`clearContent() supports only Input and Container elements`);
+        },
+
+        // Update the visible label of a Button element
+        setLabel: (name, label) => {
+            const el = findWrapper(name);
+            if (!el) {
+                throw new SyntaxError(`Element not found: ${String(name)}`);
+            }
+
+            const eltype = typeOf(el);
+            if (eltype !== 'Button') {
+                throw new SyntaxError(`setLabel() can only be applied to Button elements`);
+            }
+
+            updateElement(el, { label: String(label ?? '') });
+        },
+
+        // Change the label of a specific Container item
+        changeValue: (name, oldValue, newValue) => {
+            const el = findWrapper(name);
+            if (!el) {
+                throw new SyntaxError(`Element not found: ${String(name)}`);
+            }
+
+            const eltype = typeOf(el);
+            if (eltype !== 'Container') {
+                throw new SyntaxError(`changeValue() can only be applied to Container elements`);
+            }
+
+            const host = el; // container wrapper
+            const items = Array.from(host.querySelectorAll('.container-item')) as HTMLElement[];
+            const from = String(oldValue ?? '');
+            const to = String(newValue ?? '');
+
+            // Find first item whose text or dataset.value matches
+            const item = items.find(r => {
+                const text = (r.querySelector('.container-text') as HTMLElement | null)?.textContent || '';
+                const ds = r.dataset.value || '';
+                return text === from || ds === from;
+            });
+
+            if (!item) {
+                return; // nothing to change
+            }
+
+            // Update dataset mirror and visible text
+            item.dataset.value = to;
+            const label = item.querySelector('.container-text') as HTMLElement | null;
+            if (label) {
+                label.textContent = to;
+            }
+
+            // If item is active, refresh container's dataset.selected mirror
+            try {
+                const active = Array.from(host.querySelectorAll('.container-item.active .container-text')) as HTMLElement[];
+                const vals = active.map(n => String(n.textContent || '').trim()).filter(s => s.length > 0);
+                el.dataset.selected = vals.join(',');
+            } catch {}
         },
 
         // call: (service, args?, cb?) => call(service, args, cb),

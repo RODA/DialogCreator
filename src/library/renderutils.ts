@@ -998,7 +998,8 @@ export const renderutils: RenderUtils = {
 
                     elementWidth = element.getBoundingClientRect().width;
 
-                    if (elementWidth && Number(elleft.value) + elementWidth + 10 > dialogW) {
+                    // In Preview, the editor input fields (elleft) are not present; guard their access
+                    if (elementWidth && elleft && Number(elleft.value) + elementWidth + 10 > dialogW) {
                         const newleft = String(Math.round(dialogW - elementWidth - 10));
                         elleft.value = newleft;
                         element.style.left = newleft + 'px';
