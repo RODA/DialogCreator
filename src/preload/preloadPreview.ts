@@ -20,29 +20,7 @@ function buildUI(canvas: HTMLElement): PreviewUI {
             type,
             message,
             detail
-        ),
-        // call: (service, args, cb) => new Promise((resolve) => {
-        //     const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-        //     const replyChannel = `service-reply-${requestId}`;
-
-        //     coms.once(replyChannel, (result) => {
-        //         try {
-        //             if (typeof cb === 'function') {
-        //                 cb(result);
-        //             }
-        //         } finally {
-        //             resolve(result);
-        //         }
-        //     });
-
-        //     coms.sendTo(
-        //         'main',
-        //         'service-call',
-        //         requestId,
-        //         service,
-        //         args ?? null
-        //     );
-        // })
+        )
     };
 
     return createPreviewUI(env);
@@ -518,13 +496,17 @@ function renderPreview(dialog: PreviewDialog) {
                     'Preview: customJS executed top-level.'
                 );
             } catch (e: any) {
-                const msg = `Custom code runtime error: ${String(e && e.message ? e.message : e)}`;
+                const msg = `Action code runtime error: ${String(e && e.message ? e.message : e)}`;
                 // Reuse runtime error overlay
                 const overlay = document.createElement('div');
                 overlay.className = 'customjs-error';
                 overlay.textContent = msg;
                 canvas.appendChild(overlay);
-                coms.sendTo('editorWindow', 'consolog', msg);
+                coms.sendTo(
+                    'editorWindow',
+                    'consolog',
+                    msg
+                );
             }
         }
 
@@ -582,49 +564,4 @@ window.addEventListener("DOMContentLoaded", () => {
             );
         }
     });
-
-    // Renderer adapter executor: run services configured with adapter 'renderer' inside this window
-    coms.on('service-renderer-exec', async (...args: unknown[]) => {
-        const [reqId, moduleName, method, payload] = args as [string, string, string, unknown];
-        // Try dynamic resolution by known names; for WebR, look for a global or lazy import
-        const reply = (result: unknown) => {
-            coms.sendTo('main', 'service-renderer-reply', reqId, result);
-        };
-        try {
-            let mod: any = null;
-            // Allow predefined handler name 'webr' meaning use global WebR
-            if (moduleName.toLowerCase() === 'webr') {
-                mod = (window as any).webR || (window as any).WebR || null;
-                if (!mod) {
-                    // Attempt dynamic import if a loader is available (user may include it via customJS)
-                    try {
-                        // @ts-ignore
-                        mod = await import('webr');
-                    } catch {
-                        reply({ ok: false, error: 'WebR not available in renderer. Load it in customJS or include the script.' });
-                        return;
-                    }
-                }
-            } else if ((window as any)[moduleName]) {
-                mod = (window as any)[moduleName];
-            }
-
-            if (!mod) {
-                reply({ ok: false, error: `Renderer module not found: ${moduleName}` });
-                return;
-            }
-
-            const fn = method && method !== 'default' ? mod[method] : (mod.default || mod);
-            if (typeof fn !== 'function') {
-                reply({ ok: false, error: `Renderer method not found: ${method || 'default'}` });
-                return;
-            }
-
-            const out = await Promise.resolve(fn(payload));
-            reply({ ok: true, data: out });
-        } catch (e: any) {
-            reply({ ok: false, error: String(e?.message || e) });
-        }
-    });
 });
-
