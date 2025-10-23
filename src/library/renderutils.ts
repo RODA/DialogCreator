@@ -1898,8 +1898,13 @@ export const renderutils: RenderUtils = {
             const maxRight = Math.max(...rects.map(r => r.right));
             const maxBottom = Math.max(...rects.map(r => r.bottom));
 
-            const left = Math.round(minLeft - canvasRect.left);
-            const top = Math.round(minTop - canvasRect.top);
+            // Compute base offsets relative to canvas
+            const baseLeft = (minLeft - canvasRect.left);
+            const baseTop = (minTop - canvasRect.top);
+            // Use floor for group position so that child offsets computed with rounding
+            // can reconstruct the original integer pixel positions without drift.
+            const left = Math.floor(baseLeft);
+            const top = Math.floor(baseTop);
             const width = Math.round(maxRight - minLeft);
             const height = Math.round(maxBottom - minTop);
 
@@ -1918,9 +1923,13 @@ export const renderutils: RenderUtils = {
 
             for (let idx = 0; idx < els.length; idx++) {
                 const child = els[idx];
-                const childRect = child.getBoundingClientRect();
-                const newLeft = Math.round(childRect.left - canvasRect.left - left);
-                const newTop = Math.round(childRect.top - canvasRect.top - top);
+                const childRect = rects[idx];
+                // Reconstruct child position so that (groupLeft + childLeft) ~= round(childAbsLeft)
+                const childAbsLeft = (childRect.left - canvasRect.left);
+                const childAbsTop = (childRect.top - canvasRect.top);
+                // Hardwire a -1px adjustment to counteract subpixel rounding drift
+                const newLeft = Math.round(childAbsLeft) - left - 1;
+                const newTop = Math.round(childAbsTop) - top - 1;
                 child.style.left = String(newLeft) + 'px';
                 child.style.top = String(newTop) + 'px';
                 child.dataset.left = String(newLeft);

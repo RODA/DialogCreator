@@ -22,6 +22,59 @@ const suppressClickFor = new Set<string>();
 const SKIP_KEYS = new Set(['parentId', 'elementIds', 'persistent']);
 const elementPropertyKinds = buildElementPropertyKindMap();
 const multiDragSnapshot = new Map<string, { left: number; top: number; width: number; height: number }>();
+const selectionOrder: string[] = [];
+let selectionAnchorId: string | null = null;
+
+function applySelection(order: string[], opts: { emit?: boolean } = {}) {
+    const seen = new Set<string>();
+    const filtered: string[] = [];
+
+    for (const id of order) {
+        if (!id || seen.has(id)) continue;
+        const el = dialog.getElement(id) as HTMLElement | undefined;
+        if (!el) continue;
+        filtered.push(id);
+        seen.add(id);
+    }
+
+    selectionOrder.length = 0;
+    selectionOrder.push(...filtered);
+
+    selectionAnchorId = selectionOrder[0] ?? null;
+    const anchorEl = selectionAnchorId ? dialog.getElement(selectionAnchorId) as HTMLElement | undefined : undefined;
+    currentGroupId = (anchorEl && anchorEl.classList.contains('element-group')) ? selectionAnchorId : null;
+
+    multiSelected.clear();
+    filtered.forEach(id => multiSelected.add(id));
+
+    dialog.canvas.querySelectorAll('.selectedElement').forEach(node => node.classList.remove('selectedElement'));
+
+    for (const id of filtered) {
+        const node = dialog.getElement(id) as HTMLElement | undefined;
+        if (!node) continue;
+        node.classList.add('selectedElement');
+        if (node.classList.contains('element-group')) {
+            node.querySelectorAll('.selectedElement').forEach(child => child.classList.remove('selectedElement'));
+        }
+    }
+
+    multiOutline = renderutils.clearMultiOutline(multiOutline);
+
+    if (opts.emit === false) {
+        return;
+    }
+
+    if (filtered.length === 0) {
+        dialog.selectedElement = '';
+        coms.emit('elementDeselected');
+    } else if (filtered.length === 1) {
+        dialog.selectedElement = filtered[0];
+        coms.emit('elementSelected', filtered[0]);
+    } else {
+        dialog.selectedElement = '';
+        coms.emit('elementSelectedMultiple', filtered.slice());
+    }
+}
 
 type PropertyKind = 'boolean' | 'number' | 'string' | 'array' | 'object';
 
@@ -164,24 +217,16 @@ function showContextMenu(targetId: string, x: number, y: number) {
 }
 
 function makeGroupFromSelection(persistent = false) {
-    if (multiSelected.size <= 1) {
-        if (multiSelected.size === 1) {
-            const only = Array.from(multiSelected)[0];
-            dialog.selectedElement = only;
-            coms.emit('elementSelected', only);
-        } else {
-            dialog.selectedElement = '';
-            coms.emit('elementDeselected');
-        }
-        multiOutline = renderutils.clearMultiOutline(multiOutline);
+    if (selectionOrder.length <= 1) {
+        applySelection(selectionOrder, { emit: true });
         return;
     }
 
-    const ids = Array.from(multiSelected);
+    const ids = selectionOrder.slice();
     if (!persistent) {
+        currentGroupId = null;
         multiOutline = renderutils.clearMultiOutline(multiOutline);
-        dialog.selectedElement = '';
-        coms.emit('elementSelectedMultiple');
+        coms.emit('elementSelectedMultiple', ids);
         return;
     }
 
@@ -190,19 +235,15 @@ function makeGroupFromSelection(persistent = false) {
     const groupEl = dialog.getElement(groupId) as HTMLElement | undefined;
     if (!groupEl) return;
     editor.addElementListeners(groupEl);
-    groupEl.classList.add('selectedElement');
-    multiSelected.clear();
-    multiSelected.add(groupId);
-    dialog.selectedElement = groupId;
     currentGroupId = groupId;
-    coms.emit('elementSelected', groupId);
+    applySelection([groupId]);
 }
 
 export const editor: Editor = {
     alignSelection: function(mode: 'left' | 'top' | 'middle' | 'right' | 'bottom' | 'center') {
-        const orderedIds = multiSelected.size >= 2
-            ? Array.from(multiSelected)
-            : renderutils.getSelectedIds();
+        const orderedIds = selectionOrder.length >= 2
+            ? selectionOrder.slice()
+            : (selectionOrder.length === 0 ? renderutils.getSelectedIds() : selectionOrder.slice());
 
         if (orderedIds.length < 2) {
             return;
@@ -220,45 +261,114 @@ export const editor: Editor = {
         const anchorHeight = anchor.offsetHeight;
         const targets = orderedIds.slice(1);
 
+        // If targets represent an ephemeral multi-selection (no persistent group container included),
+        // treat them as a unit and align their bounding box to the anchor.
+        const containsPersistentGroup = targets.some(id => {
+            const n = dialog.getElement(id) as HTMLElement | undefined;
+            return !!n && n.classList.contains('element-group');
+        });
+
+        if (targets.length > 1 && !containsPersistentGroup) {
+            const groupBounds = renderutils.computeBounds(targets);
+            if (groupBounds) {
+                let dx = 0, dy = 0;
+                if (mode === 'left') {
+                    dx = anchorLeft - groupBounds.left;
+                } else if (mode === 'right') {
+                    const anchorRight = anchorLeft + anchorWidth;
+                    const groupRight = groupBounds.left + groupBounds.width;
+                    dx = anchorRight - groupRight;
+                } else if (mode === 'center') {
+                    const anchorCenter = anchorLeft + Math.round(anchorWidth / 2);
+                    const groupCenter = groupBounds.left + Math.round(groupBounds.width / 2);
+                    dx = anchorCenter - groupCenter;
+                } else if (mode === 'top') {
+                    dy = anchorTop - groupBounds.top;
+                } else if (mode === 'bottom') {
+                    const anchorBottom = anchorTop + anchorHeight;
+                    const groupBottom = groupBounds.top + groupBounds.height;
+                    dy = anchorBottom - groupBottom;
+                } else if (mode === 'middle') {
+                    const anchorMiddle = anchorTop + Math.round(anchorHeight / 2);
+                    const groupMiddle = groupBounds.top + Math.round(groupBounds.height / 2);
+                    dy = anchorMiddle - groupMiddle;
+                }
+
+                if (dx !== 0 || dy !== 0) {
+                    renderutils.moveElementsBy(targets, dx, dy);
+                }
+
+                coms.emit('elementSelectedMultiple', orderedIds);
+                return;
+            }
+        }
+
         for (const id of targets) {
             const el = dialog.getElement(id) as HTMLElement | undefined;
             if (!el) {
                 continue;
             }
 
+            const isGroupContainer = el.classList.contains('element-group');
             const currentLeft = Number(el.dataset.left ?? (parseInt(el.style.left || '0', 10) || 0));
             const currentTop = Number(el.dataset.top ?? (parseInt(el.style.top || '0', 10) || 0));
             const elWidth = el.offsetWidth;
             const elHeight = el.offsetHeight;
             const props: Record<string, number> = {};
 
-            if (mode === 'left' && currentLeft !== anchorLeft) {
-                props.left = anchorLeft;
-            } else if (mode === 'top' && currentTop !== anchorTop) {
-                props.top = anchorTop;
-            } else if (mode === 'right') {
-                const anchorRight = anchorLeft + anchorWidth;
-                const elRight = currentLeft + elWidth;
-                if (elRight !== anchorRight) {
-                    props.left = anchorRight - elWidth;
+            if (isGroupContainer) {
+                // Move group container as a unit relative to anchor
+                if (mode === 'left' && currentLeft !== anchorLeft) {
+                    props.left = anchorLeft;
+                } else if (mode === 'top' && currentTop !== anchorTop) {
+                    props.top = anchorTop;
+                } else if (mode === 'right') {
+                    const anchorRight = anchorLeft + anchorWidth;
+                    const elRight = currentLeft + elWidth;
+                    if (elRight !== anchorRight) props.left = anchorRight - elWidth;
+                } else if (mode === 'bottom') {
+                    const anchorBottom = anchorTop + anchorHeight;
+                    const elBottom = currentTop + elHeight;
+                    if (elBottom !== anchorBottom) props.top = anchorBottom - elHeight;
+                } else if (mode === 'center') {
+                    const anchorCenter = anchorLeft + Math.round(anchorWidth / 2);
+                    const newLeft = anchorCenter - Math.round(elWidth / 2);
+                    if (newLeft !== currentLeft) props.left = newLeft;
+                } else if (mode === 'middle') {
+                    const anchorCenter = anchorTop + Math.round(anchorHeight / 2);
+                    const newTop = anchorCenter - Math.round(elHeight / 2);
+                    if (newTop !== currentTop) props.top = newTop;
                 }
-            } else if (mode === 'bottom') {
-                const anchorBottom = anchorTop + anchorHeight;
-                const elBottom = currentTop + elHeight;
-                if (elBottom !== anchorBottom) {
-                    props.top = anchorBottom - elHeight;
-                }
-            } else if (mode === 'center') {
-                const anchorCenter = anchorLeft + Math.round(anchorWidth / 2);
-                const newLeft = anchorCenter - Math.round(elWidth / 2);
-                if (newLeft !== currentLeft) {
-                    props.left = newLeft;
-                }
-            } else if (mode === 'middle') {
-                const anchorCenter = anchorTop + Math.round(anchorHeight / 2);
-                const newTop = anchorCenter - Math.round(elHeight / 2);
-                if (newTop !== currentTop) {
-                    props.top = newTop;
+            } else {
+                // Per-element alignment as before
+                if (mode === 'left' && currentLeft !== anchorLeft) {
+                    props.left = anchorLeft;
+                } else if (mode === 'top' && currentTop !== anchorTop) {
+                    props.top = anchorTop;
+                } else if (mode === 'right') {
+                    const anchorRight = anchorLeft + anchorWidth;
+                    const elRight = currentLeft + elWidth;
+                    if (elRight !== anchorRight) {
+                        props.left = anchorRight - elWidth;
+                    }
+                } else if (mode === 'bottom') {
+                    const anchorBottom = anchorTop + anchorHeight;
+                    const elBottom = currentTop + elHeight;
+                    if (elBottom !== anchorBottom) {
+                        props.top = anchorBottom - elHeight;
+                    }
+                } else if (mode === 'center') {
+                    const anchorCenter = anchorLeft + Math.round(anchorWidth / 2);
+                    const newLeft = anchorCenter - Math.round(elWidth / 2);
+                    if (newLeft !== currentLeft) {
+                        props.left = newLeft;
+                    }
+                } else if (mode === 'middle') {
+                    const anchorCenter = anchorTop + Math.round(anchorHeight / 2);
+                    const newTop = anchorCenter - Math.round(elHeight / 2);
+                    if (newTop !== currentTop) {
+                        props.top = newTop;
+                    }
                 }
             }
 
@@ -370,28 +480,22 @@ export const editor: Editor = {
             lassoDiv = null;
             lassoActive = false;
             if (width < 3 && height < 3 && !additive) {
-                editor.deselectAll();
+                applySelection([]);
                 return;
             }
             const selRectangle = { left, top, right: left + width, bottom: top + height };
-            if (!additive) {
-                editor.deselectAll();
-            }
+            const next = additive ? selectionOrder.slice() : [];
             const children = Array.from(dialog.canvas.children) as HTMLElement[];
-            children.forEach((el) => {
-                // Skip lasso rect itself and any existing groups
-                if (el.classList.contains('lasso-rect') || el.classList.contains('element-group')) {
-                    return;
-                }
-                const elRectangle = el.getBoundingClientRect();
+            children.forEach(el => {
+                if (el.classList.contains('lasso-rect')) return;
+                const rect = el.getBoundingClientRect();
                 const canvasRect = dialog.canvas.getBoundingClientRect();
                 const rel = {
-                    left: elRectangle.left - canvasRect.left,
-                    top: elRectangle.top - canvasRect.top,
-                    right: elRectangle.right - canvasRect.left,
-                    bottom: elRectangle.bottom - canvasRect.top
+                    left: rect.left - canvasRect.left,
+                    right: rect.right - canvasRect.left,
+                    top: rect.top - canvasRect.top,
+                    bottom: rect.bottom - canvasRect.top
                 };
-                // Require full containment inside lasso rectangle
                 const contained = (
                     rel.left >= selRectangle.left &&
                     rel.right <= selRectangle.right &&
@@ -399,25 +503,22 @@ export const editor: Editor = {
                     rel.bottom <= selRectangle.bottom
                 );
                 if (!contained) return;
-
+                const id = el.id;
+                const idx = next.indexOf(id);
                 if (additive) {
-                    // Shift+lasso toggles membership: deselect if already selected, otherwise add
-                    if (el.classList.contains('selectedElement')) {
-                        el.classList.remove('selectedElement');
-                        multiSelected.delete(el.id);
+                    if (idx >= 0) {
+                        next.splice(idx, 1);
                     } else {
-                        el.classList.add('selectedElement');
-                        multiSelected.add(el.id);
+                        next.push(id);
                     }
                 } else {
-                    // Non-additive: simply select everything fully inside the rectangle (we already cleared above)
-                    el.classList.add('selectedElement');
-                    multiSelected.add(el.id);
+                    if (idx === -1) {
+                        next.push(id);
+                    }
                 }
             });
-            // Prevent the canvas click that follows mouseup from clearing the new selection
             skipCanvasClickOnce = true;
-            makeGroupFromSelection();
+            applySelection(next);
         };
         document.addEventListener('mouseup', endLasso);
 
@@ -543,12 +644,7 @@ export const editor: Editor = {
             renderutils.updateLabel(wrapper);
         }
 
-        editor.deselectAll();
-        wrapper.classList.add('selectedElement');
-        multiSelected.add(wrapper.id);
-        dialog.selectedElement = wrapper.id;
-
-        coms.emit('elementSelected', wrapper.id);
+        applySelection([wrapper.id]);
     },
 
     updateDialogArea: function (properties) {
@@ -714,122 +810,61 @@ export const editor: Editor = {
         element.addEventListener('click', (event: MouseEvent) => {
             event.stopPropagation();
 
-            // If a property input is active (e.g., nameid), blur it to commit before changing selection
             const activeProp = document.activeElement as HTMLElement | null;
             if (activeProp && activeProp.closest('#propertiesList')) {
                 activeProp.blur();
             }
 
-            // Prefer selecting the group if this element is inside one
-            const groupAncestor = element.classList.contains('element-group')
-                ? element
-                : (element.closest('.element-group') as HTMLElement | null);
-            if (groupAncestor && !element.classList.contains('element-group')) {
-                const shift = event.shiftKey;
-                if (suppressClickFor.has(groupAncestor.id)) {
-                    suppressClickFor.delete(groupAncestor.id);
-                    return;
-                }
-                if (shift) {
-                    // Toggle selection of the persistent group when shift-clicking inside it
-                    if (groupAncestor.classList.contains('selectedElement')) {
-                        groupAncestor.classList.remove('selectedElement');
-                        multiSelected.delete(groupAncestor.id);
-                        if (dialog.selectedElement === groupAncestor.id) {
-                            dialog.selectedElement = '';
-                            currentGroupId = null;
-                            coms.emit('elementDeselected');
-                        }
-                    } else {
-                        // Add the group to the multi selection set
-                        groupAncestor.classList.add('selectedElement');
-                        // Remove selection from group's descendants to avoid double outlines
-                        groupAncestor.querySelectorAll('.selectedElement').forEach((el) => el.classList.remove('selectedElement'));
-                        multiSelected.add(groupAncestor.id);
-                        dialog.selectedElement = groupAncestor.id;
-                        currentGroupId = groupAncestor.id;
-                        coms.emit('elementSelected', groupAncestor.id);
-                        // Focus nameid input for newly selected group
-                        setTimeout(() => {
-                            const ni = document.getElementById('elnameid') as HTMLInputElement | null;
-                            if (ni) { ni.focus(); ni.select(); }
-                        }, 0);
-                    }
-                    makeGroupFromSelection();
-                    return;
-                }
-                // Default click inside group selects the group exclusively
-                dialog.canvas.querySelectorAll('.selectedElement').forEach((el) => el.classList.remove('selectedElement'));
-                multiOutline = renderutils.clearMultiOutline(multiOutline);
-
-                groupAncestor.classList.add('selectedElement');
-                // Remove selection from group's descendants to avoid double outlines
-                groupAncestor.querySelectorAll('.selectedElement').forEach((el) => el.classList.remove('selectedElement'));
-
-                multiSelected.clear();
-                multiSelected.add(groupAncestor.id);
-                dialog.selectedElement = groupAncestor.id;
-                currentGroupId = groupAncestor.id;
-                coms.emit('elementSelected', groupAncestor.id);
-                // Focus nameid input for newly selected group
-                setTimeout(() => {
-                    const ni = document.getElementById('elnameid') as HTMLInputElement | null;
-                    if (ni) { ni.focus(); ni.select(); }
-                }, 0);
-                return;
-            }
-
-            if (suppressClickFor.has(element.id)) {
-                suppressClickFor.delete(element.id);
-                return;
-            }
+            const isGroupContainer = element.classList.contains('element-group');
+            const groupAncestor = element.closest('.element-group') as HTMLElement | null;
+            const target = isGroupContainer ? element : (groupAncestor || element);
+            const targetId = target.id;
             const shift = event.shiftKey;
-            if (shift) {
-                if (element.classList.contains('selectedElement')) {
-                    element.classList.remove('selectedElement');
-                    multiSelected.delete(element.id);
-                    if (dialog.selectedElement === element.id) {
-                        dialog.selectedElement = '';
-                        coms.emit('elementDeselected');
-                    }
-                } else {
-                    element.classList.add('selectedElement');
-                    multiSelected.add(element.id);
-                    dialog.selectedElement = element.id;
-                    coms.emit('elementSelected', element.id);
-                }
-                makeGroupFromSelection();
+
+            if (suppressClickFor.has(targetId)) {
+                suppressClickFor.delete(targetId);
                 return;
             }
-            editor.deselectAll();
-            element.classList.add('selectedElement');
-            multiSelected.add(element.id);
-            dialog.selectedElement = element.id;
-            coms.emit('elementSelected', element.id);
-            // Focus nameid input for newly selected element
+
+            if (shift) {
+                let next = selectionOrder.slice();
+                const existingIndex = next.indexOf(targetId);
+                if (existingIndex >= 0) {
+                    next.splice(existingIndex, 1);
+                } else {
+                    if (target.classList.contains('element-group')) {
+                        next = next.filter(id => {
+                            const node = dialog.getElement(id) as HTMLElement | undefined;
+                            return !(node && node !== target && target.contains(node));
+                        });
+                    }
+                    next.push(targetId);
+                }
+                applySelection(next);
+                return;
+            }
+
+            applySelection([targetId]);
+
             setTimeout(() => {
-                const ni = document.getElementById('elnameid') as HTMLInputElement | null;
-                if (ni) { ni.focus(); ni.select(); }
+                if (selectionOrder.length === 1 && selectionOrder[0] === targetId) {
+                    const element = document.getElementById('elnameid') as HTMLInputElement | null;
+                    if (element) {
+                        element.focus();
+                        element.select();
+                    }
+                }
             }, 0);
-        })
+        });
 
         // Double-click inside a group should select the individual element (not the group)
         element.addEventListener('dblclick', (event: MouseEvent) => {
             event.stopPropagation();
-            // Only apply when the clicked element is not a group container but has a group ancestor
             const isGroupContainer = element.classList.contains('element-group');
             const hasGroupAncestor = !!(element.closest('.element-group') as HTMLElement | null);
             if (!isGroupContainer && hasGroupAncestor) {
-                // Clear group selection and select this element instead
-                dialog.canvas.querySelectorAll('.selectedElement').forEach((el) => el.classList.remove('selectedElement'));
-                multiSelected.clear();
-                multiOutline = renderutils.clearMultiOutline(multiOutline);
+                applySelection([element.id]);
                 currentGroupId = null;
-
-                element.classList.add('selectedElement');
-                multiSelected.add(element.id);
-                dialog.selectedElement = element.id;
-                coms.emit('elementSelected', element.id);
             }
         });
 
@@ -837,19 +872,11 @@ export const editor: Editor = {
             event.preventDefault();
             event.stopPropagation();
 
-            const target = element;
-            if (!target) return;
-
-            const alreadySelected = target.classList.contains('selectedElement');
-            if (!alreadySelected) {
-                editor.deselectAll();
-                target.classList.add('selectedElement');
-                multiSelected.add(target.id);
-                dialog.selectedElement = target.id;
-                coms.emit('elementSelected', target.id);
+            const targetId = (element.closest('.element-group') as HTMLElement | null)?.id || element.id;
+            if (!selectionOrder.includes(targetId)) {
+                applySelection([targetId], { emit: true });
             }
-
-            showContextMenu(target.id, event.clientX, event.clientY);
+            showContextMenu(targetId, event.clientX, event.clientY);
         });
 
         editor.addDragAndDrop(element);
@@ -892,15 +919,9 @@ export const editor: Editor = {
             const isGroupEl = dragTarget.classList.contains('element-group');
 
             // If dragging a group and it's not selected, select it now and clear child outlines
-            if (isGroupEl && dialog.selectedElement !== dragTarget.id) {
-                dialog.canvas.querySelectorAll('.selectedElement').forEach((el) => el.classList.remove('selectedElement'));
-                (dragTarget as HTMLElement).classList.add('selectedElement');
-                (dragTarget as HTMLElement).querySelectorAll('.selectedElement').forEach((el) => el.classList.remove('selectedElement'));
-                multiSelected.clear();
-                multiSelected.add(dragTarget.id);
-                dialog.selectedElement = dragTarget.id;
+            if (isGroupEl && !event.shiftKey && selectionOrder.indexOf(dragTarget.id) === -1) {
+                applySelection([dragTarget.id]);
                 currentGroupId = dragTarget.id;
-                coms.emit('elementSelected', dragTarget.id);
                 suppressClickFor.add(dragTarget.id);
             }
 
@@ -924,27 +945,13 @@ export const editor: Editor = {
                     // Do not suppress click yet; only suppress after we actually move on mouseup
                 }
             } else if (!isGroupEl) {
-                // Selection handling for single or persistent group context
-                if (!element.classList.contains('selectedElement')) {
+                if (!selectionOrder.includes(element.id)) {
                     if (event.shiftKey) {
-                        element.classList.add('selectedElement');
-                        multiSelected.add(element.id);
-                        dialog.selectedElement = element.id;
-                        coms.emit('elementSelected', element.id);
-                        suppressClickFor.add(element.id);
-                        makeGroupFromSelection(false);
+                        applySelection([...selectionOrder, element.id]);
                     } else {
-                        editor.deselectAll();
-                        element.classList.add('selectedElement');
-                        multiSelected.clear();
-                        multiSelected.add(element.id);
-                        dialog.selectedElement = element.id;
-                        const type = dialog.getElement(element.id)?.dataset.type;
-                        if (!type) return;
-                        coms.emit('elementSelected', element.id);
-                        suppressClickFor.add(element.id);
-                        makeGroupFromSelection(false);
+                        applySelection([element.id]);
                     }
+                    suppressClickFor.add(element.id);
                 }
             }
 
@@ -1063,16 +1070,10 @@ export const editor: Editor = {
     },
 
     deselectAll: function () {
-        // Remove selection from all elements (deep)
-        dialog.canvas.querySelectorAll('.selectedElement').forEach((el) => el.classList.remove('selectedElement'));
-        // Do not auto-ungroup on deselect
+        applySelection([]);
         currentGroupId = null;
-        multiSelected.clear();
         multiOutline = renderutils.clearMultiOutline(multiOutline);
-        dialog.selectedElement = '';
         editor.clearPropsList();
-        // notify UI that selection has been cleared
-        coms.emit('elementDeselected');
     },
 
     // updateElement(data) {
@@ -1104,9 +1105,8 @@ export const editor: Editor = {
             dialog.removeElement(el.id);
         }
 
-        // clear element properties and selection state
+        applySelection([]);
         editor.clearPropsList();
-        coms.emit('elementDeselected');
     },
 
     // clear element props
@@ -1297,50 +1297,19 @@ export const editor: Editor = {
     },
 
     ungroupSelection: function() {
-        // Convert a persistent group back into an ephemeral multi-selection
         if (currentGroupId) {
-            // Perform ungroup via renderutils and get the child IDs
             const childIds: string[] = renderutils.ungroupGroup(currentGroupId);
-
-            // Clear all selection outlines, then select all former children
-            dialog.canvas.querySelectorAll('.selectedElement').forEach((el) => el.classList.remove('selectedElement'));
-            multiSelected.clear();
-            for (const id of childIds) {
-                const el = dialog.getElement(id);
-                if (el) {
-                    el.classList.add('selectedElement');
-                    multiSelected.add(id);
-                }
-            }
-
-            // No persistent group is active anymore
             currentGroupId = null;
-            dialog.selectedElement = '';
-
-            // Ephemeral multi-selection (keep group-like behavior without DOM container)
-            // Do not show any extra outer outline; just both elements selected
-            coms.emit('elementSelectedMultiple', childIds);
+            applySelection(childIds);
         }
     },
 
-    // Select all top-level elements in the dialog canvas (ephemeral multi-selection)
     selectAll: function() {
-        // Clear previous selection
-        dialog.canvas.querySelectorAll('.selectedElement').forEach((el) => el.classList.remove('selectedElement'));
-        multiSelected.clear();
+        const ids = Array.from(dialog.canvas.children)
+            .filter((el): el is HTMLElement => el instanceof HTMLElement && !el.classList.contains('lasso-rect'))
+            .map(el => el.id);
         currentGroupId = null;
-        multiOutline = renderutils.clearMultiOutline(multiOutline);
-        dialog.selectedElement = '';
-
-        const all = Array.from(dialog.canvas.children) as HTMLElement[];
-        const ids: string[] = [];
-        for (const el of all) {
-            if (el.classList.contains('lasso-rect')) continue;
-            el.classList.add('selectedElement');
-            multiSelected.add(el.id);
-            ids.push(el.id);
-        }
-        coms.emit('elementSelectedMultiple', ids);
+        applySelection(ids);
     },
 
     stringifyDialog: function() {

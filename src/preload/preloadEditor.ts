@@ -165,15 +165,19 @@ coms.on('elementSelected', (id) => {
     const alignMiddleBtn = document.getElementById('alignMiddle') as HTMLButtonElement | null;
     const alignCenterBtn = document.getElementById('alignCenter') as HTMLButtonElement | null;
 
-    const selectedIds = renderutils.getSelectedIds();
-    const multipleSelection = selectedIds.length > 1;
-
-    if (alignLeftBtn) alignLeftBtn.disabled = !multipleSelection;
-    if (alignRightBtn) alignRightBtn.disabled = !multipleSelection;
-    if (alignTopBtn) alignTopBtn.disabled = !multipleSelection;
-    if (alignBottomBtn) alignBottomBtn.disabled = !multipleSelection;
-    if (alignMiddleBtn) alignMiddleBtn.disabled = !multipleSelection;
-    if (alignCenterBtn) alignCenterBtn.disabled = !multipleSelection;
+    const applyAlignEnable = () => {
+        const ids = renderutils.getSelectedIds();
+        const multiple = ids.length > 1;
+        if (alignLeftBtn) alignLeftBtn.disabled = !multiple;
+        if (alignRightBtn) alignRightBtn.disabled = !multiple;
+        if (alignTopBtn) alignTopBtn.disabled = !multiple;
+        if (alignBottomBtn) alignBottomBtn.disabled = !multiple;
+        if (alignMiddleBtn) alignMiddleBtn.disabled = !multiple;
+        if (alignCenterBtn) alignCenterBtn.disabled = !multiple;
+    };
+    // Apply immediately and once more after DOM class updates settle
+    applyAlignEnable();
+    setTimeout(applyAlignEnable, 0);
 
     // Enable/disable group/ungroup toolbar buttons
     const groupBtn = document.getElementById('groupElements') as HTMLButtonElement | null;
@@ -286,16 +290,18 @@ coms.on('elementSelectedMultiple', (...args: unknown[]) => {
     const alignBottomBtn = document.getElementById('alignBottom') as HTMLButtonElement | null;
     const alignCenterBtn = document.getElementById('alignCenter') as HTMLButtonElement | null;
 
-    const selectedIds = renderutils.getSelectedIds();
-    const multipleSelection = selectedIds.length > 1;
-
-    if (alignLeftBtn) alignLeftBtn.disabled = !multipleSelection;
-    if (alignTopBtn) alignTopBtn.disabled = !multipleSelection;
-    if (alignMidBtn) alignMidBtn.disabled = !multipleSelection;
-    if (alignRightBtn) alignRightBtn.disabled = !multipleSelection;
-    if (alignBottomBtn) alignBottomBtn.disabled = !multipleSelection;
-    if (alignCenterBtn) alignCenterBtn.disabled = !multipleSelection;
-    if (alignMidBtn) alignMidBtn.disabled = !multipleSelection;
+    const refreshAlign = () => {
+        const ids = renderutils.getSelectedIds();
+        const multiple = ids.length > 1;
+        if (alignLeftBtn) alignLeftBtn.disabled = !multiple;
+        if (alignTopBtn) alignTopBtn.disabled = !multiple;
+        if (alignMidBtn) alignMidBtn.disabled = !multiple;
+        if (alignRightBtn) alignRightBtn.disabled = !multiple;
+        if (alignBottomBtn) alignBottomBtn.disabled = !multiple;
+        if (alignCenterBtn) alignCenterBtn.disabled = !multiple;
+    };
+    refreshAlign();
+    setTimeout(refreshAlign, 0);
 
     const groupBtn = document.getElementById('groupElements') as HTMLButtonElement | null;
     const ungroupBtn = document.getElementById('ungroupElements') as HTMLButtonElement | null;
