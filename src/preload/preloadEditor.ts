@@ -348,6 +348,31 @@ window.addEventListener("DOMContentLoaded", async () => {
     editor.addAvailableElementsTo("editor");
     editor.addDefaultsButton();
 
+    // Debounced JSON notifier to main (dirty indicator)
+    const debounce = (fn: () => void, delay: number) => {
+        let t: ReturnType<typeof setTimeout> | null = null;
+        return () => {
+            if (t) clearTimeout(t);
+            t = setTimeout(fn, delay);
+        };
+    };
+    const sendJsonToMain = () => {
+        try {
+            const json = editor.stringifyDialog();
+            ipcRenderer.send('send-to', 'main', 'document-json-updated', json);
+        } catch { /* noop */ }
+    };
+    const scheduleJsonUpdate = debounce(sendJsonToMain, 300);
+
+    // Observe canvas for structural/attribute changes
+    try {
+        const canvas = document.getElementById('dialog');
+        if (canvas) {
+            const mo = new MutationObserver(() => scheduleJsonUpdate());
+            mo.observe(canvas, { childList: true, attributes: true, subtree: true });
+        }
+    } catch { /* noop */ }
+
     // Enable Syntax button and wire it
     const syntaxBtn = document.getElementById('dialog-syntax') as HTMLButtonElement | null;
     if (syntaxBtn) {
@@ -449,6 +474,8 @@ window.addEventListener("DOMContentLoaded", async () => {
         } catch (error) {
             console.error('Failed to load dialog JSON', error);
         }
+        // After load, schedule a dirty state recompute
+        setTimeout(() => { try { scheduleJsonUpdate(); } catch {} }, 300);
     });
 
     // Persist syntax text coming from Syntax window
@@ -456,12 +483,15 @@ window.addEventListener("DOMContentLoaded", async () => {
         const t = typeof text === 'string' ? text : '';
         dialog.syntax = dialog.syntax || { command: '' };
         dialog.syntax.command = t;
+        // reflect in dirty state
+        try { scheduleJsonUpdate(); } catch {}
     });
 
     // Persist custom JS text coming from Code window
     coms.on('setDialogCustomJS', (text: unknown) => {
         const t = typeof text === 'string' ? text : '';
         dialog.customJS = t;
+        try { scheduleJsonUpdate(); } catch {}
     });
 
     // Arrange buttons
@@ -561,6 +591,13 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         ev.preventDefault();
     });
+
+    // Also mark dirty when dialog-level properties change (blur)
+    try {
+        document.querySelectorAll('#dialog-properties [id^="dialog"]').forEach(el => {
+            el.addEventListener('blur', () => { try { scheduleJsonUpdate(); } catch {} });
+        });
+    } catch { /* noop */ }
 
     // Keyboard shortcuts for arrange actions (Cmd/Ctrl + Arrow keys) and grouping (Cmd/Ctrl + G)
     document.addEventListener('keydown', function (ev) {
@@ -748,6 +785,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     });
     ipcRenderer.on('newDialogClear', () => {
         setTimeout(clearStalePropertiesPanel, 0);
+        setTimeout(() => { try { scheduleJsonUpdate(); } catch {} }, 300);
     });
 });
 

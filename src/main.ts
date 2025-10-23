@@ -47,6 +47,9 @@ function createMainWindow() {
         center: true
     });
 
+    // Ensure initial title formatting on all platforms
+    updateWindowTitle();
+
     // and load the index.html of the app.
     editorWindow.loadFile(path.join(__dirname, "../src/pages/editor.html"));
 
@@ -243,6 +246,23 @@ function setupIPC() {
                 case 'close-previewWindow':
                     secondWindow.close();
                     break;
+                case 'document-json-updated':
+                    try {
+                        const json = String(args[0] ?? '');
+                        if (pendingCanonicalUpdate) {
+                            lastSavedJson = json;
+                            dialogModified = false;
+                            pendingCanonicalUpdate = false;
+                            updateWindowTitle();
+                        } else {
+                            const same = json === (lastSavedJson || '');
+                            dialogModified = !same;
+                            updateWindowTitle();
+                        }
+                    } catch {
+                        // ignore errors computing dirty state
+                    }
+                    break;
                 default:
                     break;
             }
@@ -265,11 +285,35 @@ function quitApp() {
     app.quit();
 }
 
+// Title helpers
+function updateWindowTitle() {
+    try {
+        if (editorWindow && !editorWindow.isDestroyed()) {
+            const base = 'Dialog creator';
+            const name = currentFilePath ? ` — ${path.basename(currentFilePath)}` : '';
+            const dot = dialogModified ? '~ ' : '';
+            editorWindow.setTitle(`${dot}${base}${name}`);
+            try {
+                if (process.platform === 'darwin') {
+                    editorWindow.setDocumentEdited(!!dialogModified);
+                }
+            } catch { /* noop */ }
+        }
+    } catch { /* noop */ }
+}
+
+function setCurrentDialogPath(filePath: string | null) {
+    currentFilePath = filePath;
+    updateWindowTitle();
+}
 
 // Create menu template
 import type { MenuItemConstructorOptions } from "electron";
 
 let lastSavedJson = '';
+let currentFilePath: string | null = null;
+let dialogModified = false;
+let pendingCanonicalUpdate = false; // next JSON update should reset baseline
 
 const mainMenuTemplate: MenuItemConstructorOptions[] = [
     {
@@ -311,6 +355,8 @@ const mainMenuTemplate: MenuItemConstructorOptions[] = [
                                         const fs = require('fs');
                                         fs.writeFileSync(filePath, current, 'utf-8');
                                         lastSavedJson = current;
+                                        // Remember path used for saving the previous file
+                                        setCurrentDialogPath(filePath);
                                     } else {
                                         // user canceled save dialog => abort New
                                         return;
@@ -323,6 +369,12 @@ const mainMenuTemplate: MenuItemConstructorOptions[] = [
                         }
                         // Clear dialog: select all + remove
                         editorWindow.webContents.send('newDialogClear');
+                        // Reset state for the new unsaved dialog
+                        setCurrentDialogPath(null);
+                        // Next renderer JSON becomes the clean baseline
+                        pendingCanonicalUpdate = true;
+                        dialogModified = false;
+                        updateWindowTitle();
                     };
                     const onSendTo = (_event: any, window: string, channel: string, ...args: any[]) => {
                         if (window === 'main' && channel === 'dialog-json') {
@@ -359,7 +411,12 @@ const mainMenuTemplate: MenuItemConstructorOptions[] = [
                         const fs = require('fs');
                         const content = fs.readFileSync(filePaths[0], 'utf-8');
                         editorWindow.webContents.send('load-dialog-json', content);
-                        lastSavedJson = content;
+                        // Ask the next JSON snapshot to be treated as canonical
+                        pendingCanonicalUpdate = true;
+                        dialogModified = false;
+                        // Remember the loaded file path so Cmd+S overwrites it and reflect in title
+                        setCurrentDialogPath(filePaths[0]);
+                        updateWindowTitle();
                     } catch (e: any) {
                         dialog.showErrorBox('Load failed', String((e && e.message) ? e.message : e));
                     }
@@ -374,15 +431,64 @@ const mainMenuTemplate: MenuItemConstructorOptions[] = [
                     const onJson = async (_ev: any, json: string) => {
                         ipcMain.removeListener('send-to', onSendTo);
                         try {
+                            const fs = require('fs');
+                            const data = json || '';
+                            if (currentFilePath && currentFilePath.length > 0) {
+                                // Overwrite the current file without prompting
+                                fs.writeFileSync(currentFilePath, data, 'utf-8');
+                                lastSavedJson = data;
+                                dialogModified = false;
+                                updateWindowTitle();
+                                return;
+                            }
+                            // No known path: fall back to Save As...
                             const { canceled, filePath } = await dialog.showSaveDialog(editorWindow, {
                                 title: 'Save dialog',
                                 filters: [{ name: 'Dialog JSON', extensions: ['json'] }],
                                 defaultPath: 'dialog.json'
                             });
+
                             if (canceled || !filePath) return;
+
+                            fs.writeFileSync(filePath, data, 'utf-8');
+                            lastSavedJson = data;
+                            setCurrentDialogPath(filePath);
+
+                            dialogModified = false;
+                            updateWindowTitle();
+
+                        } catch (e: any) {
+                            dialog.showErrorBox('Save failed', String((e && e.message) ? e.message : e));
+                        }
+                    };
+                    const onSendTo = (_event: any, window: string, channel: string, ...args: any[]) => {
+                        if (window === 'main' && channel === 'dialog-json') {
+                            onJson(null, args[0] as string);
+                        }
+                    };
+                    ipcMain.on('send-to', onSendTo);
+                }
+            },
+            {
+                label: 'Save dialog As...',
+                accelerator: 'Shift+CommandOrControl+S',
+                click: async () => {
+                    // Ask renderer for JSON
+                    editorWindow.webContents.send('request-dialog-json');
+                    const onJson = async (_ev: any, json: string) => {
+                        ipcMain.removeListener('send-to', onSendTo);
+                        try {
                             const fs = require('fs');
-                            fs.writeFileSync(filePath, json || '', 'utf-8');
-                            lastSavedJson = json || '';
+                            const data = json || '';
+                            const { canceled, filePath } = await dialog.showSaveDialog(editorWindow, {
+                                title: 'Save dialog As...',
+                                filters: [{ name: 'Dialog JSON', extensions: ['json'] }],
+                                defaultPath: currentFilePath || 'dialog.json'
+                            });
+                            if (canceled || !filePath) return;
+                            fs.writeFileSync(filePath, data, 'utf-8');
+                            lastSavedJson = data;
+                            setCurrentDialogPath(filePath);
                         } catch (e: any) {
                             dialog.showErrorBox('Save failed', String((e && e.message) ? e.message : e));
                         }
@@ -436,4 +542,3 @@ const mainMenuTemplate: MenuItemConstructorOptions[] = [
         ]
     },
 ];
-
