@@ -184,3 +184,29 @@ input:focus, select:focus, textarea:focus {
 .preview-canvas .error-in-radio .form-check-inline {
     margin-bottom: 0px !important;
 }
+
+/* Error tooltip theme: solid white background so it doesn't blend with canvas */
+.tippy-box[data-theme~='light-red'] {
+    background-color: #ffffff !important;
+    color: #900 !important;
+    border: 1px solid #d33 !important;
+    border-radius: 6px !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+    z-index: 9999 !important;
+    pointer-events: none !important; /* do not block clicks on the canvas */
+}
+.tippy-box[data-theme~='light-red'] .tippy-content {
+    padding: 2px 8px !important;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji" !important;
+    font-size: 12px !important;
+    line-height: 1.25 !important;             /* fixed line height for precise clamp */
+    max-height: calc(2 * 1.25em) !important;     /* exact 2 lines height */
+    max-width: 200px !important;              /* clamp width */
+    white-space: normal !important;           /* allow wrapping */
+    overflow: hidden !important;              /* hide overflow */
+    text-overflow: ellipsis !important;       /* add ellipsis */
+    display: -webkit-box !important;          /* multiline clamp */
+    -webkit-line-clamp: 2 !important;         /* max 2 lines */
+    -webkit-box-orient: vertical !important;  /* vertical flow */
+    word-break: break-word !important;        /* break long tokens */
+}
