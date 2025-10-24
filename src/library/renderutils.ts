@@ -105,7 +105,12 @@ function ensureTooltip(name: string, anchor: HTMLElement, content: string) {
                 placement: 'top-start',
                 content,
                 arrow: false,
-                allowHTML: true
+                allowHTML: true,
+                // Keep tooltip out of the way and outside the canvas stacking context
+                appendTo: () => document.body,
+                offset: [0, 8],
+                zIndex: 9999,
+                interactive: false
             })
         ];
     } else {
@@ -118,6 +123,17 @@ function destroyTooltip(name: string) {
         error_tippy[name][0]?.destroy();
         delete error_tippy[name];
     }
+}
+
+function bestAnchorFor(name: string, fallback: HTMLElement | null): HTMLElement | null {
+    const stored = highlight_targets.get(name);
+    if (stored && stored.size) {
+        for (const node of stored) return node; // first stored node
+    }
+    if (fallback && fallback.firstElementChild instanceof HTMLElement) {
+        return fallback.firstElementChild as HTMLElement;
+    }
+    return fallback;
 }
 
 function removeHighlightClasses(node: HTMLElement | null | undefined) {
@@ -142,10 +158,13 @@ export const errorutils = {
             const { host } = resolveElementHost(name);
             if (!host) return;
 
-            ensureTooltip(name, host, text);
+            // Ensure highlight is set first so we can anchor to the visible target
+            errorutils.addHighlight(name);
+            const anchor = bestAnchorFor(name, host);
+            ensureTooltip(name, anchor || host, text);
+
             if (!validation_messages[name]) {
                 validation_messages[name] = { name, errors: [text] };
-                errorutils.addHighlight(name);
                 auto_highlight.add(name);
             } else if (!validation_messages[name].errors.includes(text)) {
                 validation_messages[name].errors.push(text);
@@ -176,8 +195,9 @@ export const errorutils = {
                 auto_highlight.delete(name);
             } else {
                 const { host } = resolveElementHost(name);
-                if (host) {
-                    ensureTooltip(name, host, existing.errors[0]);
+                const anchor = bestAnchorFor(name, host);
+                if (anchor) {
+                    ensureTooltip(name, anchor, existing.errors[0]);
                 }
             }
         });
@@ -191,9 +211,18 @@ export const errorutils = {
             const inferredKind = kind ?? ((host.dataset?.type === 'Radio' || isRadio) ? 'radio' : 'field');
             const highlightClass = inferredKind === 'radio' ? 'error-in-radio' : 'error-in-field';
 
-            const target = highlightClass === 'error-in-radio'
-                ? (host.querySelector('.custom-radio') as HTMLElement | null)
-                : (host.querySelector('input, select, textarea, button') as HTMLElement | null);
+            // Prefer highlighting the visible inner control when possible.
+            // In Preview, wrappers are absolutely positioned and may have 0x0 size;
+            // applying the class to the inner element ensures the glow is visible
+            // for containers and other non-input elements.
+            let target: HTMLElement | null = null;
+            if (highlightClass === 'error-in-radio') {
+                target = host.querySelector('.custom-radio') as HTMLElement | null;
+            } else {
+                target = host.querySelector('input, select, textarea, button') as HTMLElement | null;
+                // Fallback to the first element child (e.g., Container, Separator, Slider, Button wrapper)
+                if (!target) target = host.firstElementChild as HTMLElement | null;
+            }
 
             const node = target || host;
 
@@ -982,7 +1011,7 @@ export const renderutils: RenderUtils = {
                         if (radio && customRadio) customRadio.style.height = value + 'px';
                     }
 
-                    if (Number(eltop.value) + Number(value) + 10 > dialogH) {
+                    if (eltop && Number(eltop.value) + Number(value) + 10 > dialogH) {
                         const newtop = String(Math.round(dialogH - Number(value) - 10));
                         eltop.value = newtop;
                         element.style.top = newtop + 'px';
@@ -1014,8 +1043,8 @@ export const renderutils: RenderUtils = {
                 case 'width':
                     if (Number(value) > dialogW - 20) {
                         value = String(Math.round(dialogW - 20));
-                        const width = document.getElementById('elwidth') as HTMLInputElement;
-                        width.value = value;
+                        const widthInput = document.getElementById('elwidth') as HTMLInputElement | null;
+                        if (widthInput) widthInput.value = value;
                     }
 
                     if (select && Number(value) < 100) {
@@ -1048,7 +1077,7 @@ export const renderutils: RenderUtils = {
                         }
                     }
 
-                    if (Number(elleft.value) + Number(value) + 10 > dialogW) {
+                    if (elleft && Number(elleft.value) + Number(value) + 10 > dialogW) {
                         const newleft = String(Math.round(dialogW - Number(value) - 10));
                         elleft.value = newleft;
                         element.style.left = newleft + 'px';
@@ -1326,7 +1355,7 @@ export const renderutils: RenderUtils = {
                         width = String(Math.round(dialogW - 20));
                     }
 
-                    if (Number(elleft.value) + Number(width) + 10 > dialogW) {
+                    if (elleft && Number(elleft.value) + Number(width) + 10 > dialogW) {
                         const newleft = String(Math.round(dialogW - Number(width) - 10));
                         elleft.value = newleft;
                         element.style.left = newleft + 'px';
@@ -1336,7 +1365,7 @@ export const renderutils: RenderUtils = {
                         height = String(Math.round(dialogH - 20));
                     }
 
-                    if (Number(eltop.value) + Number(height) + 10 > dialogH) {
+                    if (eltop && Number(eltop.value) + Number(height) + 10 > dialogH) {
                         const newtop = String(Math.round(dialogH - Number(height) - 10));
                         eltop.value = newtop;
                         element.style.top = newtop + 'px';
@@ -1351,8 +1380,8 @@ export const renderutils: RenderUtils = {
                     }
                     element.style.width = width + 'px';
                     element.style.height = height + 'px';
-                    elwidth.value = String(width);
-                    elheight.value = String(height);
+                    if (elwidth) elwidth.value = String(width);
+                    if (elheight) elheight.value = String(height);
                     break;
 
                 case 'selection':
