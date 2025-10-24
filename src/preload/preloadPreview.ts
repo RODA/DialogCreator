@@ -87,6 +87,18 @@ function renderPreview(dialog: PreviewDialog) {
         if (desiredNameId) wrapper.dataset.nameid = desiredNameId;
         wrapper.dataset.parentId = String(data.parentId || dialog.id || '');
 
+        // Mirror all dataset properties from the inner element onto the wrapper
+        // so Preview UI helpers read the same values as in the Editor.
+        try {
+            const ds = (core as HTMLElement).dataset || {} as DOMStringMap;
+            Object.keys(ds).forEach((key) => {
+                const val = ds[key as keyof DOMStringMap];
+                if (typeof val === 'string') {
+                    wrapper.dataset[key] = val;
+                }
+            });
+        } catch { /* no-op */ }
+
         core.id = `${desiredId}-inner`;
         core.style.left = '0px';
         core.style.top = '0px';
