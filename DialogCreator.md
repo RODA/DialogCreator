@@ -305,7 +305,9 @@ Initialization
 
 `run(command)`
 
-  - Sends a built command string to an external runtime in a real app; in Preview this is a no‑op but users can use showMessage() to display the command.
+  - Displays the given command string in a dedicated Run Output panel anchored just beneath the Preview window (outside the canvas). The panel uses a monospace font and preserves whitespace/line breaks.
+  - The panel follows the Preview window when you move/resize it and closes when Preview closes. It automatically resizes its height to fit the command content, and matches the Preview window width. You can also resize it manually.
+  - If the external panel cannot be created (e.g. permissions/environment), a fallback inline panel appears immediately below the Preview canvas inside the Preview window.
   - Example:
 ```javascript
 const sel = getSelected(radiogroup1);

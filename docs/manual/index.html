@@ -295,9 +295,23 @@
 <li>Supported: Input (clears the text), Container (removes all rows).</li>
 <li>Throws an error if used on unsupported types.</li>
 </ul>
+<p><code class="hljs"><span class="hljs-title function_">setLabel</span>(<span class="api-param">name</span>, <span class="api-param">label</span>)</code></p>
+<ul>
+<li>Set the visible label text of a Button element.</li>
+<li>Throws a SyntaxError if the element doesn't exist or isn't a Button.</li>
+</ul>
+<p><code class="hljs"><span class="hljs-title function_">changeValue</span>(<span class="api-param">name</span>, <span class="api-param">oldValue</span>, <span class="api-param">newValue</span>)</code></p>
+<ul>
+<li>Rename a specific item within a Container from <code class="hljs"><span class="api-param">oldValue</span></code> to <code class="hljs"><span class="api-param">newValue</span></code>.</li>
+<li>If the item is currently selected, the container's selection mirror is updated accordingly.</li>
+<li>No event is dispatched automatically; call <code class="hljs"><span class="hljs-title function_">triggerChange</span>(<span class="api-param">name</span>)</code> if you want change handlers to run.</li>
+<li>Throws a SyntaxError if the element doesn't exist or isn't a Container.</li>
+</ul>
 <p><code class="hljs"><span class="hljs-title function_">run</span>(<span class="api-param">command</span>)</code></p>
 <ul>
-<li>Sends a built command string to an external runtime in a real app; in Preview this is a no‑op but users can use showMessage() to display the command.</li>
+<li>Displays the given command string in a dedicated Run Output panel anchored just beneath the Preview window (outside the canvas). The panel uses a monospace font and preserves whitespace/line breaks.</li>
+<li>The panel follows the Preview window when you move/resize it and closes when Preview closes. It automatically resizes its height to fit the command content, and matches the Preview window width. You can also resize it manually.</li>
+<li>If the external panel cannot be created (e.g. permissions/environment), a fallback inline panel appears immediately below the Preview canvas inside the Preview window.</li>
 <li>Example:<pre><code class="language-javascript hljs">const sel = <span class="hljs-title function_">getSelected</span>(<span class="api-param">radiogroup1</span>);
 const cmd = <span class="hljs-title function_">do_something</span>(<span class="api-param">sel</span>);
 <span class="hljs-title function_">run</span>(<span class="api-param">cmd</span>);
@@ -415,6 +429,13 @@ const cmd = <span class="hljs-title function_">do_something</span>(<span class="
 </ul>
 <pre><code class="language-javascript hljs"><span class="hljs-title function_">addValue</span>(<span class="api-param">variablesContainer</span>, <span class="hljs-string">"Sepal.Length"</span>);
 <span class="hljs-title function_">clearValue</span>(<span class="api-param">variablesContainer</span>, <span class="hljs-string">"Sepal.Width"</span>);
+</code></pre>
+
+<ul>
+<li>Update a Button label and rename a Container item:</li>
+</ul>
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">setLabel</span>(<span class="api-param">runBtn</span>, <span class="hljs-string">"Run Analysis"</span>);
+<span class="hljs-title function_">changeValue</span>(<span class="api-param">variablesContainer</span>, <span class="hljs-string">"Sepal.Length"</span>, <span class="hljs-string">"Sepal Len"</span>);
 </code></pre>
 
 <p>Notes</p>
