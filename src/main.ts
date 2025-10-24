@@ -14,6 +14,9 @@ import { DBElements } from "./interfaces/database";
 
 let editorWindow: BrowserWindow;
 let secondWindow: BrowserWindow;
+let runPanelWindow: BrowserWindow | null;
+let runPanelAnchor: BrowserWindow | null;
+let runPanelHeight = 160; // content height; updated by renderer
 
 const windowid: { [key: string]: number } = {
     editorWindow: 1,
@@ -223,6 +226,114 @@ function setupIPC() {
                         title: String(args[1] ?? '')
                     });
                     break;
+                case 'open-runpanel': {
+                    try {
+                        const command = String(args[0] ?? '');
+
+                        // Try to find the active Preview window (by URL containing preview.html)
+                        const wins = BrowserWindow.getAllWindows();
+                        let anchor = wins.find(w => {
+                            try {
+                                return w.webContents.getURL().includes('preview.html');
+                            } catch {
+                                return false;
+                            }
+                        }) || secondWindow || editorWindow;
+
+                        const bounds = anchor.getBounds();
+
+                        const desiredWidth = Math.max(200, bounds.width);
+                        const desiredHeight = runPanelHeight;
+                        const desiredX = Math.max(0, bounds.x);
+                        const desiredY = bounds.y + bounds.height + 6; // just beneath the preview window
+
+                        if (!runPanelWindow || runPanelWindow.isDestroyed()) {
+                            runPanelWindow = new BrowserWindow({
+                                width: desiredWidth,
+                                height: desiredHeight,
+                                x: desiredX,
+                                y: desiredY,
+                                useContentSize: true,
+                                alwaysOnTop: true,
+                                resizable: true,
+                                minimizable: false,
+                                maximizable: false,
+                                title: 'Run Output',
+                                webPreferences: {
+                                    contextIsolation: true,
+                                    preload: path.join(__dirname, 'preload', 'preloadRunPanel.js'),
+                                    sandbox: false
+                                },
+                                autoHideMenuBar: true,
+                            });
+
+                            runPanelWindow.loadFile(path.join(__dirname, "../src/pages", 'runpanel.html'));
+
+                            runPanelWindow.on('closed', () => {
+                                runPanelWindow = null;
+                            });
+                        }
+
+                        // Position and size each time in case preview moved
+                        try {
+                            runPanelWindow!.setPosition(desiredX, desiredY);
+                            runPanelWindow!.setContentSize(desiredWidth, desiredHeight);
+                        } catch {}
+
+                        // Reposition with the anchor on move/resize
+                        if (anchor !== runPanelAnchor) {
+                            // detach old listeners
+                            runPanelAnchor?.removeAllListeners('move');
+                            runPanelAnchor?.removeAllListeners('resize');
+                            runPanelAnchor?.removeAllListeners('closed');
+                            runPanelAnchor = anchor;
+                            const reposition = () => {
+                                try {
+                                    const b = anchor.getBounds();
+                                    const w = Math.max(200, b.width);
+                                    runPanelWindow?.setPosition(b.x, b.y + b.height + 6);
+                                    runPanelWindow?.setContentSize(w, runPanelHeight);
+                                } catch {}
+                            };
+                            anchor.on('move', reposition);
+                            anchor.on('resize', reposition);
+                            anchor.on('closed', () => { try { runPanelWindow?.close(); } catch {} });
+                        }
+
+                        // Once content is ready, send payload; also send immediately for updates
+                        if (runPanelWindow && !runPanelWindow.webContents.isLoadingMainFrame()) {
+                            runPanelWindow.webContents.send('renderRunCommand', command);
+                        } else {
+                            runPanelWindow?.webContents.once('did-finish-load', () => {
+                                runPanelWindow?.webContents.send('renderRunCommand', command);
+                            });
+                        }
+
+                    } catch (e: any) {
+                        dialog.showErrorBox('Run panel error', String(e && e.message ? e.message : e));
+                    }
+                    break;
+                }
+                case 'runpanel-resize': {
+                    try {
+                        const payload = args[0];
+                        const requestedHeight = Number((payload && payload.height) ?? payload ?? 0);
+                        if (!Number.isFinite(requestedHeight) || requestedHeight <= 0) break;
+                        runPanelHeight = Math.max(40, Math.min(1000, Math.round(requestedHeight)));
+
+                        if (runPanelWindow && !runPanelWindow.isDestroyed()) {
+                            // Align width with anchor when possible
+                            let w = 320;
+                            try {
+                                const b = (runPanelAnchor || secondWindow || editorWindow).getBounds();
+                                w = Math.max(200, b.width);
+                                runPanelWindow.setPosition(b.x, b.y + b.height + 6);
+                            } catch { /* keep current position */ }
+                            runPanelWindow.setContentSize(w, runPanelHeight);
+                        }
+                    } catch { /* noop */ }
+                    break;
+                }
                 case 'secondWindow':
                     createSecondWindow(args[0]);
                     break;

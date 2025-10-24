@@ -59,6 +59,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         showRuntimeError,
         logToEditor,
         showDialogMessage,
+        openRunPanel,
         // call
     } = env;
 
@@ -298,8 +299,51 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         },
 
         run: (command: string) => {
-            // Simulate running a constructed command to an external runtime
-            // (e.g., R). In Preview, this is a no-op.
+            try {
+                // Prefer external floating panel via env if available
+                if (typeof openRunPanel === 'function') {
+                    openRunPanel(String(command ?? ''));
+                    return;
+                }
+
+                const root = document.getElementById('preview-root');
+                if (!root) { logToEditor(`run(): preview root not found.`); return; }
+
+                // Ensure we place the panel right after the canvas
+                const canvas = root.querySelector('.preview-canvas') as HTMLElement | null;
+
+                let panel = root.querySelector('.preview-run-panel') as HTMLDivElement | null;
+                if (!panel) {
+                    panel = document.createElement('div');
+                    panel.className = 'preview-run-panel';
+                    // Insert after canvas when possible, otherwise append to root
+                    if (canvas && canvas.parentElement === root && canvas.nextSibling) {
+                        root.insertBefore(panel, canvas.nextSibling);
+                    } else {
+                        root.appendChild(panel);
+                    }
+                }
+
+                // Keep width in sync with canvas for alignment
+                try {
+                    const w = (canvas?.getBoundingClientRect().width || 0);
+                    if (w > 0) {
+                        panel.style.width = `${Math.round(w)}px`;
+                    } else {
+                        panel.style.removeProperty('width');
+                    }
+                } catch {}
+
+                // Render command as code in monospace
+                panel.innerHTML = '';
+                const pre = document.createElement('pre');
+                pre.textContent = String(command ?? '');
+                panel.appendChild(pre);
+                panel.style.display = 'block';
+            } catch (e: any) {
+                const msg = `run() failed: ${String(e && e.message ? e.message : e)}`;
+                logToEditor(msg);
+            }
         },
 
         get: (name, prop) => {

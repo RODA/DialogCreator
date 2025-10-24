@@ -20,7 +20,8 @@ function buildUI(canvas: HTMLElement): PreviewUI {
             type,
             message,
             detail
-        )
+        ),
+        openRunPanel: (command: string) => coms.sendTo('main', 'open-runpanel', command)
     };
 
     return createPreviewUI(env);

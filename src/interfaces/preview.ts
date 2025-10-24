@@ -151,6 +151,8 @@ export interface PreviewUIEnv {
     logToEditor: (msg: string) => void;
     // Show an app-level dialog message via main process
     showDialogMessage: (type: 'info' | 'warning' | 'error' | 'question', message: string, detail: string) => void;
+    // Open an external floating run panel near the Preview window
+    openRunPanel?: (command: string) => void;
     // Experimental bridge to services; returns a Promise and optionally invokes a callback
     // call: (service: string, args?: unknown, cb?: (result: unknown) => void) => Promise<unknown>;
 }

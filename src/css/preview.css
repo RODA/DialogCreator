@@ -1,7 +1,8 @@
 html, body {
     margin: 0;
     padding: 0;
-    overflow: hidden;
+    /* Allow the area below the canvas (run panel) to be visible */
+    overflow: auto;
     background: #ffffff;
 }
 
@@ -209,4 +210,20 @@ input:focus, select:focus, textarea:focus {
     -webkit-line-clamp: 2 !important;         /* max 2 lines */
     -webkit-box-orient: vertical !important;  /* vertical flow */
     word-break: break-word !important;        /* break long tokens */
+}
+
+/* Output panel for ui.run(command) */
+.preview-run-panel {
+    margin-top: 8px;
+    border: 1px solid #c9c9c9;
+    background: #f8f9fb;
+    color: #111;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 12px;
+}
+.preview-run-panel pre {
+    margin: 0;
+    white-space: pre-wrap;
 }
