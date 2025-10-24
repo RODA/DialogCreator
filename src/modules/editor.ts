@@ -213,8 +213,7 @@ function showContextMenu(targetId: string, x: number, y: number) {
     contextMenu.style.visibility = 'visible';
     lastContextTargetId = targetId;
 
-    const firstButton = contextMenu.querySelector('button');
-    firstButton?.focus({ preventScroll: true });
+    // Do not auto-focus the first menu item to avoid showing a focus ring
     try {
         const duplicate = contextMenu.querySelector('[data-action="duplicate"]') as HTMLButtonElement | null;
         const group = contextMenu.querySelector('[data-action="group"]') as HTMLButtonElement | null;

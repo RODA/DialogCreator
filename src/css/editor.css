@@ -596,17 +596,18 @@ input {
     width: 100%;
     padding: 6px 12px;
     border: 0;
-    background: transparent;
+    background: #ffffff; /* unhovered state is white */
     text-align: left;
     font: inherit;
     cursor: pointer;
 }
 
-.context-menu__item:hover,
-.context-menu__item:focus {
-    background-color: #ececec;
-    outline: none;
+.context-menu__item:hover {
+    background-color: #ececec; /* hover highlight */
 }
+
+/* Do not show outline on programmatic/mouse focus */
+.context-menu__item:focus { outline: none; }
 
 /* Selection rectangle for multi-select */
 .lasso-rect {
