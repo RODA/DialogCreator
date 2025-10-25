@@ -747,8 +747,11 @@ export const editor: Editor = {
             }
 
             if (properties.fontSize != dialog.properties.fontSize) {
-                // TODO: modify all elements that have font size
-
+                const fsize = utils.asNumeric(properties.fontSize);
+                if (utils.isNumeric(fsize) && fsize > 0) {
+                    coms.fontSize = fsize;
+                    renderutils.updateFont(fsize);
+                }
             }
 
             dialog.properties = properties;
@@ -1361,8 +1364,8 @@ export const editor: Editor = {
                 if (idLower === 'dialogfontsize') {
                     const value = element.value;
                     if (value) {
-                        coms.fontSize = Number(value);
-                        renderutils.updateFont(Number(value));
+                        const dialogprops = renderutils.collectDialogProperties();
+                        editor.updateDialogArea(dialogprops);
                     }
                 }
             });
@@ -1576,6 +1579,12 @@ export const editor: Editor = {
             const dfont = document.getElementById('dialogFontSize') as HTMLInputElement | null;
             if (dfont) dfont.value = String(props.fontSize || '');
 
+            // Sync global typography before recreating elements so their initial sizing matches
+            const pf = Number(props.fontSize);
+            if (Number.isFinite(pf) && pf > 0) {
+                coms.fontSize = pf;
+            }
+
             // Recreate elements
             const arr = Array.isArray(obj.elements) ? obj.elements : [];
             const groups: any[] = [];
@@ -1701,6 +1710,11 @@ export const editor: Editor = {
                     if (gt !== undefined) props.top = String(gt);
                     renderutils.updateElement(groupEl, props);
                 }
+            }
+
+            // Ensure all existing elements reflect the loaded font settings
+            if (Number.isFinite(coms.fontSize) && coms.fontSize > 0) {
+                renderutils.updateFont(coms.fontSize);
             }
         } catch (error) {
             console.error('loadDialogFromJson failed', error);

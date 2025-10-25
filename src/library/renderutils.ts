@@ -2192,13 +2192,31 @@ export const renderutils: RenderUtils = {
 
                 case "Button":
                     // Update the inner button node for precise sizing
-                    renderutils.updateButton(
-                        (inner as HTMLDivElement) || element,
-                        dataset.label || '',
-                        fontSize,
-                        Number(dataset.lineClamp) || 1,
-                        Number(dataset.maxWidth) || 100
-                    );
+                    // Preserve the explicit button width when changing global font size.
+                    // Prefer dataset.width, then inline style width, then current layout width,
+                    // and only lastly fall back to any legacy maxWidth or a safe default.
+                    {
+                        const host = (inner as HTMLDivElement) || element;
+                        const dsWidth = utils.asNumeric(dataset.width);
+                        const styleW = utils.asNumeric(String(element.style.width || '').replace('px', ''));
+                        const rectW = Math.round(host.getBoundingClientRect().width || 0);
+                        const legacyMax = utils.asNumeric(dataset.maxWidth);
+                        const widthPx = (
+                            (utils.isNumeric(dsWidth) && dsWidth > 0) ? dsWidth :
+                            (utils.isNumeric(styleW) && styleW > 0) ? styleW :
+                            (utils.isNumeric(rectW) && rectW > 0) ? rectW :
+                            (utils.isNumeric(legacyMax) && legacyMax > 0) ? legacyMax :
+                            100
+                        );
+
+                        renderutils.updateButton(
+                            host,
+                            dataset.label || '',
+                            fontSize,
+                            Number(dataset.lineClamp) || 1,
+                            widthPx
+                        );
+                    }
                     // Let wrapper height auto-follow content
                     element.style.height = '';
                     break;
