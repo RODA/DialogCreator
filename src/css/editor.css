@@ -9,8 +9,9 @@ body {
     margin: 0;
     padding: 0;
     background-color: #f0f0f0;
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, 'Noto Sans', 'Liberation Sans', sans-serif;
     font-size: 0.9rem;
+    letter-spacing: -0.02em;
 }
 
 .editor-area {
@@ -40,6 +41,24 @@ body {
     border-bottom: 1px solid #FFF;
 }
 
+/* Elements list typography (force) */
+#elementsList,
+#paperAvailableElements {
+    font-size: inherit; /* pick a different size than body’s 0.9rem */
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, 'Noto Sans', 'Liberation Sans', sans-serif;
+}
+
+#paperAvailableElements li,
+#paperAvailableElements li > *,
+#paperAvailableElements button,
+#paperAvailableElements .smart-button,
+#paperAvailableElements .custombutton {
+    font-size: inherit !important;
+    line-height: inherit;
+}
+
 /* Dialog properties ===================== */
 .dialog-section {
     padding: 0px;
@@ -56,6 +75,12 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+/* Force Inter for all elements placed on the canvas */
+#dialog,
+#dialog * {
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, 'Noto Sans', 'Liberation Sans', sans-serif !important;
 }
 
 .dialog-section #dialogProperties {

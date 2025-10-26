@@ -17,6 +17,12 @@ html, body {
     border: none;
 }
 
+/* Force Inter within preview canvas */
+.preview-canvas,
+.preview-canvas * {
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, 'Noto Sans', 'Liberation Sans', sans-serif !important;
+}
+
 .preview-canvas * {
     box-sizing: border-box;
 }

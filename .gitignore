@@ -9,6 +9,7 @@ lerna-debug.log*
 log.txt
 todo.txt
 log-*
+Instructions.Rmd
 
 node_modules
 dist
