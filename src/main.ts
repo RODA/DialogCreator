@@ -612,8 +612,8 @@ const mainMenuTemplate: MenuItemConstructorOptions[] = [
             },
             { type: "separator" as const },
             {
-                label: 'Load dialog',
-                accelerator: "CommandOrControl+O",
+                label: 'Load',
+                accelerator: "CommandOrControl+L",
                 click: async () => {
                     const { canceled, filePaths } = await dialog.showOpenDialog(editorWindow, {
                         title: 'Load dialog',
@@ -637,7 +637,7 @@ const mainMenuTemplate: MenuItemConstructorOptions[] = [
                 }
             },
             {
-                label: 'Save dialog',
+                label: 'Save',
                 accelerator: "CommandOrControl+S",
                 click: async () => {
                     // Ask renderer for JSON
@@ -684,7 +684,7 @@ const mainMenuTemplate: MenuItemConstructorOptions[] = [
                 }
             },
             {
-                label: 'Save dialog As...',
+                label: 'Save as ...',
                 accelerator: 'Shift+CommandOrControl+S',
                 click: async () => {
                     // Ask renderer for JSON
@@ -728,23 +728,6 @@ const mainMenuTemplate: MenuItemConstructorOptions[] = [
                             quitApp();
                         }
                     })();
-                }
-            }
-        ]
-    },
-    {
-        label: 'View',
-        submenu: [
-            {
-                label: 'Reload Styles',
-                accelerator: 'Shift+CommandOrControl+R',
-                click: () => {
-                    try {
-                        // Tell all renderer windows to bust CSS cache and reapply styles
-                        BrowserWindow.getAllWindows().forEach((win) => {
-                            try { win.webContents.send('message-from-main-reload-css'); } catch {}
-                        });
-                    } catch { /* noop */ }
                 }
             }
         ]
