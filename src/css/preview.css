@@ -57,11 +57,6 @@ input:focus, select:focus, textarea:focus {
     box-shadow: 0 0 4px 1px rgba(52, 125, 51, 0.25) !important; /* fuzzy glow */
 }
 
-/* Preview-only: keep disabled elements fully visible but greyed */
-.preview-canvas .disabled-div {
-    opacity: 1 !important; /* prevents fading */
-    filter: grayscale(100%) brightness(0.95) !important; /* neutral grey look */
-}
 
 /* Normalize control sizing so enabled/disabled are identical */
 .preview-canvas input[type="text"],
@@ -116,24 +111,20 @@ input:focus, select:focus, textarea:focus {
     user-select: none;
 }
 
-/* Ensure native disabled controls remain readable and sized the same */
+/* Ensure native disabled controls match the disabled-div styling */
 .preview-canvas input:disabled,
 .preview-canvas select:disabled,
 .preview-canvas textarea:disabled {
-    opacity: 1 !important;
     color: #444 !important;
     -webkit-text-fill-color: #444 !important;     /* Safari/WebKit */
-    background-color: #f7f7f7 !important;
-    border: 1px solid #bbb !important;            /* normalize border */
-    border-radius: 0 !important;                    /* remove rounded bevels */
-    box-shadow: none !important;                    /* kill inset/outer shadows */
-    outline: none !important;                       /* no focus outline on disabled */
-    appearance: none !important;                    /* remove platform-specific styling */
+    background-color: #ececec !important;
+    border: 1px solid #686868 !important;            /* match editor */
+    box-shadow: none !important;                  /* match editor */
+    appearance: none !important;                  /* keep platform-neutral look */
     -webkit-appearance: none !important;
-    background-clip: padding-box !important;        /* prevent background under border */
-    filter: grayscale(100%) !important;
-    padding: 3px 5px !important;                    /* keep same vertical box */
-    height: 22px !important;                        /* exact same height */
+    background-clip: padding-box !important;      /* prevent background under border */
+    padding: 3px 5px !important;                  /* keep same vertical box */
+    height: 22px !important;                      /* exact same height */
 }
 
 /* Ensure radios/checkboxes in Preview don't show the grab cursor from editor.css */

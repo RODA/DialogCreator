@@ -408,6 +408,17 @@ input[type="text"] {
     border-radius: 4px;      /* rounded corners same as Preview */
 }
 
+/* Disabled native controls on the canvas should look subtly greyed */
+#dialog input:disabled,
+#dialog select:disabled,
+#dialog textarea:disabled {
+    background-color: #ececec;
+    border: 1px solid #686868;
+    color: #444;
+    -webkit-text-fill-color: #444; /* Safari/WebKit */
+    box-shadow: none;
+}
+
 input {
     text-overflow: ellipsis;
     overflow: hidden;
