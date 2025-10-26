@@ -1,6 +1,6 @@
 // Setting ENVIRONMENT
-// process.env.NODE_ENV = 'development';
-process.env.NODE_ENV = 'production';
+process.env.NODE_ENV = 'development';
+// process.env.NODE_ENV = 'production';
 
 const production = process.env.NODE_ENV === 'production';
 const development = process.env.NODE_ENV === 'development';
@@ -194,6 +194,32 @@ function createSecondWindow(args: { [key: string]: any }) {
     });
 
     windowid.secondWindow = secondWindow.id;
+}
+
+// Create a simple About window
+function createAboutWindow() {
+    try {
+        const aboutWin = new BrowserWindow({
+            width: 420,
+            height: 360,
+            useContentSize: true,
+            resizable: false,
+            minimizable: false,
+            maximizable: false,
+            autoHideMenuBar: true,
+            parent: editorWindow,
+            title: 'About Dialog Creator',
+            webPreferences: {
+                // No Node APIs needed; static page only
+                contextIsolation: true,
+                sandbox: false
+            }
+        });
+
+        aboutWin.loadFile(path.join(__dirname, "../src/pages", "about.html"));
+    } catch {
+        // ignore
+    }
 }
 
 function setupIPC() {
@@ -528,7 +554,29 @@ async function confirmQuitIfDirty(): Promise<boolean> {
 
 const mainMenuTemplate: MenuItemConstructorOptions[] = [
     {
-        label: 'Dialog Creator'
+        label: 'Dialog Creator',
+        submenu:[
+            {
+                label: 'About',
+                click: () => {
+                    createAboutWindow();
+                }
+            },
+            {
+                label: 'Quit',
+                accelerator: 'CommandOrControl+Q',
+                click: () => {
+                    // Respect dirty state before quitting via menu/accelerator
+                    (async () => {
+                        const ok = await confirmQuitIfDirty();
+                        if (ok) {
+                            quittingInProgress = true;
+                            quitApp();
+                        }
+                    })();
+                }
+            }
+        ]
     },
     {
         label: 'File',
@@ -583,6 +631,8 @@ const mainMenuTemplate: MenuItemConstructorOptions[] = [
                         }
                         // Clear dialog: select all + remove
                         editorWindow.webContents.send('newDialogClear');
+                        // Reset dialog basic properties for a fresh new dialog (Name, Title)
+                        editorWindow.webContents.send('reset-dialog-properties', { name: 'NewDialog', title: 'New dialog' });
                         // Reset state for the new unsaved dialog
                         setCurrentDialogPath(null);
                         // Next renderer JSON becomes the clean baseline
@@ -714,21 +764,6 @@ const mainMenuTemplate: MenuItemConstructorOptions[] = [
                     };
                     ipcMain.on('send-to', onSendTo);
                 }
-            },
-            { type: 'separator' },
-            {
-                label: 'Quit',
-                accelerator: 'CommandOrControl+Q',
-                click: () => {
-                    // Respect dirty state before quitting via menu/accelerator
-                    (async () => {
-                        const ok = await confirmQuitIfDirty();
-                        if (ok) {
-                            quittingInProgress = true;
-                            quitApp();
-                        }
-                    })();
-                }
             }
         ]
     },
@@ -747,12 +782,6 @@ const mainMenuTemplate: MenuItemConstructorOptions[] = [
     {
         label: 'Info',
         submenu:[
-            {
-                label: 'About',
-                click() {
-                    // createAboutWindow();
-                }
-            },
             {
                 label: 'User manual',
                 click() {
