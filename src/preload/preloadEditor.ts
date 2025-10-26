@@ -373,6 +373,15 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
     } catch { /* noop */ }
 
+    // Also track dialog-level property edits (Name, Title, Width, Height, Font size)
+    try {
+        const props = document.querySelectorAll<HTMLInputElement>('#dialog-properties [id^="dialog"]');
+        props.forEach(input => {
+            input.addEventListener('blur', () => scheduleJsonUpdate());
+            input.addEventListener('change', () => scheduleJsonUpdate());
+        });
+    } catch { /* noop */ }
+
     // Syntax window removed
 
     // Add Actions button if present

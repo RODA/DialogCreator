@@ -1360,13 +1360,16 @@ export const editor: Editor = {
                             Number(dialog.properties.height)
                         );
                     }
-                }
-                if (idLower === 'dialogfontsize') {
+                } else if (idLower === 'dialogfontsize') {
                     const value = element.value;
                     if (value) {
                         const dialogprops = renderutils.collectDialogProperties();
                         editor.updateDialogArea(dialogprops);
                     }
+                } else if (idLower === 'dialogname' || idLower === 'dialogtitle') {
+                    // Update name/title into dialog properties as well
+                    const dialogprops = renderutils.collectDialogProperties();
+                    editor.updateDialogArea(dialogprops);
                 }
             });
         }
