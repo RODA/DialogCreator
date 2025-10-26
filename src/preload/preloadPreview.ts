@@ -566,6 +566,20 @@ function renderPreview(dialog: PreviewDialog) {
     } catch {}
 }
 
+// Hot-reload linked CSS stylesheets in the Preview window
+coms.on('reload-css', () => {
+    try {
+        const links = Array.from(document.querySelectorAll('link[rel="stylesheet"]')) as HTMLLinkElement[];
+        const ts = Date.now();
+        links.forEach((link) => {
+            try {
+                const base = link.href.split('?')[0];
+                link.href = `${base}?v=${ts}`;
+            } catch { /* ignore per-link errors */ }
+        });
+    } catch { /* ignore */ }
+});
+
 
 // Render a snapshot of the dialog using the exact same element factory as the editor
 window.addEventListener("DOMContentLoaded", () => {

@@ -770,6 +770,20 @@ window.addEventListener("DOMContentLoaded", async () => {
     });
 });
 
+// Hot-reload linked CSS stylesheets without reloading the window
+coms.on('reload-css', () => {
+    try {
+        const links = Array.from(document.querySelectorAll('link[rel="stylesheet"]')) as HTMLLinkElement[];
+        const ts = Date.now();
+        links.forEach((link) => {
+            try {
+                const base = link.href.split('?')[0];
+                link.href = `${base}?v=${ts}`;
+            } catch { /* ignore per-link errors */ }
+        });
+    } catch { /* ignore */ }
+});
+
 
 
 
