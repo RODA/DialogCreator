@@ -1519,6 +1519,8 @@ export const editor: Editor = {
         // Open a dedicated preview window via the main process
         const width = Math.max(Number(dialog.properties.width) || 640, 200);
         const height = Math.max(Number(dialog.properties.height) || 480, 200);
+        // Use custom dialog title when available
+        const winTitle = String(dialog.properties.title || dialog.properties.name || 'Preview');
         coms.sendTo(
             'main',
             'secondWindow',
@@ -1528,7 +1530,7 @@ export const editor: Editor = {
                 useContentSize: true,
                 autoHideMenuBar: true,
                 backgroundColor: '#ffffff',
-                title: 'Preview',
+                title: winTitle,
                 preload: 'preloadPreview.js',
                 html: 'preview.html',
                 data: json

@@ -171,6 +171,8 @@ export interface PreviewScriptExports {
 export interface PreviewDialog {
     id: string;
     properties: {
+        name?: string | number;
+        title?: string | number;
         width: string | number;
         height: string | number;
         background?: string;

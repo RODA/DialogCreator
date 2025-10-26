@@ -373,28 +373,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
     } catch { /* noop */ }
 
-    // Enable Syntax button and wire it
-    const syntaxBtn = document.getElementById('dialog-syntax') as HTMLButtonElement | null;
-    if (syntaxBtn) {
-        syntaxBtn.disabled = false;
-        syntaxBtn.addEventListener('click', () => {
-            const json = editor.stringifyDialog();
-            const screenW = Number(window.innerWidth) || 1024;
-            const width = Math.max(560, Math.round(screenW * 0.66)); // ~1/3 narrower than editor
-            const height = 480; // reduce height a bit as well
-            coms.sendTo('main', 'secondWindow', {
-                width,
-                height,
-                useContentSize: true,
-                autoHideMenuBar: true,
-                backgroundColor: '#ffffff',
-                title: 'Syntax',
-                preload: 'preloadSyntax.js',
-                html: 'syntax.html',
-                data: json
-            });
-        });
-    }
+    // Syntax window removed
 
     // Add Actions button if present
     const codeBtn = document.getElementById('dialog-code') as HTMLButtonElement | null;
@@ -478,14 +457,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         setTimeout(() => { try { scheduleJsonUpdate(); } catch {} }, 300);
     });
 
-    // Persist syntax text coming from Syntax window
-    coms.on('setDialogSyntaxText', (text: unknown) => {
-        const t = typeof text === 'string' ? text : '';
-        dialog.syntax = dialog.syntax || { command: '' };
-        dialog.syntax.command = t;
-        // reflect in dirty state
-        try { scheduleJsonUpdate(); } catch {}
-    });
+    // Syntax window removed; no-op handler
 
     // Persist custom JS text coming from Code window
     coms.on('setDialogCustomJS', (text: unknown) => {

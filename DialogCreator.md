@@ -456,11 +456,9 @@ onChange(container1, () => setValue(
 
 Multi-selection containers support range selection: click an item, then Shift-click another to select or deselect the entire range. Single containers toggle a single active row.
 
-## Syntax window
+## Commands
 
-- Opens from the File menu (Syntax) or via the dedicated button when enabled.
-- Shows an Elements table; clicking a row inserts a token like {name} into the textarea for building commands.
-- Text persists within the session; use Save & Close to send the text back to the editor.
+- Command construction lives entirely in the Actions (Code) window via custom JS.
 
 ## File menu actions
 
@@ -507,6 +505,7 @@ Behavior:
 
 - Width and Height take effect when the field loses focus (after editing it, click elsewhere or press Enter to blur).
 - Font size updates the typography of supported elements across the dialog.
+- Preview window title uses the dialog Title when set (falls back to Name, then "Preview").
 
 ## Element types and key properties
 

@@ -37,6 +37,14 @@ function renderPreview(dialog: PreviewDialog) {
     const height = Number(dialog.properties.height) || 480;
     const background = dialog.properties.background || "#ffffff";
 
+    // Reflect dialog title in the window/document title for user clarity
+    try {
+        const title = String((dialog as any)?.properties?.title || (dialog as any)?.properties?.name || 'Preview');
+        if (title && typeof title === 'string') {
+            document.title = title;
+        }
+    } catch { /* no-op */ }
+
     const canvas = document.createElement("div");
     canvas.className = "preview-canvas";
     canvas.style.width = width + "px";
