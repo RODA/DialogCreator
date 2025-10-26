@@ -661,6 +661,24 @@ window.addEventListener("DOMContentLoaded", async () => {
         }
     });
 
+    // Reset dialog basic properties to defaults (Name, Title) on New
+    ipcRenderer.on('reset-dialog-properties', (_ev, data: { name?: string; title?: string } = {}) => {
+        try {
+            const dname = document.getElementById('dialogName') as HTMLInputElement | null;
+            const dtitle = document.getElementById('dialogTitle') as HTMLInputElement | null;
+            if (dname) {
+                dname.value = String(data.name ?? 'NewDialog');
+                dname.dispatchEvent(new Event('change', { bubbles: true }));
+                dname.dispatchEvent(new Event('blur', { bubbles: true }));
+            }
+            if (dtitle) {
+                dtitle.value = String(data.title ?? 'New dialog');
+                dtitle.dispatchEvent(new Event('change', { bubbles: true }));
+                dtitle.dispatchEvent(new Event('blur', { bubbles: true }));
+            }
+        } catch { /* noop */ }
+    });
+
     // Conditions window removed; no-op
 
     coms.on("propertiesFromDB", (...args: unknown[]) => {
