@@ -28,7 +28,8 @@
     "appId": "DialogCreator.tool",
     "productName": "DialogCreator",
     "directories": {
-      "output": "build/output"
+      "output": "build/output",
+      "buildResources": "icons"
     },
     "extraResources": [
       {
@@ -45,7 +46,7 @@
       }
     ],
     "win": {
-      "icon": "build/DialogCreator.ico",
+      "icon": "icons/icon.ico",
       "legalTrademarks": "MIT Licence",
       "target": {
         "target": "nsis",
@@ -55,6 +56,7 @@
       }
     },
     "mac": {
+      "icon": "icons/icon.icns",
       "category": "public.app-category.productivity",
       "target": {
         "target": "dmg",

@@ -47,7 +47,8 @@ function createMainWindow() {
         height: 800,
         minWidth: 1200,
         minHeight: 800,
-        center: true
+        center: true,
+        icon: path.join(__dirname, 'icons', 'icon.png')
     });
 
     // Ensure initial title formatting on all platforms
@@ -527,6 +528,9 @@ async function confirmQuitIfDirty(): Promise<boolean> {
 
 const mainMenuTemplate: MenuItemConstructorOptions[] = [
     {
+        label: 'Dialog Creator'
+    },
+    {
         label: 'File',
         submenu:[
             {
@@ -724,6 +728,23 @@ const mainMenuTemplate: MenuItemConstructorOptions[] = [
                             quitApp();
                         }
                     })();
+                }
+            }
+        ]
+    },
+    {
+        label: 'View',
+        submenu: [
+            {
+                label: 'Reload Styles',
+                accelerator: 'Shift+CommandOrControl+R',
+                click: () => {
+                    try {
+                        // Tell all renderer windows to bust CSS cache and reapply styles
+                        BrowserWindow.getAllWindows().forEach((win) => {
+                            try { win.webContents.send('message-from-main-reload-css'); } catch {}
+                        });
+                    } catch { /* noop */ }
                 }
             }
         ]

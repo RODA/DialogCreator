@@ -794,7 +794,7 @@ export const renderutils: RenderUtils = {
             ) as { [key: string]: string };
             renderutils.updateHandleStyle(handle, handleConfig);
 
-    } else if (data.type == "Label") {
+        } else if (data.type == "Label") {
 
             // Initial label setup: single span-like behavior within the core node
             element.textContent = data.value || '';
