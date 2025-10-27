@@ -22,11 +22,11 @@
   "homepage": "https://github.com/RODA/DialogCreator#readme",
   "keywords": [
     "Electron",
-    "DialogCreator"
+    "Dialog Creator"
   ],
   "build": {
     "appId": "DialogCreator.tool",
-    "productName": "DialogCreator",
+    "productName": "Dialog Creator",
     "directories": {
       "output": "build/output",
       "buildResources": "icons"

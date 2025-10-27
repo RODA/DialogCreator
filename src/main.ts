@@ -1,10 +1,12 @@
 // Setting ENVIRONMENT
-process.env.NODE_ENV = 'development';
-// process.env.NODE_ENV = 'production';
+// process.env.NODE_ENV = 'development';
+process.env.NODE_ENV = 'production';
 
 const production = process.env.NODE_ENV === 'production';
 const development = process.env.NODE_ENV === 'development';
 const OS_Windows = process.platform == 'win32';
+const OS_Linux = process.platform == 'linux';
+const OS_Mac = process.platform == 'darwin';
 
 import { app, BrowserWindow, dialog, ipcMain, Menu } from "electron";
 import { utils } from "./library/utils";
@@ -57,8 +59,8 @@ function createMainWindow() {
     // and load the index.html of the app.
     editorWindow.loadFile(path.join(__dirname, "../src/pages/editor.html"));
 
-    // // Set the application menu
-    const mainMenu = Menu.buildFromTemplate(mainMenuTemplate);
+    // Build and set the application menu dynamically per platform (macOS vs Windows/Linux)
+    const mainMenu = Menu.buildFromTemplate(buildMainMenuTemplate());
     Menu.setApplicationMenu(mainMenu);
 
     // Open the DevTools.
@@ -552,39 +554,12 @@ async function confirmQuitIfDirty(): Promise<boolean> {
     }
 }
 
-const mainMenuTemplate: MenuItemConstructorOptions[] = [
-    {
-        label: 'Dialog Creator',
-        submenu:[
-            {
-                label: 'About',
-                click: () => {
-                    createAboutWindow();
-                }
-            },
-            {
-                label: 'Quit',
-                accelerator: 'CommandOrControl+Q',
-                click: () => {
-                    // Respect dirty state before quitting via menu/accelerator
-                    (async () => {
-                        const ok = await confirmQuitIfDirty();
-                        if (ok) {
-                            quittingInProgress = true;
-                            quitApp();
-                        }
-                    })();
-                }
-            }
-        ]
-    },
-    {
-        label: 'File',
-        submenu:[
-            {
-                label: 'New',
-                accelerator: "CommandOrControl+N",
-                click: async () => {
+function buildMainMenuTemplate(): MenuItemConstructorOptions[] {
+    const fileSubmenu: MenuItemConstructorOptions[] = [
+        { // New
+            label: 'New',
+            accelerator: 'CommandOrControl+N',
+            click: async () => {
                     // Request current JSON from renderer
                     editorWindow.webContents.send('request-dialog-json');
 
@@ -646,128 +621,124 @@ const mainMenuTemplate: MenuItemConstructorOptions[] = [
                         }
                     };
                     ipcMain.on('send-to', onSendTo);
-                }
-            },
-            {
-                label: 'Preview',
-                accelerator: "CommandOrControl+P",
-                click: () => {
-                    editorWindow.webContents.send('previewDialog');
-                    ipcMain.once('containerData', (event, arg) => {
-                        if (utils.isTrue(arg)) {
-                            // createObjectsWindow(arg);
-                        }
-                    });
-                }
-            },
-            { type: "separator" as const },
-            {
-                label: 'Load',
-                accelerator: "CommandOrControl+L",
-                click: async () => {
-                    const { canceled, filePaths } = await dialog.showOpenDialog(editorWindow, {
-                        title: 'Load dialog',
-                        filters: [{ name: 'Dialog JSON', extensions: ['json'] }],
-                        properties: ['openFile']
-                    });
-                    if (canceled || !filePaths || filePaths.length === 0) return;
-                    try {
-                        const fs = require('fs');
-                        const content = fs.readFileSync(filePaths[0], 'utf-8');
-                        editorWindow.webContents.send('load-dialog-json', content);
-                        // Ask the next JSON snapshot to be treated as canonical
-                        pendingCanonicalUpdate = true;
-                        dialogModified = false;
-                        // Remember the loaded file path so Cmd+S overwrites it and reflect in title
-                        setCurrentDialogPath(filePaths[0]);
-                        updateWindowTitle();
-                    } catch (e: any) {
-                        dialog.showErrorBox('Load failed', String((e && e.message) ? e.message : e));
+            }
+        },
+        { // Preview
+            label: 'Preview',
+            accelerator: 'CommandOrControl+P',
+            click: () => {
+                editorWindow.webContents.send('previewDialog');
+                ipcMain.once('containerData', (event, arg) => {
+                    if (utils.isTrue(arg)) {
+                        // createObjectsWindow(arg);
                     }
-                }
-            },
-            {
-                label: 'Save',
-                accelerator: "CommandOrControl+S",
-                click: async () => {
-                    // Ask renderer for JSON
-                    editorWindow.webContents.send('request-dialog-json');
-                    const onJson = async (_ev: any, json: string) => {
-                        ipcMain.removeListener('send-to', onSendTo);
-                        try {
-                            const fs = require('fs');
-                            const data = json || '';
-                            if (currentFilePath && currentFilePath.length > 0) {
-                                // Overwrite the current file without prompting
-                                fs.writeFileSync(currentFilePath, data, 'utf-8');
-                                lastSavedJson = data;
-                                dialogModified = false;
-                                updateWindowTitle();
-                                return;
-                            }
-                            // No known path: fall back to Save As...
-                            const { canceled, filePath } = await dialog.showSaveDialog(editorWindow, {
-                                title: 'Save dialog',
-                                filters: [{ name: 'Dialog JSON', extensions: ['json'] }],
-                                defaultPath: 'dialog.json'
-                            });
-
-                            if (canceled || !filePath) return;
-
-                            fs.writeFileSync(filePath, data, 'utf-8');
-                            lastSavedJson = data;
-                            setCurrentDialogPath(filePath);
-
-                            dialogModified = false;
-                            updateWindowTitle();
-
-                        } catch (e: any) {
-                            dialog.showErrorBox('Save failed', String((e && e.message) ? e.message : e));
-                        }
-                    };
-                    const onSendTo = (_event: any, window: string, channel: string, ...args: any[]) => {
-                        if (window === 'main' && channel === 'dialog-json') {
-                            onJson(null, args[0] as string);
-                        }
-                    };
-                    ipcMain.on('send-to', onSendTo);
-                }
-            },
-            {
-                label: 'Save as ...',
-                accelerator: 'Shift+CommandOrControl+S',
-                click: async () => {
-                    // Ask renderer for JSON
-                    editorWindow.webContents.send('request-dialog-json');
-                    const onJson = async (_ev: any, json: string) => {
-                        ipcMain.removeListener('send-to', onSendTo);
-                        try {
-                            const fs = require('fs');
-                            const data = json || '';
-                            const { canceled, filePath } = await dialog.showSaveDialog(editorWindow, {
-                                title: 'Save dialog As...',
-                                filters: [{ name: 'Dialog JSON', extensions: ['json'] }],
-                                defaultPath: currentFilePath || 'dialog.json'
-                            });
-                            if (canceled || !filePath) return;
-                            fs.writeFileSync(filePath, data, 'utf-8');
-                            lastSavedJson = data;
-                            setCurrentDialogPath(filePath);
-                        } catch (e: any) {
-                            dialog.showErrorBox('Save failed', String((e && e.message) ? e.message : e));
-                        }
-                    };
-                    const onSendTo = (_event: any, window: string, channel: string, ...args: any[]) => {
-                        if (window === 'main' && channel === 'dialog-json') {
-                            onJson(null, args[0] as string);
-                        }
-                    };
-                    ipcMain.on('send-to', onSendTo);
+                });
+            }
+        },
+        { type: 'separator' },
+        { // Load
+            label: 'Load',
+            accelerator: 'CommandOrControl+L',
+            click: async () => {
+                const { canceled, filePaths } = await dialog.showOpenDialog(editorWindow, {
+                    title: 'Load dialog',
+                    filters: [{ name: 'Dialog JSON', extensions: ['json'] }],
+                    properties: ['openFile']
+                });
+                if (canceled || !filePaths || filePaths.length === 0) return;
+                try {
+                    const fs = require('fs');
+                    const content = fs.readFileSync(filePaths[0], 'utf-8');
+                    editorWindow.webContents.send('load-dialog-json', content);
+                    pendingCanonicalUpdate = true;
+                    dialogModified = false;
+                    setCurrentDialogPath(filePaths[0]);
+                    updateWindowTitle();
+                } catch (e: any) {
+                    dialog.showErrorBox('Load failed', String((e && e.message) ? e.message : e));
                 }
             }
-        ]
-    },
-    {
+        },
+        { // Save
+            label: 'Save',
+            accelerator: 'CommandOrControl+S',
+            click: async () => {
+                editorWindow.webContents.send('request-dialog-json');
+                const onJson = async (_ev: any, json: string) => {
+                    ipcMain.removeListener('send-to', onSendTo);
+                    try {
+                        const fs = require('fs');
+                        const data = json || '';
+                        if (currentFilePath && currentFilePath.length > 0) {
+                            fs.writeFileSync(currentFilePath, data, 'utf-8');
+                            lastSavedJson = data;
+                            dialogModified = false;
+                            updateWindowTitle();
+                            return;
+                        }
+                        const { canceled, filePath } = await dialog.showSaveDialog(editorWindow, {
+                            title: 'Save dialog',
+                            filters: [{ name: 'Dialog JSON', extensions: ['json'] }],
+                            defaultPath: 'dialog.json'
+                        });
+                        if (canceled || !filePath) return;
+                        fs.writeFileSync(filePath, data, 'utf-8');
+                        lastSavedJson = data;
+                        setCurrentDialogPath(filePath);
+                        dialogModified = false;
+                        updateWindowTitle();
+                    } catch (e: any) {
+                        dialog.showErrorBox('Save failed', String((e && e.message) ? e.message : e));
+                    }
+                };
+                const onSendTo = (_event: any, window: string, channel: string, ...args: any[]) => {
+                    if (window === 'main' && channel === 'dialog-json') {
+                        onJson(null, args[0] as string);
+                    }
+                };
+                ipcMain.on('send-to', onSendTo);
+            }
+        },
+        { // Save as
+            label: 'Save as ...',
+            accelerator: 'Shift+CommandOrControl+S',
+            click: async () => {
+                editorWindow.webContents.send('request-dialog-json');
+                const onJson = async (_ev: any, json: string) => {
+                    ipcMain.removeListener('send-to', onSendTo);
+                    try {
+                        const fs = require('fs');
+                        const data = json || '';
+                        const { canceled, filePath } = await dialog.showSaveDialog(editorWindow, {
+                            title: 'Save dialog As...',
+                            filters: [{ name: 'Dialog JSON', extensions: ['json'] }],
+                            defaultPath: currentFilePath || 'dialog.json'
+                        });
+                        if (canceled || !filePath) return;
+                        fs.writeFileSync(filePath, data, 'utf-8');
+                        lastSavedJson = data;
+                        setCurrentDialogPath(filePath);
+                    } catch (e: any) {
+                        dialog.showErrorBox('Save failed', String((e && e.message) ? e.message : e));
+                    }
+                };
+                const onSendTo = (_event: any, window: string, channel: string, ...args: any[]) => {
+                    if (window === 'main' && channel === 'dialog-json') {
+                        onJson(null, args[0] as string);
+                    }
+                };
+                ipcMain.on('send-to', onSendTo);
+            }
+        }
+    ];
+
+    // Add Exit on non-mac platforms
+    if (!OS_Mac) {
+        fileSubmenu.push({ type: 'separator' });
+        fileSubmenu.push({ role: 'quit', label: 'Exit' });
+    }
+
+    const editMenu: MenuItemConstructorOptions = {
         label: 'Edit',
         submenu: [
             { role: 'undo' },
@@ -778,16 +749,45 @@ const mainMenuTemplate: MenuItemConstructorOptions[] = [
             { role: 'paste' },
             { role: 'selectAll' }
         ]
-    },
-    {
+    };
+
+    const infoMenu: MenuItemConstructorOptions = {
         label: 'Info',
-        submenu:[
+        submenu: [
             {
                 label: 'User manual',
                 click() {
                     // createUserManualWindow();
                 }
-            }
+            },
+            // Put About here on non-mac platforms
+            ...(!OS_Mac ? [{ label: 'About', click: () => createAboutWindow() }] : [])
         ]
-    },
-];
+    };
+
+    const template: MenuItemConstructorOptions[] = [];
+
+    if (OS_Mac) {
+        // macOS app menu (first menu)
+        template.push({
+            label: app.name,
+            submenu: [
+                { label: 'About', click: () => createAboutWindow() },
+                { type: 'separator' },
+                { role: 'services' },
+                { type: 'separator' },
+                { role: 'hide' },
+                { role: 'hideOthers' },
+                { role: 'unhide' },
+                { type: 'separator' },
+                { role: 'quit' }
+            ]
+        });
+    }
+
+    template.push({ label: 'File', submenu: fileSubmenu });
+    template.push(editMenu);
+    template.push(infoMenu);
+
+    return template;
+}
