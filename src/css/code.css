@@ -74,3 +74,21 @@ html, body {
     font-size: 12px;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
+
+/* Ensure the code editor uses a true monospace font and disables programming ligatures
+   so sequences like =>, >=, -> are shown literally and not rendered as single glyphs. */
+.cm-editor,
+.cm-editor .cm-scroller,
+.cm-editor .cm-content {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+    font-variant-ligatures: none !important;
+    -webkit-font-feature-settings: "liga" 0, "calt" 0, "clig" 0;
+    font-feature-settings: "liga" 0, "calt" 0, "clig" 0;
+}
+
+/* Also apply to the textarea fallback to keep behavior consistent */
+#codeText {
+    font-variant-ligatures: none;
+    -webkit-font-feature-settings: "liga" 0, "calt" 0, "clig" 0;
+    font-feature-settings: "liga" 0, "calt" 0, "clig" 0;
+}
