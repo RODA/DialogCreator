@@ -1,7 +1,25 @@
-type Datasets = Record<string, string[]>;
+type DatasetVariable = {
+    text: string;
+    type: string;
+};
+
+type Datasets = Record<string, DatasetVariable[]>;
 
 export const datasets: Datasets = {
-    LR: ["DEV","URB","LIT","IND","STB","SURV"],
-    LR2: ["DEV2","URB2","LIT2","IND2","STB2","SURV2"]
-}
-
+    LR: [
+        { text: "DEV", type: "numeric" },
+        { text: "URB", type: "numeric" },
+        { text: "LIT", type: "character" },
+        { text: "IND", type: "factor" },
+        { text: "STB", type: "binary" },
+        { text: "SURV", type: "date" }
+    ],
+    LR2: [
+        { text: "DEV2", type: "numeric" },
+        { text: "URB2", type: "numeric" },
+        { text: "LIT2", type: "character" },
+        { text: "IND2", type: "factor" },
+        { text: "STB2", type: "binary" },
+        { text: "SURV2", type: "calibrated" }
+    ]
+};

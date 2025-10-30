@@ -1,6 +1,12 @@
 import type { Dialog } from './dialog';
 import { StringNumber } from './elements';
 
+export interface ContainerItemDescriptor {
+    text: string;
+    type?: string;
+    active?: boolean;
+}
+
 export interface PreviewUI {
     /** Log helper (forwards to editor console) */
     log(...args: unknown[]): void;
@@ -38,7 +44,7 @@ export interface PreviewUI {
     // Sets value or items depending on element type and value type.
     // - If value is an array: for Select/Container, sets items/options/rows
     // - If scalar: sets value for Input/Label/Select/Counter; boolean for Checkbox/Radio
-    setValue(name: string, value: unknown | string[]): void;
+    setValue(name: string, value: unknown | string[] | ContainerItemDescriptor[]): void;
 
     // Selected values:
     // - Container: array of selected row labels
@@ -78,7 +84,7 @@ export interface PreviewUI {
     /** Return list of available dataset names from the connected workspace */
     listDatasets(): string[];
     /** Return list of variables specific to a dataset */
-    listVariables(dataset: string): string[];
+    listVariables(dataset: string | string[]): Array<string | ContainerItemDescriptor>;
 
     /** Register an event handler on the wrapper */
     on(name: string, event: string, handler: (ev: Event, el: HTMLElement) => void): void;
@@ -104,7 +110,7 @@ export interface PreviewUI {
     select(name: string, value: string): void;
 
     /** Add a new item to a Container (does nothing for Select). */
-    addValue(name: string, value: string): void;
+    addValue(name: string, value: string | ContainerItemDescriptor): void;
 
     /** Clear an item from a Container by its label (does nothing for Select). */
     clearValue(name: string, value: string): void;

@@ -26,6 +26,112 @@ const error_tippy: ErrorTippy = {};
 const auto_highlight = new Set<string>();
 const highlight_targets = new Map<string, Set<HTMLElement>>();
 const enhancedButtons = new WeakSet<HTMLButtonElement>();
+const KNOWN_CONTAINER_ITEM_TYPES = new Set<string>([
+    'numeric',
+    'calibrated',
+    'binary',
+    'character',
+    'factor',
+    'date'
+]);
+
+const previewWindow = (): boolean => {
+    try {
+        const loc = window.location.pathname.toLowerCase();
+        if (loc.includes('preview.html')) return true;
+        if (document.body && document.body.dataset.view === 'preview') return true;
+        // Fallback: editor has an element with id 'dialog-properties'; preview should not
+        return !document.getElementById('dialog-properties');
+    } catch {
+        return false;
+    }
+};
+
+const normalizeContainerItemType = (value: unknown): string => {
+    const raw = String(value ?? '').trim().toLowerCase();
+    if (!raw) return '';
+    if (raw === 'any') return 'any';
+    if (KNOWN_CONTAINER_ITEM_TYPES.has(raw)) {
+        return raw;
+    }
+    return raw;
+};
+
+const resolveContainerItemType = (value: unknown): string => {
+    const normalized = normalizeContainerItemType(value);
+    if (!normalized || normalized === 'any') {
+        return 'any';
+    }
+    if (!KNOWN_CONTAINER_ITEM_TYPES.has(normalized)) {
+        return 'any';
+    }
+    return normalized;
+};
+
+const applyContainerItemFilter = (host: HTMLElement | null) => {
+    if (!(host instanceof HTMLElement)) {
+        return;
+    }
+
+    // Skip visual filtering in the editor: the design surface only shows sample rows.
+    if (!previewWindow()) {
+        return;
+    }
+
+    const allowed = resolveContainerItemType(host.dataset.itemType);
+    const allowAll = allowed === 'any';
+    const items = Array.from(host.querySelectorAll<HTMLElement>('.container-item'));
+    const normalBg = host.dataset.backgroundColor || '#ffffff';
+    const normalFg = host.dataset.fontColor || '#000000';
+    const activeBg = host.dataset.activeBackgroundColor || '#779B49';
+    const activeFg = host.dataset.activeFontColor || '#ffffff';
+    let selectionChanged = false;
+
+    items.forEach((item) => {
+        const rawItemType = item.dataset.itemType || item.dataset.valueType || '';
+        const itemType = normalizeContainerItemType(rawItemType);
+        const hasExplicitType = Boolean(rawItemType);
+        const blocked = !allowAll && hasExplicitType && itemType !== allowed;
+        const label = item.querySelector('.container-text') as HTMLElement | null;
+
+        if (blocked) {
+            item.classList.add('container-item-disabled');
+            item.dataset.disabled = 'true';
+            item.setAttribute('aria-disabled', 'true');
+            if (item.classList.contains('active')) {
+                item.classList.remove('active');
+                selectionChanged = true;
+            }
+            item.style.backgroundColor = normalBg;
+            if (label) {
+                label.style.color = normalFg;
+            }
+        } else {
+            item.classList.remove('container-item-disabled');
+            if (item.dataset.disabled) {
+                delete item.dataset.disabled;
+            }
+            item.removeAttribute('aria-disabled');
+            const isActive = item.classList.contains('active');
+            item.style.backgroundColor = isActive ? activeBg : normalBg;
+            if (label) {
+                label.style.color = isActive ? activeFg : normalFg;
+            }
+        }
+    });
+
+    if (selectionChanged) {
+        const activeItems = items
+            .filter(node => node.classList.contains('active'))
+            .map(node => (node.querySelector('.container-text') as HTMLElement | null)?.textContent || '')
+            .map(text => text.trim())
+            .filter(Boolean);
+        const joined = activeItems.join(',');
+        host.dataset.selected = joined;
+        host.dataset.activeValues = joined;
+        host.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+};
 
 const CSS_ESCAPE = (value: string) => {
     if (typeof CSS !== 'undefined' && CSS.escape) {
@@ -248,18 +354,7 @@ export const errorhelpers = errorutils;
 
 export const renderutils: RenderUtils = {
     // Determine if current window/context is the Preview window
-    // Heuristic: pathname or body data attribute; fallback to checking for preview-specific element
-    previewWindow: function() {
-        try {
-            const loc = window.location.pathname.toLowerCase();
-            if (loc.includes('preview.html')) return true;
-            if (document.body && document.body.dataset.view === 'preview') return true;
-            // Fallback: editor has an element with id 'dialog-properties'; preview should not
-            return !document.getElementById('dialog-properties');
-        } catch {
-            return false;
-        }
-    },
+    previewWindow,
 
     unselectRadioGroup: function(element) {
         const group = element?.getAttribute?.('group') || '';
@@ -846,6 +941,7 @@ export const renderutils: RenderUtils = {
             element.dataset.borderColor = data.borderColor;
             element.style.width = data.width + 'px';
             element.style.height = data.height + 'px';
+            element.dataset.itemType = resolveContainerItemType(element.dataset.itemType);
 
             if (renderutils.previewWindow()) {
                 const content = document.createElement('div');
@@ -1081,6 +1177,13 @@ export const renderutils: RenderUtils = {
                         const newleft = String(Math.round(dialogW - Number(value) - 10));
                         elleft.value = newleft;
                         element.style.left = newleft + 'px';
+                    }
+                    break;
+
+                case 'maxWidth':
+                    if (label) {
+                        element.dataset[key] = value;
+                        renderutils.updateLabel(element);
                     }
                     break;
 
@@ -1419,6 +1522,15 @@ export const renderutils: RenderUtils = {
                                 }
                             });
                         }
+                    }
+                    break;
+
+                case 'itemType':
+                    if (container) {
+                        const resolved = resolveContainerItemType(value);
+                        value = resolved;
+                        element.dataset.itemType = resolved;
+                        applyContainerItemFilter(element);
                     }
                     break;
 
@@ -1791,16 +1903,33 @@ export const renderutils: RenderUtils = {
 
         host.style.minWidth = '0';
 
-        // Measure natural single-line width (no wrapping) using canvas measurement
-        const natural = utils.textWidth(text, fontSize, coms.fontFamily);
+        // Measure natural rendered width so the Editor stays in sync with Preview sizing.
+        // Temporarily clear width constraints so scrollWidth reflects the full content width.
+        element.style.removeProperty('width');
+        element.style.removeProperty('max-width');
+        host.style.width = 'auto';
+        host.style.removeProperty('max-width');
 
-        const finalW = maxW > 0 ? Math.min(natural, maxW) : natural;
+        const measuredScroll = Math.ceil(host.scrollWidth || 0);
+        const measuredBox = Math.ceil(host.getBoundingClientRect().width || 0);
+        let natural = Math.max(measuredScroll, measuredBox);
+        if (!Number.isFinite(natural) || natural <= 0) {
+            natural = utils.textWidth(text, fontSize, coms.fontFamily);
+        }
+
+        const finalW = Math.max(0, maxW > 0 ? Math.min(natural, maxW) : natural);
         element.style.maxWidth = maxW > 0 ? `${maxW}px` : '';
         element.style.width = `${finalW}px`;
 
-        // Host should fill wrapper (for Preview, host===element so this is harmless)
-        host.style.maxWidth = '100%';
-        host.style.width = '100%';
+        // Restore any width settings that were temporarily cleared. Preview hosts (no wrapper)
+        // should mirror the final width instead of stretching to 100%.
+        if (host === element) {
+            host.style.maxWidth = maxW > 0 ? `${maxW}px` : '';
+            host.style.width = `${finalW}px`;
+        } else {
+            host.style.maxWidth = '100%';
+            host.style.width = '100%';
+        }
 
         // Keep in canvas bounds (Editor only). In Preview, do not auto-shift position.
         if (!renderutils.previewWindow()) {
@@ -2594,5 +2723,13 @@ export const renderutils: RenderUtils = {
             return null;
         }
         return s as EventName;
+    },
+
+    normalizeContainerItemType: function(value) {
+        return normalizeContainerItemType(value);
+    },
+
+    applyContainerItemFilter: function(host) {
+        applyContainerItemFilter(host || null);
     },
 }

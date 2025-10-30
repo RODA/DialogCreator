@@ -302,7 +302,7 @@ body {
 
 /* Custom elements (ex. checkbox, radio buttons etc.) */
 
-/* Custom element container div */
+/* Custom element wrapper div */
 .element-div {
     position: absolute; /* Allows it to be draggable */
     cursor: grab; /* Indicate draggable element */
@@ -327,7 +327,7 @@ body {
 /* Element: checkbox */
 .custom-checkbox {
     display: inline-block;
-    width: 100%; /* Matches the container div size */
+    width: 100%; /* Matches the wrapper div size */
     height: 100%;
     position: relative;
     background-color: #fff;
@@ -569,7 +569,7 @@ input {
     margin: 0;
 }
 
-/* Prevent selecting the button container text on double click */
+/* Prevent selecting the button wrapper text on double click */
 .smart-button {
     -webkit-user-select: none;
     user-select: none;
@@ -579,13 +579,6 @@ input {
 .smart-button.btn-active {
     filter: brightness(0.95);
     transform: translateY(1px);
-}
-
-
-.container {
-    border: 1px solid #777777;
-    border-radius: 2px;
-    box-sizing: border-box;
 }
 
 
@@ -678,10 +671,18 @@ input {
     z-index: 999;
 }
 
+
+.container {
+    border: 1px solid #777777;
+    border-radius: 2px;
+    box-sizing: border-box;
+}
+
 /* Container sample content */
 .container-sample {
     padding: 0px; /* rows should stretch edge-to-edge */
 }
+
 .container-item {
     display: flex;
     align-items: center;
@@ -694,6 +695,7 @@ input {
     box-sizing: border-box;
     text-align: left;
 }
+
 .container-item .container-text {
     font-size: inherit;
     /* font-weight: 700; */

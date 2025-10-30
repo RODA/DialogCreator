@@ -85,7 +85,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
 
     const lastSelectedItem = new WeakMap<HTMLElement, HTMLElement | null>();
 
-    const populateContainer = (host: HTMLElement, items: Array<{ text: string; active?: boolean }>) => {
+    const populateContainer = (host: HTMLElement, items: Array<{ text: string; active?: boolean; type?: string }>) => {
         let target: HTMLElement | null = null;
 
         // identify container target
@@ -122,6 +122,12 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             const div = document.createElement('div');
             div.className = 'container-item';
             div.dataset.value = value;
+            const itemType = renderutils.normalizeContainerItemType(item?.type ?? (item as any)?.itemType ?? (item as any)?.kind ?? '');
+            if (itemType && itemType !== 'any') {
+                div.dataset.itemType = itemType;
+            } else {
+                delete div.dataset.itemType;
+            }
 
             const active = item.active || initialActive.has(value);
             div.classList.toggle('active', active);
@@ -133,6 +139,11 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             div.appendChild(label);
 
             div.addEventListener('click', (ev) => {
+                if (div.dataset.disabled === 'true') {
+                    ev.preventDefault();
+                    return;
+                }
+
                 if (multiple && ev instanceof MouseEvent && ev.shiftKey) {
                     const all = Array.from(target.querySelectorAll<HTMLElement>('.container-item'));
                     const last = lastSelectedItem.get(host);
@@ -143,6 +154,11 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                         const [start, end] = lastIndex < currentIndex ? [lastIndex, currentIndex] : [currentIndex, lastIndex];
                         const shouldActivate = !div.classList.contains('active');
                         all.slice(start, end + 1).forEach(it => {
+                            if (it.dataset.disabled === 'true') {
+                                it.classList.remove('active');
+                                applyItemStyle(host, it, false);
+                                return;
+                            }
                             it.classList.toggle('active', shouldActivate);
                             applyItemStyle(host, it, shouldActivate);
                         });
@@ -170,11 +186,14 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                     lastSelectedItem.set(host, div);
                 }
 
-                host.dataset.activeValues = Array.from(target.querySelectorAll<HTMLElement>('.container-item.active'))
+                const activeValues = Array.from(target.querySelectorAll<HTMLElement>('.container-item.active'))
                     .map(it => it.dataset.value || '')
                     .join(',');
+                host.dataset.activeValues = activeValues;
+                host.dataset.selected = activeValues;
 
                 host.dispatchEvent(new Event('change', { bubbles: true }));
+                renderutils.applyContainerItemFilter(host);
             });
 
             target.appendChild(div);
@@ -188,21 +207,24 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             applyItemStyle(host, item, item.classList.contains('active'));
         });
 
+        renderutils.applyContainerItemFilter(host);
+
         if (items.length) {
             host.dispatchEvent(new Event('change', { bubbles: true }));
         }
     };
 
-    const parseContainerValue = (value: unknown): Array<{ text: string; active?: boolean }> => {
+    const parseContainerValue = (value: unknown): Array<{ text: string; active?: boolean; type?: string }> => {
         if (Array.isArray(value)) {
-            return value.map(v => {
-                if (typeof v === 'object' && v !== null && 'text' in v) {
+            return value.map(val => {
+                if (typeof val === 'object' && val !== null && 'text' in val) {
                     return {
-                        text: String(v.text ?? ''),
-                        active: Boolean(v.active)
+                        text: String(val.text ?? ''),
+                        active: Boolean(val.active),
+                        type: 'type' in val ? String(val.type ?? '') : ('itemType' in val ? String(val.itemType ?? '') : undefined)
                     };
                 }
-                return { text: String(v ?? '') };
+                return { text: String(val ?? '') };
             });
         }
 
@@ -526,10 +548,10 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             const inn = inner(el);
 
             if (Array.isArray(value)) {
-                const values = value.map(v => String(v));
                 if (eltype === 'Select') {
                     const sel = (el instanceof HTMLSelectElement ? el : (el.querySelector('select') as HTMLSelectElement | null));
                     if (sel) {
+                        const values = value.map(v => String(v));
                         sel.innerHTML = '';
                         for (const v of values) {
                             const opt = document.createElement('option');
@@ -545,7 +567,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 }
 
                 if (eltype === 'Container') {
-                    const items = parseContainerValue(values);
+                    const items = parseContainerValue(value);
                     populateContainer(el, items);
                     return;
                 }
@@ -788,13 +810,20 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         },
 
         // Simulated workspace variables listing
-        listVariables: (x) => {
-            if (x.length != 1) return [];
-            try {
-                return datasets[x[0]];
-            } catch {
+        listVariables: (input) => {
+            const items = Array.isArray(input) ? input : [input];
+            const [datasetName] = items.map(v => String(v ?? '').trim()).filter(Boolean);
+            if (!datasetName) {
                 return [];
             }
+            const source = datasets[datasetName];
+            if (!Array.isArray(source)) {
+                return [];
+            }
+            return source.map(entry => ({
+                text: String(entry?.text ?? ''),
+                type: String(entry?.type ?? '')
+            }));
         },
 
         on: (name, event, handler: (ev: Event, el: HTMLElement) => void) => {
@@ -968,23 +997,25 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 }
 
                 // Replace selection to exactly match selValues
-                const normalFg = String((host as HTMLElement).dataset.fontColor || '#000000');
-                const activeBg = String((host as HTMLElement).dataset.activeBackgroundColor || '#779B49');
-                const activeFg = String((host as HTMLElement).dataset.activeFontColor || '#ffffff');
+                const applied = new Set<string>();
                 items.forEach(item => {
                     const label = (item.querySelector('.container-text') as HTMLElement | null)?.textContent || '';
-                    const shouldSelect = selValues.includes(label);
+                    const disabled = item.dataset.disabled === 'true';
+                    const shouldSelect = !disabled && selValues.includes(label);
                     item.classList.toggle('active', shouldSelect);
-
-                    item.style.backgroundColor = shouldSelect ? activeBg : '';
-                    const txt = item.querySelector('.container-text') as HTMLElement | null;
-                    if (txt) {
-                        txt.style.color = shouldSelect ? activeFg : normalFg;
+                    applyItemStyle(host, item, shouldSelect);
+                    if (shouldSelect) {
+                        applied.add(label);
                     }
                 });
 
                 // Update dataset mirror
-                (el as HTMLElement).dataset.selected = selValues.join(',');
+                const finalValues = Array.from(applied).map(v => v.trim()).filter(Boolean);
+                const joined = finalValues.join(',');
+                const containerEl = el as HTMLElement;
+                containerEl.dataset.selected = joined;
+                containerEl.dataset.activeValues = joined;
+                renderutils.applyContainerItemFilter(host);
                 return;
             }
 
@@ -1014,21 +1045,20 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                     throw new SyntaxError(`Item with label "${v}" not found in Container ${name}`);
                 }
                 const h = host as HTMLElement;
+                if (item.dataset.disabled === 'true') {
+                    const required = renderutils.normalizeContainerItemType(h.dataset.itemType || 'any') || 'any';
+                    throw new SyntaxError(`Item "${v}" is not selectable; container requires ${required} items`);
+                }
 
                 const kind = String(el.dataset.selection || h.dataset.selection || 'single').toLowerCase();
-                const normalFg = String(h.dataset.fontColor || '#000000');
-                const activeBg = String(h.dataset.activeBackgroundColor || '#779B49');
-                const activeFg = String(h.dataset.activeFontColor || '#ffffff');
+                const multiple = kind === 'multiple';
+                let changed = false;
 
-                if (kind === 'multiple') {
+                if (multiple) {
                     const willActivate = !item.classList.contains('active');
-                    item.classList.toggle('active');
-                    item.style.backgroundColor = willActivate ? activeBg : '';
-
-                    const txt = item.querySelector('.container-text') as HTMLElement | null;
-                    if (txt) {
-                        txt.style.color = willActivate ? activeFg : normalFg;
-                    }
+                    item.classList.toggle('active', willActivate);
+                    applyItemStyle(h, item, willActivate);
+                    changed = true;
                 } else {
                     // Single-select: clear all others then activate this item
                     const prevs = Array.from(h.querySelectorAll('.container-item.active')) as HTMLElement[];
@@ -1040,29 +1070,23 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                             }
 
                             prev.classList.remove('active');
-                            prev.style.backgroundColor = '';
-
-                            const ptxt = prev.querySelector('.container-text') as HTMLElement | null;
-                            if (ptxt) {
-                                ptxt.style.color = normalFg;
-                            }
+                            applyItemStyle(h, prev, false);
                         }
 
                         item.classList.add('active');
-                        item.style.backgroundColor = activeBg;
-
-                        const txt = item.querySelector('.container-text') as HTMLElement | null;
-                        if (txt) {
-                            txt.style.color = activeFg;
-                        }
+                        applyItemStyle(h, item, true);
+                        changed = true;
                     }
                 }
 
-                // Update dataset mirror after programmatic select
-                const active = Array.from(h.querySelectorAll('.container-item.active .container-text')) as HTMLElement[];
-                const vals = active.map(n => String(n.textContent || '').trim()).filter(s => s.length > 0);
-
-                el.dataset.selected = vals.join(',');
+                if (changed) {
+                    const active = Array.from(h.querySelectorAll('.container-item.active .container-text')) as HTMLElement[];
+                    const vals = active.map(n => String(n.textContent || '').trim()).filter(s => s.length > 0);
+                    const joined = vals.join(',');
+                    el.dataset.selected = joined;
+                    h.dataset.activeValues = joined;
+                    renderutils.applyContainerItemFilter(h);
+                }
                 return;
             }
 
@@ -1105,19 +1129,46 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 return;
             }
 
+            const descriptor = (() => {
+                if (typeof value === 'object' && value !== null) {
+                    const src = value as {
+                        text?: unknown;
+                        label?: unknown;
+                        type?: unknown;
+                        itemType?: unknown;
+                    };
+                    const text = src.text ?? src.label ?? '';
+                    const type = src.type ?? src.itemType ?? '';
+                    return { text: String(text ?? ''), type: String(type ?? '') };
+                }
+                return { text: String(value ?? ''), type: '' };
+            })();
+
+            const textValue = descriptor.text.trim();
+            const normalizedType = renderutils.normalizeContainerItemType(descriptor.type);
+
+            if (!textValue) {
+                return;
+            }
+
             const items = Array.from(target.querySelectorAll('.container-item')) as HTMLElement[];
 
-            const exists = items.some(item => ((item.querySelector('.container-text') as HTMLElement | null)?.textContent || '') === String(value));
+            const exists = items.some(item => ((item.querySelector('.container-text') as HTMLElement | null)?.textContent || '') === textValue);
             if (exists) {
                 return;
             }
 
             const item = document.createElement('div');
             item.className = 'container-item';
-            item.dataset.value = String(value);
+            item.dataset.value = textValue;
+            if (normalizedType && normalizedType !== 'any') {
+                item.dataset.itemType = normalizedType;
+            } else {
+                delete item.dataset.itemType;
+            }
             const label = document.createElement('span');
             label.className = 'container-text';
-            label.textContent = String(value);
+            label.textContent = textValue;
             // initialize label color to container fontColor
             label.style.color = String(host.dataset.fontColor || '#000000');
             item.appendChild(label);
@@ -1129,24 +1180,20 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             // Wire click handler same as in setValue
             try {
                 const h = host as HTMLElement;
-                item.addEventListener('click', () => {
+                item.addEventListener('click', (ev) => {
+                    if (item.dataset.disabled === 'true') {
+                        ev.preventDefault();
+                        return;
+                    }
 
                     const kind = String(el.dataset.selection || h.dataset.selection || 'single').toLowerCase();
-                    const normalFg = String(h.dataset.fontColor || '#000000');
-                    const activeBg = String(h.dataset.activeBackgroundColor || '#779B49');
-                    const activeFg = String(h.dataset.activeFontColor || '#ffffff');
 
                     let changed = false;
 
                     if (kind === 'multiple') {
                         const willActivate = !item.classList.contains('active');
                         item.classList.toggle('active');
-                        item.style.backgroundColor = willActivate ? activeBg : '';
-
-                        const txt = item.querySelector('.container-text') as HTMLElement | null;
-                        if (txt) {
-                            txt.style.color = willActivate ? activeFg : normalFg;
-                        }
+                        applyItemStyle(h, item, willActivate);
 
                         changed = true;
 
@@ -1156,20 +1203,11 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                         if (prev !== item) {
                             if (prev) {
                                 prev.classList.remove('active');
-                                prev.style.backgroundColor = '';
-                                const ptxt = prev.querySelector('.container-text') as HTMLElement | null;
-                                if (ptxt) {
-                                    ptxt.style.color = normalFg;
-                                }
+                                applyItemStyle(h, prev, false);
                             }
 
                             item.classList.add('active');
-                            item.style.backgroundColor = activeBg;
-
-                            const txt = item.querySelector('.container-text') as HTMLElement | null;
-                            if (txt) {
-                                txt.style.color = activeFg;
-                            }
+                            applyItemStyle(h, item, true);
 
                             changed = true;
                         }
@@ -1179,11 +1217,16 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                         const active = Array.from(h.querySelectorAll('.container-item.active .container-text')) as HTMLElement[];
                         const vals = active.map(n => String(n.textContent || '').trim()).filter(s => s.length > 0);
 
-                        el.dataset.selected = vals.join(',');
+                        const joined = vals.join(',');
+                        el.dataset.selected = joined;
+                        h.dataset.activeValues = joined;
                         h.dispatchEvent(new Event('change', { bubbles: true }));
+                        renderutils.applyContainerItemFilter(h);
                     }
                 });
             } catch {}
+
+            renderutils.applyContainerItemFilter(host);
         },
 
         clearValue: (name, value) => {
@@ -1212,7 +1255,10 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             // Update dataset mirror after clearing
             const active = Array.from(host.querySelectorAll('.container-item.active .container-text')) as HTMLElement[];
             const vals = active.map(n => String(n.textContent || '').trim()).filter(s => s.length > 0);
-            el.dataset.selected = vals.join(',');
+            const joined = vals.join(',');
+            el.dataset.selected = joined;
+            host.dataset.activeValues = joined;
+            renderutils.applyContainerItemFilter(host);
         },
 
         clearContainer: (name) => {
@@ -1241,6 +1287,8 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
 
             // Update dataset mirror after clearing
             el.dataset.selected = '';
+            host.dataset.activeValues = '';
+            renderutils.applyContainerItemFilter(host);
         },
 
         clearInput: (name) => {
@@ -1287,6 +1335,8 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 const items = Array.from(host.querySelectorAll('.container-item')) as HTMLElement[];
                 items.forEach(item => item.remove());
                 el.dataset.selected = '';
+                host.dataset.activeValues = '';
+                renderutils.applyContainerItemFilter(host);
                 return;
             }
 

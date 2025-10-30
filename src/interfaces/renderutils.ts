@@ -60,6 +60,8 @@ export interface RenderUtils {
     exposeRadioGroupGlobals: (canvas: HTMLElement) => void;
     exposeEventNameGlobals: () => void;
     normalizeEventName: (ev: unknown) => EventName | null;
+    normalizeContainerItemType: (value: unknown) => string;
+    applyContainerItemFilter: (host: HTMLElement | null) => void;
 }
 
 export interface ValidationMessage {

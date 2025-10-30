@@ -117,6 +117,17 @@ input:focus, select:focus, textarea:focus {
     user-select: none;
 }
 
+.preview-canvas .container .container-item.container-item-disabled {
+    /* opacity: 0.5; */
+    background-color: #ececec !important;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+.preview-canvas .container .container-item.container-item-disabled .container-text {
+    color: inherit;
+}
+
 /* Ensure native disabled controls match the disabled-div styling */
 .preview-canvas input:disabled,
 .preview-canvas select:disabled,

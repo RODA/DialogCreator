@@ -157,6 +157,7 @@ export type containerElementType = {
     activeFontColor: string;
     borderColor: string;
     selection: string;
+    itemType: string;
     isEnabled: boolean;
     isVisible: boolean;
     elementIds: string[];
