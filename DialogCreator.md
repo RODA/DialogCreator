@@ -4,41 +4,147 @@
 
 This document describes how to use the Dialog Creator editor window to design dialogs by adding and arranging UI elements on a canvas.
 
-- Platform: Desktop (Electron)
-- Primary file: `src/pages/editor.html`
+## Description
+The Dialog Creator is a cross-platform, graphical interface for building dialog layouts by placing various UI elements onto a canvas. It allows users to visually design dialogs by adding, positioning, and configuring elements such as buttons, inputs, labels, checkboxes, and more.
+
+It also allows connecting UI elements, then test custom logic instantly in a live preview.
+
+Upon installing and opening the application, the following main window can be seen.
+
 
 ## Overview of the interface
 
-The editor window is divided into four main areas:
+<img src="docs/manual/images/main_window_empty.png" alt="Dialog Creator main window" style="width: 100%; max-width: 100%;">
 
-1. Elements panel (left)
+This is a fresh instance of the editor window, which can be divided into five main areas.
 
-- Shows the list of available element types.
-- Click any item to add a new element instance to the dialog canvas.
-- A "Default values" button opens a window where default properties per element type can be managed.
 
-2. Editor toolbar (top of center)
 
-- Provides arrange (Z-order) actions for the currently selected element:
+### Elements panel (left)
+
+<img src="docs/manual/images/elements.png" alt="Elements panel with available UI controls" style="width: 38%;">
+
+The image above shows the Elements panel with available UI controls, in both MacOS and Windows styles.
+
+This panel is the catalog of building blocks. It lists all available element types you can add to a dialog—buttons, labels, inputs, checkboxes, radios, selects, containers, separators, counters, sliders, and more. Items can be clicked to insert a new instance onto the canvas with sensible default properties. Those defaults can be changed for future inserts (for example, your preferred border of font color for certain element), using the "Default values" button to open a small window where you can set per‑type defaults.
+
+Those new defaults are saved with the application and persist across sessions.
+
+
+### Editor toolbar (top of center)
+
+<img src="docs/manual/images/editor_toolbar.png" alt="Editor toolbar with actions" style="width: 60%;">
+
+Z-order (stacking) actions for the current selection:
   - Send to back
   - Send backward
   - Bring forward
   - Bring to front
-- Grouping actions:
+
+Grouping actions:
   - Group selected (enabled when 2+ elements are selected)
-  - Ungroup (enabled when a group is selected)
-- Buttons enable/disable contextually depending on the current selection.
+  - Ungroup (enabled when a persistent group is selected)
 
-3. Dialog canvas (center)
+Alignment (arranging) actions — align elements relative to the first selected (anchor):
+  - Align left, right, top, bottom
+  - Align horizontal center (center), align vertical center (middle)
+  - When aligning multiple targets at once, their relative spacing is preserved (treated as a block) and the block is aligned to the anchor.
+  - Requires at least two selected elements. Use Shift+click or a lasso selection to select multiple.
 
-- The working area where elements are placed and arranged.
-- Click an element to select it. Click the empty canvas to clear the selection.
-- Drag a selected element to reposition it. Movement is constrained within the canvas with a small padding.
+Delete:
+  - Remove the current selection (single element, multiple elements, or an entire group)
+  - Also available via Delete/Backspace
 
-4. Properties panel (right)
 
-- Displays properties for the selected element.
-- Only properties relevant to the selected element type are shown and enabled.
+All toolbar buttons enable or disable automatically based on what's selected. Selecting elements (to decide for grouping, alignment, or deletion) can be done in two ways: either shift-clicking on each element or using a lasso selection, as per the image above.
+
+### Dialog canvas (center)
+
+This is the main stage where you lay out the dialog. Newly added elements appear here as movable blocks and show a dotted outline when selected. Clicking an element once will select it and reveal its properties on the right, while clicking on empty space will clear the selection.
+
+<img src="docs/manual/images/selection.png" alt="Selecting elements" style="width: 60%;">
+
+Elements can be dragged to reposition them, and their movement is constrained within the canvas with a small padding so items don't slip outside the visible area. Multiple elements can be selected with Shift‑click or by drawing a lasso on empty canvas, as per the image above.
+
+These elements can then be moved together or aligned from the toolbar. Right‑clicking an element / group reveals quick actions like Duplicate, Group, or Ungroup.
+
+
+### Properties panel (right)
+
+<img src="docs/manual/images/button_properties.png" alt="Properties for the button element" style="width: 50%;">
+
+This panel displays properties for the selected element, in the image above showing a button's properties. Different elements have different sets of properties, so only properties relevant to the selected element type are shown and enabled.
+
+All elements have Left and Top properties to control their position on the canvas. Other properties depend on the element type, such as Label and Color for buttons, Value for inputs and labels, Options for selects, Checked for checkboxes, and so on.
+
+<img src="docs/manual/images/color_property.png" alt="The color property setting" style="width: 30%;">
+
+Colors can either be typed as hex codes (e.g., `#FF0000` for red) or selected via a color picker that opens when clicking the color swatch, as in the image above. The color picker dissapears when clicking elsewhere on the dialog, or pressing the ESC key.
+
+Some properties can be overwritten with custom JavaScript code in the Actions window, for example Enable or Visible, using a pre-defined set of API commands, see the details in the [custom Javascript code](#custom_js_code).
+
+
+### Dialog properties and Actions (bottom)
+
+The whole dialog has properties of its own, for instance width and height to establish how large it should be, or a name (to be referred to from other dialogs) or a title (shown in the dialog's title bar).
+
+It also has a global font size that affects all elements uniformly, all of which are saved with the dialog and reflected in the live Preview window.
+
+There is also an Actions button to open the code window for adding custom JavaScript logic for dialog behavior. It can be used to define how the elements interact with each other based on user input: showing/hiding/enabling controls, and updating values programmatically.
+
+<img src="docs/manual/images/dialog_actions.png" alt="The dialog properties and actions" style="width: 90%">
+
+
+
+## Description of Elements
+
+### Button
+The Button element represents a clickable button. It can be styled and configured with different actions to perform when clicked.
+
+### Input
+The Input element allows users to enter text or data. It can be configured with various properties such as placeholder text, default value, and validation rules.
+
+### Select (Dropdown)
+The Select element provides a dropdown menu for users to choose from a list of options. It can be configured with default selections and multiple selection capabilities.
+
+### Checkbox
+The Checkbox element allows users to make binary choices (checked or unchecked), generally as a true / false switch when writing the options in the command syntax.
+
+### Radio Button
+The Radio Button element allows users to select one option from a set of mutually exclusive choices. Radio buttons can be grouped together to form a selection group.
+
+### Counter
+The Counter element allows users to increment or decrement a numeric value within a specified range. It can be configured with minimum and maximum limits, plus a start value.
+
+### Slider
+The Slider element provides a graphical interface for selecting a value from a continuous range. It can be customized with different step sizes and value ranges.
+
+### Label
+The Label element displays static text or information. It can be customized with different font colors, and its size depends on the text content, up to a certain maximum width.
+If the text exceeds the maximum width, it will be truncated with an ellipsis (`...`). You can control how many lines of text are shown before truncation using the Line Clamp property.
+
+### Separator
+The Separator element is a visual divider used to separate different sections or groups of elements within the dialog.
+
+### Container
+The Container element is a versatile component that can hold multiple items or rows. It supports single or multi-selection modes and can be populated dynamically via the API.
+The items in a Container can be selected by clicking, and multi-selection is supported via Shift+click for range selection. Their type can be restricted (e.g., numeric, character, date) so that only items of that type are selectable.
+
+When a Container is selected, the Properties panel exposes an **Item type** dropdown alongside the selection mode. It defaults to **Any**, which allows all rows to remain interactive. Choose a specific type (Numeric, Calibrated, Binary, Character, Factor, or Date) to enforce that only rows whose metadata matches the selected type stay selectable. Rows with a different type are visually muted, ignore clicks, and are removed from the active selection.
+
+Programmatic population supports type metadata as well. `setValue(container, array)` accepts either plain strings or objects shaped like `{ text, type, active }`. Helpers such as `listVariables()` now return descriptors with both the label and its data type; when you pair that output with a Container whose Item type is set, mismatching rows automatically render as disabled.
+
+
+
+
+
+
+
+
+
+
+
+
 
 ## Keyboard shortcuts
 
@@ -71,15 +177,18 @@ Notes:
 - Cmd/Ctrl modifiers are reserved for arrange and grouping actions; nudging uses arrows without Cmd/Ctrl.
 - When multiple elements are selected, nudging moves all selected elements together.
 
-### Shortcuts cheatsheet
+
+## Shortcuts cheatsheet
 
 ![Shortcuts cheatsheet](docs/shortcuts-cheatsheet.svg)
+
+
 
 ## Working with elements
 
 ### Add a new element
 
-- In the Elements panel (left), click the element type you want to add. It will be inserted on the dialog canvas with default properties.
+In the Elements panel (left), click the element type you want to add. It will be inserted on the dialog canvas with default properties.
 
 ### Select an element
 
@@ -94,10 +203,9 @@ Notes:
 
 ### Move an element
 
-- Click and drag an element to reposition it.
+- Drag an element to reposition it.
 - Movement is constrained within the dialog canvas with a small margin.
 - Use Arrow keys to nudge by 1px; hold Shift for 10px steps (when an element is selected and focus is not in an input).
-- The cursor changes to indicate dragging.
 
 ### Remove an element
 
@@ -106,11 +214,12 @@ Notes:
 
 ## Preview window
 
-- Opens from the File menu (Preview) and renders the dialog with live interactions.
+- Opens from the File menu (Preview) or using the keyboard shortcut (Cmd/Ctrl + P)
+- It renders the dialog with live interactions.
 - Disabled elements remain fully visible, only greyed out (no opacity fade). Native inputs/selects retain the exact same size when disabled.
-- ESC closes popovers (like color pickers). If a runtime error overlay is visible, ESC dismisses it first; pressing ESC again closes the Preview window.
+- Pressing ESC closes the Preview window.
 
-Selections in Preview
+Item selections in Preview
 
 - Containers support multi-selection. Clicking a row toggles its selection (active state). A `'change'` event is dispatched on the Container so your handlers can react.
 - Select elements are single-choice. Changing the selection dispatches `'change'` like native selects.
@@ -118,11 +227,15 @@ Selections in Preview
 Runtime errors in Preview
 
 - When Custom JS misuses the API (e.g., unsupported event, unknown element, invalid select option), a visible error box appears inside the Preview canvas. This helps spot issues without checking the console.
-- You can dismiss the error box with ESC. The same error is also logged to the Editor console.
+- The error box can be dismissed with ESC.
 
-### Custom JS code — quick start
 
-Some dialogs have complex behaviors that require custom JavaScript code. The editor provides a code window for writing and testing such code. This code runs at the top level automatically, with a dedicated, provided API.
+<a id="custom_js_code"></a>
+## Custom JS code — quick start
+
+<img src="docs/manual/images/actions_window.png" alt="The action window" style="width: 90%;">
+
+Some dialogs have complex behaviors that require custom JavaScript code. Open the code window with the Actions button at the bottom of the Editor. This code runs at the top level automatically, with a dedicated, provided API.
 
 Elements can be referred to by their Name (ID) either quoted or not. For example, `getValue(input1)` is the same as `getValue('input1')`.
 
@@ -180,7 +293,7 @@ Events:
 - Text inputs can use `'change'` (on blur) or `'input'` (as you type).
 - Selects use `'change'`.
 - Tip: Prefer the helpers `onClick`, `onChange`, `onInput` for readability.
-- Radio groups: pass the group name to `onChange(groupName, handler)` to attach a handler to every radio in that group. If the group name is a valid identifier (e.g. `radiogroup1`), you may omit quotes.
+- Radio groups: pass the group name to `onChange(groupName, handler)` to attach a handler to every radio in that group. Similar to element names, if the group name is a valid identifier (e.g. `radiogroup1`), the quotes may be omitted.
 
 Programmatic events:
 
@@ -190,9 +303,16 @@ Initialization
 
 - Your top-level custom code runs after the Preview is ready (elements rendered and listeners attached). You can directly register handlers and set initial state without extra lifecycle wrappers.
 - Event helpers:
-  - `onClick(name, fn)` — same as `on(name, 'click', fn)`
-  - `onChange(name, fn)` — same as `on(name, 'change', fn)`
-  - `onInput(name, fn)` — same as `on(name, 'input', fn)`
+  - `onClick(name, fn)`
+  - `onChange(name, fn)`
+  - `onInput(name, fn)`
+
+
+```javascript
+onClick(button1, () => {
+  // do something
+});
+```
 
 ### Scripting API — reference
 
@@ -203,7 +323,7 @@ Initialization
 - Examples:
 - `showMessage('Hello')`
 - `showMessage('Low disk space', 'Please free up 1GB', 'warning')`
-- `showMessage('Save failed', String(err), 'error')`
+- `showMessage('Save failed', err, 'error')`
 
 `getValue(name)`
 
@@ -309,9 +429,10 @@ Initialization
   - The panel follows the Preview window when you move/resize it and closes when Preview closes. It automatically resizes its height to fit the command content, and matches the Preview window width. You can also resize it manually.
   - If the external panel cannot be created (e.g. permissions/environment), a fallback inline panel appears immediately below the Preview canvas inside the Preview window.
   - Example:
+
 ```javascript
 const sel = getSelected(radiogroup1);
-const cmd = do_something(sel);
+const cmd = construct_command(sel);
 run(cmd);
 ```
 
@@ -368,7 +489,7 @@ Element-specific notes and examples
   - Event: 'click'
 
 - Slider
-  - Dragging is supported in Preview. To react to changes, listen on the wrapper or the handle's mouseup.
+  - Dragging is supported in Preview, and sliders react to changes.
 
 
 Practical patterns
@@ -450,8 +571,11 @@ onChange(container1, () => setValue(
 ));
 ```
 
-- `setValue(container, array)` accepts an array of strings (or an array of objects with `{ text, active }`) and renders each entry as a row.
-- Rows automatically adopt the container’s `fontColor`, `activeBackgroundColor`, and `activeFontColor`.
+`listVariables()` returns objects with both the variable label and its data type, so passing its output straight into `setValue` preserves the metadata required for type filtering.
+
+- `setValue(container, array)` accepts an array of strings or objects shaped like `{ text, type, active }` and renders each entry as a row.
+- Rows automatically adopt the container's `fontColor`, `activeBackgroundColor`, and `activeFontColor`.
+- If the container's Item type is restricted, rows whose `type` metadata does not match are rendered disabled and cannot be selected.
 - Containers scroll automatically when the row list exceeds the container height.
 
 Multi-selection containers support range selection: click an item, then Shift-click another to select or deselect the entire range. Single containers toggle a single active row.
@@ -491,104 +615,22 @@ Multi-selection containers support range selection: click an item, then Shift-cl
 
 - Select the group container and click Ungroup in the toolbar or press Cmd/Ctrl + Shift + G to return the elements to the top level. The former members remain selected.
 
-## Dialog-level properties
-
-In the "Dialog's properties" area (above the Properties panel), you can edit:
-
-- Name
-- Title
-- Width
-- Height
-- Font size
-
-Behavior:
-
-- Width and Height take effect when the field loses focus (after editing it, click elsewhere or press Enter to blur).
-- Font size updates the typography of supported elements across the dialog.
-- Preview window title uses the dialog Title when set (falls back to Name, then "Preview").
-
-## Element types and key properties
-
-Below is a summary of element types supported by the editor and their notable properties. The Properties panel only shows fields relevant to the selected element type.
-
-- Button
-
-  - Label (text)
-  - Color
-  - Width (max)
-  - Lines (max) — line clamp for the label text
-
-- Input
-
-  - Value (text)
-  - Width, Height
-
-- Select
-
-  - Value(s)
-  - Width
-  - Arrow color (dropdown indicator)
-  - Data source (Custom or R workspace)
-
-- Checkbox
-
-  - Checked
-  - Fill (when checked)
-  - Color
-  - Size
-
-- Radio
-
-  - Size
-  - Color
-  - Group
-  - Selected
-
-- Counter
-
-  - Start Val, Max val
-  - Space (padding between arrows and value)
-  - Color (affects arrows)
-
-- Slider
-
-  - Width, Height
-  - Direction (horizontal/vertical)
-  - Handle properties: Position (%), Shape (triangle or circle), Color, Size
-
-- Label
-
-  - Value (text)
-
-- Separator
-
-  - Width, Height
-  - Color
-
-- Container
-  - Width, Height
-  - Object class (Dataset or Variable)
 
 ## Tips & notes
 
+- Right-click an element or group to access quick actions like Duplicate, Group, or Ungroup.
 - Press Enter while editing a property field to commit changes (the editor will blur the field to trigger the update).
 - Some numeric fields are constrained (e.g., size within the canvas, line clamp limited to a small maximum). If a value is out of range, the editor will adjust it automatically.
 - Element Name (ID) must be unique. If a duplicate is entered, it will be rejected and an error shown.
 - Visibility (isVisible) and Enabled (isEnabled) toggles affect how elements render and behave in the editor.
-- Grouping is an editor convenience: when exporting or previewing, groups are flattened and only individual elements (with absolute positions) are saved.
 
-Build notes
-
-- The Code window uses a CodeMirror bundle that's rebuilt only when its entry source changes. This keeps builds fast during development.
 
 ## Troubleshooting
 
 - Arrange buttons are disabled
-
   - Ensure an element is selected. Click an element on the canvas.
 
 - Delete key doesn't remove the element
-
   - Make sure focus isn't inside a text field. Click on the canvas and try again.
 
 - Property change seems ignored
