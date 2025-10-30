@@ -5,13 +5,28 @@ import { elements } from "../modules/elements";
 import { utils } from "../library/utils";
 import { AnyElement, StringNumber } from '../interfaces/elements';
 const sqlite = sqlite3.verbose();
+import * as fs from "fs";
 
 let dbFile = '';
 if (process.env.NODE_ENV == 'development') {
     dbFile = path.join(path.resolve('./src/database/DialogCreator.sqlite'));
 } else {
-    dbFile = path.join(path.resolve(__dirname, '../../../', 'DialogCreator.sqlite'));
-    // dbFile = path.join(path.resolve(__dirname, '../src/database/DialogCreator.sqlite'));
+    const candidatePaths = [
+        path.join(path.resolve(__dirname, '../../', 'DialogCreator.sqlite')),
+        path.join(path.resolve(__dirname, '../../../', 'DialogCreator.sqlite')),
+        path.join(path.resolve('./src/database/DialogCreator.sqlite')),
+    ];
+
+    const existing = candidatePaths.find(p => {
+        if (!fs.existsSync(p)) return false;
+        try {
+            const stats = fs.statSync(p);
+            return stats.size > 0;
+        } catch {
+            return false;
+        }
+    });
+    dbFile = existing ?? candidatePaths[candidatePaths.length - 1];
 }
 
 export const db = new sqlite.Database(dbFile);
@@ -78,26 +93,27 @@ export const database: DBInterface = {
     },
 
     updateProperty: async (element, property, value) => {
-        const updateSQL = "UPDATE elements SET value = ? WHERE element = ? AND property = ?";
-        const insertSQL = "INSERT INTO elements (value, element, property) VALUES (?, ?, ?)";
+        const deleteSQL = "DELETE FROM elements WHERE element = ? AND property = ?";
+        const insertSQL = "INSERT INTO elements (element, property, value) VALUES (?, ?, ?)";
+
         return new Promise<boolean>((resolve) => {
-            db.run(updateSQL, [value, element, property], function (err) {
-                if (err) {
-                    console.error("Error updating property:", err);
-                    resolve(false);
-                } else if (this.changes > 0) {
-                    resolve(true);
-                } else {
-                    // Property row might not exist yet; insert it
-                    db.run(insertSQL, [value, element, property], function (err2) {
-                        if (err2) {
-                            console.error("Error inserting property:", err2);
+            db.serialize(() => {
+                db.run(deleteSQL, [element, property], function (delErr) {
+                    if (delErr) {
+                        console.error("Error deleting existing property:", delErr);
+                        resolve(false);
+                        return;
+                    }
+
+                    db.run(insertSQL, [element, property, value], function (insErr) {
+                        if (insErr) {
+                            console.error("Error inserting property:", insErr);
                             resolve(false);
                         } else {
-                            resolve(this.changes > 0);
+                            resolve(true);
                         }
                     });
-                }
+                });
             });
         });
     },

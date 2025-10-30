@@ -783,6 +783,7 @@ export const editor: Editor = {
             for (const name of availableElements) {
                 const li = document.createElement('li');
                 li.setAttribute('id', uuidv4());
+                li.dataset.elementKey = name;
 
                 // Remove the sufix "Element" from the name of the element
                 li.textContent = utils.capitalize(name.substring(0, name.length - 7));
@@ -796,6 +797,10 @@ export const editor: Editor = {
                         });
                         // Highlight this one
                         li.classList.add('selected-available-element');
+                        const propsPanel = document.getElementById('propertiesList') as HTMLDivElement | null;
+                        if (propsPanel) {
+                            propsPanel.dataset.defaultElement = name;
+                        }
 
                         // this sends a message within the same ("defaults", second) window
                         // useful when the click event is created in a different module, like here
@@ -1266,7 +1271,7 @@ export const editor: Editor = {
                     'secondWindow',
                     {
                         width: 640,
-                        height: 480,
+                        height: 510,
                         backgroundColor: '#fff',
                         title: 'Default values',
                         preload: 'preloadDefaults.js',
