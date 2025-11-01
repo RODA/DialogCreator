@@ -85,6 +85,69 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
 
     const lastSelectedItem = new WeakMap<HTMLElement, HTMLElement | null>();
 
+    const attachContainerItemHandler = (host: HTMLElement, target: HTMLElement, item: HTMLElement) => {
+        item.addEventListener('click', (ev) => {
+            if (item.dataset.disabled === 'true') {
+                ev.preventDefault();
+                return;
+            }
+
+            const selectionMode = String(host.dataset.selection || 'single').toLowerCase();
+            const multiple = selectionMode === 'multiple';
+
+            if (multiple && ev instanceof MouseEvent && ev.shiftKey) {
+                const all = Array.from(target.querySelectorAll<HTMLElement>('.container-item'));
+                const last = lastSelectedItem.get(host);
+                const lastIndex = last ? all.indexOf(last) : -1;
+                const currentIndex = all.indexOf(item);
+
+                if (lastIndex !== -1 && currentIndex !== -1) {
+                    const [start, end] = lastIndex < currentIndex ? [lastIndex, currentIndex] : [currentIndex, lastIndex];
+                    const shouldActivate = !item.classList.contains('active');
+                    all.slice(start, end + 1).forEach(it => {
+                        if (it.dataset.disabled === 'true') {
+                            it.classList.remove('active');
+                            applyItemStyle(host, it, false);
+                            return;
+                        }
+                        it.classList.toggle('active', shouldActivate);
+                        applyItemStyle(host, it, shouldActivate);
+                    });
+                    lastSelectedItem.set(host, item);
+                } else {
+                    const shouldActivate = !item.classList.contains('active');
+                    item.classList.toggle('active', shouldActivate);
+                    applyItemStyle(host, item, shouldActivate);
+                    lastSelectedItem.set(host, item);
+                }
+            } else if (multiple) {
+                const shouldSelect = !item.classList.contains('active');
+                item.classList.toggle('active', shouldSelect);
+                applyItemStyle(host, item, shouldSelect);
+                lastSelectedItem.set(host, item);
+            } else {
+                target.querySelectorAll<HTMLElement>('.container-item.active').forEach(other => {
+                    if (other !== item) {
+                        other.classList.remove('active');
+                        applyItemStyle(host, other, false);
+                    }
+                });
+                item.classList.add('active');
+                applyItemStyle(host, item, true);
+                lastSelectedItem.set(host, item);
+            }
+
+            const activeValues = Array.from(target.querySelectorAll<HTMLElement>('.container-item.active'))
+                .map(it => it.dataset.value || '')
+                .join(',');
+            host.dataset.activeValues = activeValues;
+            host.dataset.selected = activeValues;
+
+            host.dispatchEvent(new Event('change', { bubbles: true }));
+            renderutils.applyContainerItemFilter(host);
+        });
+    };
+
     const populateContainer = (host: HTMLElement, items: Array<{ text: string; active?: boolean; type?: string }>) => {
         let target: HTMLElement | null = null;
 
@@ -96,7 +159,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         } else if (sample instanceof HTMLElement) {
             target = sample;
         } else {
-            const target = document.createElement('div');
+            target = document.createElement('div');
             target.className = 'container-content';
             target.style.width = '100%';
             target.style.height = '100%';
@@ -105,8 +168,6 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             host.appendChild(target);
         }
 
-        const selectionMode = String(host.dataset.selection || 'single').toLowerCase();
-        const multiple = selectionMode === 'multiple';
         const initialActive = new Set<string>(
             (host.dataset.activeValues || '').split(',').map(v => v.trim()).filter(Boolean)
         );
@@ -138,63 +199,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             label.textContent = value;
             div.appendChild(label);
 
-            div.addEventListener('click', (ev) => {
-                if (div.dataset.disabled === 'true') {
-                    ev.preventDefault();
-                    return;
-                }
-
-                if (multiple && ev instanceof MouseEvent && ev.shiftKey) {
-                    const all = Array.from(target.querySelectorAll<HTMLElement>('.container-item'));
-                    const last = lastSelectedItem.get(host);
-                    const lastIndex = last ? all.indexOf(last) : -1;
-                    const currentIndex = all.indexOf(div);
-
-                    if (lastIndex !== -1 && currentIndex !== -1) {
-                        const [start, end] = lastIndex < currentIndex ? [lastIndex, currentIndex] : [currentIndex, lastIndex];
-                        const shouldActivate = !div.classList.contains('active');
-                        all.slice(start, end + 1).forEach(it => {
-                            if (it.dataset.disabled === 'true') {
-                                it.classList.remove('active');
-                                applyItemStyle(host, it, false);
-                                return;
-                            }
-                            it.classList.toggle('active', shouldActivate);
-                            applyItemStyle(host, it, shouldActivate);
-                        });
-                        lastSelectedItem.set(host, div);
-                    } else {
-                        const shouldActivate = !div.classList.contains('active');
-                        div.classList.toggle('active', shouldActivate);
-                        applyItemStyle(host, div, shouldActivate);
-                        lastSelectedItem.set(host, div);
-                    }
-                } else if (multiple) {
-                    const shouldSelect = !div.classList.contains('active');
-                    div.classList.toggle('active', shouldSelect);
-                    applyItemStyle(host, div, shouldSelect);
-                    lastSelectedItem.set(host, div);
-                } else {
-                    target.querySelectorAll<HTMLElement>('.container-item.active').forEach(other => {
-                        if (other !== div) {
-                            other.classList.remove('active');
-                            applyItemStyle(host, other, false);
-                        }
-                    });
-                    div.classList.add('active');
-                    applyItemStyle(host, div, true);
-                    lastSelectedItem.set(host, div);
-                }
-
-                const activeValues = Array.from(target.querySelectorAll<HTMLElement>('.container-item.active'))
-                    .map(it => it.dataset.value || '')
-                    .join(',');
-                host.dataset.activeValues = activeValues;
-                host.dataset.selected = activeValues;
-
-                host.dispatchEvent(new Event('change', { bubbles: true }));
-                renderutils.applyContainerItemFilter(host);
-            });
+            attachContainerItemHandler(host, target, div);
 
             target.appendChild(div);
         });
@@ -1126,7 +1131,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             } else if (sample instanceof HTMLElement) {
                 target = sample;
             } else {
-                const target = document.createElement('div');
+                target = document.createElement('div');
                 target.className = 'container-content';
                 target.style.width = '100%';
                 target.style.height = '100%';
@@ -1187,54 +1192,8 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             // Apply initial styling like in populateContainer
             applyItemStyle(host, item, false);
 
-            // Wire click handler same as in setValue
-            try {
-                const h = host as HTMLElement;
-                item.addEventListener('click', (ev) => {
-                    if (item.dataset.disabled === 'true') {
-                        ev.preventDefault();
-                        return;
-                    }
-
-                    const kind = String(el.dataset.selection || h.dataset.selection || 'single').toLowerCase();
-
-                    let changed = false;
-
-                    if (kind === 'multiple') {
-                        const willActivate = !item.classList.contains('active');
-                        item.classList.toggle('active');
-                        applyItemStyle(h, item, willActivate);
-
-                        changed = true;
-
-                    } else {
-                        const prev = h.querySelector('.container-item.active') as HTMLElement | null;
-
-                        if (prev !== item) {
-                            if (prev) {
-                                prev.classList.remove('active');
-                                applyItemStyle(h, prev, false);
-                            }
-
-                            item.classList.add('active');
-                            applyItemStyle(h, item, true);
-
-                            changed = true;
-                        }
-                    }
-
-                    if (changed) {
-                        const active = Array.from(h.querySelectorAll('.container-item.active .container-text')) as HTMLElement[];
-                        const vals = active.map(n => String(n.textContent || '').trim()).filter(s => s.length > 0);
-
-                        const joined = vals.join(',');
-                        el.dataset.selected = joined;
-                        h.dataset.activeValues = joined;
-                        h.dispatchEvent(new Event('change', { bubbles: true }));
-                        renderutils.applyContainerItemFilter(h);
-                    }
-                });
-            } catch {}
+            // Wire click handler same as populateContainer
+            attachContainerItemHandler(host, target, item);
 
             renderutils.applyContainerItemFilter(host);
         },
