@@ -16,7 +16,7 @@ import {
 import { javascript } from '@codemirror/lang-javascript';
 import { bracketMatching, indentUnit, syntaxHighlighting, HighlightStyle } from '@codemirror/language';
 import { linter, lintGutter, Diagnostic, forceLinting, setDiagnostics } from '@codemirror/lint';
-import { autocompletion, Completion, CompletionContext } from '@codemirror/autocomplete';
+import { autocompletion, closeBrackets, closeBracketsKeymap, Completion, CompletionContext } from '@codemirror/autocomplete';
 import * as acorn from 'acorn';
 import { API_NAMES, EVENT_NAMES, ELEMENT_FIRST_ARG_CALLS } from './api';
 import { tags } from '@lezer/highlight';
@@ -613,9 +613,11 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
                 indentWithTab,               // Tab indents selection / line
                 { key: 'Shift-Tab', run: indentLess }, // Shift+Tab outdents
                 { key: 'Mod-/', run: toggleLineComment }, // Toggle line comment
+                ...closeBracketsKeymap,
                 ...defaultKeymap,
                 ...historyKeymap
             ]),
+            closeBrackets(),
             bracketMatching(),
             uiApiLinter,
             syntaxHighlighting(dialogHighlightStyle),
