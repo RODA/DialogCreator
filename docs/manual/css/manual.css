@@ -7,10 +7,106 @@ body {
     padding: 48px 0;
 }
 
+html { scroll-behavior: smooth; font-size: 14px; }
+
 main {
     max-width: 800px;
     margin: 0 auto;
     padding: 0 24px 48px;
+}
+
+/* Layout for pages with a sidebar ToC */
+.page-with-toc {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    column-gap: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px 0;
+}
+
+.page-with-toc main {
+    max-width: 900px;
+    margin: 0;
+    padding: 0 0 48px;
+}
+
+.toc-sidebar {
+    position: sticky;
+    top: 16px;
+    align-self: start;
+    max-height: calc(100vh - 64px);
+    overflow: auto;
+    padding: 16px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+}
+
+.toc-list { list-style: none; margin: 0; padding: 0; }
+.toc-list > li { margin: 6px 0; }
+.toc-sub { list-style: none; margin: 6px 0 0 12px; padding: 0; }
+
+.toc-list li.has-children { position: relative; }
+.toc-list li.collapsed > .toc-sub { display: none; }
+
+.toc-toggle {
+    appearance: none;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0 6px 0 0;
+    cursor: pointer;
+    color: #64748b;
+}
+.toc-toggle::before {
+    content: '▾';
+    display: inline-block;
+    width: 1em;
+}
+.collapsed > .toc-toggle::before { content: '▸'; }
+
+.toc-sidebar a { color: #1e81b0; text-decoration: none; }
+.toc-sidebar a:hover { text-decoration: underline; }
+.toc-sidebar a.active { color: #1f3653; font-weight: 600; }
+
+.toc-heading {
+    font-weight: 600;
+    color: #1f3653;
+    margin-bottom: 8px;
+}
+
+/* Heading anchor links */
+h2, h3 { position: relative; }
+.heading-anchor {
+    margin-left: 8px;
+    font-weight: normal;
+    opacity: 0;
+    text-decoration: none;
+    color: #94a3b8;
+}
+h2:hover .heading-anchor, h3:hover .heading-anchor { opacity: 1; }
+
+/* Mobile ToC dropdown */
+.toc-mobile { display: none; margin: 0 0 16px; }
+.toc-mobile summary { cursor: pointer; font-weight: 600; color: #1f3653; }
+.toc-mobile[open] { padding: 8px 12px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; }
+
+/* Responsive: collapse sidebar on narrow screens */
+@media (max-width: 1000px) {
+    .page-with-toc {
+        display: block;
+        padding: 0;
+    }
+    .page-with-toc main {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 0 24px 48px;
+    }
+    .toc-sidebar {
+        display: none;
+    }
+    .toc-mobile { display: block; }
 }
 
 h1, h2, h3 {
@@ -31,6 +127,12 @@ h2 {
 
 h3 {
     font-size: 1.3em;
+}
+
+/* Smaller, cleaner size for API signature headings */
+h3[id^="api-"] {
+    font-size: 1.05em;
+    margin-top: 1.4em;
 }
 
 pre {

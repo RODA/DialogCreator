@@ -227,7 +227,7 @@ function getInfoConfig(page: InfoPage) {
         case 'manual':
             return {
                 title: 'Dialog Creator — User Manual',
-                width: 1100,
+                width: 1200,
                 height: 780,
                 minWidth: 900,
                 minHeight: 640,
@@ -238,7 +238,7 @@ function getInfoConfig(page: InfoPage) {
         case 'api':
             return {
                 title: 'Dialog Creator — API Reference',
-                width: 1100,
+                width: 1200,
                 height: 780,
                 minWidth: 900,
                 minHeight: 640,
@@ -251,9 +251,9 @@ function getInfoConfig(page: InfoPage) {
             return {
                 title: 'About Dialog Creator',
                 width: 420,
-                height: 360,
+                height: 325,
                 minWidth: 420,
-                minHeight: 360,
+                minHeight: 325,
                 resizable: false,
                 maximizable: false,
                 file: path.join(__dirname, "../src/pages", "about.html")
@@ -380,7 +380,7 @@ function setupIPC() {
                         title: String(args[1] ?? '')
                     });
                     break;
-                case 'open-syntaxpanel': {
+                case 'openSyntaxPanel': {
                     try {
                         const command = String(args[0] ?? '');
 

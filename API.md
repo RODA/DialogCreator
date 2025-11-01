@@ -4,7 +4,7 @@
 Use this reference when writing custom JavaScript for Dialog Creator. It contains information about window helpers, event utilities, and data APIs available in the preview runtime.
 
 
-### Scripting API — reference
+## Scripting API — reference
 
 `showMessage(message, detail?, type?)`
 
@@ -13,7 +13,7 @@ Use this reference when writing custom JavaScript for Dialog Creator. It contain
 - Examples:
 - `showMessage('Hello')`
 - `showMessage('Low disk space', 'Please free up 1GB', 'warning')`
-- `showMessage('Save failed', err, 'error')`
+- `showMessage('Save failed', 'The dialog failed to save your changes.', 'error')`
 
 `getValue(name)`
 
@@ -35,7 +35,7 @@ Use this reference when writing custom JavaScript for Dialog Creator. It contain
 
 - Convenience methods for Checkbox and Radio elements to set on/off.
 - For Radio, `check(name)` also unselects other radios in the same group.
-- These do not dispatch events by themselves; if you want handlers to run, use `triggerChange()` or `triggerClick()`.
+- These do not dispatch events by themselves; for the handlers to run, use `triggerChange()` or `triggerClick()`.
 
 `getSelected(name)`
 
@@ -92,7 +92,7 @@ Use this reference when writing custom JavaScript for Dialog Creator. It contain
   - Programmatically set selection.
   - For Select elements: sets the selected option by value (single-choice).
   - For Container elements: accepts a string or array of strings and replaces the current selection with exactly those labels.
-  - Does not dispatch a `change` event automatically. If you need handlers to run, call `triggerChange(name)` after changing selection.
+  - Does not dispatch a `change` event automatically. For the handlers to run, call `triggerChange(name)` after changing selection.
   - Throws a SyntaxError if the element doesn't exist, the control is missing, the option/row is not found, or the element type doesn't support selection.
 
 `clearContent(element)`
@@ -110,7 +110,7 @@ Use this reference when writing custom JavaScript for Dialog Creator. It contain
 
   - Rename a specific item within a Container from `oldValue` to `newValue`.
   - If the item is currently selected, the container's selection mirror is updated accordingly.
-  - No event is dispatched automatically; call `triggerChange(name)` if you want change handlers to run.
+  - No event is dispatched automatically; call `triggerChange(name)` for the change handlers to run.
   - Throws a SyntaxError if the element doesn't exist or isn't a Container.
 
 `updateSyntax(command)`
@@ -141,7 +141,7 @@ Validation and highlight helpers
 
   - Clear a previously added validation message. If `message` is provided, only that message is removed; otherwise, all messages for the element are cleared.
 
-Element-specific notes and examples
+## Element-specific notes and examples
 
 - Input
 
@@ -179,7 +179,7 @@ Element-specific notes and examples
 
 - Button
 
-  - Pressed feedback is built-in in Preview; your handler can trigger other UI changes.
+  - Pressed feedback is built-in in Preview; the handler can trigger other UI changes.
   - Event: 'click'
 
 - Slider
@@ -247,11 +247,11 @@ changeValue(variablesContainer, "Sepal.Length", "Sepal Len");
 
 Notes
 
-- Programmatic state changes (e.g., `check`, `setValue`) do not automatically dispatch events. Use `triggerChange()` or `triggerClick()` when you need the dialog to behave as if the user had interacted with the element.
-- The selection command (`setSelected`) also does not auto-dispatch, but it can be paired with `triggerChange(name)` if you rely on change triggers.
+- Programmatic state changes (e.g., `check`, `setValue`) do not automatically dispatch events. Use `triggerChange()` or `triggerClick()` if the dialog should behave as if the user had interacted with the element.
+- The selection command (`setSelected`) also does not auto-dispatch, but it can be paired with `triggerChange(name)` to trigger a change event.
 - Validation helpers (`addError`, `clearError`) are purely visual aids in Preview; they do not block execution or change element values.
 
-### Populate container contents
+## Populate container contents
 
 Containers can show rows populated via API. For example:
 

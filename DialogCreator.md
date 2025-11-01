@@ -25,7 +25,7 @@ This is a fresh instance of the editor window, which can be divided into five ma
 
 The image above shows the Elements panel with available UI controls, in both MacOS and Windows styles.
 
-This panel is the catalog of building blocks. It lists all available element types you can add to a dialog—buttons, labels, inputs, checkboxes, radios, selects, containers, separators, counters, sliders, and more. Items can be clicked to insert a new instance onto the canvas with sensible default properties. Those defaults can be changed for future inserts (for example, your preferred border of font color for certain element), using the "Default values" button to open a small window where you can set per‑type defaults.
+This panel is the catalog of building blocks. It lists all available element types that can be added to a dialog: buttons, labels, inputs, checkboxes, radios, selects, containers, separators, counters, sliders, and more. Items can be clicked to insert a new instance onto the canvas with sensible default properties. Those defaults can be changed for future inserts (for example, a preferred border or font color for a certain element), using the "Default values" button to open a small window where the per‑type defaults are located.
 
 Those new defaults are saved with the application and persist across sessions.
 
@@ -59,7 +59,7 @@ All toolbar buttons enable or disable automatically based on what's selected. Se
 
 ### Dialog canvas (center)
 
-This is the main stage where you lay out the dialog. Newly added elements appear here as movable blocks and show a dotted outline when selected. Clicking an element once will select it and reveal its properties on the right, while clicking on empty space will clear the selection.
+This is the main stage where the dialog is laid out. Newly added elements appear here as movable blocks and show a dotted outline when selected. Clicking an element once will select it and reveal its properties on the right, while clicking on empty space will clear the selection.
 
 <img src="docs/manual/images/selection.png" alt="Selecting elements" style="width: 60%;">
 
@@ -120,7 +120,7 @@ The Slider element provides a graphical interface for selecting a value from a c
 
 ### Label
 The Label element displays static text or information. It can be customized with different font colors, and its size depends on the text content, up to a certain maximum width.
-If the text exceeds the maximum width, it will be truncated with an ellipsis (`...`). You can control how many lines of text are shown before truncation using the Line Clamp property.
+If the text exceeds the maximum width, it will be truncated with an ellipsis (`...`). There is a control for how many lines of text are shown before truncation using the Line Clamp property.
 
 ### Separator
 The Separator element is a visual divider used to separate different sections or groups of elements within the dialog.
@@ -131,7 +131,7 @@ The items in a Container can be selected by clicking, and multi-selection is sup
 
 When a Container is selected, the Properties panel exposes an **Item type** dropdown alongside the selection mode. It defaults to **Any**, which allows all rows to remain interactive. Choose a specific type (Numeric, Calibrated, Binary, Character, Factor, or Date) to enforce that only rows whose metadata matches the selected type stay selectable. Rows with a different type are visually muted, ignore clicks, and are removed from the active selection.
 
-Programmatic population supports type metadata as well. `setValue(container, array)` accepts either plain strings or objects shaped like `{ text, type, active }`. Helpers such as `listVariables()` now return descriptors with both the label and its data type; when you pair that output with a Container whose Item type is set, mismatching rows automatically render as disabled.
+Programmatic population supports type metadata as well. `setValue(container, array)` accepts either plain strings or objects shaped like `{ text, type, active }`. Helpers such as `listVariables()` now return descriptors with both the label and its data type; when that output is paired with a Container whose Item type is set, mismatching rows automatically render as disabled.
 
 
 ## Keyboard shortcuts
@@ -176,7 +176,7 @@ Notes:
 
 ### Add a new element
 
-In the Elements panel (left), click the element type you want to add. It will be inserted on the dialog canvas with default properties.
+In the Elements panel (left), click the element to be added. It will be inserted on the dialog canvas with default properties.
 
 ### Select an element
 
@@ -209,7 +209,7 @@ In the Elements panel (left), click the element type you want to add. It will be
 
 Item selections in Preview
 
-- Containers support multi-selection. Clicking a row toggles its selection (active state). A `'change'` event is dispatched on the Container so your handlers can react.
+- Containers support multi-selection. Clicking a row toggles its selection (active state). A `'change'` event is dispatched on the Container so that handlers can react.
 - Select elements are single-choice. Changing the selection dispatches `'change'` like native selects.
 
 Runtime errors in Preview
@@ -236,7 +236,7 @@ Notes on missing elements and strict operations:
 - For simple getters/setters (getValue/setValue), if a name is not found, reads return `null` (or a safe default) and writes are ignored.
 - For event-related or selection operations (on, select), using an unknown element will throw a SyntaxError and show the error overlay in Preview.
 
-Common patterns you can copy/paste:
+Common patterns that can be used:
 
 1. Show the input's value in a label on change
 
@@ -293,7 +293,7 @@ Programmatic events:
 
 Initialization
 
-- Your top-level custom code runs after the Preview is ready (elements rendered and listeners attached). You can directly register handlers and set initial state without extra lifecycle wrappers.
+- The top-level custom code runs after the Preview is ready (elements rendered and listeners attached). Handlers can be directly registered and initial state can be set without extra lifecycle wrappers.
 - Event helpers:
   - `onClick(name, fn)`
   - `onChange(name, fn)`

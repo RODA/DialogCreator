@@ -21,7 +21,7 @@ function buildUI(canvas: HTMLElement): PreviewUI {
             message,
             detail
         ),
-        openSyntaxPanel: (command: string) => coms.sendTo('main', 'open-syntaxpanel', command)
+        openSyntaxPanel: (command: string) => coms.sendTo('main', 'openSyntaxPanel', command)
     };
 
     return createPreviewUI(env);
