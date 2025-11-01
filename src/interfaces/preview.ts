@@ -18,11 +18,11 @@ export interface PreviewUI {
     showMessage(type: 'info' | 'error' | 'question' | 'warning', title: string, message: string): void;
     showMessage(type: 'info' | 'error' | 'question' | 'warning', message: string): void;
 
-    /**
-     * Simulate sending a constructed command to an external runtime (e.g., R).
-     * This is a no-op stub in Preview that logs the command to the Editor console.
-     */
+    /** Legacy stub retained for compatibility. Does nothing in Preview. */
     run(command: string): void;
+
+    /** Update the syntax panel with the provided command. */
+    updateSyntax(command: string): void;
 
     /** Generic getter (value / dataset-driven) */
     get(name: string, prop: string): unknown;
@@ -38,7 +38,7 @@ export interface PreviewUI {
     // - Checkbox: boolean (checked)
     // - Radio: boolean (selected)
     // - Counter: number
-    // - Container: array of row labels (items)
+    // - Container: array of row labels (items) or '' when empty
     getValue(name: string): unknown;
 
     // Sets value or items depending on element type and value type.
@@ -48,8 +48,9 @@ export interface PreviewUI {
 
     // Selected values:
     // - Container: array of selected row labels
-    // - Select: array with single selected value (or empty)
-    getSelected(name: string): string[];
+    // - Select: array with single selected value (or empty array when none)
+    // - Container: array of selected row labels (items) or '' when empty
+    getSelected(name: string): string[] | '';
 
     /** Checkbox/Radio convenience for checked/selected */
     isChecked(name: string): boolean;
@@ -158,7 +159,7 @@ export interface PreviewUIEnv {
     // Show an app-level dialog message via main process
     showDialogMessage: (type: 'info' | 'warning' | 'error' | 'question', message: string, detail: string) => void;
     // Open an external floating run panel near the Preview window
-    openRunPanel?: (command: string) => void;
+    openSyntaxPanel?: (command: string) => void;
     // Experimental bridge to services; returns a Promise and optionally invokes a callback
     // call: (service: string, args?: unknown, cb?: (result: unknown) => void) => Promise<unknown>;
 }

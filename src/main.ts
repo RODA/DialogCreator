@@ -1,6 +1,6 @@
 // Setting ENVIRONMENT
-// process.env.NODE_ENV = 'development';
-process.env.NODE_ENV = 'production';
+process.env.NODE_ENV = 'development';
+// process.env.NODE_ENV = 'production';
 
 const production = process.env.NODE_ENV === 'production';
 const development = process.env.NODE_ENV === 'development';
@@ -16,9 +16,9 @@ import { DBElements } from "./interfaces/database";
 
 let editorWindow: BrowserWindow;
 let secondWindow: BrowserWindow;
-let runPanelWindow: BrowserWindow | null;
-let runPanelAnchor: BrowserWindow | null;
-let runPanelHeight = 160; // content height; updated by renderer
+let syntaxPanelWindow: BrowserWindow | null;
+let syntaxPanelAnchor: BrowserWindow | null;
+let syntaxPanelHeight = 160; // content height; updated by renderer
 
 const windowid: { [key: string]: number } = {
     editorWindow: 1,
@@ -252,7 +252,7 @@ function setupIPC() {
                         title: String(args[1] ?? '')
                     });
                     break;
-                case 'open-runpanel': {
+                case 'open-syntaxpanel': {
                     try {
                         const command = String(args[0] ?? '');
 
@@ -269,12 +269,12 @@ function setupIPC() {
                         const bounds = anchor.getBounds();
 
                         const desiredWidth = Math.max(200, bounds.width);
-                        const desiredHeight = runPanelHeight;
+                        const desiredHeight = syntaxPanelHeight;
                         const desiredX = Math.max(0, bounds.x);
                         const desiredY = bounds.y + bounds.height + 6; // just beneath the preview window
 
-                        if (!runPanelWindow || runPanelWindow.isDestroyed()) {
-                            runPanelWindow = new BrowserWindow({
+                        if (!syntaxPanelWindow || syntaxPanelWindow.isDestroyed()) {
+                            syntaxPanelWindow = new BrowserWindow({
                                 width: desiredWidth,
                                 height: desiredHeight,
                                 x: desiredX,
@@ -284,78 +284,84 @@ function setupIPC() {
                                 resizable: true,
                                 minimizable: false,
                                 maximizable: false,
-                                title: 'Run Output',
+                                title: 'Syntax Panel',
                                 webPreferences: {
                                     contextIsolation: true,
-                                    preload: path.join(__dirname, 'preload', 'preloadRunPanel.js'),
+                                    preload: path.join(__dirname, 'preload', 'preloadSyntaxPanel.js'),
                                     sandbox: false
                                 },
                                 autoHideMenuBar: true,
                             });
 
-                            runPanelWindow.loadFile(path.join(__dirname, "../src/pages", 'runpanel.html'));
+                            syntaxPanelWindow.loadFile(path.join(__dirname, "../src/pages", 'syntaxpanel.html'));
 
-                            runPanelWindow.on('closed', () => {
-                                runPanelWindow = null;
+                            syntaxPanelWindow.on('closed', () => {
+                                const anchorToClose = syntaxPanelAnchor;
+                                syntaxPanelWindow = null;
+                                try {
+                                    if (anchorToClose && !anchorToClose.isDestroyed()) {
+                                        anchorToClose.close();
+                                    }
+                                } catch { /* noop */ }
                             });
                         }
 
                         // Position and size each time in case preview moved
                         try {
-                            runPanelWindow!.setPosition(desiredX, desiredY);
-                            runPanelWindow!.setContentSize(desiredWidth, desiredHeight);
+                            syntaxPanelWindow!.setPosition(desiredX, desiredY);
+                            syntaxPanelWindow!.setContentSize(desiredWidth, desiredHeight);
                         } catch {}
 
                         // Reposition with the anchor on move/resize
-                        if (anchor !== runPanelAnchor) {
+                        if (anchor !== syntaxPanelAnchor) {
                             // detach old listeners
-                            runPanelAnchor?.removeAllListeners('move');
-                            runPanelAnchor?.removeAllListeners('resize');
-                            runPanelAnchor?.removeAllListeners('closed');
-                            runPanelAnchor = anchor;
+                            syntaxPanelAnchor?.removeAllListeners('move');
+                            syntaxPanelAnchor?.removeAllListeners('resize');
+                            syntaxPanelAnchor?.removeAllListeners('closed');
+                            syntaxPanelAnchor = anchor;
                             const reposition = () => {
                                 try {
                                     const b = anchor.getBounds();
                                     const w = Math.max(200, b.width);
-                                    runPanelWindow?.setPosition(b.x, b.y + b.height + 6);
-                                    runPanelWindow?.setContentSize(w, runPanelHeight);
+                                    syntaxPanelWindow?.setPosition(b.x, b.y + b.height + 6);
+                                    syntaxPanelWindow?.setContentSize(w, syntaxPanelHeight);
                                 } catch {}
                             };
                             anchor.on('move', reposition);
                             anchor.on('resize', reposition);
-                            anchor.on('closed', () => { try { runPanelWindow?.close(); } catch {} });
+                            anchor.on('closed', () => { try { syntaxPanelWindow?.close(); } catch {} });
                         }
 
                         // Once content is ready, send payload; also send immediately for updates
-                        if (runPanelWindow && !runPanelWindow.webContents.isLoadingMainFrame()) {
-                            runPanelWindow.webContents.send('renderRunCommand', command);
+                        if (syntaxPanelWindow && !syntaxPanelWindow.webContents.isLoadingMainFrame()) {
+                            syntaxPanelWindow.webContents.send('renderSyntaxCommand', command);
                         } else {
-                            runPanelWindow?.webContents.once('did-finish-load', () => {
-                                runPanelWindow?.webContents.send('renderRunCommand', command);
+                            syntaxPanelWindow?.webContents.once('did-finish-load', () => {
+                                syntaxPanelWindow?.webContents.send('renderSyntaxCommand', command);
                             });
                         }
 
                     } catch (e: any) {
-                        dialog.showErrorBox('Run panel error', String(e && e.message ? e.message : e));
+                        dialog.showErrorBox('Syntax panel error', String(e && e.message ? e.message : e));
                     }
                     break;
                 }
-                case 'runpanel-resize': {
+                case 'syntaxpanel-resize': {
                     try {
                         const payload = args[0];
                         const requestedHeight = Number((payload && payload.height) ?? payload ?? 0);
                         if (!Number.isFinite(requestedHeight) || requestedHeight <= 0) break;
-                        runPanelHeight = Math.max(40, Math.min(1000, Math.round(requestedHeight)));
+                        syntaxPanelHeight = Math.max(40, Math.min(1000, Math.round(requestedHeight)));
 
-                        if (runPanelWindow && !runPanelWindow.isDestroyed()) {
+                        if (syntaxPanelWindow && !syntaxPanelWindow.isDestroyed()) {
                             // Align width with anchor when possible
                             let w = 320;
                             try {
-                                const b = (runPanelAnchor || secondWindow || editorWindow).getBounds();
+                                const b = (syntaxPanelAnchor || secondWindow || editorWindow).getBounds();
                                 w = Math.max(200, b.width);
-                                runPanelWindow.setPosition(b.x, b.y + b.height + 6);
+                                syntaxPanelWindow.setPosition(b.x, b.y + b.height + 6);
                             } catch { /* keep current position */ }
-                            runPanelWindow.setContentSize(w, runPanelHeight);
+                            syntaxPanelWindow.setContentSize(w, syntaxPanelHeight);
                         }
                     } catch { /* noop */ }
                     break;

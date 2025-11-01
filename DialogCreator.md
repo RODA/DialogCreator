@@ -423,18 +423,22 @@ onClick(button1, () => {
   - No event is dispatched automatically; call `triggerChange(name)` if you want change handlers to run.
   - Throws a SyntaxError if the element doesn't exist or isn't a Container.
 
-`run(command)`
+`updateSyntax(command)`
 
-  - Displays the given command string in a dedicated Run Output panel anchored just beneath the Preview window (outside the canvas). The panel uses a monospace font and preserves whitespace/line breaks.
-  - The panel follows the Preview window when you move/resize it and closes when Preview closes. It automatically resizes its height to fit the command content, and matches the Preview window width. You can also resize it manually.
-  - If the external panel cannot be created (e.g. permissions/environment), a fallback inline panel appears immediately below the Preview canvas inside the Preview window.
+  - Updates the Syntax Panel with the provided command string. The panel remains open alongside the Preview window and mirrors its width; closing either window also closes the other.
+  - Content is rendered with preserved whitespace/line breaks in a monospace font.
+  - If the floating Syntax Panel cannot be created, a fallback inline panel appears immediately below the Preview canvas inside the Preview window.
   - Example:
 
 ```javascript
 const sel = getSelected(radiogroup1);
 const cmd = construct_command(sel);
-run(cmd);
+updateSyntax(cmd);
 ```
+
+`run(command)`
+
+  - Legacy no-op retained for backward compatibility. Use `updateSyntax(command)` to show commands.
 
 
 Validation and highlight helpers

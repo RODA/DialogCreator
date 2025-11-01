@@ -1,24 +1,24 @@
 import { coms } from "../modules/coms";
 
 window.addEventListener('DOMContentLoaded', () => {
-    const root = document.getElementById('runpanel-root') || (() => {
+    const root = document.getElementById('syntaxpanel-root') || (() => {
         const el = document.createElement('div');
-        el.id = 'runpanel-root';
+        el.id = 'syntaxpanel-root';
         document.body.appendChild(el);
         return el;
     })();
 
     const container = document.createElement('div');
-    container.className = 'runpanel-container';
+    container.className = 'syntaxpanel-container';
     const pre = document.createElement('pre');
-    pre.className = 'runpanel-pre';
+    pre.className = 'syntaxpanel-pre';
     container.appendChild(pre);
     (root as HTMLElement).appendChild(container);
 
     const notifyResize = () => {
         coms.sendTo(
             'main',
-            'runpanel-resize',
+            'syntaxpanel-resize',
             { height: Math.ceil(container.scrollHeight) }
         );
     };
@@ -28,7 +28,7 @@ window.addEventListener('DOMContentLoaded', () => {
         requestAnimationFrame(() => notifyResize());
     };
 
-    coms.on('renderRunCommand', (...args: unknown[]) => {
+    coms.on('renderSyntaxCommand', (...args: unknown[]) => {
         const text = String(args[0] ?? '');
         render(text);
     });

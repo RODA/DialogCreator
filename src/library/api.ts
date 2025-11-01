@@ -13,7 +13,7 @@ export const EVENT_NAMES = new Set<string>(EVENT_LIST);
 // Curated helper names exposed as shorthand in user customJS (prelude)
 export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
     // core
-    'showMessage', 'getValue', 'setValue', 'run',
+    'showMessage', 'getValue', 'setValue', 'run', 'updateSyntax',
 
     // checkbox/radio
     'check', 'isChecked', 'uncheck', 'isUnchecked',
@@ -59,7 +59,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         showRuntimeError,
         logToEditor,
         showDialogMessage,
-        openRunPanel,
+        openSyntaxPanel,
         // call
     } = env;
 
@@ -320,24 +320,28 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             showDialogMessage(type, message, detail);
         },
 
-        run: (command: string) => {
+        run: (_command: string) => {
+            // Intentionally left as a no-op to preserve legacy API surface.
+        },
+
+        updateSyntax: (command: string) => {
             try {
                 // Prefer external floating panel via env if available
-                if (typeof openRunPanel === 'function') {
-                    openRunPanel(String(command ?? ''));
+                if (typeof openSyntaxPanel === 'function') {
+                    openSyntaxPanel(String(command ?? ''));
                     return;
                 }
 
                 const root = document.getElementById('preview-root');
-                if (!root) { logToEditor(`run(): preview root not found.`); return; }
+                if (!root) { logToEditor(`updateSyntax(): preview root not found.`); return; }
 
                 // Ensure we place the panel right after the canvas
                 const canvas = root.querySelector('.preview-canvas') as HTMLElement | null;
 
-                let panel = root.querySelector('.preview-run-panel') as HTMLDivElement | null;
+                let panel = root.querySelector('.preview-syntax-panel') as HTMLDivElement | null;
                 if (!panel) {
                     panel = document.createElement('div');
-                    panel.className = 'preview-run-panel';
+                    panel.className = 'preview-syntax-panel';
                     // Insert after canvas when possible, otherwise append to root
                     if (canvas && canvas.parentElement === root && canvas.nextSibling) {
                         root.insertBefore(panel, canvas.nextSibling);
@@ -359,11 +363,12 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 // Render command as code in monospace
                 panel.innerHTML = '';
                 const pre = document.createElement('pre');
+                pre.className = 'preview-syntax-panel-pre';
                 pre.textContent = String(command ?? '');
                 panel.appendChild(pre);
                 panel.style.display = 'block';
             } catch (e: any) {
-                const msg = `run() failed: ${String(e && e.message ? e.message : e)}`;
+                const msg = `updateSyntax() failed: ${String(e && e.message ? e.message : e)}`;
                 logToEditor(msg);
             }
         },
@@ -534,7 +539,8 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             if (eltype === 'Container') {
                 const host = el; // items are direct children of the container element
                 const items = Array.from(host.querySelectorAll('.container-item .container-text')) as HTMLElement[];
-                return items.map(r => r.textContent || '');
+                const values = items.map(r => r.textContent || '');
+                return values.length ? values : '';
             }
 
             return el.dataset['value'] ?? null;
@@ -688,7 +694,11 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
 
                 // Fallback to dataset mirror if present
                 const ds = String((el as HTMLElement).dataset.selected || '').trim();
-                return ds ? ds.split(',').map(s => s.trim()).filter(s => s.length > 0) : [];
+                const dsVals = ds
+                    ? ds.split(',').map(s => s.trim()).filter(s => s.length > 0)
+                    : [];
+
+                return dsVals.length > 0 ? dsVals : '';
             }
 
             // Radios are handled via radio group names; for a single Radio element,
@@ -1410,6 +1420,11 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             disposers.length = 0;
         }
     };
+
+    // Ensure the syntax panel is created/opened alongside the preview.
+    try {
+        api.updateSyntax('');
+    } catch { /* ignore panel boot errors */ }
 
     return api;
 }

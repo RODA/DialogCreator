@@ -356,18 +356,22 @@ The items in a Container can be selected by clicking, and multi-selection is sup
 <li>No event is dispatched automatically; call <code class="hljs"><span class="hljs-title function_">triggerChange</span>(<span class="api-param">name</span>)</code> if you want change handlers to run.</li>
 <li>Throws a SyntaxError if the element doesn't exist or isn't a Container.</li>
 </ul>
-<p><code class="hljs"><span class="hljs-title function_">run</span>(<span class="api-param">command</span>)</code></p>
+<p><code class="hljs"><span class="hljs-title function_">updateSyntax</span>(<span class="api-param">command</span>)</code></p>
 <ul>
-<li>Displays the given command string in a dedicated Run Output panel anchored just beneath the Preview window (outside the canvas). The panel uses a monospace font and preserves whitespace/line breaks.</li>
-<li>The panel follows the Preview window when you move/resize it and closes when Preview closes. It automatically resizes its height to fit the command content, and matches the Preview window width. You can also resize it manually.</li>
-<li>If the external panel cannot be created (e.g. permissions/environment), a fallback inline panel appears immediately below the Preview canvas inside the Preview window.</li>
+<li>Updates the Syntax Panel with the provided command string. The panel stays in sync with the Preview window&#39;s width and closes when the Preview window closes (and vice versa).</li>
+<li>Content is rendered with preserved whitespace/line breaks in a monospace font.</li>
+<li>If the external panel cannot be created, a fallback inline panel appears immediately below the Preview canvas inside the Preview window.</li>
 <li>Example:</li>
 </ul>
 <pre><code class="language-javascript hljs">const sel = <span class="hljs-title function_">getSelected</span>(<span class="api-param">radiogroup1</span>);
 const cmd = <span class="hljs-title function_">construct_command</span>(<span class="api-param">sel</span>);
-<span class="hljs-title function_">run</span>(<span class="api-param">cmd</span>);
+<span class="hljs-title function_">updateSyntax</span>(<span class="api-param">cmd</span>);
 </code></pre>
 
+<p><code class="hljs"><span class="hljs-title function_">run</span>(<span class="api-param">command</span>)</code></p>
+<ul>
+<li>Legacy no-op kept for compatibility. Use <code class="hljs"><span class="hljs-title function_">updateSyntax</span>()</code> to show commands.</li>
+</ul>
 
 <p>Validation and highlight helpers</p>
 <p><code class="hljs"><span class="hljs-title function_">addError</span>(<span class="api-param">name</span>, <span class="api-param">message</span>)</code></p>
