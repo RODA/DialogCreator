@@ -25,15 +25,37 @@ const windowid: { [key: string]: number } = {
     secondWindow: 2
 }
 
-
-// const appSession = {
-//     language: "en"
-// };
-
-function consolog(x: any) {
-    if (editorWindow && !editorWindow.isDestroyed()) {
-        editorWindow.webContents.send("consolog", x);
+function setSyntaxOnTop(enabled: boolean) {
+    if (!syntaxPanelWindow || syntaxPanelWindow.isDestroyed()) {
+        return;
     }
+    try {
+        if (enabled) {
+            syntaxPanelWindow.setAlwaysOnTop(true, 'floating');
+        } else {
+            syntaxPanelWindow.setAlwaysOnTop(false);
+        }
+    } catch {
+        // noop: window might be mid-destroy
+    }
+}
+
+const enableSyntaxOnTop = () => setSyntaxOnTop(true);
+const disableSyntaxOnTop = () => setSyntaxOnTop(false);
+
+if (OS_Mac) { // TODO: test on Windows/Linux
+    app.on('browser-window-focus', enableSyntaxOnTop);
+    app.on('activate', enableSyntaxOnTop);
+    app.on('browser-window-blur', () => {
+        setImmediate(() => {
+            // spends one cycle, letting the pending focus event fire first
+            // and only then fire this blur handler
+            // same as setTimeout(..., 0) but more efficient
+            if (!BrowserWindow.getFocusedWindow()) {
+                disableSyntaxOnTop();
+            }
+        });
+    });
 }
 
 
