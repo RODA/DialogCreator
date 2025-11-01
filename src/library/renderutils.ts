@@ -879,6 +879,8 @@ export const renderutils: RenderUtils = {
             element.className = 'separator';
             element.style.width = data.width + 'px';
             element.style.height = data.height + 'px';
+            element.style.backgroundColor = String(data.color || '#000000');
+            element.dataset.color = String(data.color || '#000000');
 
             const handle = document.createElement('div');
             handle.className = 'slider-handle';
@@ -1258,6 +1260,8 @@ export const renderutils: RenderUtils = {
                             inner.style.backgroundColor = value;
                         } else if (separator && inner) {
                             // For separators, apply color to the inner element (the actual separator)
+                            inner.style.backgroundColor = value;
+                        } else if (slider && inner) {
                             inner.style.backgroundColor = value;
                         } else if (!container) {
                             // For most elements, 'color' is background. Container uses 'backgroundColor' instead.
