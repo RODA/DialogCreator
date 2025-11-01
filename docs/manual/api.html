@@ -1,0 +1,282 @@
+<!DOCTYPE html><html><head><title></title><meta charset="utf-8">  <title>Dialog Creator — API Reference</title>
+  <link rel="stylesheet" href="css/manual.css">
+</head>
+	<body class="">
+<main>
+		<h1 id="dialog-creator--api-reference">Dialog Creator — API Reference</h1>
+<p>Use this reference when writing custom JavaScript for Dialog Creator. It contains information about window helpers, event utilities, and data APIs available in the preview runtime.</p>
+<h3 id="scripting-api--reference">Scripting API — reference</h3>
+<p><code class="hljs"><span class="hljs-title function_">showMessage</span>(<span class="api-param">message</span>, <span class="api-param">detail?</span>, <span class="api-param">type?</span>)</code></p>
+<ul>
+<li>Shows an application message dialog via the host app.</li>
+<li>message is the visible header; detail is the body text; type (optional) controls icon: 'info' | 'warning' | 'error' | 'question'.</li>
+<li>Examples:</li>
+<li><code class="hljs"><span class="hljs-title function_">showMessage</span>(<span class="hljs-string">'Hello'</span>)</code></li>
+<li><code class="hljs"><span class="hljs-title function_">showMessage</span>(<span class="hljs-string">'Low disk space'</span>, <span class="hljs-string">'Please free up 1GB'</span>, <span class="hljs-string">'warning'</span>)</code></li>
+<li><code class="hljs"><span class="hljs-title function_">showMessage</span>(<span class="hljs-string">'Save failed'</span>, <span class="api-param">err</span>, <span class="hljs-string">'error'</span>)</code></li>
+</ul>
+<p><code class="hljs"><span class="hljs-title function_">getValue</span>(<span class="api-param">name</span>)</code></p>
+<ul>
+<li>Get the element's value/text.</li>
+<li>Input/Label/Select/Counter return their current value; Checkbox/Radio return their current boolean state.</li>
+<li>Returns <code class="hljs"><span class="api-param">null</span></code> if the element doesn't exist.</li>
+</ul>
+<p><code class="hljs"><span class="hljs-title function_">setValue</span>(<span class="api-param">name</span>, <span class="api-param">value</span>)</code></p>
+<ul>
+<li>Set the value/text.</li>
+<li>Input/Label: set string; Counter: set number within its min/max; Select: set selected option by value; Checkbox/Radio: set boolean state.</li>
+<li>No-op if the element doesn't exist. Does not dispatch events automatically.</li>
+</ul>
+<p><code class="hljs"><span class="hljs-title function_">isChecked</span>(<span class="api-param">name</span>)</code></p>
+<ul>
+<li>For Checkbox/Radio, returns the live checked/selected state as a boolean.</li>
+</ul>
+<p><code class="hljs"><span class="hljs-title function_">check</span>(<span class="api-param">name</span>)</code> / <code class="hljs"><span class="hljs-title function_">uncheck</span>(<span class="api-param">name</span>)</code></p>
+<ul>
+<li>Convenience methods for Checkbox and Radio elements to set on/off.</li>
+<li>For Radio, <code class="hljs"><span class="hljs-title function_">check</span>(<span class="api-param">name</span>)</code> also unselects other radios in the same group.</li>
+<li>These do not dispatch events by themselves; if you want handlers to run, use <code class="hljs"><span class="hljs-title function_">triggerChange</span>()</code> or <code class="hljs"><span class="hljs-title function_">triggerClick</span>()</code>.</li>
+</ul>
+<p><code class="hljs"><span class="hljs-title function_">getSelected</span>(<span class="api-param">name</span>)</code></p>
+<ul>
+<li>Read the current selection(s) as an array of values.</li>
+<li>For Select, returns a single-item array (or empty array if nothing selected).</li>
+<li>For Container, returns labels of all selected rows.</li>
+</ul>
+<p><code class="hljs"><span class="hljs-title function_">isVisible</span>(<span class="api-param">name</span>)</code>: boolean</p>
+<ul>
+<li>Returns whether the element is currently visible (display not set to 'none').</li>
+</ul>
+<p><code class="hljs"><span class="hljs-title function_">isHidden</span>(<span class="api-param">name</span>)</code>: boolean</p>
+<ul>
+<li>Logical complement of <code class="hljs"><span class="hljs-title function_">isVisible</span>(<span class="api-param">name</span>)</code>.</li>
+</ul>
+<p><code class="hljs"><span class="hljs-title function_">isEnabled</span>(<span class="api-param">name</span>)</code>: boolean</p>
+<ul>
+<li>Returns whether the element is currently enabled (not marked as disabled).</li>
+</ul>
+<p><code class="hljs"><span class="hljs-title function_">isDisabled</span>(<span class="api-param">name</span>)</code>: boolean</p>
+<ul>
+<li>Logical complement of <code class="hljs"><span class="hljs-title function_">isEnabled</span>(<span class="api-param">name</span>)</code>.</li>
+</ul>
+<p><code class="hljs"><span class="hljs-title function_">show</span>(<span class="api-param">name</span>, <span class="api-param">on = true</span>)</code></p>
+<ul>
+<li>Show or hide by boolean. Use <code class="hljs"><span class="hljs-title function_">show</span>(<span class="api-param">name</span>, <span class="hljs-keyword">true</span>)</code> to show; <code class="hljs"><span class="hljs-title function_">show</span>(<span class="api-param">name</span>, <span class="hljs-keyword">false</span>)</code> to hide.</li>
+</ul>
+<p><code class="hljs"><span class="hljs-title function_">hide</span>(<span class="api-param">name</span>, <span class="api-param">on = true</span>)</code></p>
+<ul>
+<li>Convenience inverse of show: <code class="hljs"><span class="hljs-title function_">hide</span>(<span class="api-param">name</span>)</code> hides, <code class="hljs"><span class="hljs-title function_">hide</span>(<span class="api-param">name</span>, <span class="hljs-keyword">false</span>)</code> shows. Internally calls <code class="hljs"><span class="hljs-title function_">show</span>(<span class="api-param">name</span>, <span class="api-param">!on</span>)</code>.</li>
+</ul>
+<p><code class="hljs"><span class="hljs-title function_">enable</span>(<span class="api-param">name</span>, <span class="api-param">on = true</span>)</code></p>
+<ul>
+<li>Enable or disable by boolean. Use <code class="hljs"><span class="hljs-title function_">enable</span>(<span class="api-param">name</span>, <span class="hljs-keyword">true</span>)</code> to enable; <code class="hljs"><span class="hljs-title function_">enable</span>(<span class="api-param">name</span>, <span class="hljs-keyword">false</span>)</code> to disable.</li>
+</ul>
+<p><code class="hljs"><span class="hljs-title function_">disable</span>(<span class="api-param">name</span>, <span class="api-param">on = true</span>)</code></p>
+<ul>
+<li>Convenience inverse of enable: <code class="hljs"><span class="hljs-title function_">disable</span>(<span class="api-param">name</span>)</code> disables, <code class="hljs"><span class="hljs-title function_">disable</span>(<span class="api-param">name</span>, <span class="hljs-keyword">false</span>)</code> enables. Internally calls <code class="hljs"><span class="hljs-title function_">enable</span>(<span class="api-param">name</span>, <span class="api-param">!on</span>)</code>.</li>
+</ul>
+<p><code class="hljs"><span class="hljs-title function_">onClick</span>(<span class="api-param">name</span>, <span class="api-param">handler</span>)</code></p>
+<ul>
+<li>Shortcut for <code class="hljs"><span class="hljs-title function_">on</span>(<span class="api-param">name</span>, <span class="hljs-string">'click'</span>, <span class="api-param">handler</span>)</code>.</li>
+</ul>
+<p><code class="hljs"><span class="hljs-title function_">onChange</span>(<span class="api-param">name</span>, <span class="api-param">handler</span>)</code></p>
+<ul>
+<li>Shortcut for <code class="hljs"><span class="hljs-title function_">on</span>(<span class="api-param">name</span>, <span class="hljs-string">'change'</span>, <span class="api-param">handler</span>)</code>.</li>
+</ul>
+<p><code class="hljs"><span class="hljs-title function_">onInput</span>(<span class="api-param">name</span>, <span class="api-param">handler</span>)</code></p>
+<ul>
+<li>Shortcut for <code class="hljs"><span class="hljs-title function_">on</span>(<span class="api-param">name</span>, <span class="hljs-string">'input'</span>, <span class="api-param">handler</span>)</code>.</li>
+</ul>
+<p><code class="hljs"><span class="hljs-title function_">setSelected</span>(<span class="api-param">name</span>, <span class="api-param">value</span>)</code></p>
+<ul>
+<li>Programmatically set selection.</li>
+<li>For Select elements: sets the selected option by value (single-choice).</li>
+<li>For Container elements: accepts a string or array of strings and replaces the current selection with exactly those labels.</li>
+<li>Does not dispatch a <code class="hljs"><span class="api-param">change</span></code> event automatically. If you need handlers to run, call <code class="hljs"><span class="hljs-title function_">triggerChange</span>(<span class="api-param">name</span>)</code> after changing selection.</li>
+<li>Throws a SyntaxError if the element doesn't exist, the control is missing, the option/row is not found, or the element type doesn't support selection.</li>
+</ul>
+<p><code class="hljs"><span class="hljs-title function_">clearContent</span>(<span class="api-param">element</span>)</code></p>
+<ul>
+<li>Clears the content/value of supported elements.</li>
+<li>Supported: Input (clears the text), Container (removes all rows).</li>
+<li>Throws an error if used on unsupported types.</li>
+</ul>
+<p><code class="hljs"><span class="hljs-title function_">setLabel</span>(<span class="api-param">name</span>, <span class="api-param">label</span>)</code></p>
+<ul>
+<li>Set the visible label text of a Button element.</li>
+<li>Throws a SyntaxError if the element doesn't exist or isn't a Button.</li>
+</ul>
+<p><code class="hljs"><span class="hljs-title function_">changeValue</span>(<span class="api-param">name</span>, <span class="api-param">oldValue</span>, <span class="api-param">newValue</span>)</code></p>
+<ul>
+<li>Rename a specific item within a Container from <code class="hljs"><span class="api-param">oldValue</span></code> to <code class="hljs"><span class="api-param">newValue</span></code>.</li>
+<li>If the item is currently selected, the container's selection mirror is updated accordingly.</li>
+<li>No event is dispatched automatically; call <code class="hljs"><span class="hljs-title function_">triggerChange</span>(<span class="api-param">name</span>)</code> if you want change handlers to run.</li>
+<li>Throws a SyntaxError if the element doesn't exist or isn't a Container.</li>
+</ul>
+<p><code class="hljs"><span class="hljs-title function_">updateSyntax</span>(<span class="api-param">command</span>)</code></p>
+<ul>
+<li>Updates the Syntax Panel with the provided command string. The panel remains open alongside the Preview window and mirrors its width; closing either window also closes the other.</li>
+<li>Content is rendered with preserved whitespace/line breaks in a monospace font.</li>
+<li>If the floating Syntax Panel cannot be created, a fallback inline panel appears immediately below the Preview canvas inside the Preview window.</li>
+<li>Example:</li>
+</ul>
+<pre><code class="language-javascript hljs">const sel = <span class="hljs-title function_">getSelected</span>(<span class="api-param">radiogroup1</span>);
+const cmd = <span class="hljs-title function_">construct_command</span>(<span class="api-param">sel</span>);
+<span class="hljs-title function_">updateSyntax</span>(<span class="api-param">cmd</span>);
+</code></pre>
+
+<p><code class="hljs"><span class="hljs-title function_">run</span>(<span class="api-param">command</span>)</code></p>
+<ul>
+<li>Legacy no-op retained for backward compatibility. Use <code class="hljs"><span class="hljs-title function_">updateSyntax</span>(<span class="api-param">command</span>)</code> to show commands.</li>
+</ul>
+<p>Validation and highlight helpers</p>
+<p><code class="hljs"><span class="hljs-title function_">addError</span>(<span class="api-param">name</span>, <span class="api-param">message</span>)</code></p>
+<ul>
+<li>Show a tooltip-like validation message attached to the element and apply a visual highlight (glow). Multiple distinct messages on the same element are de-duplicated and the first one is shown. The highlight is removed automatically when all messages are cleared.</li>
+</ul>
+<p><code class="hljs"><span class="hljs-title function_">clearError</span>(<span class="api-param">name</span>, <span class="api-param">message?</span>)</code></p>
+<ul>
+<li>Clear a previously added validation message. If <code class="hljs"><span class="api-param">message</span></code> is provided, only that message is removed; otherwise, all messages for the element are cleared.</li>
+</ul>
+<p>Element-specific notes and examples</p>
+<ul>
+<li><p>Input</p>
+<ul>
+<li>Read: <code class="hljs"><span class="hljs-title function_">getValue</span>(<span class="api-param">myInput</span>)</code>: returns a string</li>
+<li>Write: <code class="hljs"><span class="hljs-title function_">setValue</span>(<span class="api-param">myInput</span>, <span class="hljs-string">'hello'</span>)</code></li>
+<li>Events: 'change' (on blur) or 'input' (as you type)</li>
+</ul>
+</li>
+<li><p>Label</p>
+<ul>
+<li>Read: <code class="hljs"><span class="hljs-title function_">getValue</span>(<span class="api-param">myLabel</span>)</code>: returns a string</li>
+<li>Write: <code class="hljs"><span class="hljs-title function_">setValue</span>(<span class="api-param">myLabel</span>, <span class="hljs-string">'New text'</span>)</code></li>
+</ul>
+</li>
+<li><p>Select</p>
+<ul>
+<li>Read: <code class="hljs"><span class="hljs-title function_">getValue</span>(<span class="api-param">mySelect</span>)</code>: returns a string</li>
+<li>Write: <code class="hljs"><span class="hljs-title function_">setValue</span>(<span class="api-param">mySelect</span>, <span class="hljs-string">'RO'</span>)</code></li>
+<li>Event: 'change'</li>
+</ul>
+</li>
+<li><p>Checkbox</p>
+<ul>
+<li>Read state: <code class="hljs"><span class="hljs-title function_">isChecked</span>(<span class="api-param">myCheckbox</span>)</code>: returns a boolean</li>
+<li>Write state: <code class="hljs"><span class="hljs-title function_">check</span>(<span class="api-param">myCheckbox</span>)</code> and <code class="hljs"><span class="hljs-title function_">uncheck</span>(<span class="api-param">myCheckbox</span>)</code></li>
+<li>Event: 'click'</li>
+</ul>
+</li>
+<li><p>Radio</p>
+<ul>
+<li>Read state: <code class="hljs"><span class="hljs-title function_">isChecked</span>(<span class="api-param">myRadio</span>)</code>: returns a boolean</li>
+<li>Write state: <code class="hljs"><span class="hljs-title function_">check</span>(<span class="api-param">myRadio</span>)</code> and <code class="hljs"><span class="hljs-title function_">uncheck</span>(<span class="api-param">myRadio</span>)</code></li>
+<li>Event: 'click'</li>
+</ul>
+</li>
+<li><p>Counter</p>
+<ul>
+<li>Set value within its min/max: <code class="hljs"><span class="hljs-title function_">setValue</span>(<span class="api-param">myCounter</span>, <span class="hljs-number">7</span>)</code></li>
+<li>Read current number: <code class="hljs"><span class="hljs-title function_">getValue</span>(<span class="api-param">myCounter</span>)</code></li>
+</ul>
+</li>
+<li><p>Button</p>
+<ul>
+<li>Pressed feedback is built-in in Preview; your handler can trigger other UI changes.</li>
+<li>Event: 'click'</li>
+</ul>
+</li>
+<li><p>Slider</p>
+<ul>
+<li>Dragging is supported in Preview, and sliders react to changes.</li>
+</ul>
+</li>
+</ul>
+<p>Practical patterns</p>
+<ul>
+<li>Conditional show a panel when a checkbox is checked:</li>
+</ul>
+<pre><code class="language-javascript hljs">onClick(myCheckbox, () =&gt; {
+  <span class="hljs-title function_">show</span>(<span class="api-param">myPanel</span>, <span class="hljs-title function_">isChecked</span>(<span class="api-param">myCheckbox</span>));
+  <span class="hljs-comment">// or: hide(myPanel, isUnchecked(myCheckbox))</span>
+});
+</code></pre>
+
+<ul>
+<li>Mirror an input's text to a label on change:</li>
+</ul>
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">onChange</span>(<span class="api-param">myInput</span>, () =&gt; <span class="hljs-title function_">setValue</span>(<span class="api-param">myLabel</span>, <span class="hljs-title function_">getValue</span>(<span class="api-param">myInput</span>)));
+</code></pre>
+
+<ul>
+<li>Select a value in a Select (no auto-dispatch), then notify listeners:</li>
+</ul>
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">setSelected</span>(<span class="api-param">countrySelect</span>, <span class="hljs-string">"RO"</span>);
+<span class="hljs-title function_">triggerChange</span>(<span class="api-param">countrySelect</span>);
+</code></pre>
+
+<ul>
+<li>Conditional enable/disable situations:</li>
+</ul>
+<pre><code class="language-javascript hljs">onClick(lockCheckbox, () =&gt; {
+  <span class="hljs-title function_">disable</span>(<span class="api-param">saveBtn</span>, <span class="hljs-title function_">isChecked</span>(<span class="api-param">lockCheckbox</span>)); <span class="hljs-comment">// disable when locked</span>
+  <span class="hljs-comment">// Equivalent forms:</span>
+  <span class="hljs-comment">// enable(saveBtn, isUnchecked(lockCheckbox));</span>
+
+  <span class="hljs-comment">// Unconditional forms:</span>
+  <span class="hljs-comment">// enable(saveBtn);             // just enable</span>
+  <span class="hljs-comment">// disable(saveBtn);            // just disable</span>
+});
+</code></pre>
+
+<ul>
+<li>Replace a Container's selection (multi-select) and notify listeners:</li>
+</ul>
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">setSelected</span>(<span class="api-param">variablesContainer</span>, <span class="api-param">["Sepal.Width"]</span>);
+<span class="hljs-title function_">triggerChange</span>(<span class="api-param">variablesContainer</span>);
+</code></pre>
+
+<ul>
+<li>Add or remove items in a Container:</li>
+</ul>
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">addValue</span>(<span class="api-param">variablesContainer</span>, <span class="hljs-string">"Sepal.Length"</span>);
+<span class="hljs-title function_">clearValue</span>(<span class="api-param">variablesContainer</span>, <span class="hljs-string">"Sepal.Width"</span>);
+</code></pre>
+
+<ul>
+<li>Update a Button label and rename a Container item:</li>
+</ul>
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">setLabel</span>(<span class="api-param">runBtn</span>, <span class="hljs-string">"Run Analysis"</span>);
+<span class="hljs-title function_">changeValue</span>(<span class="api-param">variablesContainer</span>, <span class="hljs-string">"Sepal.Length"</span>, <span class="hljs-string">"Sepal Len"</span>);
+</code></pre>
+
+<p>Notes</p>
+<ul>
+<li>Programmatic state changes (e.g., <code class="hljs"><span class="hljs-title function_">check</span></code>, <code class="hljs"><span class="hljs-title function_">setValue</span></code>) do not automatically dispatch events. Use <code class="hljs"><span class="hljs-title function_">triggerChange</span>()</code> or <code class="hljs"><span class="hljs-title function_">triggerClick</span>()</code> when you need the dialog to behave as if the user had interacted with the element.</li>
+<li>The selection command (<code class="hljs"><span class="hljs-title function_">setSelected</span></code>) also does not auto-dispatch, but it can be paired with <code class="hljs"><span class="hljs-title function_">triggerChange</span>(<span class="api-param">name</span>)</code> if you rely on change triggers.</li>
+<li>Validation helpers (<code class="hljs"><span class="hljs-title function_">addError</span></code>, <code class="hljs"><span class="hljs-title function_">clearError</span></code>) are purely visual aids in Preview; they do not block execution or change element values.</li>
+</ul>
+<h3 id="populate-container-contents">Populate container contents</h3>
+<p>Containers can show rows populated via API. For example:</p>
+<pre><code class="language-javascript hljs">
+<span class="hljs-title function_">setValue</span>(<span class="api-param">container1</span>, <span class="hljs-title function_">listDatasets</span>());
+
+onChange(container1, () =&gt; setValue(
+  container2,
+  <span class="hljs-title function_">listVariables</span>(<span class="hljs-title function_">getSelected</span>(<span class="api-param">container1</span>))
+));
+</code></pre>
+
+<p><code class="hljs"><span class="hljs-title function_">listVariables</span>()</code> returns objects with both the variable label and its data type, so passing its output straight into <code class="hljs"><span class="hljs-title function_">setValue</span></code> preserves the metadata required for type filtering.</p>
+<ul>
+<li><code class="hljs"><span class="hljs-title function_">setValue</span>(<span class="api-param">container</span>, <span class="api-param">array</span>)</code> accepts an array of strings or objects shaped like <code class="hljs">{ text, type, active }</code> and renders each entry as a row.</li>
+<li>Rows automatically adopt the container's <code class="hljs"><span class="api-param">fontColor</span></code>, <code class="hljs"><span class="api-param">activeBackgroundColor</span></code>, and <code class="hljs"><span class="api-param">activeFontColor</span></code>.</li>
+<li>If the container's Item type is restricted, rows whose <code class="hljs"><span class="api-param">type</span></code> metadata does not match are rendered disabled and cannot be selected.</li>
+<li>Containers scroll automatically when the row list exceeds the container height.</li>
+</ul>
+<p>Multi-selection containers support range selection: click an item, then Shift-click another to select or deselect the entire range. Single containers toggle a single active row.</p>
+
+	
+
+</main>
+</body></html>

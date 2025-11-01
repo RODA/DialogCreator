@@ -4,20 +4,10 @@ const path = require('path');
 const fs = require('fs');
 const { transformManualMarkdown } = require('./transform-markdown');
 
-(async function main() {
-  const repoRoot = path.resolve(__dirname, '../..');
-  const input = path.join(repoRoot, 'DialogCreator.md');
-  const outputDir = path.join(repoRoot, 'docs', 'manual');
-  const output = path.join(outputDir, 'index.html');
-  const manualCss = path.relative(outputDir, path.join(repoRoot, 'docs', 'manual', 'css', 'manual.css'));
-
+async function renderPage({ input, output, title }, repoRoot, outputDir, manualCss) {
   if (!fs.existsSync(input)) {
-    console.error('DialogCreator.md not found at', input);
+    console.error('Markdown source not found at', input);
     process.exit(1);
-  }
-
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true });
   }
 
   const md = fs.readFileSync(input, 'utf8');
@@ -30,7 +20,7 @@ const { transformManualMarkdown } = require('./transform-markdown');
     });
 
     if (!result || typeof result.content !== 'string') {
-      console.error('Failed to render manual HTML.');
+      console.error(`Failed to render HTML for ${path.basename(input)}.`);
       process.exit(1);
     }
 
@@ -41,7 +31,7 @@ const { transformManualMarkdown } = require('./transform-markdown');
 
     // Remove any existing stylesheet links and inject our own relative link
     html = html.replace(/<link rel="stylesheet"[^>]*>/g, '');
-    html = html.replace('</head>', `  <title>Dialog Creator — User Manual</title>\n  <link rel="stylesheet" href="${manualCss}">\n</head>`);
+    html = html.replace('</head>', `  <title>${title}</title>\n  <link rel="stylesheet" href="${manualCss}">\n</head>`);
 
     if (!/<main>/i.test(html)) {
       html = html.replace(/<body([^>]*)>/i, (match, attrs = '') => `<body${attrs}>\n<main>`);
@@ -55,10 +45,36 @@ const { transformManualMarkdown } = require('./transform-markdown');
     html = html.replace(/src="docs\//g, 'src="../');
 
     fs.writeFileSync(output, html, 'utf8');
-    console.log('Manual HTML generated at:', output);
+    console.log(`Manual HTML generated at: ${output}`);
   } catch (err) {
-    console.error('Error generating HTML manual:', (err && err.stack) || err);
+    console.error(`Error generating HTML for ${path.basename(input)}:`, (err && err.stack) || err);
     process.exit(1);
   }
-})();
+}
 
+(async function main() {
+  const repoRoot = path.resolve(__dirname, '../..');
+  const outputDir = path.join(repoRoot, 'docs', 'manual');
+  const manualCss = path.relative(outputDir, path.join(repoRoot, 'docs', 'manual', 'css', 'manual.css'));
+
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
+
+  const pages = [
+    {
+      input: path.join(repoRoot, 'DialogCreator.md'),
+      output: path.join(outputDir, 'index.html'),
+      title: 'Dialog Creator — User Manual'
+    },
+    {
+      input: path.join(repoRoot, 'API.md'),
+      output: path.join(outputDir, 'api.html'),
+      title: 'Dialog Creator — API Reference'
+    }
+  ];
+
+  for (const page of pages) {
+    await renderPage(page, repoRoot, outputDir, manualCss);
+  }
+})();

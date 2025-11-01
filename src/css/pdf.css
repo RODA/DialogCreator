@@ -98,6 +98,11 @@ img {
     max-width: 100%;
 }
 
+.page-break {
+    page-break-before: always;
+    break-before: page;
+}
+
 /* Add a simple header/footer */
 header, footer {
     position: running(header-footer);

@@ -19,6 +19,8 @@ let secondWindow: BrowserWindow;
 let syntaxPanelWindow: BrowserWindow | null;
 let syntaxPanelAnchor: BrowserWindow | null;
 let syntaxPanelHeight = 160; // content height; updated by renderer
+type InfoPage = 'manual' | 'api' | 'about';
+let infoWindow: BrowserWindow | null = null;
 
 const windowid: { [key: string]: number } = {
     editorWindow: 1,
@@ -220,30 +222,134 @@ function createSecondWindow(args: { [key: string]: any }) {
     windowid.secondWindow = secondWindow.id;
 }
 
-// Create a simple About window
-function createAboutWindow() {
-    try {
-        const aboutWin = new BrowserWindow({
-            width: 420,
-            height: 360,
+function getInfoConfig(page: InfoPage) {
+    switch (page) {
+        case 'manual':
+            return {
+                title: 'Dialog Creator — User Manual',
+                width: 1100,
+                height: 780,
+                minWidth: 900,
+                minHeight: 640,
+                resizable: true,
+                maximizable: true,
+                file: path.join(__dirname, "../docs/manual", "index.html")
+            };
+        case 'api':
+            return {
+                title: 'Dialog Creator — API Reference',
+                width: 1100,
+                height: 780,
+                minWidth: 900,
+                minHeight: 640,
+                resizable: true,
+                maximizable: true,
+                file: path.join(__dirname, "../docs/manual", "api.html")
+            };
+        case 'about':
+        default:
+            return {
+                title: 'About Dialog Creator',
+                width: 420,
+                height: 360,
+                minWidth: 420,
+                minHeight: 360,
+                resizable: false,
+                maximizable: false,
+                file: path.join(__dirname, "../src/pages", "about.html")
+            };
+    }
+}
+
+function openInfoWindow(page: InfoPage) {
+    const config = getInfoConfig(page);
+
+    const ensureWindow = () => {
+        if (infoWindow && !infoWindow.isDestroyed()) {
+            return infoWindow;
+        }
+        const win = new BrowserWindow({
+            width: config.width,
+            height: config.height,
             useContentSize: true,
-            resizable: false,
+            resizable: config.resizable,
             minimizable: false,
-            maximizable: false,
+            maximizable: config.maximizable,
             autoHideMenuBar: true,
             parent: editorWindow,
-            title: 'About Dialog Creator',
+            title: config.title,
+            center: true,
             webPreferences: {
-                // No Node APIs needed; static page only
                 contextIsolation: true,
                 sandbox: false
             }
         });
 
-        aboutWin.loadFile(path.join(__dirname, "../src/pages", "about.html"));
-    } catch {
-        // ignore
+        win.on('closed', () => {
+            infoWindow = null;
+        });
+        infoWindow = win;
+        if (typeof config.minWidth === 'number' && typeof config.minHeight === 'number') {
+            try {
+                win.setMinimumSize(config.minWidth, config.minHeight);
+            } catch {
+                // ignore if platform rejects the constraint
+            }
+        }
+        return win;
+    };
+
+    const win = ensureWindow();
+
+    if (win.isDestroyed()) {
+        infoWindow = null;
+        return openInfoWindow(page);
     }
+
+    // Update window characteristics when switching pages
+    try {
+        win.setResizable(config.resizable);
+        win.setMaximizable(config.maximizable);
+        if (typeof config.minWidth === 'number' && typeof config.minHeight === 'number') {
+            win.setMinimumSize(config.minWidth, config.minHeight);
+        }
+        const [curW, curH] = win.getSize();
+        if (curW !== config.width || curH !== config.height) {
+            win.setSize(config.width, config.height);
+            try {
+                win.center();
+            } catch {
+                // ignore if centering is not possible
+            }
+        }
+        win.setTitle(config.title);
+    } catch {
+        // ignore adjustments if they fail (e.g., during window teardown)
+    }
+
+    // Load requested content
+    win.loadFile(config.file).catch(() => {
+        // noop when file missing; window stays open
+    });
+
+    try {
+        win.focus();
+    } catch {
+        // ignore focus errors
+    }
+}
+
+function createUserManualWindow() {
+    openInfoWindow('manual');
+}
+
+function createAPIReference() {
+    openInfoWindow('api');
+}
+
+// Create (or reuse) the shared About/manual/API window
+function createAboutWindow() {
+    openInfoWindow('about');
 }
 
 function setupIPC() {
@@ -787,9 +893,11 @@ function buildMainMenuTemplate(): MenuItemConstructorOptions[] {
         submenu: [
             {
                 label: 'User manual',
-                click() {
-                    // createUserManualWindow();
-                }
+                click: () => createUserManualWindow()
+            },
+            {
+                label: 'API reference',
+                click: () => createAPIReference()
             },
             // Put About here on non-mac platforms
             ...(!OS_Mac ? [{ label: 'About', click: () => createAboutWindow() }] : [])
