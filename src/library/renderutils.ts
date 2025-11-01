@@ -633,12 +633,30 @@ export const renderutils: RenderUtils = {
         }
 
         const uuid = uuidv4();
-        // Determine effective nameid: if provided with digits, preserve as-is (e.g., from duplicate or JSON);
-        // if empty or base without digits, generate the next sequential id for that base.
+        // Determine effective nameid:
+        // - If user provided a non-empty, valid identifier and it is not already used, keep it verbatim.
+        // - Otherwise, generate a unique sequential id based on the provided base or the element type.
         const provided = String((data as any).nameid || '').trim();
-        const nameid = (/\d$/.test(provided) && provided)
-            ? provided
-            : renderutils.makeUniqueNameID(provided || String(data.type || 'el').toLowerCase());
+        const baseFallback = String((data as any).type || 'el').toLowerCase();
+        const existingIds = (() => {
+            try {
+                const info = renderutils.getDialogInfo();
+                return Array.isArray(info?.elements) ? new Set(info.elements.filter(Boolean)) : new Set<string>();
+            } catch {
+                return new Set<string>();
+            }
+        })();
+
+        const chooseUnique = (base: string) => renderutils.makeUniqueNameID(base || baseFallback);
+
+        let nameid: string;
+        if (provided && utils.isIdentifier(provided) && !existingIds.has(provided)) {
+            nameid = provided;
+        } else if (provided) {
+            nameid = chooseUnique(provided);
+        } else {
+            nameid = chooseUnique(baseFallback);
+        }
 
         let eltype = 'div';
         if (utils.isElementOf(data.type, ["Input", "Select"])) {

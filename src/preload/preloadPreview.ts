@@ -531,7 +531,48 @@ function renderPreview(dialog: PreviewDialog) {
 
             const exports: PreviewScriptExports = {};
             const preludeList = API_NAMES.join(', ');
-            const bindings = `const { ${preludeList} } = ui;\nconst log = ui.log.bind(ui);`;
+
+            // Build safe local bindings for element name IDs and radio groups, so
+            // bare identifiers in customJS (e.g., getValue(datasets)) are always
+            // defined in the function scope regardless of existing window globals.
+            const elementsWithName = Array.from(canvas.querySelectorAll<HTMLElement>('[data-nameid]'));
+            const nameIds = Array.from(new Set(
+                elementsWithName
+                    .map(el => String(el.dataset?.nameid || '').trim())
+                    .filter(n => n && utils.isIdentifier(n))
+            ));
+
+            const groupNamesSet = new Set<string>();
+            const customRadios = Array.from(canvas.querySelectorAll<HTMLElement>('.custom-radio[group]'));
+            customRadios.forEach(node => {
+                const g = (node.getAttribute('group') || '').trim();
+                if (g) groupNamesSet.add(g);
+            });
+            const wrappers = Array.from(canvas.querySelectorAll<HTMLElement>('.element-wrapper[data-group]'));
+            wrappers.forEach(w => {
+                const t = String(w.dataset?.type || '').trim();
+                if (t !== 'Radio') return;
+                const g = (w.dataset.group || '').trim();
+                if (g) groupNamesSet.add(g);
+            });
+
+            const groupNames = Array.from(groupNamesSet).filter(n => n && utils.isIdentifier(n));
+
+            const allBareNames = Array.from(new Set([...nameIds, ...groupNames]));
+            // try {
+            //     coms.sendTo('editorWindow', 'consolog', `Preview: bare identifiers available -> ${allBareNames.join(', ')}`);
+            // } catch { /* ignore */ }
+
+            // Note: base-name aliasing (e.g., mapping datasets -> 'datasets1')
+            // can collide with user-declared variables and cause TDZ errors.
+            // To keep customJS predictable, we only expose the exact name IDs
+            // present in the dialog.
+
+            const namePrelude = allBareNames
+                .map(n => `const ${n} = ${JSON.stringify(n)};`)
+                .join('\n');
+
+            const bindings = `const { ${preludeList} } = ui;\nconst log = ui.log.bind(ui);\n${namePrelude}`;
             let fn: Function | null = null;
             try {
                 fn = new Function('ui', 'exports', bindings + '\n' + code);
