@@ -1271,7 +1271,7 @@ export const editor: Editor = {
                     'secondWindow',
                     {
                         width: 640,
-                        height: 510,
+                        height: 520,
                         backgroundColor: '#fff',
                         title: 'Default values',
                         preload: 'preloadDefaults.js',

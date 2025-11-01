@@ -709,3 +709,21 @@ input {
     white-space: nowrap;     /* single line */
     text-overflow: ellipsis; /* add ellipsis when text is longer */
 }
+
+.container-sample .container-item {
+    padding: 4px;
+}
+
+.container-sample .container-item .container-text {
+    padding-left: 0;
+}
+
+.container-sample .container-item-disabled {
+    background-color: #ececec;
+    color: #444;
+    cursor: not-allowed;
+}
+
+.container-sample .container-item-disabled .container-text {
+    color: inherit;
+}

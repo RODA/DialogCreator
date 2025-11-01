@@ -30,7 +30,7 @@ body {
 
 .elements {
     flex-grow: 1;
-    padding: 10px 20px 0px 40px; /* Move 20px more to the right (total 40px left padding) */
+    padding: 5px 20px 0px 40px; /* Move 20px more to the right (total 40px left padding) */
     background-color: #f0f0f0;
     max-width: 200px;
     min-width: 160px;

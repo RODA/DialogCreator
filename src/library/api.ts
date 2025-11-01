@@ -246,6 +246,13 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         const normalFg = host.dataset.fontColor || '#000000';
         const activeBg = host.dataset.activeBackgroundColor || '#779B49';
         const activeFg = host.dataset.activeFontColor || '#ffffff';
+        const disabledBg = host.dataset.disabledBackgroundColor || '#ececec';
+
+        if (item.dataset.disabled === 'true') {
+            item.style.backgroundColor = disabledBg;
+            if (label) label.style.color = normalFg;
+            return;
+        }
 
         if (active) {
             item.style.backgroundColor = activeBg;

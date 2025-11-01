@@ -194,12 +194,13 @@ export const elements: ElementsWithPersist = {
         fontColor: '#000000',
         activeBackgroundColor: '#779B49',
         activeFontColor: '#ffffff',
+        disabledBackgroundColor: '#ececec',
         borderColor: '#b8b8b8',
         isEnabled: true,
         isVisible: true,
         elementIds: [],
         $persist: [
-            'nameid','left','top','width','height','selection','itemType','backgroundColor','fontColor','activeBackgroundColor','activeFontColor','borderColor','isEnabled','isVisible'
+            'nameid','left','top','width','height','selection','itemType','backgroundColor','fontColor','activeBackgroundColor','activeFontColor','disabledBackgroundColor','borderColor','isEnabled','isVisible'
         ] as const
     },
     groupElement: {

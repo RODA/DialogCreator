@@ -28,6 +28,12 @@ body, body *, input, select, textarea, button {
     margin-top: 2px;
 }
 
+.mt-0_5 {
+    margin-top: 0.5rem;
+}
+.mt-0_75 {
+    margin-top: 0.75rem;
+}
 .mt-1 {
     margin-top: 1rem;
 }

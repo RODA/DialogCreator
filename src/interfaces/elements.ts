@@ -155,6 +155,7 @@ export type containerElementType = {
     fontColor: string;
     activeBackgroundColor: string;
     activeFontColor: string;
+    disabledBackgroundColor: string;
     borderColor: string;
     selection: string;
     itemType: string;

@@ -85,6 +85,7 @@ const applyContainerItemFilter = (host: HTMLElement | null) => {
     const normalFg = host.dataset.fontColor || '#000000';
     const activeBg = host.dataset.activeBackgroundColor || '#779B49';
     const activeFg = host.dataset.activeFontColor || '#ffffff';
+    const disabledBg = host.dataset.disabledBackgroundColor || '#ececec';
     let selectionChanged = false;
 
     items.forEach((item) => {
@@ -102,7 +103,7 @@ const applyContainerItemFilter = (host: HTMLElement | null) => {
                 item.classList.remove('active');
                 selectionChanged = true;
             }
-            item.style.backgroundColor = normalBg;
+            item.style.backgroundColor = disabledBg;
             if (label) {
                 label.style.color = normalFg;
             }
@@ -963,17 +964,23 @@ export const renderutils: RenderUtils = {
 
                 const inactive = mkRow('inactive', 'unselected');
                 const active = mkRow('active', 'active / selected');
+                const disabled = mkRow('container-item-disabled disabled', 'disabled / blocked');
 
                 const fg = String(data.fontColor) || '#000000';
                 const abg = String(data.activeBackgroundColor) || '#779B49';
                 const afg = String(data.activeFontColor) || '#ffffff';
-
+                const dbg = String((data as Record<string, unknown>).disabledBackgroundColor ?? '#ececec');
                 inactive.label.style.color = fg;
                 active.row.style.backgroundColor = abg;
                 active.label.style.color = afg;
+                disabled.row.dataset.disabled = 'true';
+                disabled.row.setAttribute('aria-disabled', 'true');
+                disabled.row.style.backgroundColor = dbg;
+                disabled.label.style.color = fg;
 
                 sample.appendChild(inactive.row);
                 sample.appendChild(active.row);
+                sample.appendChild(disabled.row);
                 element.appendChild(sample);
             }
 
@@ -1360,6 +1367,22 @@ export const renderutils: RenderUtils = {
                             value = dataset.activeFontColor;
                             const color = document.getElementById('elactiveFontColor') as HTMLInputElement;
                             color.value = value;
+                        }
+                    }
+                    break;
+
+                case 'disabledBackgroundColor':
+                    if (container) {
+                        if (utils.isValidColor(value)) {
+                            const host = (inner || element) as HTMLElement;
+                            host.querySelectorAll('.container-item-disabled').forEach((r) => {
+                                (r as HTMLDivElement).style.backgroundColor = String(value);
+                            });
+                            renderutils.applyContainerItemFilter(element as HTMLElement);
+                        } else {
+                            value = dataset.disabledBackgroundColor || '#ececec';
+                            const color = document.getElementById('eldisabledBackgroundColor') as HTMLInputElement;
+                            if (color) color.value = value;
                         }
                     }
                     break;

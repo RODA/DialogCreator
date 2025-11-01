@@ -12,14 +12,14 @@ export const datasets: Datasets = {
         { text: "LIT", type: "character" },
         { text: "IND", type: "factor" },
         { text: "STB", type: "binary" },
-        { text: "SURV", type: "date" }
+        { text: "SURV", type: "numeric" }
     ],
     LR2: [
-        { text: "DEV2", type: "numeric" },
+        { text: "DEV2", type: "date" },
         { text: "URB2", type: "numeric" },
         { text: "LIT2", type: "character" },
         { text: "IND2", type: "factor" },
         { text: "STB2", type: "binary" },
-        { text: "SURV2", type: "calibrated" }
+        { text: "SURV2", type: "numeric" }
     ]
 };
