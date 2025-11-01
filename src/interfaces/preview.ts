@@ -113,8 +113,8 @@ export interface PreviewUI {
     /** Add a new item to a Container (does nothing for Select). */
     addValue(name: string, value: string | ContainerItemDescriptor): void;
 
-    /** Clear an item from a Container by its label (does nothing for Select). */
-    clearValue(name: string, value: string): void;
+    /** Clear item(s) from a Container by their label(s) (does nothing for Select). */
+    clearValue(name: string, value: string | string[]): void;
 
     /** Clear all items from a Container element. */
     clearContainer(name: string): void;

@@ -1254,14 +1254,30 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             const host = el; // use the container element directly
 
             const items = Array.from(host.querySelectorAll('.container-item')) as HTMLElement[];
-            const v = String(value);
+            const values = (Array.isArray(value) ? value : [value])
+                .map(v => String(v).trim())
+                .filter(v => v.length > 0);
 
-            const item = items.find(r => ((r.querySelector('.container-text') as HTMLElement | null)?.textContent || '') === v);
-            if (!item) {
+            if (values.length === 0) {
                 return; // nothing to clear
             }
 
-            item.remove();
+            const valuesSet = new Set(values);
+            let removed = false;
+
+            items.forEach(item => {
+                const textElement = item.querySelector('.container-text') as HTMLElement | null;
+                const text = String(textElement?.textContent || '').trim();
+                if (valuesSet.has(text)) {
+                    item.remove();
+                    removed = true;
+                }
+            });
+
+            if (!removed) {
+                return; // no matching items found
+            }
+
             // Update dataset mirror after clearing
             const active = Array.from(host.querySelectorAll('.container-item.active .container-text')) as HTMLElement[];
             const vals = active.map(n => String(n.textContent || '').trim()).filter(s => s.length > 0);
