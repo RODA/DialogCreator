@@ -281,9 +281,12 @@ function setupIPC() {
                                 y: desiredY,
                                 useContentSize: true,
                                 alwaysOnTop: true,
-                                resizable: true,
+                                resizable: false,
                                 minimizable: false,
                                 maximizable: false,
+                                fullscreenable: false,
+                                frame: false,
+                                skipTaskbar: true,
                                 title: 'Syntax Panel',
                                 webPreferences: {
                                     contextIsolation: true,
