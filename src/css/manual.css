@@ -170,12 +170,14 @@ pre code {
 }
 
 .hljs-params {
-    color: #22863a !important;
+    /* color: #22863a !important; */
+    color: #296294 !important;
     font-weight: normal !important;
 }
 
 .hljs-string {
-    color: #296294 !important;
+    /* color: #296294 !important; */
+    color: #22863a !important;
 }
 
 .hljs-keyword {
@@ -243,6 +245,7 @@ a:hover {
 }
 
 span.api-param {
-    color: #22863a !important;
+    /* color: #22863a !important; */
+    color: #477D9B !important;
     font-weight: normal !important;
 }

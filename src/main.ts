@@ -239,7 +239,7 @@ function getInfoConfig(page: InfoPage) {
                 minHeight: 640,
                 resizable: true,
                 maximizable: true,
-                file: path.join(__dirname, "../docs/manual", "index.html")
+                file: path.join(__dirname, "../docs/manual", "manual.html")
             };
         case 'api':
             return {

@@ -1,18 +1,18 @@
 <!DOCTYPE html><html><head><title></title><meta charset="utf-8">  <title>Dialog Creator — API Reference</title>
-  <link rel="stylesheet" href="css/manual.css">
+  <link rel="stylesheet" href="../../src/css/manual.css">
 </head>
 	<body class="">
 <div class="page-with-toc">
 
 <nav class="toc-sidebar" aria-label="Table of contents">
   <div class="toc-heading">Contents</div>
-  <ul class="toc-list"><li class="has-children"><button class="toc-toggle" aria-label="Toggle section" aria-expanded="true"></button><a href="#scripting-api--reference">Scripting API — reference</a><ul class="toc-sub"><li><a href="#api-showmessage">showMessage</a></li><li><a href="#api-getvalue">getValue</a></li><li><a href="#api-setvalue">setValue</a></li><li><a href="#api-ischecked">isChecked</a></li><li><a href="#api-check-uncheck">check / uncheck</a></li><li><a href="#api-getselected">getSelected</a></li><li><a href="#api-isvisible">isVisible</a></li><li><a href="#api-ishidden">isHidden</a></li><li><a href="#api-isenabled">isEnabled</a></li><li><a href="#api-isdisabled">isDisabled</a></li><li><a href="#api-show">show</a></li><li><a href="#api-hide">hide</a></li><li><a href="#api-enable">enable</a></li><li><a href="#api-disable">disable</a></li><li><a href="#api-onclick">onClick</a></li><li><a href="#api-onchange">onChange</a></li><li><a href="#api-oninput">onInput</a></li><li><a href="#api-setselected">setSelected</a></li><li><a href="#api-clearcontent">clearContent</a></li><li><a href="#api-setlabel">setLabel</a></li><li><a href="#api-changevalue">changeValue</a></li><li><a href="#api-updatesyntax">updateSyntax</a></li><li><a href="#api-run">run</a></li><li><a href="#api-adderror">addError</a></li><li><a href="#api-clearerror">clearError</a></li></ul></li><li><a href="#element-specific-notes-and-examples">Element-specific notes and examples</a></li><li><a href="#populate-container-contents">Populate container contents</a></li></ul>
+  <ul class="toc-list"><li class="has-children"><button class="toc-toggle" aria-label="Toggle section" aria-expanded="true"></button><a href="#scripting-api--reference">Scripting API — reference</a><ul class="toc-sub"><li><a href="#api-showmessage">showMessage</a></li><li><a href="#api-getvalue">getValue</a></li><li><a href="#api-setvalue">setValue</a></li><li><a href="#api-ischecked">isChecked</a></li><li><a href="#api-check-uncheck">check / uncheck</a></li><li><a href="#api-getselected">getSelected</a></li><li><a href="#api-isvisible">isVisible</a></li><li><a href="#api-ishidden">isHidden</a></li><li><a href="#api-isenabled">isEnabled</a></li><li><a href="#api-isdisabled">isDisabled</a></li><li><a href="#api-show">show</a></li><li><a href="#api-hide">hide</a></li><li><a href="#api-enable">enable</a></li><li><a href="#api-disable">disable</a></li><li><a href="#api-onclick">onClick</a></li><li><a href="#api-onchange">onChange</a></li><li><a href="#api-oninput">onInput</a></li><li><a href="#api-setselected">setSelected</a></li><li><a href="#api-clearcontent">clearContent</a></li><li><a href="#api-setlabel">setLabel</a></li><li><a href="#api-changevalue">changeValue</a></li><li><a href="#api-updatesyntax">updateSyntax</a></li><li><a href="#api-run">run</a></li><li><a href="#api-adderror">addError</a></li><li><a href="#api-clearerror">clearError</a></li><li><a href="#api-listdatasets">listDatasets</a></li><li><a href="#api-listvariables">listVariables</a></li></ul></li><li><a href="#element-specific-details">Element-specific details</a></li><li><a href="#case-study-recode-variables-dialog">Case study: recode variables dialog</a></li></ul>
 </nav>
 <main id="main">
 
 <details class="toc-mobile">
   <summary>Contents</summary>
-  <ul class="toc-list"><li class="has-children"><button class="toc-toggle" aria-label="Toggle section" aria-expanded="true"></button><a href="#scripting-api--reference">Scripting API — reference</a><ul class="toc-sub"><li><a href="#api-showmessage">showMessage</a></li><li><a href="#api-getvalue">getValue</a></li><li><a href="#api-setvalue">setValue</a></li><li><a href="#api-ischecked">isChecked</a></li><li><a href="#api-check-uncheck">check / uncheck</a></li><li><a href="#api-getselected">getSelected</a></li><li><a href="#api-isvisible">isVisible</a></li><li><a href="#api-ishidden">isHidden</a></li><li><a href="#api-isenabled">isEnabled</a></li><li><a href="#api-isdisabled">isDisabled</a></li><li><a href="#api-show">show</a></li><li><a href="#api-hide">hide</a></li><li><a href="#api-enable">enable</a></li><li><a href="#api-disable">disable</a></li><li><a href="#api-onclick">onClick</a></li><li><a href="#api-onchange">onChange</a></li><li><a href="#api-oninput">onInput</a></li><li><a href="#api-setselected">setSelected</a></li><li><a href="#api-clearcontent">clearContent</a></li><li><a href="#api-setlabel">setLabel</a></li><li><a href="#api-changevalue">changeValue</a></li><li><a href="#api-updatesyntax">updateSyntax</a></li><li><a href="#api-run">run</a></li><li><a href="#api-adderror">addError</a></li><li><a href="#api-clearerror">clearError</a></li></ul></li><li><a href="#element-specific-notes-and-examples">Element-specific notes and examples</a></li><li><a href="#populate-container-contents">Populate container contents</a></li></ul>
+  <ul class="toc-list"><li class="has-children"><button class="toc-toggle" aria-label="Toggle section" aria-expanded="true"></button><a href="#scripting-api--reference">Scripting API — reference</a><ul class="toc-sub"><li><a href="#api-showmessage">showMessage</a></li><li><a href="#api-getvalue">getValue</a></li><li><a href="#api-setvalue">setValue</a></li><li><a href="#api-ischecked">isChecked</a></li><li><a href="#api-check-uncheck">check / uncheck</a></li><li><a href="#api-getselected">getSelected</a></li><li><a href="#api-isvisible">isVisible</a></li><li><a href="#api-ishidden">isHidden</a></li><li><a href="#api-isenabled">isEnabled</a></li><li><a href="#api-isdisabled">isDisabled</a></li><li><a href="#api-show">show</a></li><li><a href="#api-hide">hide</a></li><li><a href="#api-enable">enable</a></li><li><a href="#api-disable">disable</a></li><li><a href="#api-onclick">onClick</a></li><li><a href="#api-onchange">onChange</a></li><li><a href="#api-oninput">onInput</a></li><li><a href="#api-setselected">setSelected</a></li><li><a href="#api-clearcontent">clearContent</a></li><li><a href="#api-setlabel">setLabel</a></li><li><a href="#api-changevalue">changeValue</a></li><li><a href="#api-updatesyntax">updateSyntax</a></li><li><a href="#api-run">run</a></li><li><a href="#api-adderror">addError</a></li><li><a href="#api-clearerror">clearError</a></li><li><a href="#api-listdatasets">listDatasets</a></li><li><a href="#api-listvariables">listVariables</a></li></ul></li><li><a href="#element-specific-details">Element-specific details</a></li><li><a href="#case-study-recode-variables-dialog">Case study: recode variables dialog</a></li></ul>
 </details>
 
 		<h1 id="dialog-creator--api-reference">Dialog Creator — API Reference</h1>
@@ -139,7 +139,7 @@ const cmd = <span class="hljs-title function_">construct_command</span>(<span cl
 
 <h3 id="api-run"><code class="hljs"><span class="hljs-title function_">run</span>(<span class="api-param">command</span>)</code></h3>
 <ul>
-<li>Legacy no-op retained for backward compatibility. Use <code class="hljs"><span class="hljs-title function_">updateSyntax</span>(<span class="api-param">command</span>)</code> to show commands.</li>
+<li>Sends the specified command to the backend for execution (for instance to run the R code, if running on top of R).</li>
 </ul>
 <p>Validation and highlight helpers</p>
 <h3 id="api-adderror"><code class="hljs"><span class="hljs-title function_">addError</span>(<span class="api-param">name</span>, <span class="api-param">message</span>)</code></h3>
@@ -150,7 +150,16 @@ const cmd = <span class="hljs-title function_">construct_command</span>(<span cl
 <ul>
 <li>Clear a previously added validation message. If <code class="hljs"><span class="api-param">message</span></code> is provided, only that message is removed; otherwise, all messages for the element are cleared.</li>
 </ul>
-<h2 id="element-specific-notes-and-examples">Element-specific notes and examples</h2>
+<p>Backend helpers (in the developer's responsibility)</p>
+<h3 id="api-listdatasets"><code class="hljs"><span class="hljs-title function_">listDatasets</span>()</code></h3>
+<ul>
+<li>Returns an array of dataset names available in the backend environment (e.g., R).</li>
+</ul>
+<h3 id="api-listvariables"><code class="hljs"><span class="hljs-title function_">listVariables</span>(<span class="api-param">dataset</span>)</code></h3>
+<ul>
+<li>Returns an array of variable names available in the specified dataset, as well as their types.</li>
+</ul>
+<h2 id="element-specific-details">Element-specific details</h2>
 <ul>
 <li><p>Input</p>
 <ul>
@@ -268,25 +277,223 @@ const cmd = <span class="hljs-title function_">construct_command</span>(<span cl
 <li>The selection command (<code class="hljs"><span class="hljs-title function_">setSelected</span></code>) also does not auto-dispatch, but it can be paired with <code class="hljs"><span class="hljs-title function_">triggerChange</span>(<span class="api-param">name</span>)</code> to trigger a change event.</li>
 <li>Validation helpers (<code class="hljs"><span class="hljs-title function_">addError</span></code>, <code class="hljs"><span class="hljs-title function_">clearError</span></code>) are purely visual aids in Preview; they do not block execution or change element values.</li>
 </ul>
-<h2 id="populate-container-contents">Populate container contents</h2>
-<p>Containers can show rows populated via API. For example:</p>
-<pre><code class="language-javascript hljs">
-<span class="hljs-title function_">setValue</span>(<span class="api-param">container1</span>, <span class="hljs-title function_">listDatasets</span>());
+<h2 id="case-study-recode-variables-dialog">Case study: recode variables dialog</h2>
+<p>The following section exemplifies, using a step by step approach, how to build a dialog that allows users to recode a variable in the R language. It shows how to construct the dialog in the editor area, and what actions are needed in the scripting area to make it functional and responsive.</p>
+<p>Similar to any other recoding dialog, the user needs to first select a dataset from a list, then choose a variable from that dataset to recode, and finally specify the recoding rules.</p>
+<img src="../manual/images/recodesign.png" alt="Recode design part" style="width: 540px;">
 
-onChange(container1, () =&gt; setValue(
-  container2,
-  <span class="hljs-title function_">listVariables</span>(<span class="hljs-title function_">getSelected</span>(<span class="api-param">container1</span>))
-));
+<p>The design window contains three Container elements: the top left for datasets and the bottom left for variable, and the right one for the recoding rules. Out of all container properties, the image below highlights the important ones for the dataset container, namely the selection type (single/multiple) and the item type (used for filtering variables). In this particular container, a single dataset can be selected, and the item type is left to the default 'Any' but it could have been set to 'Character', as dataset names are strings.</p>
+<img src="../manual/images/selection_type.png" alt="Selection and item types" style="width: 30%;">
+
+<p>The variables container is also set to single selection, but its item type is set to 'Numeric' to restrict only numeric variables to be selected for recoding. The recoding rules container is set to multi-selection and its item type is also left to 'Any' since it will contain ad-hoc user-defined rules.</p>
+<p>The design window also contains two sets of radio buttons, six to specify the old values in the left side of the vertical separator, and three radio buttons on the right side to specify the new values. Above the rules container, there are three buttons to add rules, remove selected rules, or completely clear the entire rules container.</p>
+<p>On the bottom part of the dialog, there is a left checkbox to indicate whether the recoding should be done in place (overwriting the original variable) or to a new variable, and a text input to specify the name of the new variable. This input is barely visible in the image because its property 'Visible' is set to 'Hide' by default, and it will be shown only when the checkbox is checked (indicating that a new variable is to be created).</p>
+<p>On the bottom right side, there is another (main) button to execute the recoding operation. This button will be responsible with sending / running the final command into R.</p>
+<img src="../manual/images/recode_preview.png" alt="Recode preview part" style="width: 540px;">
+
+<p>This image above is the preview window of the dialog, showing how it will look like when executed. The datasets container is populated with the list of available datasets, for the time being a simulation of two datasets from the R environment: 'PlantGrowth' and 'ToothGrowth'. Below the window is the syntax panel, which will display the constructed command to be sent to R. This is not a valid R command yet, because of the placeholders <code class="hljs">&lt;dataset&gt;</code> and <code class="hljs">&lt;variable&gt;</code>, but it will be updated as the user makes selections in the dialog. The functions <code class="hljs"><span class="hljs-title function_">inside</span>()</code> and <code class="hljs"><span class="hljs-title function_">recode</span>()</code> are both part of the R package <code class="hljs"><span class="api-param">admisc</span></code>.</p>
+<p>Hitting the 'Run' button, at this very moment, will trigger a validation error because no dataset or variable has been selected yet:</p>
+<img src="../manual/images/recode_no_dataset.png" alt="Recode no dataset" style="width: 19%;">
+
+<p>Upon selecting a dataset, in this case 'ToothGrowth', the variables container is populated with the numeric variables from that dataset, namely 'len' and 'dose' (while the categorical variable 'supp' is disabled). The syntax panel is also updated to reflect the selected dataset. Hitting 'Run' now will trigger a different validation error, this time for the missing variable selection:</p>
+<img src="../manual/images/recode_dataset_selected.png" alt="Recode preview part" style="width: 540px;">
+
+<p>Note how the syntax panel now shows the selected dataset 'ToothGrowth' instead of the placeholder <code class="hljs">&lt;dataset&gt;</code>, while the variable is still unselected, hence the placeholder <code class="hljs">&lt;variable&gt;</code> remains. This way, the syntax panel is progressively updated as the user makes selections in the dialog. Making use of the Javascript's reactive nature, the syntax panel is updated automatically whenever the user selects or clicks something in the dialog.</p>
+<p>This looks like a lot of work, but in reality it only requires a few lines of code to make it all work. Below is an image of the custom scripting area that makes this dialog functional, that appear when the button 'Actions' is clicked in the design window:</p>
+<img src="../manual/images/recode_actions.png" alt="Recode actions area" style="width: 793px;">
+
+<p>The syntax construction is left entirely to the user's imagination, and a dedicated custom function <code class="hljs"><span class="hljs-title function_">buildCommand</span>()</code> will be introduced later. In the above image, the code starts by defining a few global variables to hold the selected dataset and variable names, as well as the recoded variable name (which is updated via a checkbox handler, also shown later).</p>
+<p>Once the Preview window is started, the first action is to populate the datasets container with the list of available datasets. This is done via the API function <code class="hljs"><span class="hljs-title function_">setValue</span>()</code>, which accepts an array of strings to render as container items. Here, the built-in API function <code class="hljs"><span class="hljs-title function_">listDatasets</span>()</code> is used to retrieve the list of datasets from R (it is the developer's responsibility to provide this function in the host application). This is done only once, at the start of the Preview:</p>
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">setValue</span>(<span class="api-param">c_datasets</span>, <span class="hljs-title function_">listDatasets</span>());
+</code></pre>
+<p>(note also that the container name <code class="hljs"><span class="api-param">c_datasets</span></code> is used here, as manually changed in the design window).</p>
+<p>The custom code then continues with an event handler for the datasets container, which triggers whenever the user selects a dataset. Inside this handler, the selected dataset is retrieved via <code class="hljs"><span class="hljs-title function_">getSelected</span>()</code>, and stored in the global variable <code class="hljs"><span class="api-param">selected_dataset</span></code>. Then, the variables container is populated with the list of variables from the selected dataset, using another built-in API function <code class="hljs"><span class="hljs-title function_">listVariables</span>()</code>, which returns an array of variable names from the specified dataset, as well as their types. Finally, the syntax panel is updated by calling a custom function <code class="hljs"><span class="hljs-title function_">buildCommand</span>()</code>, which constructs the R command string based on the current selections:</p>
+<pre><code class="language-javascript hljs">onChange(c_datasets, () =&gt; {
+  <span class="hljs-title function_">clearError</span>(<span class="api-param">c_datasets</span>);
+  selected_dataset = <span class="hljs-title function_">getSelected</span>(<span class="api-param">c_datasets</span>);
+  <span class="hljs-title function_">setValue</span>(<span class="api-param">c_variables</span>, <span class="hljs-title function_">listVariables</span>(<span class="api-param">selected_dataset</span>));
+  selected_variable = <span class="hljs-string">'&lt;variable&gt;'</span>;
+  <span class="hljs-title function_">updateSyntax</span>(<span class="hljs-title function_">buildCommand</span>());
+});
 </code></pre>
 
-<p><code class="hljs"><span class="hljs-title function_">listVariables</span>()</code> returns objects with both the variable label and its data type, so passing its output straight into <code class="hljs"><span class="hljs-title function_">setValue</span></code> preserves the metadata required for type filtering.</p>
-<ul>
-<li><code class="hljs"><span class="hljs-title function_">setValue</span>(<span class="api-param">container</span>, <span class="api-param">array</span>)</code> accepts an array of strings or objects shaped like <code class="hljs">{ text, type, active }</code> and renders each entry as a row.</li>
-<li>Rows automatically adopt the container's <code class="hljs"><span class="api-param">fontColor</span></code>, <code class="hljs"><span class="api-param">activeBackgroundColor</span></code>, and <code class="hljs"><span class="api-param">activeFontColor</span></code>.</li>
-<li>If the container's Item type is restricted, rows whose <code class="hljs"><span class="api-param">type</span></code> metadata does not match are rendered disabled and cannot be selected.</li>
-<li>Containers scroll automatically when the row list exceeds the container height.</li>
-</ul>
-<p>Multi-selection containers support range selection: click an item, then Shift-click another to select or deselect the entire range. Single containers toggle a single active row.</p>
+<p>The next set of commands are just convenience handlers for the radio buttons. For instance, when the user clicks on the first top input in the old values (<code class="hljs"><span class="api-param">i_value_old</span></code>), the corresponding radion button is checked programmatically via the <code class="hljs"><span class="hljs-title function_">check</span>()</code> API function. Similar handlers are defined for all other radio buttons, both for old and new values:</p>
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">onClick</span>(<span class="api-param">i_value_old</span>, () =&gt; <span class="hljs-title function_">check</span>(<span class="api-param">r_old1</span>));
+<span class="hljs-title function_">onClick</span>(<span class="api-param">i_lowesto</span>, () =&gt; <span class="hljs-title function_">check</span>(<span class="api-param">r_old2</span>));
+<span class="hljs-title function_">onClick</span>(<span class="api-param">i_from</span>, () =&gt; <span class="hljs-title function_">check</span>(<span class="api-param">r_old3</span>));
+<span class="hljs-title function_">onClick</span>(<span class="api-param">i_to</span>, () =&gt; <span class="hljs-title function_">check</span>(<span class="api-param">r_old3</span>));
+<span class="hljs-title function_">onClick</span>(<span class="api-param">i_tohighest</span>, () =&gt; <span class="hljs-title function_">check</span>(<span class="api-param">r_old4</span>));
+<span class="hljs-title function_">onClick</span>(<span class="api-param">i_value_new</span>, () =&gt; <span class="hljs-title function_">check</span>(<span class="api-param">r_new1</span>));
+</code></pre>
+
+<p>The radio buttons have explicit handlers themselves. Once clicked, they fire the change events for their corresponding input fields, ensuring that the UI stays in sync with the user's selections. This allows for a more dynamic and responsive dialog experience, as changes to one element can automatically update others as needed.</p>
+<pre><code class="language-javascript hljs">onChange(radiogroup1, () =&gt; {
+  <span class="hljs-keyword">if</span> (<span class="hljs-title function_">isChecked</span>(<span class="api-param">r_old1</span>)) <span class="hljs-title function_">triggerChange</span>(<span class="api-param">i_value_old</span>);
+  <span class="hljs-keyword">if</span> (<span class="hljs-title function_">isChecked</span>(<span class="api-param">r_old2</span>)) <span class="hljs-title function_">triggerChange</span>(<span class="api-param">i_lowesto</span>);
+  <span class="hljs-keyword">if</span> (<span class="hljs-title function_">isChecked</span>(<span class="api-param">r_old3</span>)) <span class="hljs-title function_">triggerChange</span>(<span class="api-param">i_from</span>); <span class="hljs-comment">// also checks i_to</span>
+  <span class="hljs-keyword">if</span> (<span class="hljs-title function_">isChecked</span>(<span class="api-param">r_old4</span>)) <span class="hljs-title function_">triggerChange</span>(<span class="api-param">i_tohighest</span>);
+  <span class="hljs-keyword">if</span> (<span class="hljs-title function_">isChecked</span>(<span class="api-param">r_old5</span>)) old_value = <span class="hljs-string">"missing"</span>;
+  <span class="hljs-keyword">if</span> (<span class="hljs-title function_">isChecked</span>(<span class="api-param">r_old6</span>)) old_value = <span class="hljs-string">"else"</span>;
+});
+
+onChange(radiogroup2, () =&gt; {
+  <span class="hljs-keyword">if</span> (<span class="hljs-title function_">isChecked</span>(<span class="api-param">r_new1</span>)) <span class="hljs-title function_">triggerChange</span>(<span class="api-param">i_value_new</span>);
+  <span class="hljs-keyword">if</span> (<span class="hljs-title function_">isChecked</span>(<span class="api-param">r_new2</span>)) new_value = <span class="hljs-string">'missing'</span>;
+  <span class="hljs-keyword">if</span> (<span class="hljs-title function_">isChecked</span>(<span class="api-param">r_new3</span>)) new_value = <span class="hljs-string">'copy'</span>;
+});
+</code></pre>
+
+<p>Instead of listening to each individual radio button, the code above listens to the entire radio group <code class="hljs"><span class="api-param">radiogroup1</span></code>, and checks which radio button is currently selected. For instance, if the first radio button <code class="hljs"><span class="api-param">r_old1</span></code> is checked, it triggers the change event for the corresponding input field <code class="hljs"><span class="api-param">i_value_old</span></code>, which will update the <code class="hljs"><span class="api-param">old_value</span></code> variable accordingly (and similar logic applies to the corresponding input in the new values section):</p>
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">onChange</span>(<span class="api-param">i_value_old</span>, () =&gt; old_value = <span class="hljs-title function_">getValue</span>(<span class="api-param">i_value_old</span>));
+<span class="hljs-title function_">onChange</span>(<span class="api-param">i_value_new</span>, () =&gt; new_value = <span class="hljs-title function_">getValue</span>(<span class="api-param">i_value_new</span>));
+</code></pre>
+
+<p>The next input from the old values section is handled similarly, updating the <code class="hljs"><span class="api-param">old_value</span></code> variable when the user changes the input:</p>
+<pre><code class="language-javascript hljs">
+onChange(i_lowesto, () =&gt; {
+  const lowesto = <span class="hljs-title function_">getValue</span>(<span class="api-param">i_lowesto</span>);
+  old_value = lowesto ? <span class="hljs-string">'lo:'</span> + lowesto : <span class="hljs-string">''</span>;
+});
+</code></pre>
+
+<p>The part with <code class="hljs">old_value = lowesto ? 'lo:' + lowesto : '';</code> is a Javascript shorthand for:</p>
+<pre><code class="language-javascript hljs">  <span class="hljs-keyword">if</span> (lowesto) {
+    old_value = <span class="hljs-string">'lo:'</span> + lowesto;
+  } <span class="hljs-keyword">else</span> {
+    old_value = <span class="hljs-string">''</span>;
+  }
+</code></pre>
+<p>It is similar to the equivalent R code: <code class="hljs">oldvalue &lt;- ifelse(nzchar(lowesto), paste<span class="hljs-number">0</span>('lo:', lowesto), '')</code></p>
+<p>Both next inputs <code class="hljs"><span class="api-param">i_from</span></code> and <code class="hljs"><span class="api-param">i_to</span></code> from the old values section are handled in a similar manner, updating the <code class="hljs"><span class="api-param">old_value</span></code> variable based on user input:</p>
+<pre><code class="language-javascript hljs"><span class="hljs-comment">// delegate to i_to</span>
+<span class="hljs-title function_">onChange</span>(<span class="api-param">i_from</span>, () =&gt; <span class="hljs-title function_">triggerChange</span>(<span class="api-param">i_to</span>));
+
+onChange(i_to, () =&gt; {
+  const from = <span class="hljs-title function_">getValue</span>(<span class="api-param">i_from</span>);
+  const to = <span class="hljs-title function_">getValue</span>(<span class="api-param">i_to</span>);
+  old_value = (from &amp;&amp; to) ? from + <span class="hljs-string">':'</span> + to : <span class="hljs-string">''</span>;
+});
+</code></pre>
+
+<p>Here, both "from" and "to" inputs have to be non-empty to construct a valid range string for <code class="hljs"><span class="api-param">old_value</span></code>, otherwise it defaults to an empty string. In a similar fashion, the input from the option "to highest" is handled next:</p>
+<pre><code class="language-javascript hljs">onChange(i_tohighest, () =&gt; {
+  const tohighest = <span class="hljs-title function_">getValue</span>(<span class="api-param">i_tohighest</span>);
+  old_value = tohighest ? tohighest + <span class="hljs-string">':hi'</span> : <span class="hljs-string">''</span>;
+});
+</code></pre>
+
+<p>If both old and new values have valid content, the 'Add' button (named <code class="hljs"><span class="api-param">b_add</span></code> in the editor area) can be clicked to add a new recoding rule into the rules container. The handler for this button first clears any previous validation errors on the rules container, then checks if both <code class="hljs"><span class="api-param">old_value</span></code> and <code class="hljs"><span class="api-param">new_value</span></code> are non-empty. If either is empty, it adds a descriptive error message to the rules container. Otherwise, it constructs a rule string in the format "old_value = new_value", adds it to the rules container using <code class="hljs"><span class="hljs-title function_">addValue</span>()</code>, clears any previously added errors and finally updates the syntax panel:</p>
+<pre><code class="language-javascript hljs">onClick(b_add, () =&gt; {
+  <span class="hljs-keyword">if</span> (old_value &amp;&amp; new_value) {
+    <span class="hljs-title function_">addValue</span>(<span class="api-param">c_rules</span>, <span class="api-param">old_value + '=' + new_value</span>);
+    <span class="hljs-title function_">clearContent</span>(<span class="api-param">i_value_old</span>);
+    <span class="hljs-title function_">clearContent</span>(<span class="api-param">i_lowesto</span>);
+    <span class="hljs-title function_">clearContent</span>(<span class="api-param">i_from</span>);
+    <span class="hljs-title function_">clearContent</span>(<span class="api-param">i_to</span>);
+    <span class="hljs-title function_">clearContent</span>(<span class="api-param">i_tohighest</span>);
+    <span class="hljs-title function_">clearContent</span>(<span class="api-param">i_value_new</span>);
+    <span class="hljs-title function_">clearError</span>(<span class="api-param">c_rules</span>);
+    <span class="hljs-title function_">updateSyntax</span>(<span class="hljs-title function_">buildCommand</span>());
+  } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (old_value) {
+    <span class="hljs-title function_">addError</span>(<span class="api-param">c_rules</span>, <span class="hljs-string">'new value not defined'</span>);
+  } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (new_value) {
+    <span class="hljs-title function_">addError</span>(<span class="api-param">c_rules</span>, <span class="hljs-string">'old value not defined'</span>);
+  } <span class="hljs-keyword">else</span> {
+    <span class="hljs-title function_">addError</span>(<span class="api-param">c_rules</span>, <span class="hljs-string">'old and new values needed'</span>);
+  }
+});
+</code></pre>
+
+<p>The next button is 'Remove', which deletes the selected rules from the rules container. Its handler first retrieves the selected rules via <code class="hljs"><span class="hljs-title function_">getSelected</span>()</code>, then removes them one by one using <code class="hljs"><span class="hljs-title function_">clearValue</span>()</code>. Before exiting, it updates the syntax panel:</p>
+<pre><code class="language-javascript hljs">onClick(b_remove, () =&gt; {
+  <span class="hljs-title function_">clearValue</span>(<span class="api-param">c_rules</span>, <span class="hljs-title function_">getSelected</span>(<span class="api-param">c_rules</span>));
+  <span class="hljs-title function_">updateSyntax</span>(<span class="hljs-title function_">buildCommand</span>());
+});
+</code></pre>
+
+
+<p>The 'Clear' button removes all rules from the rules container. Its handler simply calls <code class="hljs"><span class="hljs-title function_">clearContent</span>()</code> on the rules container, then updates the syntax panel:</p>
+<pre><code class="language-javascript hljs">onClick(b_clear, () =&gt; {
+  <span class="hljs-title function_">clearContainer</span>(<span class="api-param">c_rules</span>);
+  <span class="hljs-title function_">updateSyntax</span>(<span class="hljs-title function_">buildCommand</span>());
+});
+</code></pre>
+
+<p>The checkbox on the bottom left side of the dialog indicates whether the recoding should be done in place or to a new variable. Its handler checks the current state of the checkbox using <code class="hljs"><span class="hljs-title function_">isChecked</span>()</code>, then shows or hides the new variable input accordingly using <code class="hljs"><span class="hljs-title function_">show</span>()</code> and <code class="hljs"><span class="hljs-title function_">hide</span>()</code>. It also updates the global variable <code class="hljs"><span class="api-param">recoded_variable</span></code> to either the <code class="hljs"><span class="api-param">selected_variable</span></code> (if recoding in place) or to the new variable name <code class="hljs"><span class="api-param">newvar</span></code> (if recoding to a new variable, collected from the <code class="hljs"><span class="api-param">i_newvar</span></code> input). Finally, it updates the syntax panel:</p>
+<pre><code class="language-javascript hljs">onChange(checkbox1, () =&gt; {
+  <span class="hljs-keyword">if</span> (<span class="hljs-title function_">isChecked</span>(<span class="api-param">checkbox1</span>)) {
+    <span class="hljs-title function_">show</span>(<span class="api-param">i_newvar</span>);
+    const newvar = <span class="hljs-title function_">getValue</span>(<span class="api-param">i_newvar</span>);
+    recoded_variable = newvar ? newvar : selected_variable;
+    <span class="hljs-title function_">updateSyntax</span>(<span class="hljs-title function_">buildCommand</span>());
+  } <span class="hljs-keyword">else</span> {
+    <span class="hljs-title function_">hide</span>(<span class="api-param">i_newvar</span>);
+    recoded_variable = selected_variable;
+    <span class="hljs-title function_">updateSyntax</span>(<span class="hljs-title function_">buildCommand</span>());
+  }
+});
+</code></pre>
+
+<p>Similar to the previous input handlers, the new variable input has its own change handler that updates the <code class="hljs"><span class="api-param">recoded_variable</span></code> variable when changed:</p>
+<pre><code class="language-javascript hljs">onChange(i_newvar, () =&gt; {
+  <span class="hljs-title function_">clearError</span>(<span class="api-param">i_newvar</span>);
+  const newvar = <span class="hljs-title function_">getValue</span>(<span class="api-param">i_newvar</span>);
+  recoded_variable = newvar ? newvar : selected_variable;
+  <span class="hljs-title function_">updateSyntax</span>(<span class="hljs-title function_">buildCommand</span>());
+});
+</code></pre>
+
+<p>All of these handlers use the <code class="hljs"><span class="hljs-title function_">buildCommand</span>()</code> function to construct the R command string based on the current selections. This function retrieves all the relevant bits , and builds the final command string in the required format:</p>
+<pre><code class="language-javascript hljs">const buildCommand = () =&gt; {
+  const rules = <span class="hljs-title function_">getValue</span>(<span class="api-param">c_rules</span>);
+  <span class="hljs-title function_">triggerChange</span>(<span class="api-param">checkbox1</span>); <span class="hljs-comment">// to update recoded_variable</span>
+
+  let command = <span class="hljs-string">'inside(\n  '</span> + selected_dataset + <span class="hljs-string">',\n  '</span>;
+  command += recoded_variable + <span class="hljs-string">' &lt;- recode(\n    '</span>;
+  command += selected_variable + <span class="hljs-string">',\n    rules = "'</span>;
+  command += rules ? rules.<span class="hljs-title function_">join</span>(<span class="hljs-string">'; '</span>) : <span class="hljs-string">''</span>;
+  command += <span class="hljs-string">'"\n  )\n)\n'</span>;
+  <span class="hljs-keyword">return</span> command;
+}
+</code></pre>
+
+
+<p>Finally, the main 'Run' button validates the user's selections and either shows validation errors or proceeds to execute the constructed command. Its only purpose in the Preview window is to validate the user's input, and add error messages if needed.</p>
+<pre><code class="language-javascript hljs">
+onClick(b_run, () =&gt; {
+  <span class="hljs-keyword">if</span> (selected_dataset === <span class="hljs-string">'&lt;dataset&gt;'</span>) {
+    <span class="hljs-title function_">addError</span>(<span class="api-param">c_datasets</span>, <span class="hljs-string">"No dataset selected"</span>);
+    <span class="hljs-keyword">return</span>;
+  }
+
+  <span class="hljs-keyword">if</span> (selected_variable === <span class="hljs-string">'&lt;variable&gt;'</span>) {
+    <span class="hljs-title function_">addError</span>(<span class="api-param">c_variables</span>, <span class="hljs-string">"No variable selected"</span>);
+    <span class="hljs-keyword">return</span>;
+  }
+
+  <span class="hljs-keyword">if</span> (!<span class="hljs-title function_">getValue</span>(<span class="api-param">c_rules</span>)) {
+    <span class="hljs-title function_">addError</span>(<span class="api-param">c_rules</span>, <span class="hljs-string">"No recoding rules"</span>);
+    <span class="hljs-keyword">return</span>;
+  }
+
+  <span class="hljs-keyword">if</span> (<span class="hljs-title function_">isChecked</span>(<span class="api-param">checkbox1</span>)) {
+    const newvar = <span class="hljs-title function_">getValue</span>(<span class="api-param">i_newvar</span>);
+    <span class="hljs-keyword">if</span> (!newvar) {
+      <span class="hljs-title function_">addError</span>(<span class="api-param">i_newvar</span>, <span class="hljs-string">"New variable needs a name."</span>)
+    }
+  } <span class="hljs-keyword">else</span> {
+    <span class="hljs-title function_">clearError</span>(<span class="api-param">i_newvar</span>);
+  }
+
+  <span class="hljs-title function_">run</span>(<span class="hljs-title function_">buildCommand</span>());
+});
+</code></pre>
+
+<p>At the very end, if all validations pass, the constructed command is sent to R via the <code class="hljs"><span class="hljs-title function_">run</span>()</code> API function. The final command in the code window simply prints the initial constructed syntax when the Preview window is opened:</p>
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">updateSyntax</span>(<span class="hljs-title function_">buildCommand</span>());
+</code></pre>
+
+<p>This is fired only once, and it can only be placed after the <code class="hljs"><span class="hljs-title function_">buildCommand</span>()</code> function definition, so that the function is already known when called.</p>
 
 	
 

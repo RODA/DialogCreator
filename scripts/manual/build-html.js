@@ -16,7 +16,7 @@ async function renderPage({ input, output, title }, repoRoot, outputDir, manualC
   try {
     const result = await mdToPdf({ content: processedMd }, {
       as_html: true,
-      stylesheet: [path.join(repoRoot, 'docs', 'manual', 'css', 'manual.css')],
+      stylesheet: [path.join(repoRoot, 'src', 'css', 'manual.css')],
     });
 
     if (!result || typeof result.content !== 'string') {
@@ -173,7 +173,7 @@ async function renderPage({ input, output, title }, repoRoot, outputDir, manualC
 (async function main() {
   const repoRoot = path.resolve(__dirname, '../..');
   const outputDir = path.join(repoRoot, 'docs', 'manual');
-  const manualCss = path.relative(outputDir, path.join(repoRoot, 'docs', 'manual', 'css', 'manual.css'));
+  const manualCss = path.relative(outputDir, path.join(repoRoot, 'src', 'css', 'manual.css'));
 
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
@@ -182,7 +182,7 @@ async function renderPage({ input, output, title }, repoRoot, outputDir, manualC
   const pages = [
     {
       input: path.join(repoRoot, 'DialogCreator.md'),
-      output: path.join(outputDir, 'index.html'),
+      output: path.join(outputDir, 'manual.html'),
       title: 'Dialog Creator — User Manual'
     },
     {

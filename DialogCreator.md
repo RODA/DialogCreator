@@ -91,7 +91,7 @@ It also has a global font size that affects all elements uniformly, all of which
 
 There is also an Actions button to open the code window for adding custom JavaScript logic for dialog behavior. It can be used to define how the elements interact with each other based on user input: showing/hiding/enabling controls, and updating values programmatically.
 
-<img src="docs/manual/images/dialog_actions.png" alt="The dialog properties and actions" style="width: 90%">
+<img src="docs/manual/images/dialog_actions.png" alt="The dialog properties and actions" style="width: 793px;">
 
 
 
