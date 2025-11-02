@@ -11,7 +11,11 @@
     "dist": "npm run build && electron-builder",
     "docs:pdf": "node scripts/manual/build-pdf.js",
     "docs:html": "node scripts/manual/build-html.js",
-    "bundle:cm6": "node scripts/bundle-cm6-if-needed.js"
+    "bundle:cm6": "node scripts/bundle-cm6-if-needed.js",
+    "rename:unix": "bash scripts/rename-binaries-unix.sh",
+    "rename:win": "powershell -ExecutionPolicy Bypass -File scripts/rename-binaries-windows.ps1",
+    "dist:unix": "npm run dist && npm run rename:unix",
+    "dist:win": "npm run dist && npm run rename:win"
   },
   "author": "RODA",
   "license": "CC0-1.0",
@@ -26,7 +30,7 @@
   ],
   "build": {
     "appId": "DialogCreator.tool",
-    "productName": "Dialog Creator",
+    "productName": "DialogCreator",
     "directories": {
       "output": "build/output",
       "buildResources": "icons"

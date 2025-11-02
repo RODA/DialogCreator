@@ -1,6 +1,6 @@
 // Setting ENVIRONMENT
-process.env.NODE_ENV = 'development';
-// process.env.NODE_ENV = 'production';
+// process.env.NODE_ENV = 'development';
+process.env.NODE_ENV = 'production';
 
 const production = process.env.NODE_ENV === 'production';
 const development = process.env.NODE_ENV === 'development';
@@ -37,14 +37,11 @@ function setSyntaxOnTop(enabled: boolean) {
     if (!syntaxPanelWindow || syntaxPanelWindow.isDestroyed()) {
         return;
     }
-    try {
-        if (enabled) {
-            syntaxPanelWindow.setAlwaysOnTop(true, 'floating');
-        } else {
-            syntaxPanelWindow.setAlwaysOnTop(false);
-        }
-    } catch {
-        // noop: window might be mid-destroy
+
+    if (enabled) {
+        syntaxPanelWindow.setAlwaysOnTop(true, 'floating');
+    } else {
+        syntaxPanelWindow.setAlwaysOnTop(false);
     }
 }
 
