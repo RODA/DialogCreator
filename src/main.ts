@@ -19,8 +19,14 @@ let secondWindow: BrowserWindow;
 let syntaxPanelWindow: BrowserWindow | null;
 let syntaxPanelAnchor: BrowserWindow | null;
 let syntaxPanelHeight = 160; // content height; updated by renderer
-type InfoPage = 'manual' | 'api' | 'about';
 let infoWindow: BrowserWindow | null = null;
+type InfoPage = 'manual' | 'api' | 'about';
+
+
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+    app.quit();
+}
 
 const windowid: { [key: string]: number } = {
     editorWindow: 1,
