@@ -339,7 +339,7 @@ onClick(button1, () => {
 - Select the group container and click Ungroup in the toolbar or press Cmd/Ctrl + Shift + G to return the elements to the top level. The former members remain selected.
 
 
-## Tips & notes
+## Tips and tricks
 
 - Right-click an element or group to access quick actions like Duplicate, Group, or Ungroup.
 - Press Enter while editing a property field to commit changes (the editor will blur the field to trigger the update).
