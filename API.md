@@ -528,3 +528,13 @@ updateSyntax(buildCommand());
 ```
 
 This is fired only once, and it can only be placed after the `buildCommand()` function definition, so that the function is already known when called.
+
+<br>
+
+## Download example
+
+Download the complete recode dialog example: <a href="./recode.json" download="recode.json">recode.json</a>
+
+This file contains the full dialog configuration used in the case study above, which you can load directly into Dialog Creator to examine the layout, element properties, and actions code.
+
+<br><br><br>

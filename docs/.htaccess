@@ -1,0 +1,4 @@
+<Files "*.json">
+    Header set Content-Type "application/octet-stream"
+    Header set Content-Disposition "attachment"
+</Files>
