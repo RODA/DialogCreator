@@ -236,7 +236,7 @@ function getInfoConfig(page: InfoPage) {
                 minHeight: 640,
                 resizable: true,
                 maximizable: true,
-                file: path.join(__dirname, "../docs/manual", "manual.html")
+                file: path.join(__dirname, "../docs", "manual.html")
             };
         case 'api':
             return {
@@ -247,7 +247,7 @@ function getInfoConfig(page: InfoPage) {
                 minHeight: 640,
                 resizable: true,
                 maximizable: true,
-                file: path.join(__dirname, "../docs/manual", "api.html")
+                file: path.join(__dirname, "../docs", "api.html")
             };
         case 'about':
         default:
