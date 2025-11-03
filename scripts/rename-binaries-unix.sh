@@ -4,64 +4,34 @@ VERSION=$(node -p "require('./package.json').version")
 ARCH=$(uname -m)
 PLATFORM=$(uname -s)
 
-if [ "$PLATFORM" = "Darwin" ]; then
-    # macOS section
-    if [ "$ARCH" = "x86_64" ]; then
-        NEW_NAME_INTEL="DialogCreator_${VERSION}_intel.dmg"
-        ORIGINAL_FILE_INTEL="build/output/DialogCreator-${VERSION}.dmg"
+ORIGINAL_APPLE_ARM="build/output/DialogCreator-${VERSION}-arm64.dmg"
+NEW_APPLE_ARM="DialogCreator_${VERSION}_silicon.dmg"
 
-        if [ -f "$ORIGINAL_FILE_INTEL" ]; then
-            mv "$ORIGINAL_FILE_INTEL" "build/output/$NEW_NAME_INTEL"
-        fi
+ORIGINAL_APPLE_INTEL="build/output/DialogCreator-${VERSION}.dmg"
+NEW_APPLE_INTEL="DialogCreator_${VERSION}_intel.dmg"
 
-    elif [ "$ARCH" = "arm64" ]; then
-        NEW_NAME_ARM="DialogCreator_${VERSION}_silicon.dmg"
-        ORIGINAL_FILE_ARM="build/output/DialogCreator-${VERSION}-arm64.dmg"
-        NEW_NAME_INTEL="DialogCreator_${VERSION}_intel.dmg"
-        ORIGINAL_FILE_INTEL="build/output/DialogCreator-${VERSION}.dmg"
+ORIGINAL_LINUX_ARM="build/output/DialogCreator-${VERSION}-arm64.AppImage"
+NEW_LINUX_ARM="DialogCreator_${VERSION}_silicon.AppImage"
 
-        if [ -f "$ORIGINAL_FILE_ARM" ]; then
-            mv "$ORIGINAL_FILE_ARM" "build/output/$NEW_NAME_ARM"
-        fi
+ORIGINAL_LINUX_INTEL="build/output/DialogCreator-${VERSION}.AppImage"
+NEW_LINUX_INTEL="DialogCreator_${VERSION}_intel.AppImage"
 
-        if [ -f "$ORIGINAL_FILE_INTEL" ]; then
-            mv "$ORIGINAL_FILE_INTEL" "build/output/$NEW_NAME_INTEL"
-        fi
+if [ -f "$ORIGINAL_APPLE_ARM" ]; then
+    mv "$ORIGINAL_APPLE_ARM" "build/output/$NEW_APPLE_ARM"
+    echo "Renamed Apple silicon binary."
+fi
 
-    else
-        echo "Unknown macOS architecture: $ARCH"
-        exit 1
-    fi
+if [ -f "$ORIGINAL_APPLE_INTEL" ]; then
+    mv "$ORIGINAL_APPLE_INTEL" "build/output/$NEW_APPLE_INTEL"
+    echo "Renamed Apple Intel binary."
+fi
 
-elif [ "$PLATFORM" = "Linux" ]; then
-    # Linux section
-    if [ "$ARCH" = "x86_64" ]; then
-        NEW_NAME_INTEL="DialogCreator_${VERSION}_intel.AppImage"
-        ORIGINAL_FILE_INTEL="build/output/DialogCreator-${VERSION}.AppImage"
+if [ -f "$ORIGINAL_LINUX_ARM" ]; then
+    mv "$ORIGINAL_LINUX_ARM" "build/output/$NEW_LINUX_ARM"
+    echo "Renamed Linux silicon binary."
+fi
 
-        if [ -f "$ORIGINAL_FILE_INTEL" ]; then
-            mv "$ORIGINAL_FILE_INTEL" "build/output/$NEW_NAME_INTEL"
-        fi
-
-    elif [ "$ARCH" = "aarch64" ]; then
-        NEW_NAME_INTEL="DialogCreator_${VERSION}_intel.AppImage"
-        ORIGINAL_FILE_INTEL="build/output/DialogCreator-${VERSION}.AppImage"
-        NEW_NAME_ARM="DialogCreator_${VERSION}_silicon.AppImage"
-        ORIGINAL_FILE_ARM="build/output/DialogCreator-${VERSION}-arm64.AppImage"
-
-        if [ -f "$ORIGINAL_FILE_ARM" ]; then
-            mv "$ORIGINAL_FILE_ARM" "build/output/$NEW_NAME_ARM"
-        fi
-
-        if [ -f "$ORIGINAL_FILE_INTEL" ]; then
-            mv "$ORIGINAL_FILE_INTEL" "build/output/$NEW_NAME_INTEL"
-        fi
-
-    else
-        echo "Unknown Linux architecture: $ARCH"
-        exit 1
-    fi
-else
-    echo "Unsupported platform: $PLATFORM"
-    exit 1
+if [ -f "$ORIGINAL_LINUX_INTEL" ]; then
+    mv "$ORIGINAL_LINUX_INTEL" "build/output/$NEW_LINUX_INTEL"
+    echo "Renamed Linux Intel binary."
 fi
