@@ -13,7 +13,7 @@ Upon installing and opening the application, the following main window can be se
 
 ## Overview of the interface
 
-<img src="docs/manual/images/main_window_empty.png" alt="Dialog Creator main window" style="width: 100%; max-width: 100%;">
+<img src="docs/images/main_window_empty.png" alt="Dialog Creator main window" style="width: 1200px; max-width: 100%;">
 
 This is a fresh instance of the editor window, which can be divided into five main areas.
 
@@ -21,7 +21,7 @@ This is a fresh instance of the editor window, which can be divided into five ma
 
 ### Elements panel (left)
 
-<img src="docs/manual/images/elements.png" alt="Elements panel with available UI controls" style="width: 38%;">
+<img src="docs/images/elements.png" alt="Elements panel with available UI controls" style="width: 38%;">
 
 The image above shows the Elements panel with available UI controls, in both MacOS and Windows styles.
 
@@ -32,7 +32,7 @@ Those new defaults are saved with the application and persist across sessions.
 
 ### Editor toolbar (top of center)
 
-<img src="docs/manual/images/editor_toolbar.png" alt="Editor toolbar with actions" style="width: 60%;">
+<img src="docs/images/editor_toolbar.png" alt="Editor toolbar with actions" style="width: 60%;">
 
 Z-order (stacking) actions for the current selection:
   - Send to back
@@ -61,7 +61,7 @@ All toolbar buttons enable or disable automatically based on what's selected. Se
 
 This is the main stage where the dialog is laid out. Newly added elements appear here as movable blocks and show a dotted outline when selected. Clicking an element once will select it and reveal its properties on the right, while clicking on empty space will clear the selection.
 
-<img src="docs/manual/images/selection.png" alt="Selecting elements" style="width: 60%;">
+<img src="docs/images/selection.png" alt="Selecting elements" style="width: 60%;">
 
 Elements can be dragged to reposition them, and their movement is constrained within the canvas with a small padding so items don't slip outside the visible area. Multiple elements can be selected with Shift‑click or by drawing a lasso on empty canvas, as per the image above.
 
@@ -70,13 +70,13 @@ These elements can then be moved together or aligned from the toolbar. Right‑c
 
 ### Properties panel (right)
 
-<img src="docs/manual/images/button_properties.png" alt="Properties for the button element" style="width: 50%;">
+<img src="docs/images/button_properties.png" alt="Properties for the button element" style="width: 50%;">
 
 This panel displays properties for the selected element, in the image above showing a button's properties. Different elements have different sets of properties, so only properties relevant to the selected element type are shown and enabled.
 
 All elements have Left and Top properties to control their position on the canvas. Other properties depend on the element type, such as Label and Color for buttons, Value for inputs and labels, Options for selects, Checked for checkboxes, and so on.
 
-<img src="docs/manual/images/color_property.png" alt="The color property setting" style="width: 30%;">
+<img src="docs/images/color_property.png" alt="The color property setting" style="width: 30%;">
 
 Colors can either be typed as hex codes (e.g., `#FF0000` for red) or selected via a color picker that opens when clicking the color swatch, as in the image above. The color picker dissapears when clicking elsewhere on the dialog, or pressing the ESC key.
 
@@ -91,7 +91,7 @@ It also has a global font size that affects all elements uniformly, all of which
 
 There is also an Actions button to open the code window for adding custom JavaScript logic for dialog behavior. It can be used to define how the elements interact with each other based on user input: showing/hiding/enabling controls, and updating values programmatically.
 
-<img src="docs/manual/images/dialog_actions.png" alt="The dialog properties and actions" style="width: 793px;">
+<img src="docs/images/dialog_actions.png" alt="The dialog properties and actions" style="width: 793px;">
 
 
 
@@ -168,7 +168,7 @@ Notes:
 
 ## Shortcuts cheatsheet
 
-![Shortcuts cheatsheet](docs/shortcuts-cheatsheet.svg)
+![Shortcuts cheatsheet](docs/images/shortcuts-cheatsheet.svg)
 
 
 
@@ -225,7 +225,7 @@ Dialog Creator supports custom JavaScript through a built-in API. For events, he
 
 This section includes quick-start recipes, container population examples, validation helpers, and practical scripting patterns.
 
-<img src="docs/manual/images/actions_window.png" alt="The action window" style="width: 90%;">
+<img src="docs/images/actions_window.png" alt="The action window" style="width: 793px;">
 
 Some dialogs have complex behaviors that require custom JavaScript code. Open the code window with the Actions button at the bottom of the Editor. This code runs at the top level automatically, with a dedicated, provided API.
 

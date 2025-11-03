@@ -162,6 +162,17 @@ async function renderPage({ input, output, title }, repoRoot, outputDir, manualC
       // If ToC injection fails for any reason, continue without it.
     }
 
+    html = html.replace(
+      /src="\.\.\/images\//g,
+      'src="./images/'
+  );
+
+  // Also fix any other relative image paths that might be problematic
+  html = html.replace(
+      /src="docs\/images\//g,
+      'src="./images/'
+  );
+
     fs.writeFileSync(output, html, 'utf8');
     console.log(`Manual HTML generated at: ${output}`);
   } catch (err) {
@@ -172,7 +183,7 @@ async function renderPage({ input, output, title }, repoRoot, outputDir, manualC
 
 (async function main() {
   const repoRoot = path.resolve(__dirname, '../..');
-  const outputDir = path.join(repoRoot, 'docs', 'manual');
+  const outputDir = path.join(repoRoot, 'docs');
   const manualCss = path.relative(outputDir, path.join(repoRoot, 'src', 'css', 'manual.css'));
 
   if (!fs.existsSync(outputDir)) {

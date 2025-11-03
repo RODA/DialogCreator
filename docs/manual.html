@@ -1,5 +1,5 @@
 <!DOCTYPE html><html><head><title></title><meta charset="utf-8">  <title>Dialog Creator — User Manual</title>
-  <link rel="stylesheet" href="../../src/css/manual.css">
+  <link rel="stylesheet" href="../src/css/manual.css">
 </head>
 	<body class="">
 <div class="page-with-toc">
@@ -22,17 +22,17 @@
 <p>It also allows connecting UI elements, then test custom logic instantly in a live preview.</p>
 <p>Upon installing and opening the application, the following main window can be seen.</p>
 <h2 id="overview-of-the-interface">Overview of the interface</h2>
-<img src="../manual/images/main_window_empty.png" alt="Dialog Creator main window" style="width: 100%; max-width: 100%;">
+<img src="./images/main_window_empty.png" alt="Dialog Creator main window" style="width: 1200px; max-width: 100%;">
 
 <p>This is a fresh instance of the editor window, which can be divided into five main areas.</p>
 <h3 id="elements-panel-left">Elements panel (left)</h3>
-<img src="../manual/images/elements.png" alt="Elements panel with available UI controls" style="width: 38%;">
+<img src="./images/elements.png" alt="Elements panel with available UI controls" style="width: 38%;">
 
 <p>The image above shows the Elements panel with available UI controls, in both MacOS and Windows styles.</p>
 <p>This panel is the catalog of building blocks. It lists all available element types that can be added to a dialog: buttons, labels, inputs, checkboxes, radios, selects, containers, separators, counters, sliders, and more. Items can be clicked to insert a new instance onto the canvas with sensible default properties. Those defaults can be changed for future inserts (for example, a preferred border or font color for a certain element), using the "Default values" button to open a small window where the per‑type defaults are located.</p>
 <p>Those new defaults are saved with the application and persist across sessions.</p>
 <h3 id="editor-toolbar-top-of-center">Editor toolbar (top of center)</h3>
-<img src="../manual/images/editor_toolbar.png" alt="Editor toolbar with actions" style="width: 60%;">
+<img src="./images/editor_toolbar.png" alt="Editor toolbar with actions" style="width: 60%;">
 
 <p>Z-order (stacking) actions for the current selection:</p>
 <ul>
@@ -61,16 +61,16 @@
 <p>All toolbar buttons enable or disable automatically based on what's selected. Selecting elements (to decide for grouping, alignment, or deletion) can be done in two ways: either shift-clicking on each element or using a lasso selection, as per the image above.</p>
 <h3 id="dialog-canvas-center">Dialog canvas (center)</h3>
 <p>This is the main stage where the dialog is laid out. Newly added elements appear here as movable blocks and show a dotted outline when selected. Clicking an element once will select it and reveal its properties on the right, while clicking on empty space will clear the selection.</p>
-<img src="../manual/images/selection.png" alt="Selecting elements" style="width: 60%;">
+<img src="./images/selection.png" alt="Selecting elements" style="width: 60%;">
 
 <p>Elements can be dragged to reposition them, and their movement is constrained within the canvas with a small padding so items don't slip outside the visible area. Multiple elements can be selected with Shift‑click or by drawing a lasso on empty canvas, as per the image above.</p>
 <p>These elements can then be moved together or aligned from the toolbar. Right‑clicking an element / group reveals quick actions like Duplicate, Group, or Ungroup.</p>
 <h3 id="properties-panel-right">Properties panel (right)</h3>
-<img src="../manual/images/button_properties.png" alt="Properties for the button element" style="width: 50%;">
+<img src="./images/button_properties.png" alt="Properties for the button element" style="width: 50%;">
 
 <p>This panel displays properties for the selected element, in the image above showing a button's properties. Different elements have different sets of properties, so only properties relevant to the selected element type are shown and enabled.</p>
 <p>All elements have Left and Top properties to control their position on the canvas. Other properties depend on the element type, such as Label and Color for buttons, Value for inputs and labels, Options for selects, Checked for checkboxes, and so on.</p>
-<img src="../manual/images/color_property.png" alt="The color property setting" style="width: 30%;">
+<img src="./images/color_property.png" alt="The color property setting" style="width: 30%;">
 
 <p>Colors can either be typed as hex codes (e.g., <code class="hljs">#FF<span class="hljs-number">0000</span></code> for red) or selected via a color picker that opens when clicking the color swatch, as in the image above. The color picker dissapears when clicking elsewhere on the dialog, or pressing the ESC key.</p>
 <p>Some properties can be overwritten with custom JavaScript code in the Actions window, for example Enable or Visible, using a pre-defined set of API commands, see the details in the <a href="API.md">API reference</a>.</p>
@@ -78,7 +78,7 @@
 <p>The whole dialog has properties of its own, for instance width and height to establish how large it should be, or a name (to be referred to from other dialogs) or a title (shown in the dialog's title bar).</p>
 <p>It also has a global font size that affects all elements uniformly, all of which are saved with the dialog and reflected in the live Preview window.</p>
 <p>There is also an Actions button to open the code window for adding custom JavaScript logic for dialog behavior. It can be used to define how the elements interact with each other based on user input: showing/hiding/enabling controls, and updating values programmatically.</p>
-<img src="../manual/images/dialog_actions.png" alt="The dialog properties and actions" style="width: 793px;">
+<img src="./images/dialog_actions.png" alt="The dialog properties and actions" style="width: 793px;">
 
 
 
@@ -137,7 +137,7 @@ The items in a Container can be selected by clicking, and multi-selection is sup
 <li>When multiple elements are selected, nudging moves all selected elements together.</li>
 </ul>
 <h2 id="shortcuts-cheatsheet">Shortcuts cheatsheet</h2>
-<p><img src="../shortcuts-cheatsheet.svg" alt="Shortcuts cheatsheet"></p>
+<p><img src="./images/shortcuts-cheatsheet.svg" alt="Shortcuts cheatsheet"></p>
 <h2 id="working-with-elements">Working with elements</h2>
 <h3 id="add-a-new-element">Add a new element</h3>
 <p>In the Elements panel (left), click the element to be added. It will be inserted on the dialog canvas with default properties.</p>
@@ -183,7 +183,7 @@ The items in a Container can be selected by clicking, and multi-selection is sup
 <h2 id="custom-js-code--quick-start">Custom JS code — quick start</h2>
 <p>Dialog Creator supports custom JavaScript through a built-in API. For events, helper functions, and the full reference, open the <a href="API.md">API reference</a>.</p>
 <p>This section includes quick-start recipes, container population examples, validation helpers, and practical scripting patterns.</p>
-<img src="../manual/images/actions_window.png" alt="The action window" style="width: 90%;">
+<img src="./images/actions_window.png" alt="The action window" style="width: 793px;">
 
 <p>Some dialogs have complex behaviors that require custom JavaScript code. Open the code window with the Actions button at the bottom of the Editor. This code runs at the top level automatically, with a dedicated, provided API.</p>
 <p>Elements can be referred to by their Name (ID) either quoted or not. For example, <code class="hljs"><span class="hljs-title function_">getValue</span>(<span class="api-param">input1</span>)</code> is the same as <code class="hljs"><span class="hljs-title function_">getValue</span>(<span class="hljs-string">'input1'</span>)</code>.</p>

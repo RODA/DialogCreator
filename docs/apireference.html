@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DialogCreator - User Manual</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/x-icon" href="./favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link href="./css/styles.css" rel="stylesheet">
+    <link href="./scripts/prism.css" rel="stylesheet">
+    <style>
+        /* Override manual content to fit website layout */
+        #api-content {
+            max-width: 1200px; /* Increase to accommodate sidebar */
+            margin: 0 auto;
+            padding: 0 20px;
+            line-height: 1.6;
+        }
+
+        /* Fix image sizing - override the manual's inline styles */
+        #api-content img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 1rem auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        /* Specific overrides for images with inline styles */
+        #api-content img[style*="width: 100%"] {
+            width: 90% !important;
+            max-width: 600px !important;
+        }
+
+        #api-content img[style*="width: 60%"] {
+            width: 60% !important;
+            max-width: 400px !important;
+        }
+
+        #api-content img[style*="width: 50%"] {
+            width: 50% !important;
+            max-width: 350px !important;
+        }
+
+        #api-content img[style*="width: 38%"] {
+            width: 40% !important;
+            max-width: 250px !important;
+        }
+
+        #api-content img[style*="width: 30%"] {
+            width: 35% !important;
+            max-width: 200px !important;
+        }
+
+        #api-content img[style*="width: 90%"] {
+            width: 80% !important;
+            max-width: 500px !important;
+        }
+
+        /* Style the TOC to fit your site design */
+        #api-content .toc-sidebar {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+
+
+        #api-content h1 {
+            font-size: 1.5rem !important;
+        }
+
+        #api-content h2 {
+            font-size: 1.25rem !important;
+        }
+
+        #api-content h3 {
+            font-size: 1.1rem !important;
+        }
+
+        #api-content h4 {
+            font-size: 1.0rem !important;
+        }
+
+        /* Hide mobile TOC (the collapsible one at top) */
+        #api-content .toc-mobile {
+            display: none !important;
+        }
+
+        /* Fix image sizing - override the manual's inline styles */
+        #api-content img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 1rem auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        /* Specific overrides for images with inline styles */
+        #api-content img[style*="width: 100%"] {
+            width: 90% !important;
+            max-width: 600px !important;
+        }
+
+        #api-content img[style*="width: 60%"] {
+            width: 60% !important;
+            max-width: 400px !important;
+        }
+
+        #api-content img[style*="width: 50%"] {
+            width: 50% !important;
+            max-width: 350px !important;
+        }
+
+        #api-content img[style*="width: 38%"] {
+            width: 40% !important;
+            max-width: 250px !important;
+        }
+
+        #api-content img[style*="width: 30%"] {
+            width: 35% !important;
+            max-width: 200px !important;
+        }
+
+        #api-content img[style*="width: 90%"] {
+            width: 80% !important;
+            max-width: 500px !important;
+        }
+
+        #api-content pre,
+        #api-content code {
+            font-size: 14px !important;
+            line-height: 1.4 !important;
+        }
+
+        #api-content pre {
+            background: #f8f9fa !important;
+            border: 1px solid #e9ecef !important;
+            border-radius: 4px !important;
+            padding: 12px !important;
+            margin: 16px 0 !important;
+            overflow-x: auto !important;
+        }
+
+        #api-content code {
+            background: #f1f3f4 !important;
+            padding: 2px 4px !important;
+            border-radius: 3px !important;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace !important;
+        }
+
+        #api-content pre code {
+            background: transparent !important;
+            padding: 0 !important;
+            font-size: 14px !important;
+        }
+
+        /* Fix inline code in paragraphs */
+        #api-content p code,
+        #api-content li code {
+            font-size: 14px !important;
+            vertical-align: baseline !important;
+        }
+
+        /* Fix syntax highlighting */
+        #api-content .token.string,
+        #api-content .token.number,
+        #api-content .token.boolean,
+        #api-content .token.keyword {
+            font-size: inherit !important;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- ...existing code... -->
+    <div id="page" class="page open-menu">
+        <div id="st-sidebar" class="sidebar">
+            <a href="./index.html">About Dialog Creator</a>
+            <a href="./download.html">Download</a>
+            <a href="./run-from-sources.html">Run / Build from sources</a>
+            <a href="./usermanual.html">User manual</a>
+            <a href="./apireference.html" class="active">API reference</a>
+            <p style="margin-top: 2rem; padding: 10px 10px 10px 20px;font-size: 0.93rem;">Other tools by RODA:</p>
+            <a href="https://roda.github.io/StatConverter/" target="_blank"><b>StatConverter</b></a>
+            <a class="roda-logo" href="http://www.roda.ro" target="_blank">
+                <img src="./images/RODA.png" alt="RODA"/>
+            </a>
+        </div>
+
+        <div id="main" class="main-body">
+            <div class="main-header">
+                <button class="openbtn" onclick="toggleNavigation()">☰</button>
+                <a class="github" href="https://github.com/roda/DialogCreator/" target="_blank">
+                    <img src="./images/GitHub-Mark-32px.png" alt="GitHub DialogCreator">
+                </a>
+            </div>
+            <div class="main-inner">
+                <div id="api-content">
+                    <p>Loading manual...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="./scripts/scripts.js"></script>
+    <script src="./scripts/prism.js"></script>
+    <script>
+        // Load and inject manual content
+        fetch('./api.html')
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+
+                // Extract the entire page-with-toc div to get both TOC and main content
+                const pageWithToc = doc.querySelector('.page-with-toc');
+                if (pageWithToc) {
+                    document.getElementById('api-content').innerHTML = pageWithToc.innerHTML;
+                } else {
+                    // Fallback to main content only
+                    const content = doc.querySelector('main') || doc.body;
+                    document.getElementById('api-content').innerHTML = content.innerHTML;
+                }
+
+                // Re-run syntax highlighting
+                if (window.Prism) {
+                    Prism.highlightAll();
+                }
+            })
+            .catch(error => {
+                console.error('Error loading manual:', error);
+                document.getElementById('api-content').innerHTML =
+                    '<h1>Error</h1><p>Could not load the user manual content.</p>';
+            });
+    </script>
+</body>
+</html>

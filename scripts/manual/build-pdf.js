@@ -53,7 +53,7 @@ async function renderPdf({ inputs, output }, repoRoot) {
 
 (async function main() {
   const repoRoot = path.resolve(__dirname, '../..');
-  const outputDir = path.join(repoRoot, 'docs', 'manual');
+  const outputDir = path.join(repoRoot, 'docs');
 
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });

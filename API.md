@@ -267,11 +267,11 @@ The following section exemplifies, using a step by step approach, how to build a
 
 Similar to any other recoding dialog, the user needs to first select a dataset from a list, then choose a variable from that dataset to recode, and finally specify the recoding rules.
 
-<img src="docs/manual/images/recodesign.png" alt="Recode design part" style="width: 540px;">
+<img src="docs/images/recodesign.png" alt="Recode design part" style="width: 540px;">
 
 The design window contains three Container elements: the top left for datasets and the bottom left for variable, and the right one for the recoding rules. Out of all container properties, the image below highlights the important ones for the dataset container, namely the selection type (single/multiple) and the item type (used for filtering variables). In this particular container, a single dataset can be selected, and the item type is left to the default 'Any' but it could have been set to 'Character', as dataset names are strings.
 
-<img src="docs/manual/images/selection_type.png" alt="Selection and item types" style="width: 30%;">
+<img src="docs/images/selection_type.png" alt="Selection and item types" style="width: 250px;">
 
 The variables container is also set to single selection, but its item type is set to 'Numeric' to restrict only numeric variables to be selected for recoding. The recoding rules container is set to multi-selection and its item type is also left to 'Any' since it will contain ad-hoc user-defined rules.
 
@@ -281,23 +281,23 @@ On the bottom part of the dialog, there is a left checkbox to indicate whether t
 
 On the bottom right side, there is another (main) button to execute the recoding operation. This button will be responsible with sending / running the final command into R.
 
-<img src="docs/manual/images/recode_preview.png" alt="Recode preview part" style="width: 540px;">
+<img src="docs/images/recode_preview.png" alt="Recode preview part" style="width: 540px;">
 
 This image above is the preview window of the dialog, showing how it will look like when executed. The datasets container is populated with the list of available datasets, for the time being a simulation of two datasets from the R environment: 'PlantGrowth' and 'ToothGrowth'. Below the window is the syntax panel, which will display the constructed command to be sent to R. This is not a valid R command yet, because of the placeholders `<dataset>` and `<variable>`, but it will be updated as the user makes selections in the dialog. The functions `inside()` and `recode()` are both part of the R package `admisc`.
 
 Hitting the 'Run' button, at this very moment, will trigger a validation error because no dataset or variable has been selected yet:
 
-<img src="docs/manual/images/recode_no_dataset.png" alt="Recode no dataset" style="width: 19%;">
+<img src="docs/images/recode_no_dataset.png" alt="Recode no dataset" style="width: 170px;">
 
 Upon selecting a dataset, in this case 'ToothGrowth', the variables container is populated with the numeric variables from that dataset, namely 'len' and 'dose' (while the categorical variable 'supp' is disabled). The syntax panel is also updated to reflect the selected dataset. Hitting 'Run' now will trigger a different validation error, this time for the missing variable selection:
 
-<img src="docs/manual/images/recode_dataset_selected.png" alt="Recode preview part" style="width: 540px;">
+<img src="docs/images/recode_dataset_selected.png" alt="Recode preview part" style="width: 540px;">
 
 Note how the syntax panel now shows the selected dataset 'ToothGrowth' instead of the placeholder `<dataset>`, while the variable is still unselected, hence the placeholder `<variable>` remains. This way, the syntax panel is progressively updated as the user makes selections in the dialog. Making use of the Javascript's reactive nature, the syntax panel is updated automatically whenever the user selects or clicks something in the dialog.
 
 This looks like a lot of work, but in reality it only requires a few lines of code to make it all work. Below is an image of the custom scripting area that makes this dialog functional, that appear when the button 'Actions' is clicked in the design window:
 
-<img src="docs/manual/images/recode_actions.png" alt="Recode actions area" style="width: 793px;">
+<img src="docs/images/recode_actions.png" alt="Recode actions area" style="width: 793px;">
 
 The syntax construction is left entirely to the user's imagination, and a dedicated custom function `buildCommand()` will be introduced later. In the above image, the code starts by defining a few global variables to hold the selected dataset and variable names, as well as the recoded variable name (which is updated via a checkbox handler, also shown later).
 
