@@ -90,6 +90,20 @@ function createMainWindow() {
     const mainMenu = Menu.buildFromTemplate(buildMainMenuTemplate());
     Menu.setApplicationMenu(mainMenu);
 
+    // Handle window close button (red X)
+    editorWindow.on('close', async (e) => {
+        if (quittingInProgress) return; // allow close to proceed during app quit
+
+        e.preventDefault(); // Prevent default close
+
+        const ok = await confirmQuitIfDirty();
+        if (ok) {
+            quittingInProgress = true;
+            app.quit(); // This will close all windows and quit the app
+        }
+        // If not ok, window stays open (close was cancelled)
+    });
+
     // Open the DevTools.
     if (development) {
         editorWindow.webContents.openDevTools();
@@ -103,18 +117,24 @@ app.whenReady().then(() => {
     createMainWindow();
     setupIPC();
     // Intercept OS-level quits (e.g., Cmd+Q) to prompt for save when dirty
-    app.on('before-quit', async (e) => {
-        try {
-            if (quittingInProgress) return; // allow actual quit to proceed
-            const ok = await confirmQuitIfDirty();
-            if (!ok) {
-                e.preventDefault();
-                return;
-            }
-            quittingInProgress = true;
-        } catch {
-            // on error, allow quit
-        }
+    app.on('before-quit', (e) => {
+        if (quittingInProgress) return; // allow actual quit to proceed
+
+        e.preventDefault(); // Always prevent default first
+
+        confirmQuitIfDirty()
+            .then((ok) => {
+                if (ok) {
+                    quittingInProgress = true;
+                    app.quit(); // Trigger quit again, this time it will proceed
+                }
+                // If not ok, stay in app (quit was cancelled)
+            })
+            .catch(() => {
+                // On error, allow quit
+                quittingInProgress = true;
+                app.quit();
+            });
     });
 });
 
