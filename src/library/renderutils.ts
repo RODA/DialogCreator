@@ -1966,7 +1966,10 @@ export const renderutils: RenderUtils = {
             natural = utils.textWidth(text, fontSize, coms.fontFamily);
         }
 
-        const finalW = Math.max(0, maxW > 0 ? Math.min(natural, maxW) : natural);
+    // Add a small cross-platform safety buffer to avoid right-edge clipping on Windows
+    // where glyph rasterization can exceed measured widths by ~1px.
+    const fudge = 2; // px
+    const finalW = Math.max(0, maxW > 0 ? Math.min(natural + fudge, maxW) : (natural + fudge));
         element.style.maxWidth = maxW > 0 ? `${maxW}px` : '';
         element.style.width = `${finalW}px`;
 
@@ -1985,6 +1988,8 @@ export const renderutils: RenderUtils = {
             // If content fits within final width, avoid showing an ellipsis
             const needsEllipsis = natural > finalW;
             host.style.textOverflow = needsEllipsis ? 'ellipsis' : 'clip';
+            // Also allow overflow to be visible when not needed to prevent 1px clipping
+            host.style.overflow = needsEllipsis ? 'hidden' : 'visible';
         }
 
         // Keep in canvas bounds (Editor only). In Preview, do not auto-shift position.
