@@ -147,7 +147,11 @@ function renderPreview(dialog: PreviewDialog) {
 
         // Select: populate options from value (comma/semicolon separated)
         if (desiredType === 'Select') {
-            const select = core.querySelector('select') as HTMLSelectElement | null;
+            // In our factory, the core element for Select is the <select> itself,
+            // not a container with a nested <select>.
+            const select = (core instanceof HTMLSelectElement)
+                ? core
+                : (core.querySelector('select') as HTMLSelectElement | null);
             if (select) {
                 const raw = core.dataset.value ?? '';
                 const text = String(raw);
@@ -167,6 +171,13 @@ function renderPreview(dialog: PreviewDialog) {
                     }
                 }
             }
+        }
+
+        // Label: normalize sizing/ellipsis by reflowing with updateLabel once in Preview
+        if (desiredType === 'Label') {
+            try {
+                renderutils.updateLabel(wrapper);
+            } catch {}
         }
 
         // Checkbox: reflect isChecked

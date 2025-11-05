@@ -650,8 +650,11 @@ export const renderutils: RenderUtils = {
         const chooseUnique = (base: string) => renderutils.makeUniqueNameID(base || baseFallback);
 
         let nameid: string;
+        const isTemplateDefault = provided && provided.toLowerCase() === baseFallback;
         if (provided && utils.isIdentifier(provided) && !existingIds.has(provided)) {
-            nameid = provided;
+            // If the provided name is exactly the template default (e.g., 'label'),
+            // force a numeric suffix so the first instance becomes 'label1'.
+            nameid = isTemplateDefault ? chooseUnique(baseFallback) : provided;
         } else if (provided) {
             nameid = chooseUnique(provided);
         } else {
@@ -1889,12 +1892,13 @@ export const renderutils: RenderUtils = {
         let maxW = dataset.maxWidth ? Number(dataset.maxWidth) : 100;
 
 
-        // Apply text and font styles
-        host.textContent = text;
-        host.style.fontSize = fontSize + 'px';
-        host.style.lineHeight = '1.2';
-        host.style.overflow = 'hidden';
-        host.style.textOverflow = 'ellipsis';
+    // Apply text and font styles
+    host.textContent = text;
+    host.style.fontSize = fontSize + 'px';
+    host.style.lineHeight = '1.2';
+    host.style.overflow = 'hidden';
+    // textOverflow is finalized after measuring; set a safe default now
+    host.style.textOverflow = 'ellipsis';
 
         const singleLineHeight = Math.ceil(fontSize * 1.2);
 
@@ -1974,6 +1978,13 @@ export const renderutils: RenderUtils = {
         } else {
             host.style.maxWidth = '100%';
             host.style.width = '100%';
+        }
+
+        // Toggle ellipsis only when needed (single-line labels)
+        if (lines <= 1) {
+            // If content fits within final width, avoid showing an ellipsis
+            const needsEllipsis = natural > finalW;
+            host.style.textOverflow = needsEllipsis ? 'ellipsis' : 'clip';
         }
 
         // Keep in canvas bounds (Editor only). In Preview, do not auto-shift position.
