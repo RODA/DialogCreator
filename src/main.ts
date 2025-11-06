@@ -1,7 +1,3 @@
-// Setting ENVIRONMENT
-// process.env.NODE_ENV = 'development';
-process.env.NODE_ENV = 'production';
-
 const production = process.env.NODE_ENV === 'production';
 const development = process.env.NODE_ENV === 'development';
 const OS_Windows = process.platform == 'win32';
