@@ -315,9 +315,9 @@ export const utils: Utils = {
             family = getComputedStyle(document.body || document.documentElement).fontFamily || '';
         }
 
-        // Default generic family if nothing else found
+        // Default app font-family (Inter stack) if nothing else found
         if (!family) { // same thing as if (family === '') because '' is falsy
-            family = 'Arial, Helvetica, sans-serif';
+            family = "'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, 'Noto Sans', 'Liberation Sans', sans-serif";
         }
 
         // Quote family names with spaces that are not already quoted
@@ -355,4 +355,3 @@ export const utils: Utils = {
         return Math.ceil(t.length * size * 0.6);
     },
 };
-

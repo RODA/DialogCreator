@@ -1,9 +1,4 @@
-type DatasetVariable = {
-    text: string;
-    type: string;
-};
-
-type Datasets = Record<string, DatasetVariable[]>;
+import { Datasets } from "../interfaces/datasets";
 
 // export const datasets: Datasets = {
 //     LR: [

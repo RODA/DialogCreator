@@ -70,7 +70,7 @@ export const coms: Communications = {
     },
 
     fontSize: 12,
-    fontFamily: 'Arial, Helvetica, sans-serif',
+    fontFamily: "'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, 'Noto Sans', 'Liberation Sans', sans-serif",
     maxWidth: 615,
     maxHeight: 455,
 }
@@ -102,4 +102,3 @@ export const showMessage = (
 export const showError = (message: string) => {
     coms.sendTo('main', 'showError', message);
 }
-
