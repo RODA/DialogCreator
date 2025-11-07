@@ -1,3 +1,11 @@
+/*
+    Copyright (c) 2025, Adrian Dusa
+    All rights reserved.
+
+    License: Academic Non-Commercial License (see LICENSE file for details).
+    SPDX-License-Identifier: LicenseRef-ANCL-AdrianDusa
+*/
+
 const production = process.env.NODE_ENV === 'production';
 const development = process.env.NODE_ENV === 'development';
 const OS_Windows = process.platform == 'win32';

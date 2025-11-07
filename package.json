@@ -18,8 +18,9 @@
     "rename:mac": "bash scripts/rename-binaries-mac.sh",
     "rename:win": "powershell -ExecutionPolicy Bypass -File scripts/rename-binaries-windows.ps1"
   },
-  "author": "RODA",
-  "license": "CC0-1.0",
+  "author": "Adrian Dusa",
+  "contributors": ["RODA"],
+  "license": "SEE LICENSE IN LICENSE",
   "bugs": {
     "url": "https://github.com/RODA/DialogCreator/issues"
   },
@@ -37,6 +38,7 @@
       "buildResources": "icons"
     },
     "extraResources": [
+      "LICENSE",
       {
         "from": "src/database/DialogCreator.sqlite",
         "to": "DialogCreator.sqlite"
@@ -52,7 +54,8 @@
     ],
     "win": {
       "icon": "icons/icon.ico",
-      "legalTrademarks": "MIT Licence",
+      "legalTrademarks": "Academic Non-Commercial License (see LICENSE file for details).",
+      "publisherName": "RODA",
       "target": {
         "target": "nsis",
         "arch": [
@@ -63,6 +66,9 @@
     "mac": {
       "icon": "icons/icon.icns",
       "category": "public.app-category.productivity",
+      "extendInfo": {
+        "NSHumanReadableCopyright": "© 2025 Adrian Dusa — Academic Non-Commercial License (see LICENSE file for details)."
+      },
       "target": {
         "target": "dmg",
         "arch": [
@@ -71,8 +77,11 @@
         ]
       }
     },
+    "dmg": {
+      "license": "LICENSE"
+    },
     "publish": {
-      "provider": "github",
+      "provider": "GitHub",
       "owner": "RODA",
       "repo": "DialogCreator"
     }
