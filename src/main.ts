@@ -18,11 +18,20 @@ import * as path from "path";
 import { database } from "./database/database";
 import { DBElements } from "./interfaces/database";
 
+// On Wayland, Electron cannot control window coordinates; force X11 backend for positioning fidelity.
+if (OS_Linux) {
+    try {
+        app.commandLine.appendSwitch('ozone-platform-hint', 'x11');
+    } catch { /* best effort */ }
+}
+
 let editorWindow: BrowserWindow;
 let secondWindow: BrowserWindow;
 let syntaxPanelWindow: BrowserWindow | null;
 let syntaxPanelAnchor: BrowserWindow | null;
 let syntaxPanelHeight = 160; // content height; updated by renderer
+let syntaxPanelFollowTimer: NodeJS.Timeout | null = null;
+const SYNTAX_GAP = 8; // pixels below the preview content/frame
 let infoWindow: BrowserWindow | null = null;
 type InfoPage = 'manual' | 'api' | 'about';
 
@@ -124,6 +133,8 @@ function createSecondWindow(args: { [key: string]: any }) {
     // }
 
     const isCodeWindow = args.html === 'code.html';
+    const isPreviewWindow = args.html === 'preview.html';
+
     secondWindow = new BrowserWindow({
         width: args.width,
         height: args.height,
@@ -145,7 +156,14 @@ function createSecondWindow(args: { [key: string]: any }) {
         },
         autoHideMenuBar: typeof args.autoHideMenuBar === 'boolean' ? args.autoHideMenuBar : (development ? false : true),
         resizable: isCodeWindow ? true : false,
+        alwaysOnTop: false,
     });
+
+    // Ensure consistent sizing/zoom (Linux was rendering preview smaller and adding scrollbars)
+    try {
+        secondWindow.setContentSize(args.width, args.height);
+        secondWindow.webContents.setZoomFactor(1);
+    } catch { /* no-op */ }
 
     // and load the index.html of the app.
     secondWindow.loadFile(path.join(__dirname, "../src/pages", args.html));
@@ -367,6 +385,12 @@ function setupIPC() {
                 case 'openSyntaxPanel': {
                     try {
                         const command = String(args[0] ?? '');
+                        const clearFollowTimer = () => {
+                            if (syntaxPanelFollowTimer) {
+                                clearInterval(syntaxPanelFollowTimer);
+                                syntaxPanelFollowTimer = null;
+                            }
+                        };
 
                         // Try to find the active Preview window (by URL containing preview.html)
                         const wins = BrowserWindow.getAllWindows();
@@ -378,20 +402,32 @@ function setupIPC() {
                             }
                         }) || secondWindow || editorWindow;
 
-                        const bounds = anchor.getBounds();
-
-                        const desiredWidth = Math.max(200, bounds.width);
-                        const desiredHeight = syntaxPanelHeight;
-                        const desiredX = Math.max(0, bounds.x);
-                        const desiredY = bounds.y + bounds.height + 6; // just beneath the preview window
+                        const getAnchorPos = () => {
+                            const winBounds = anchor.getBounds(); // outer frame
+                            const contentBounds = (anchor as any).getContentBounds
+                                ? (anchor as any).getContentBounds()
+                                : winBounds;
+                            const dx = contentBounds.x - winBounds.x;
+                            const dy = contentBounds.y - winBounds.y;
+                            const desiredWidth = Math.max(200, contentBounds.width);
+                            return {
+                                winBounds,
+                                contentBounds,
+                                desiredWidth,
+                                desiredHeight: syntaxPanelHeight,
+                                desiredX: Math.max(0, winBounds.x + dx),
+                                desiredY: winBounds.y + dy + contentBounds.height + SYNTAX_GAP
+                            };
+                        };
+                        const pos = getAnchorPos();
 
                         if (!syntaxPanelWindow || syntaxPanelWindow.isDestroyed()) {
                             syntaxPanelWindow = new BrowserWindow({
                                 parent: anchor,
-                                width: desiredWidth,
-                                height: desiredHeight,
-                                x: desiredX,
-                                y: desiredY,
+                                width: pos.desiredWidth,
+                                height: pos.desiredHeight,
+                                x: pos.desiredX,
+                                y: pos.desiredY,
                                 useContentSize: true,
                                 resizable: false,
                                 minimizable: false,
@@ -423,8 +459,8 @@ function setupIPC() {
 
                         // Position and size each time in case preview moved
                         try {
-                            syntaxPanelWindow!.setPosition(desiredX, desiredY);
-                            syntaxPanelWindow!.setContentSize(desiredWidth, desiredHeight);
+                            syntaxPanelWindow!.setPosition(pos.desiredX, pos.desiredY);
+                            syntaxPanelWindow!.setContentSize(pos.desiredWidth, pos.desiredHeight);
                         } catch {}
 
                         // Reposition with the anchor on move/resize
@@ -433,18 +469,32 @@ function setupIPC() {
                             syntaxPanelAnchor?.removeAllListeners('move');
                             syntaxPanelAnchor?.removeAllListeners('resize');
                             syntaxPanelAnchor?.removeAllListeners('closed');
+                            clearFollowTimer();
                             syntaxPanelAnchor = anchor;
                             const reposition = () => {
                                 try {
-                                    const b = anchor.getBounds();
-                                    const w = Math.max(200, b.width);
-                                    syntaxPanelWindow?.setPosition(b.x, b.y + b.height + 6);
-                                    syntaxPanelWindow?.setContentSize(w, syntaxPanelHeight);
+                                    const p = getAnchorPos();
+                                    syntaxPanelWindow?.setPosition(p.desiredX, p.desiredY);
+                                    syntaxPanelWindow?.setContentSize(p.desiredWidth, p.desiredHeight);
                                 } catch {}
                             };
                             anchor.on('move', reposition);
+                            // Some Linux WMs emit 'moved' instead of 'move'
+                            anchor.on('moved', reposition);
                             anchor.on('resize', reposition);
-                            anchor.on('closed', () => { try { syntaxPanelWindow?.close(); } catch {} });
+                            anchor.on('closed', () => {
+                                clearFollowTimer();
+                                try { syntaxPanelWindow?.close(); } catch {}
+                            });
+
+                            // Poll as a fallback for WMs that don't emit move while dragging
+                            syntaxPanelFollowTimer = setInterval(() => {
+                                try {
+                                    const p = getAnchorPos();
+                                    syntaxPanelWindow?.setPosition(p.desiredX, p.desiredY);
+                                    syntaxPanelWindow?.setContentSize(p.desiredWidth, p.desiredHeight);
+                                } catch { /* noop */ }
+                            }, 150);
                         }
 
                         // Once content is ready, send payload; also send immediately for updates
@@ -472,9 +522,23 @@ function setupIPC() {
                             // Align width with anchor when possible
                             let w = 320;
                             try {
-                                const b = (syntaxPanelAnchor || secondWindow || editorWindow).getBounds();
-                                w = Math.max(200, b.width);
-                                syntaxPanelWindow.setPosition(b.x, b.y + b.height + 6);
+                                const anchorWin = syntaxPanelAnchor || secondWindow || editorWindow;
+                                const getPosFor = () => {
+                                    const wb = anchorWin.getBounds();
+                                    const cb = (anchorWin as any).getContentBounds
+                                        ? anchorWin.getContentBounds()
+                                        : wb;
+                                    const dx = cb.x - wb.x;
+                                    const dy = cb.y - wb.y;
+                                    return {
+                                        width: Math.max(200, cb.width),
+                                        x: Math.max(0, wb.x + dx),
+                                        y: wb.y + dy + cb.height + SYNTAX_GAP,
+                                    };
+                                };
+                                const pos = getPosFor();
+                                w = pos.width;
+                                syntaxPanelWindow.setPosition(pos.x, pos.y);
                             } catch { /* keep current position */ }
                             syntaxPanelWindow.setContentSize(w, syntaxPanelHeight);
                         }
