@@ -37,36 +37,6 @@ const windowid: { [key: string]: number } = {
     secondWindow: 2
 }
 
-function setSyntaxOnTop(enabled: boolean) {
-    if (!syntaxPanelWindow || syntaxPanelWindow.isDestroyed()) {
-        return;
-    }
-
-    if (enabled) {
-        syntaxPanelWindow.setAlwaysOnTop(true, 'floating');
-    } else {
-        syntaxPanelWindow.setAlwaysOnTop(false);
-    }
-}
-
-const enableSyntaxOnTop = () => setSyntaxOnTop(true);
-const disableSyntaxOnTop = () => setSyntaxOnTop(false);
-
-if (OS_Mac) { // TODO: test on Windows/Linux
-    app.on('browser-window-focus', enableSyntaxOnTop);
-    app.on('activate', enableSyntaxOnTop);
-    app.on('browser-window-blur', () => {
-        setImmediate(() => {
-            // spends one cycle, letting the pending focus event fire first
-            // and only then fire this blur handler
-            // same as setTimeout(..., 0) but more efficient
-            if (!BrowserWindow.getFocusedWindow()) {
-                disableSyntaxOnTop();
-            }
-        });
-    });
-}
-
 
 function createMainWindow() {
     editorWindow = new BrowserWindow({
@@ -366,19 +336,6 @@ function openInfoWindow(page: InfoPage) {
     }
 }
 
-function createUserManualWindow() {
-    openInfoWindow('manual');
-}
-
-function createAPIReference() {
-    openInfoWindow('api');
-}
-
-// Create (or reuse) the shared About/manual/API window
-function createAboutWindow() {
-    openInfoWindow('about');
-}
-
 function setupIPC() {
 
     // "_event" means that I know the event exists but I don't need it
@@ -430,12 +387,12 @@ function setupIPC() {
 
                         if (!syntaxPanelWindow || syntaxPanelWindow.isDestroyed()) {
                             syntaxPanelWindow = new BrowserWindow({
+                                parent: anchor,
                                 width: desiredWidth,
                                 height: desiredHeight,
                                 x: desiredX,
                                 y: desiredY,
                                 useContentSize: true,
-                                alwaysOnTop: true,
                                 resizable: false,
                                 minimizable: false,
                                 maximizable: false,
@@ -920,14 +877,14 @@ function buildMainMenuTemplate(): MenuItemConstructorOptions[] {
         submenu: [
             {
                 label: 'User manual',
-                click: () => createUserManualWindow()
+                click: () => openInfoWindow('manual')
             },
             {
                 label: 'API reference',
-                click: () => createAPIReference()
+                click: () => openInfoWindow('api')
             },
             // Put About here on non-mac platforms
-            ...(!OS_Mac ? [{ label: 'About', click: () => createAboutWindow() }] : [])
+            ...(!OS_Mac ? [{ label: 'About', click: () => openInfoWindow('about') }] : [])
         ]
     };
 
@@ -938,7 +895,7 @@ function buildMainMenuTemplate(): MenuItemConstructorOptions[] {
         template.push({
             label: app.name,
             submenu: [
-                { label: 'About', click: () => createAboutWindow() },
+                { label: 'About', click: () => openInfoWindow('about') },
                 { type: 'separator' },
                 { role: 'services' },
                 { type: 'separator' },
