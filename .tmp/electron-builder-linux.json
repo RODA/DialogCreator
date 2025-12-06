@@ -1,0 +1,40 @@
+{
+  "appId": "DialogCreator.tool",
+  "productName": "DialogCreator",
+  "directories": {
+    "output": "build/output",
+    "buildResources": "icons"
+  },
+  "extraResources": [
+    "LICENSE",
+    {
+      "from": "src/database/DialogCreator.sqlite",
+      "to": "DialogCreator.sqlite"
+    },
+    {
+      "from": "src/assets/",
+      "to": "assets"
+    },
+    {
+      "from": "src/bundles/codemirror.bundle.js",
+      "to": "bundles/codemirror.bundle.js"
+    }
+  ],
+  "publish": {
+    "provider": "github",
+    "owner": "RODA",
+    "repo": "DialogCreator"
+  },
+  "linux": {
+    "target": "AppImage",
+    "icon": "icons/original/icon.png",
+    "category": "Utility",
+    "vendor": "RODA",
+    "maintainer": "Adrian Dusa <dusa.adrian@gmail.com>",
+    "desktop": {
+      "entry": {
+        "Comment": "Academic Non-Commercial License (see LICENSE file for details)."
+      }
+    }
+  }
+}

@@ -5,6 +5,8 @@ const path = require('path');
 const { spawn } = require('child_process');
 
 const root = path.resolve(__dirname, '..');
+// Ensure we default to production builds unless caller overrides
+process.env.NODE_ENV = process.env.NODE_ENV || 'production';
 const isWin = process.platform === 'win32';
 const isMac = process.platform === 'darwin';
 const isLinux = process.platform === 'linux';

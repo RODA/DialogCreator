@@ -28,6 +28,10 @@ function run(cmd, args, opts = {}) {
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
   const base = pkg.build || {};
 
+  const baseDesktop = base.linux?.desktop || {};
+  // electron-builder >= 26 expects linux.desktop.entry instead of freeform keys
+  const desktopEntry = baseDesktop.entry || baseDesktop;
+
   const linuxConfig = Object.assign({}, base, {
     // Remove mac section to avoid any cross-platform confusion
     mac: undefined,
@@ -39,9 +43,11 @@ function run(cmd, args, opts = {}) {
       category: base.linux?.category || 'Utility',
       vendor: base.linux?.vendor || 'RODA',
       maintainer: base.linux?.maintainer || 'Adrian Dusa <dusa.adrian@gmail.com>',
-      desktop: Object.assign({}, base.linux?.desktop || {}, {
-        Comment: base.linux?.desktop?.Comment || 'Academic Non-Commercial License (see LICENSE file for details).'
-      })
+      desktop: {
+        entry: Object.assign({}, desktopEntry, {
+          Comment: desktopEntry.Comment || 'Academic Non-Commercial License (see LICENSE file for details).'
+        })
+      }
     })
   });
 
@@ -68,4 +74,3 @@ function run(cmd, args, opts = {}) {
   console.error(err.message || err);
   process.exit(1);
 });
-
