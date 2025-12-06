@@ -55,7 +55,6 @@
     "win": {
       "icon": "icons/icon.ico",
       "legalTrademarks": "Academic Non-Commercial License (see LICENSE file for details).",
-      "publisherName": "RODA",
       "target": {
         "target": "nsis",
         "arch": [
@@ -77,11 +76,8 @@
         ]
       }
     },
-    "dmg": {
-      "license": "LICENSE"
-    },
     "publish": {
-      "provider": "GitHub",
+      "provider": "github",
       "owner": "RODA",
       "repo": "DialogCreator"
     }
