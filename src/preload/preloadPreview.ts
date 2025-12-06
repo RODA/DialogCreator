@@ -45,6 +45,10 @@ function renderPreview(dialog: PreviewDialog) {
     const height = Number(dialog.properties.height) || 480;
     const background = dialog.properties.background || "#ffffff";
 
+    // Keep the viewport tightly aligned to the dialog size to avoid scrollbars on Linux
+    root.style.width = `${width}px`;
+    root.style.height = `${height}px`;
+
     // Reflect dialog title in the window/document title for user clarity
     try {
         const title = String((dialog as any)?.properties?.title || (dialog as any)?.properties?.name || 'Preview');

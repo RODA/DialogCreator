@@ -1,14 +1,18 @@
 html, body {
     margin: 0;
     padding: 0;
-    /* Allow the area below the canvas (run panel) to be visible */
-    overflow: auto;
+    width: 100%;
+    height: 100%;
+    overflow: hidden; /* keep preview viewport exact to dialog size */
     background: #ffffff;
 }
 
 #preview-root {
     margin: 0;
     padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
 }
 
 .preview-canvas {
