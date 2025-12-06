@@ -7,7 +7,7 @@
     "build": "tsc && npm run bundle:cm6",
     "watch": "tsc -w",
     "lint": "eslint -c .eslintrc --ext .ts ./src",
-    "start": "npm run build && cross-env NODE_ENV=development electron ./dist/main.js",
+    "start": "npm run build && node scripts/start.js",
     "docs:pdf": "node scripts/manual/build-pdf.js",
     "docs:html": "node scripts/manual/build-html.js",
     "bundle:cm6": "node scripts/bundle-cm6-if-needed.js",
