@@ -105,7 +105,6 @@ function renderPreview(dialog: PreviewDialog) {
         wrapper.dataset.top = String(top);
         if (desiredType) wrapper.dataset.type = desiredType;
         if (desiredNameId) wrapper.dataset.nameid = desiredNameId;
-        wrapper.dataset.parentId = String(data.parentId || dialog.id || '');
 
         // Mirror all dataset properties from the inner element onto the wrapper
         // so Preview UI helpers read the same values as in the Editor.
@@ -324,7 +323,7 @@ function renderPreview(dialog: PreviewDialog) {
                     handleshape: core.dataset.handleshape || 'triangle',
                     direction: core.dataset.direction || 'horizontal',
                     handlesize: core.dataset.handlesize || '8',
-                    handleColor: core.dataset.handleColor || '#75c775',
+                    handleColor: core.dataset.handleColor || '#558855',
                     handlepos: String(percent)
                 } as StringNumber);
             };

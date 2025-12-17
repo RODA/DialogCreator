@@ -339,7 +339,7 @@ body {
 
 /* Style the checked state for custom checkbox */
 .custom-checkbox[aria-checked="true"] {
-    background-color: var(--checkbox-color, #75c775);
+    background-color: var(--checkbox-color, #70a470);
     border-color: #777777;
 }
 /* If fill disabled, keep background white even when checked */
@@ -374,7 +374,7 @@ body {
 
 /* Element: radio button */
 .custom-radio {
-    --radio-color: #75c775; /* Default color */
+    --radio-color: #5b855b; /* Default color */
     background-color: #fff;
     border: 1px solid #777777;
     border-radius: 50%;
@@ -523,15 +523,12 @@ input {
     font-size: 18px;
     width: 20px;
     text-align: center;
-    color: #75c775;
+    color: #558855;
 }
 
+/* Nudge the right-side (increase) arrow slightly away from the number */
 .counter-arrow.up {
-    transform: rotate(-90deg);
-}
-
-.counter-arrow.down {
-    transform: rotate(90deg);
+    margin-left: 1px;
 }
 
 .counter-value {

@@ -341,6 +341,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         "left",
         "top",
         "handlesize",
+        "updownsize",
         "handlepos",
         "lineClamp"
     ]);

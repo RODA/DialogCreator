@@ -12,7 +12,6 @@ export type ElementsWithPersist = { [K in keyof Elements]: ElementEntryWithPersi
 
 export const elements: ElementsWithPersist = {
     buttonElement: {
-        parentId: '',
         id: '',
         nameid: 'button',
         type: 'Button',
@@ -32,7 +31,6 @@ export const elements: ElementsWithPersist = {
         ] as const
     },
     inputElement: {
-        parentId: '',
         id: '',
         type: 'Input',
         nameid: 'input',
@@ -49,7 +47,6 @@ export const elements: ElementsWithPersist = {
         ] as const
     },
     selectElement: {
-        parentId: '',
         id: '',
         type: 'Select',
         nameid: 'select',
@@ -57,7 +54,7 @@ export const elements: ElementsWithPersist = {
         top: 15,
         width: 120,
         value: '',
-        arrowColor: '#5b9c5b',
+        arrowColor: '#5b855b',
         isEnabled: true,
         isVisible: true,
         elementIds: [],
@@ -65,16 +62,14 @@ export const elements: ElementsWithPersist = {
             'nameid','left','top','width','value','arrowColor','isEnabled','isVisible'
         ] as const
     },
-    checkboxElement: {
-        parentId: '',
-        id: '',
+    checkboxElement: {        id: '',
         type: 'Checkbox',
         nameid: 'checkbox',
         left: 10,
         top: 10,
         size: 14,
         fill: true,
-        color: '#75c775',
+        color: '#70a470',
         isChecked: false,
         isEnabled: true,
         isVisible: true,
@@ -84,7 +79,6 @@ export const elements: ElementsWithPersist = {
         ] as const
     },
     radioElement: {
-        parentId: '',
         id: '',
         type: 'Radio',
         nameid: 'radio',
@@ -92,7 +86,7 @@ export const elements: ElementsWithPersist = {
         left: 10,
         top: 10,
         size: 14,
-        color: '#589658',
+        color: '#5b855b',
         isSelected: false,
         isEnabled: true,
         isVisible: true,
@@ -101,27 +95,25 @@ export const elements: ElementsWithPersist = {
             'nameid','group','left','top','size','color','isSelected','isEnabled','isVisible'
         ] as const
     },
-    counterElement: {
-        parentId: '',
-        id: '',
+    counterElement: {        id: '',
         type: 'Counter',
         nameid: 'counter',
         left: 15,
         top: 15,
         space: 4,
-        color: '#5b9c5b',
+        color: '#558855',
         minval: 1,
         startval: 1,
         maxval: 5,
+        updownsize: 8,
         isEnabled: true,
         isVisible: true,
         elementIds: [],
         $persist: [
-            'nameid','left','top','space','color','minval','startval','maxval','isEnabled','isVisible'
+            'nameid','left','top','space','color','minval','startval','maxval','updownsize','isEnabled','isVisible'
         ] as const
     },
     sliderElement: {
-        parentId: '',
         id: '',
         type: 'Slider',
         nameid: 'slider',
@@ -135,7 +127,7 @@ export const elements: ElementsWithPersist = {
         isVisible: true,
         handlepos: 50,
         handleshape: 'triangle',
-        handleColor: '#5b9c5b',
+        handleColor: '#558855',
         handlesize: 8,
         elementIds: [],
         $persist: [
@@ -143,7 +135,6 @@ export const elements: ElementsWithPersist = {
         ] as const
     },
     labelElement: {
-        parentId: '',
         id: '',
         type: 'Label',
         nameid: 'label',
@@ -161,9 +152,7 @@ export const elements: ElementsWithPersist = {
             'left','top','maxWidth','lineClamp','fontColor','value','align','isEnabled','isVisible'
         ] as const
     },
-    separatorElement: {
-        parentId: '',
-        id: '',
+    separatorElement: {        id: '',
         type: 'Separator',
         nameid: 'separator',
         left: 15,
@@ -179,9 +168,7 @@ export const elements: ElementsWithPersist = {
             'left','top','width','height','direction','color','isEnabled','isVisible'
         ] as const
     },
-    containerElement: {
-        parentId: '',
-        id: '',
+    containerElement: {        id: '',
         type: 'Container',
         nameid: 'container',
         left: 15,
@@ -192,7 +179,7 @@ export const elements: ElementsWithPersist = {
         itemType: 'any',
         backgroundColor: '#ffffff',
         fontColor: '#000000',
-        activeBackgroundColor: '#779B49',
+        activeBackgroundColor: '##589658',
         activeFontColor: '#ffffff',
         disabledBackgroundColor: '#ececec',
         borderColor: '#b8b8b8',
@@ -204,7 +191,6 @@ export const elements: ElementsWithPersist = {
         ] as const
     },
     groupElement: {
-        parentId: '',
         id: '',
         type: 'Group',
         nameid: 'group',

@@ -19,7 +19,7 @@ let multiOutline: HTMLDivElement | null = null; // ephemeral group multi-drag st
 
 const multiSelected = new Set<string>();
 const suppressClickFor = new Set<string>();
-const SKIP_KEYS = new Set(['parentId', 'elementIds', 'persistent']);
+const SKIP_KEYS = new Set(['elementIds', 'persistent']);
 const elementPropertyKinds = buildElementPropertyKindMap();
 const multiDragSnapshot = new Map<string, { left: number; top: number; width: number; height: number }>();
 const selectionOrder: string[] = [];
@@ -696,7 +696,6 @@ export const editor: Editor = {
                 wrapper.dataset[k] = v;
             }
         }
-        wrapper.dataset.parentId = dialog.id;
 
         constructed.style.left = '0px';
         constructed.style.top = '0px';
@@ -853,8 +852,6 @@ export const editor: Editor = {
             for (const [k, v] of Object.entries(core.dataset)) {
                 if (typeof v === 'string') wrapper.dataset[k] = v;
             }
-            // Ensure parentId reflects dialog id
-            wrapper.dataset.parentId = dialog.id;
 
             // The inner element should sit at (0,0) inside the wrapper
             core.style.left = '0px';
@@ -1634,7 +1631,6 @@ export const editor: Editor = {
                 if (desiredNameId) {
                     wrapper.dataset.nameid = desiredNameId;
                 }
-                wrapper.dataset.parentId = dialog.id;
 
                 // Inner element positioned relative to wrapper
                 core.style.left = '0px';

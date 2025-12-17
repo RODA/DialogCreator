@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type buttonElementType = {
-    parentId: string;
     id: string;
     type: 'Button';
     nameid: string;
@@ -17,7 +16,6 @@ export type buttonElementType = {
     elementIds: string[];
 }
 export type inputElementType = {
-    parentId: string;
     id: string;
     type: 'Input';
     nameid: string;
@@ -31,7 +29,6 @@ export type inputElementType = {
     elementIds: string[];
 }
 export type selectElementType = {
-    parentId: string;
     id: string;
     type: 'Select';
     nameid: string;
@@ -47,7 +44,6 @@ export type selectElementType = {
     elementIds: string[];
 }
 export type checkboxElementType = {
-    parentId: string;
     id: string;
     type: 'Checkbox';
     nameid: string;
@@ -62,7 +58,6 @@ export type checkboxElementType = {
     elementIds: string[];
 }
 export type radioElementType = {
-    parentId: string;
     id: string;
     type: 'Radio';
     nameid: string;
@@ -77,7 +72,6 @@ export type radioElementType = {
     elementIds: string[];
 }
 export type counterElementType = {
-    parentId: string;
     id: string;
     type: 'Counter';
     nameid: string;
@@ -88,12 +82,12 @@ export type counterElementType = {
     minval: number;
     startval: number;
     maxval: number;
+    updownsize: number;
     isEnabled: boolean;
     isVisible: boolean;
     elementIds: string[];
 }
 export type sliderElementType = {
-    parentId: string;
     id: string;
     type: 'Slider';
     nameid: string;
@@ -112,7 +106,6 @@ export type sliderElementType = {
     elementIds: string[];
 }
 export type labelElementType = {
-    parentId: string;
     id: string;
     type: 'Label';
     nameid: string;
@@ -128,7 +121,6 @@ export type labelElementType = {
     elementIds: string[];
 }
 export type separatorElementType = {
-    parentId: string;
     id: string;
     type: 'Separator';
     nameid: string;
@@ -143,7 +135,6 @@ export type separatorElementType = {
     elementIds: string[];
 }
 export type containerElementType = {
-    parentId: string;
     id: string;
     type: 'Container';
     nameid: string;
@@ -164,7 +155,6 @@ export type containerElementType = {
     elementIds: string[];
 }
 export type groupElementType = {
-    parentId: string;
     id: string;
     type: 'Group';
     nameid: string;

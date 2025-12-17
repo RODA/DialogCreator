@@ -244,7 +244,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         const label = item.querySelector('.container-text') as HTMLElement | null;
         const normalBg = host.dataset.backgroundColor || '#ffffff';
         const normalFg = host.dataset.fontColor || '#000000';
-        const activeBg = host.dataset.activeBackgroundColor || '#779B49';
+        const activeBg = host.dataset.activeBackgroundColor || '##589658';
         const activeFg = host.dataset.activeFontColor || '#ffffff';
         const disabledBg = host.dataset.disabledBackgroundColor || '#ececec';
 

@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
         "left",
         "top",
         "handlesize",
+        "updownsize",
         "handlepos",
         "lineClamp"
     ]);
@@ -176,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const nonPersistKeys = renderutils.getNonPersistKeys(name as keyof typeof elements);
         const missingFromDBInterface = Object.keys(defaults)
             .filter(k => !allowed.includes(k))
-            // ignore all non-persist keys dynamically (covers id, parentId, type, etc.)
+            // ignore all non-persist keys dynamically (covers id, type, etc.)
             .filter(k => !nonPersistKeys.includes(k));
         if (missingFromDBInterface.length > 0) {
             console.log(missingFromDBInterface);

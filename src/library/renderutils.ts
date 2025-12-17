@@ -83,7 +83,7 @@ const applyContainerItemFilter = (host: HTMLElement | null) => {
     const items = Array.from(host.querySelectorAll<HTMLElement>('.container-item'));
     const normalBg = host.dataset.backgroundColor || '#ffffff';
     const normalFg = host.dataset.fontColor || '#000000';
-    const activeBg = host.dataset.activeBackgroundColor || '#779B49';
+    const activeBg = host.dataset.activeBackgroundColor || '##589658';
     const activeFg = host.dataset.activeFontColor || '#ffffff';
     const disabledBg = host.dataset.disabledBackgroundColor || '#ececec';
     let selectionChanged = false;
@@ -787,7 +787,7 @@ export const renderutils: RenderUtils = {
             const path = document.createElementNS(SVG_NS, 'path');
             path.setAttribute('d', 'M15 35 L48 80 L95 -35');
             path.setAttribute('stroke', 'black');
-            path.setAttribute('stroke-width', '10');
+            path.setAttribute('stroke-width', '14');
             path.setAttribute('fill', 'none');
             path.setAttribute('class', 'tick-mark');
             svg.appendChild(path);
@@ -858,9 +858,13 @@ export const renderutils: RenderUtils = {
 
             const decrease = document.createElement("div");
             decrease.className = "counter-arrow down";
-            decrease.innerHTML = "&#9654;"; // rotated in the CSS
             decrease.id = "counter-decrease-" + uuid;
-            decrease.style.color = data.color;
+            decrease.style.width = '0px';
+            decrease.style.height = '0px';
+            decrease.style.borderLeft = (data.updownsize || 8) + 'px solid transparent';
+            decrease.style.borderRight = (data.updownsize || 8) + 'px solid transparent';
+            decrease.style.borderTop = (1.5 * (data.updownsize || 8)) + 'px solid ' + data.color;
+            decrease.style.borderBottom = '';
 
             const display = document.createElement("div");
             display.className = "counter-value";
@@ -884,9 +888,13 @@ export const renderutils: RenderUtils = {
 
             const increase = document.createElement("div");
             increase.className = "counter-arrow up";
-            increase.innerHTML = "&#9654;"; // rotated in the CSS
             increase.id = "counter-increase-" + uuid;
-            increase.style.color = data.color;
+            increase.style.width = '0px';
+            increase.style.height = '0px';
+            increase.style.borderLeft = (data.updownsize || 8) + 'px solid transparent';
+            increase.style.borderRight = (data.updownsize || 8) + 'px solid transparent';
+            increase.style.borderBottom = (1.5 * (data.updownsize || 8)) + 'px solid ' + data.color;
+            increase.style.borderTop = '';
 
             element.appendChild(decrease);
             element.appendChild(display);
@@ -990,7 +998,7 @@ export const renderutils: RenderUtils = {
                 const disabled = mkRow('container-item-disabled disabled', 'disabled / blocked');
 
                 const fg = String(data.fontColor) || '#000000';
-                const abg = String(data.activeBackgroundColor) || '#779B49';
+                const abg = String(data.activeBackgroundColor) || '##589658';
                 const afg = String(data.activeFontColor) || '#ffffff';
                 const dbg = String((data as Record<string, unknown>).disabledBackgroundColor ?? '#ececec');
                 inactive.label.style.color = fg;
@@ -1059,6 +1067,7 @@ export const renderutils: RenderUtils = {
         const label = dataset.type === 'Label';
         const group = dataset.type === 'Group';
 
+        let counterNeedsResize = false;
         let elementWidth = element.getBoundingClientRect().width;
         const elementHeight = element.getBoundingClientRect().height;
         const dialogW = dialog.canvas.getBoundingClientRect().width;
@@ -1069,9 +1078,6 @@ export const renderutils: RenderUtils = {
         const inner = element.firstElementChild as HTMLElement | null;
 
         Object.keys(props).forEach((key) => {
-            // if (['parentId', 'elementIds', 'conditions'].includes(key)) {
-            //     return;
-            // }
 
             let value = props[key];
 
@@ -1436,6 +1442,7 @@ export const renderutils: RenderUtils = {
                     }
                     if (countervalue) {
                         countervalue.style.padding = '0px ' + value + 'px';
+                        counterNeedsResize = counterNeedsResize || counter;
                     }
                     break;
                 case 'minval': {
@@ -1447,6 +1454,7 @@ export const renderutils: RenderUtils = {
                         value = String(candidate);
                         if (countervalue && Number(countervalue.textContent) < candidate) {
                             countervalue.textContent = String(candidate);
+                            counterNeedsResize = counterNeedsResize || counter;
                         }
                     } else {
                         value = dataset.minval ?? dataset.startval;
@@ -1467,6 +1475,7 @@ export const renderutils: RenderUtils = {
                         value = String(candidate);
                         if (countervalue) {
                             countervalue.textContent = String(candidate);
+                            counterNeedsResize = counterNeedsResize || counter;
                         }
                     } else {
                         value = dataset.startval;
@@ -1495,7 +1504,30 @@ export const renderutils: RenderUtils = {
                     break;
                 }
 
+                case 'updownsize':
+                    if (counter) {
+                        const decrease = document.querySelector(`#counter-decrease-${element.id}`) as HTMLDivElement;
+                        const increase = document.querySelector(`#counter-increase-${element.id}`) as HTMLDivElement;
+                        const size = Number(value || 8);
+                        const sideSize = size + 'px';
+                        const tipSize = (1.5 * size) + 'px';
+                        const color = element.dataset.color || '#558855';
 
+                        if (decrease) {
+                            decrease.style.borderLeft = sideSize + ' solid transparent';
+                            decrease.style.borderRight = sideSize + ' solid transparent';
+                            decrease.style.borderTop = tipSize + ' solid ' + color;
+                            decrease.style.borderBottom = '';
+                        }
+                        if (increase) {
+                            increase.style.borderLeft = sideSize + ' solid transparent';
+                            increase.style.borderRight = sideSize + ' solid transparent';
+                            increase.style.borderBottom = tipSize + ' solid ' + color;
+                            increase.style.borderTop = '';
+                        }
+                    }
+                    counterNeedsResize = counterNeedsResize || counter;
+                    break;
 
                 case 'direction':
                     // e.g. separator, switch height with width
@@ -1543,7 +1575,7 @@ export const renderutils: RenderUtils = {
                         if (kind === 'single') {
                             const items = Array.from(host.querySelectorAll('.container-item')) as HTMLElement[];
                             const normalFg = String(dataset.fontColor || '#000000');
-                            const activeBg = String(dataset.activeBackgroundColor || '#779B49');
+                            const activeBg = String(dataset.activeBackgroundColor || '#589658');
                             const activeFg = String(dataset.activeFontColor || '#ffffff');
 
                             // Keep the first active row; clear others
@@ -1782,6 +1814,10 @@ export const renderutils: RenderUtils = {
                 renderutils.updateHandleStyle(handle, {...props, ...dataset});
             }
         });
+
+        if (counter && counterNeedsResize) {
+            renderutils.syncCounterSize(element);
+        }
 
     },
 
@@ -2061,6 +2097,45 @@ export const renderutils: RenderUtils = {
                     handle.style.top = (100 - Number(obj.handlepos)) + "%";
                 }
             }
+        }
+    },
+
+    syncCounterSize: function(wrapper: HTMLElement) {
+        // Prefer the actual counter node if the caller passed a wrapper that contains it
+        const innerCounter = (
+            wrapper.firstElementChild instanceof HTMLElement &&
+            wrapper.firstElementChild.classList.contains('counter-wrapper')
+        ) ? wrapper.firstElementChild as HTMLElement : null;
+
+        const host = innerCounter || wrapper;
+        const prevWidth = wrapper.style.width;
+        const prevHeight = wrapper.style.height;
+
+        // Let the element size to its contents before measuring
+        wrapper.style.width = 'fit-content';
+        wrapper.style.height = 'fit-content';
+
+        const rect = host.getBoundingClientRect();
+        const naturalW = Math.ceil(Math.max(host.scrollWidth || 0, rect.width || 0));
+        const naturalH = Math.ceil(Math.max(host.scrollHeight || 0, rect.height || 0));
+
+        if (naturalW > 0) {
+            wrapper.style.width = `${naturalW}px`;
+        } else {
+            wrapper.style.width = prevWidth;
+        }
+
+        if (naturalH > 0) {
+            wrapper.style.height = `${naturalH}px`;
+        } else {
+            wrapper.style.height = prevHeight;
+        }
+
+        // Keep the transparent cover in sync with the new size
+        const cover = wrapper.querySelector('.elementcover') as HTMLElement | null;
+        if (cover) {
+            cover.style.width = '100%';
+            cover.style.height = '100%';
         }
     },
 
@@ -2411,13 +2486,17 @@ export const renderutils: RenderUtils = {
                     element.style.height = '';
                     break;
 
-                case "Counter":
-                    const countervalue = document.querySelector(`#counter-value-${element.id}`) as HTMLDivElement;
-                    countervalue.style.fontSize = fontSize + 'px';
-                    if (fontFamily) {
-                        countervalue.style.fontFamily = fontFamily;
+                case "Counter": {
+                    const countervalue = document.querySelector(`#counter-value-${element.id}`) as HTMLDivElement | null;
+                    if (countervalue) {
+                        countervalue.style.fontSize = fontSize + 'px';
+                        if (fontFamily) {
+                            countervalue.style.fontFamily = fontFamily;
+                        }
                     }
+                    renderutils.syncCounterSize(element);
                     break;
+                }
 
                 case "Container": {
                     // Apply font size to container and its inner sample items
