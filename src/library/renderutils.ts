@@ -189,6 +189,7 @@ const applySorterStateClasses = (
     indicator?: HTMLElement | null
 ) => {
     row.classList.remove('is-asc', 'is-desc', 'is-off');
+    row.dataset.state = item.state;
     const indicatorChar = item.state === 'desc' ? '▼' : '▲';
     if (item.state === 'asc') {
         row.classList.add('is-asc');
@@ -218,12 +219,22 @@ const updateSorterDataset = (host: HTMLElement, items: SorterItem[]) => {
         .map(it => `${it.text}:${it.state}`);
     const joinedSelected = selected.join(',');
 
-    host.dataset.items = order;
-    host.dataset.value = order; // legacy alias
-    host.dataset.order = order;
-    host.dataset.activeValues = joinedSelected;
-    host.dataset.selected = joinedSelected;
-    host.dataset[SORTER_STATE_KEY] = stringifySorterState(items);
+    const targets = new Set<HTMLElement>();
+    targets.add(host);
+    const wrapper = host.classList.contains('element-wrapper')
+        ? host
+        : (host.closest('.element-wrapper') as HTMLElement | null);
+    if (wrapper) {
+        targets.add(wrapper);
+    }
+
+    targets.forEach((node) => {
+        node.dataset.items = order;
+        node.dataset.order = order;
+        node.dataset.activeValues = joinedSelected;
+        node.dataset.selected = joinedSelected;
+        node.dataset[SORTER_STATE_KEY] = stringifySorterState(items);
+    });
 };
 
 const CSS_ESCAPE = (value: string) => {
@@ -1123,7 +1134,6 @@ export const renderutils: RenderUtils = {
             element.dataset.ordering = String(data.ordering);
             element.dataset.items = String(data.items || '');
             element.dataset.align = String(data.align || 'left');
-            element.dataset.value = String(data.items || ''); // legacy alias
 
             // Preview should start with no selection (ChoiceList has no "Value" property).
             if (renderutils.previewWindow()) {
@@ -2074,7 +2084,7 @@ export const renderutils: RenderUtils = {
 
         const datasetSource = host as HTMLElement;
 
-        const itemsStr = String(opts.items ?? datasetSource.dataset.items ?? datasetSource.dataset.value ?? '');
+        const itemsStr = String(opts.items ?? datasetSource.dataset.items ?? '');
 
         // Build a design-time sample state (second item active) for editor only.
         let sampleStateRaw: string | undefined;
@@ -2148,15 +2158,13 @@ export const renderutils: RenderUtils = {
         } else {
             const order = items.map(it => it.text).join(',');
             datasetSource.dataset.items = order;
-            datasetSource.dataset.value = order; // legacy alias
             datasetSource.dataset.order = order;
         }
-        visual.dataset.items = datasetSource.dataset.items || '';
-        visual.dataset.value = datasetSource.dataset.value || ''; // legacy
-        visual.dataset.order = datasetSource.dataset.order || '';
-        visual.dataset.activeValues = datasetSource.dataset.activeValues || '';
-        visual.dataset.selected = datasetSource.dataset.selected || '';
-        visual.dataset[SORTER_STATE_KEY] = datasetSource.dataset[SORTER_STATE_KEY] || '';
+            visual.dataset.items = datasetSource.dataset.items || '';
+            visual.dataset.order = datasetSource.dataset.order || '';
+            visual.dataset.activeValues = datasetSource.dataset.activeValues || '';
+            visual.dataset.selected = datasetSource.dataset.selected || '';
+            visual.dataset[SORTER_STATE_KEY] = datasetSource.dataset[SORTER_STATE_KEY] || '';
 
         const colors = {
             ascBg: activeBg,
@@ -2192,16 +2200,15 @@ export const renderutils: RenderUtils = {
             const cycle = () => {
                 item.state = cycleSorterState(item.state, ordering);
                 applySorterStateClasses(row, item, colors, ordering ? indicator : null);
-                if (persistState) {
-                    updateSorterDataset(datasetSource, items);
-                    visual.dataset.value = datasetSource.dataset.value || '';
-                    visual.dataset.order = datasetSource.dataset.order || '';
-                    visual.dataset.activeValues = datasetSource.dataset.activeValues || '';
-                    visual.dataset.selected = datasetSource.dataset.selected || '';
-                    visual.dataset[SORTER_STATE_KEY] = datasetSource.dataset[SORTER_STATE_KEY] || '';
-                    if (emitChange) {
-                        visual.dispatchEvent(new Event('change', { bubbles: true }));
-                    }
+                    if (persistState) {
+                        updateSorterDataset(datasetSource, items);
+                        visual.dataset.order = datasetSource.dataset.order || '';
+                        visual.dataset.activeValues = datasetSource.dataset.activeValues || '';
+                        visual.dataset.selected = datasetSource.dataset.selected || '';
+                        visual.dataset[SORTER_STATE_KEY] = datasetSource.dataset[SORTER_STATE_KEY] || '';
+                        if (emitChange) {
+                            visual.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
                 } else {
                     (visual as any).__sampleSorterState = stringifySorterState(items);
                 }
@@ -2282,7 +2289,6 @@ export const renderutils: RenderUtils = {
 
                 if (persistState) {
                     updateSorterDataset(datasetSource, items);
-                    visual.dataset.value = datasetSource.dataset.value || '';
                     visual.dataset.order = datasetSource.dataset.order || '';
                     visual.dataset.activeValues = datasetSource.dataset.activeValues || '';
                         visual.dataset.selected = datasetSource.dataset.selected || '';

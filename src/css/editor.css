@@ -744,12 +744,14 @@ input {
 }
 
 .sorter-item {
+    --ml: 0px;     /* label margin-left  */
+    --mr: 0px;     /* label margin-right */
+    --ind: 0px;    /* reserved indicator width */
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
     min-height: 24px;
-    border: 1px solid transparent;
     border-radius: 0;
     margin-bottom: 1px;
     width: 100%;
@@ -759,11 +761,30 @@ input {
     color: inherit;
     user-select: none;
     text-align: left;
-    padding: 0 4px;
+}
+
+.sorter-item[data-align="left"]{
+    justify-content: flex-start;
+    --ml: 4px;
+    --mr: 0px;
+}
+
+.sorter-item[data-align="center"]{
+    justify-content: center;
+    --ml: 0px;
+    --mr: 0px;
+}
+
+.sorter-item[data-align="right"]{
+    justify-content: flex-end;
+    --ml: 0px;
+    --mr: 4px;
 }
 
 .sorter-item .sorter-label {
-    padding-right: 12px; /* reserve space for indicator */
+    margin-left:  var(--ml);
+    margin-right: var(--mr);
+    padding-right: var(--ind);
     font-size: inherit;
     color: inherit;
     display: block;
@@ -772,6 +793,14 @@ input {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.sorter-item:has(.sorter-indicator.hidden) {
+    --ind: 0px;
+}
+
+.sorter-item:not(:has(.sorter-indicator.hidden)) {
+    --ind: 12px;
 }
 
 .sorter-item .sorter-indicator {
@@ -826,11 +855,13 @@ input {
     justify-content: center;
 }
 .sorter-item.no-order .sorter-label {
-    padding-right: 4px;
+    overflow: visible;
+    text-overflow: clip;
 }
-.sorter-item.no-order[data-align="right"] .sorter-label {
+/* padding-right: 4px; */
+/* .sorter-item.no-order[data-align="right"] .sorter-label {
     padding-right: 0;
-}
+} */
 .sorter-item.no-order .sorter-indicator {
     display: none;
 }

@@ -148,12 +148,14 @@ input:focus, select:focus, textarea:focus {
 }
 
 .preview-canvas .sorter-item {
+    --ml: 0px;     /* label margin-left  */
+    --mr: 0px;     /* label margin-right */
+    --ind: 0px;    /* reserved indicator width */
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
     min-height: 24px;
-    border: 1px solid transparent;
     border-radius: 0;
     margin-bottom: 1px;
     width: 100%;
@@ -161,11 +163,31 @@ input:focus, select:focus, textarea:focus {
     cursor: pointer;
     background: transparent;
     user-select: none;
-    padding: 0 4px;
+    text-align: left;
+}
+
+.preview-canvas .sorter-item[data-align="left"]{
+    justify-content: flex-start;
+    --ml: 4px;
+    --mr: 0px;
+}
+
+.preview-canvas .sorter-item[data-align="center"]{
+    justify-content: center;
+    --ml: 0px;
+    --mr: 0px;
+}
+
+.preview-canvas .sorter-item[data-align="right"]{
+    justify-content: flex-end;
+    --ml: 0px;
+    --mr: 4px;
 }
 
 .preview-canvas .sorter-item .sorter-label {
-    padding-right: 12px; /* reserve space for indicator */
+    margin-left:  var(--ml);
+    margin-right: var(--mr);
+    padding-right: var(--ind);
     font-size: inherit;
     color: inherit;
     display: block;
@@ -176,12 +198,20 @@ input:focus, select:focus, textarea:focus {
     text-overflow: ellipsis;
 }
 
+.preview-canvas .sorter-item:has(.sorter-indicator.hidden){
+    --ind: 0px;
+}
+
+.preview-canvas .sorter-item:not(:has(.sorter-indicator.hidden)){
+    --ind: 12px;
+}
+
 .preview-canvas .sorter-item .sorter-indicator {
     position: absolute;
     right: 2px;
     top: 50%;
     transform: translateY(-50%);
-    text-align: center;
+    text-align: right;
     font-size: 0.85em; /* scales with global font size while remaining smaller */
     width: 10px;
     display: block;
@@ -231,6 +261,8 @@ input:focus, select:focus, textarea:focus {
 }
 .preview-canvas .sorter-item.no-order .sorter-label {
     padding-right: 2px;
+    overflow: visible;
+    text-overflow: clip;
 }
 .preview-canvas .sorter-item.no-order[data-align="right"] .sorter-label {
     padding-right: 0;
