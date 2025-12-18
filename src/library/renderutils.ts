@@ -1695,6 +1695,17 @@ export const renderutils: RenderUtils = {
 
                 case 'direction':
                     // e.g. separator, switch height with width
+                    {
+                        const nextDir = String(value || dataset.direction || '').toLowerCase();
+                        const currentDir = String(dataset.direction || '').toLowerCase();
+                        const dirInput = document.getElementById('eldirection') as HTMLSelectElement | null;
+                        if (dirInput) dirInput.value = nextDir || currentDir || 'horizontal';
+                        if (nextDir === currentDir) {
+                            dataset.direction = currentDir;
+                            break;
+                        }
+                        dataset.direction = nextDir || currentDir;
+                    }
                     let width = dataset.height;
                     let height = dataset.width;
 
