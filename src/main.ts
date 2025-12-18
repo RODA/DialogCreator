@@ -15,15 +15,44 @@ const OS_Mac = process.platform == 'darwin';
 import { app, BrowserWindow, dialog, ipcMain, Menu } from "electron";
 import { utils } from "./library/utils";
 import * as path from "path";
+import * as fs from "fs";
 import { database } from "./database/database";
 import { DBElements } from "./interfaces/database";
+// One-time Wayland notice for packaged Linux users (no auto-relaunch)
+function maybeShowWaylandNotice() {
+    if (!app.isPackaged || process.platform !== 'linux') return;
+    const sessionType = (process.env.XDG_SESSION_TYPE || '').toLowerCase();
+    const onWayland = sessionType === 'wayland' || !!process.env.WAYLAND_DISPLAY;
+    if (!onWayland) return;
 
-// On Wayland, Electron cannot control window coordinates; force X11 backend for positioning fidelity.
-if (OS_Linux) {
-    try {
-        app.commandLine.appendSwitch('ozone-platform-hint', 'x11');
-    } catch { /* best effort */ }
+    const noticeFile = path.join(app.getPath('userData'), 'wayland_notice_seen');
+    if (fs.existsSync(noticeFile)) return;
+
+    const detail = [
+        'Window positioning works best under X11.',
+        'On Wayland, preview/syntax windows may not stay aligned.',
+        'For best results, launch with X11 compatibility:',
+        'ELECTRON_OZONE_PLATFORM_HINT=x11 OZONE_PLATFORM=x11 XDG_SESSION_TYPE=x11 ./DialogCreator_1.0.0.AppImage'
+    ].join('\n');
+
+    const res = dialog.showMessageBoxSync({
+        type: 'info',
+        buttons: ['OK', "Don't show again"],
+        defaultId: 0,
+        cancelId: 0,
+        title: 'Wayland positioning notice',
+        message: 'Window positioning is limited on Wayland.',
+        detail,
+        normalizeAccessKeys: true
+    });
+
+    if (res === 1) {
+        try { fs.writeFileSync(noticeFile, 'seen'); } catch { /* ignore */ }
+    }
 }
+
+// Note: For packaged Linux builds, avoid forcing platform/env vars here. Users on Wayland can launch
+// with X11 overrides if needed (e.g., ELECTRON_OZONE_PLATFORM_HINT=x11 OZONE_PLATFORM=x11 XDG_SESSION_TYPE=x11).
 
 let editorWindow: BrowserWindow;
 let secondWindow: BrowserWindow;
@@ -32,6 +61,7 @@ let syntaxPanelAnchor: BrowserWindow | null;
 let syntaxPanelHeight = 160; // content height; updated by renderer
 let syntaxPanelFollowTimer: NodeJS.Timeout | null = null;
 const SYNTAX_GAP = 8; // pixels below the preview content/frame
+let lastEditorBounds: Electron.Rectangle | null = null;
 let infoWindow: BrowserWindow | null = null;
 type InfoPage = 'manual' | 'api' | 'about';
 
@@ -65,6 +95,7 @@ function createMainWindow() {
 
     // Ensure initial title formatting on all platforms
     updateWindowTitle();
+    lastEditorBounds = editorWindow.getBounds();
 
     // and load the index.html of the app.
     editorWindow.loadFile(path.join(__dirname, "../src/pages/editor.html"));
@@ -89,14 +120,68 @@ function createMainWindow() {
 
     // Open the DevTools.
     if (development) {
-        editorWindow.webContents.openDevTools();
-        setTimeout(() => {
-            editorWindow.focus();
-        }, 300);
+        try {
+            editorWindow.webContents.openDevTools({ mode: 'detach', activate: false } as any);
+            const dt = editorWindow.webContents.devToolsWebContents;
+            if (dt) {
+                dt.once('did-finish-load', () => {
+                    try { editorWindow.focus(); editorWindow.webContents.focus(); } catch { /* noop */ }
+                });
+            }
+        } catch {
+            editorWindow.webContents.openDevTools({ mode: 'detach' } as any);
+        }
+        // Refocus the editor window after DevTools opens; add a couple passes for slower starts
+        const refocus = () => {
+            try { editorWindow.focus(); editorWindow.webContents.focus(); } catch { /* noop */ }
+        };
+
+        setTimeout(refocus, 600);
     }
+
+    // Keep child windows (preview/syntax) in sync when the editor moves (Linux lacks implicit parenting)
+    const syncChildrenOnMove = () => {
+        try {
+            if (!editorWindow || editorWindow.isDestroyed()) return;
+            const curr = editorWindow.getBounds();
+            if (!lastEditorBounds) {
+                lastEditorBounds = curr;
+                return;
+            }
+            const dx = curr.x - lastEditorBounds.x;
+            const dy = curr.y - lastEditorBounds.y;
+            if (dx === 0 && dy === 0) {
+                lastEditorBounds = curr;
+                return;
+            }
+
+            const nudge = (win: BrowserWindow | null) => {
+                if (!win || win.isDestroyed()) return;
+                const b = win.getBounds();
+                win.setBounds({ x: b.x + dx, y: b.y + dy, width: b.width, height: b.height }, false);
+            };
+
+            if (secondWindow && !secondWindow.isDestroyed()) {
+                try {
+                    const url = secondWindow.webContents.getURL();
+                    if (url.includes('preview.html')) {
+                        nudge(secondWindow);
+                    }
+                } catch { /* noop */ }
+            }
+
+            nudge(syntaxPanelWindow);
+
+            lastEditorBounds = curr;
+        } catch { /* noop */ }
+    };
+
+    editorWindow.on('move', syncChildrenOnMove);
+    editorWindow.on('moved', syncChildrenOnMove);
 }
 
 app.whenReady().then(() => {
+    maybeShowWaylandNotice();
     createMainWindow();
     setupIPC();
     // Intercept OS-level quits (e.g., Cmd+Q) to prompt for save when dirty

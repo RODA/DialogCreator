@@ -14,6 +14,9 @@ if (process.platform === 'linux') {
   process.env.ELECTRON_DISABLE_SANDBOX = process.env.ELECTRON_DISABLE_SANDBOX || '1';
   process.env.ELECTRON_FORCE_DISABLE_SANDBOX = process.env.ELECTRON_FORCE_DISABLE_SANDBOX || '1';
   process.env.ELECTRON_OZONE_PLATFORM_HINT = process.env.ELECTRON_OZONE_PLATFORM_HINT || 'x11';
+  process.env.XDG_SESSION_TYPE = process.env.XDG_SESSION_TYPE || 'x11';
+  // If Wayland is present, drop it so Electron is forced to X11 like the manual command
+  if (process.env.WAYLAND_DISPLAY) delete process.env.WAYLAND_DISPLAY;
 }
 
 const electronBin = path.join(
@@ -23,13 +26,23 @@ const electronBin = path.join(
   process.platform === 'win32' ? 'electron.cmd' : 'electron'
 );
 
+// Compose env for Electron spawn
+const spawnEnv = { ...process.env };
+if (process.platform === 'linux') {
+  spawnEnv.ELECTRON_OZONE_PLATFORM_HINT = 'x11';
+  spawnEnv.ELECTRON_ENABLE_WAYLAND = '0';
+  spawnEnv.OZONE_PLATFORM = 'x11';
+  spawnEnv.XDG_SESSION_TYPE = 'x11';
+  delete spawnEnv.WAYLAND_DISPLAY; // force X11 even inside a Wayland session
+}
+
 const child = spawn(
   electronBin,
-  ['--no-sandbox', path.join(root, 'dist', 'main.js')],
+  ['--no-sandbox', '--ozone-platform=x11', path.join(root, 'dist', 'main.js')],
   {
     stdio: 'inherit',
     cwd: root,
-    env: { ...process.env },
+    env: spawnEnv,
   }
 );
 
