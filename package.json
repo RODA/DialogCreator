@@ -19,7 +19,9 @@
     "rename:win": "powershell -ExecutionPolicy Bypass -File scripts/rename-binaries-windows.ps1"
   },
   "author": "Adrian Dusa",
-  "contributors": ["RODA"],
+  "contributors": [
+    "RODA"
+  ],
   "license": "SEE LICENSE IN LICENSE",
   "bugs": {
     "url": "https://github.com/RODA/DialogCreator/issues"
@@ -106,6 +108,7 @@
   "dependencies": {
     "@jaames/iro": "^5.5.2",
     "acorn": "^8.12.1",
+    "sortablejs": "^1.15.6",
     "sqlite3": "^5.1.7",
     "tippy.js": "^6.3.7",
     "uuid": "^13.0.0"

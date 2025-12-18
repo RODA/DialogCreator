@@ -724,3 +724,121 @@ input {
 .container-sample .container-item-disabled .container-text {
     color: inherit;
 }
+
+/* Sorter element */
+.sorter {
+    border: 1px solid #777777;
+    border-radius: 2px;
+    box-sizing: border-box;
+    background: var(--sorter-bg, #ffffff);
+    color: var(--sorter-fg, #000000);
+    overflow: hidden;
+    position: relative;
+}
+
+.sorter-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0;
+}
+
+.sorter-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 24px;
+    border: 1px solid transparent;
+    border-radius: 0;
+    margin-bottom: 1px;
+    width: 100%;
+    box-sizing: border-box;
+    cursor: pointer;
+    background: var(--sorter-row-bg, transparent);
+    color: inherit;
+    user-select: none;
+    text-align: left;
+    padding: 0 4px;
+}
+
+.sorter-item .sorter-label {
+    padding-right: 12px; /* reserve space for indicator */
+    font-size: inherit;
+    color: inherit;
+    display: block;
+    width: 100%;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sorter-item .sorter-indicator {
+    position: absolute;
+    right: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    text-align: right;
+    font-size: 0.85em; /* stays smaller, still follows global font size */
+    width: 10px;
+    display: block;
+    opacity: 0.4;
+}
+
+.sorter-item.is-asc {
+    background: var(--sorter-active-bg, #e6f1e6);
+    border-color: rgba(0, 0, 0, 0.08);
+    color: var(--sorter-active-fg, #000000);
+}
+
+.sorter-item.is-desc {
+    background: var(--sorter-desc-bg, #d9e7ff);
+    border-color: rgba(0, 0, 0, 0.08);
+    color: var(--sorter-active-fg, #000000);
+}
+
+.sorter-item.is-off {
+    background: var(--sorter-row-bg, transparent);
+}
+
+/* SortableJS drag feedback */
+.sorter-ghost {
+    opacity: 0.35;
+}
+.sorter-chosen {
+    opacity: 0.85;
+}
+.sorter-drag {
+    opacity: 0.85;
+}
+
+.sorter-indicator.asc {
+    opacity: 1;
+}
+
+.sorter-indicator.desc {
+    opacity: 1;
+}
+
+/* No-ordering variant: remove reserved space and hide indicator */
+.sorter-item.no-order {
+    justify-content: center;
+}
+.sorter-item.no-order .sorter-label {
+    padding-right: 4px;
+}
+.sorter-item.no-order[data-align="right"] .sorter-label {
+    padding-right: 0;
+}
+.sorter-item.no-order .sorter-indicator {
+    display: none;
+}
+
+.sorter-indicator.off {
+    opacity: 0.4;
+}
+
+.sorter-indicator.hidden {
+    visibility: hidden;
+}

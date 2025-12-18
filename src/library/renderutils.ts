@@ -18,6 +18,7 @@ import { v4 as uuidv4 } from 'uuid';
 import * as path from "path";
 import * as fs from "fs";
 import tippy from "tippy.js";
+import Sortable = require("sortablejs");
 
 let __uniformSchema: UniformSchema | null = null;
 
@@ -132,6 +133,97 @@ const applyContainerItemFilter = (host: HTMLElement | null) => {
         host.dataset.activeValues = joined;
         host.dispatchEvent(new Event('change', { bubbles: true }));
     }
+};
+
+type SorterState = 'off' | 'asc' | 'desc';
+type SorterItem = { text: string; state: SorterState };
+const SORTER_STATE_KEY = 'sorterState';
+
+const splitSorterValues = (value: unknown): string[] => {
+    return String(value ?? '')
+        .split(/[;,]/)
+        .map(s => s.trim())
+        .filter(Boolean);
+};
+
+const parseSorterState = (raw: unknown): SorterItem[] => {
+    if (!raw) return [];
+    try {
+        const parsed = JSON.parse(String(raw));
+        if (Array.isArray(parsed)) {
+            return parsed
+                .map((item: any) => {
+                    const text = String(item?.text ?? item?.label ?? item?.name ?? '').trim();
+                    const state = String(item?.state ?? '').toLowerCase();
+                    const normalized = (state === 'asc' || state === 'desc') ? state as SorterState : 'off';
+                    return text ? { text, state: normalized } : null;
+                })
+                .filter(Boolean) as SorterItem[];
+        }
+    } catch { /* noop */ }
+    return [];
+};
+
+const stringifySorterState = (items: SorterItem[]) => JSON.stringify(items.map(it => ({ text: it.text, state: it.state })));
+
+const normalizeSorterItems = (itemsValue: unknown, stateRaw: unknown): SorterItem[] => {
+    const labels = splitSorterValues(itemsValue);
+    const prev = parseSorterState(stateRaw);
+    const prevMap = new Map(prev.map(it => [it.text, it.state]));
+    return labels.map(label => ({
+        text: label,
+        state: prevMap.get(label) || 'off'
+    }));
+};
+
+const cycleSorterState = (current: SorterState, ordering: boolean): SorterState => {
+    if (current === 'off') return 'asc';
+    if (current === 'asc' && ordering) return 'desc';
+    return 'off';
+};
+
+const applySorterStateClasses = (
+    row: HTMLElement,
+    item: SorterItem,
+    colors: { ascBg: string; descBg: string; activeFg: string; baseBg: string; baseFg: string },
+    indicator?: HTMLElement | null
+) => {
+    row.classList.remove('is-asc', 'is-desc', 'is-off');
+    const indicatorChar = item.state === 'desc' ? '▼' : '▲';
+    if (item.state === 'asc') {
+        row.classList.add('is-asc');
+        row.style.setProperty('--sorter-row-bg', colors.ascBg);
+        row.style.color = colors.activeFg;
+    } else if (item.state === 'desc') {
+        row.classList.add('is-desc');
+        row.style.setProperty('--sorter-row-bg', colors.descBg);
+        row.style.color = colors.activeFg;
+    } else {
+        row.classList.add('is-off');
+        row.style.setProperty('--sorter-row-bg', colors.baseBg);
+        row.style.color = colors.baseFg;
+    }
+    if (indicator) {
+        indicator.classList.remove('asc', 'desc', 'off');
+        const cls = item.state === 'asc' ? 'asc' : item.state === 'desc' ? 'desc' : 'off';
+        indicator.classList.add(cls);
+        indicator.textContent = indicatorChar;
+    }
+};
+
+const updateSorterDataset = (host: HTMLElement, items: SorterItem[]) => {
+    const order = items.map(it => it.text).join(',');
+    const selected = items
+        .filter(it => it.state !== 'off')
+        .map(it => `${it.text}:${it.state}`);
+    const joinedSelected = selected.join(',');
+
+    host.dataset.items = order;
+    host.dataset.value = order; // legacy alias
+    host.dataset.order = order;
+    host.dataset.activeValues = joinedSelected;
+    host.dataset.selected = joinedSelected;
+    host.dataset[SORTER_STATE_KEY] = stringifySorterState(items);
 };
 
 const CSS_ESCAPE = (value: string) => {
@@ -636,8 +728,8 @@ export const renderutils: RenderUtils = {
         // Determine effective nameid:
         // - If user provided a non-empty, valid identifier and it is not already used, keep it verbatim.
         // - Otherwise, generate a unique sequential id based on the provided base or the element type.
-        const provided = String((data as any).nameid || '').trim();
-        const baseFallback = String((data as any).type || 'el').toLowerCase();
+        const provided = String(data.nameid || '').trim();
+        const baseFallback = String(data.type || 'el').toLowerCase();
         const existingIds = (() => {
             try {
                 const info = renderutils.getDialogInfo();
@@ -1015,6 +1107,55 @@ export const renderutils: RenderUtils = {
                 element.appendChild(sample);
             }
 
+        } else if (data.type == "ChoiceList") {
+
+            element.className = 'sorter';
+            element.style.width = data.width + 'px';
+            element.style.height = data.height + 'px';
+            element.style.backgroundColor = data.backgroundColor;
+            element.style.borderColor = data.borderColor;
+            element.dataset.backgroundColor = data.backgroundColor;
+            element.dataset.fontColor = data.fontColor;
+            element.dataset.activeBackgroundColor = data.activeBackgroundColor;
+            element.dataset.activeFontColor = data.activeFontColor;
+            element.dataset.borderColor = data.borderColor;
+            element.dataset.sortable = String(data.sortable);
+            element.dataset.ordering = String(data.ordering);
+            element.dataset.items = String(data.items || '');
+            element.dataset.align = String(data.align || 'left');
+            element.dataset.value = String(data.items || ''); // legacy alias
+
+            // Preview should start with no selection (ChoiceList has no "Value" property).
+            if (renderutils.previewWindow()) {
+                delete element.dataset.selected;
+                delete element.dataset.activeValues;
+                delete element.dataset[SORTER_STATE_KEY];
+            } else {
+                // Editor-only visual sample: show an active row by default (prefer second item when present),
+                // but do NOT persist this as dialog data.
+                const labels = splitSorterValues(data.items || '');
+                const preferred = labels[1]; // second item if exists
+                if (preferred) {
+                    (element as any).__sampleSorterState = stringifySorterState(
+                        labels.map(text => ({ text, state: text === preferred ? 'asc' : 'off' }))
+                    );
+                } else {
+                    delete (element as any).__sampleSorterState;
+                }
+            }
+
+            renderutils.renderSorter(element, {
+                items: data.items,
+                sortable: data.sortable,
+                ordering: data.ordering,
+                align: data.align,
+                backgroundColor: data.backgroundColor,
+                fontColor: data.fontColor,
+                activeBackgroundColor: data.activeBackgroundColor,
+                activeFontColor: data.activeFontColor,
+                borderColor: data.borderColor
+            });
+
         }
 
         // nameid already assigned earlier (before dataset population) for non Counter/Label types
@@ -1062,12 +1203,14 @@ export const renderutils: RenderUtils = {
         const select = dataset.type === 'Select';
         const slider = dataset.type === 'Slider';
         const container = dataset.type === 'Container';
+        const sorter = dataset.type === 'ChoiceList';
         const separator = dataset.type === 'Separator';
         const button = dataset.type === 'Button';
         const label = dataset.type === 'Label';
         const group = dataset.type === 'Group';
 
         let counterNeedsResize = false;
+        let sorterNeedsRender = false;
         let elementWidth = element.getBoundingClientRect().width;
         const elementHeight = element.getBoundingClientRect().height;
         const dialogW = dialog.canvas.getBoundingClientRect().width;
@@ -1136,7 +1279,7 @@ export const renderutils: RenderUtils = {
                     }
                     // Apply height to wrapper by default, and also to inner for visual elements
                     element.style.height = value + 'px';
-                    if (inner && (input || select || container || separator || slider || checkbox || radio)) {
+                    if (inner && (input || select || container || sorter || separator || slider || checkbox || radio)) {
                         inner.style.height = value + 'px';
                         // Also resize the custom control node if present
                         if (checkbox && customCheckbox) customCheckbox.style.height = value + 'px';
@@ -1179,6 +1322,12 @@ export const renderutils: RenderUtils = {
                         if (widthInput) widthInput.value = value;
                     }
 
+                    if (sorter && Number(value) < 24) {
+                        value = '24';
+                        const widthInput = document.getElementById('elwidth') as HTMLInputElement | null;
+                        if (widthInput) widthInput.value = value;
+                    }
+
                     if (select && Number(value) < 100) {
                         value = '100';
                     }
@@ -1202,7 +1351,7 @@ export const renderutils: RenderUtils = {
                     } else {
                         // For other elements, apply width to wrapper
                         element.style.width = value + 'px';
-                        if (inner && (input || select || container || separator || slider || checkbox || radio)) {
+                        if (inner && (input || select || container || sorter || separator || slider || checkbox || radio)) {
                             inner.style.width = value + 'px';
                             if (checkbox && customCheckbox) customCheckbox.style.width = value + 'px';
                             if (radio && customRadio) customRadio.style.width = value + 'px';
@@ -1308,12 +1457,13 @@ export const renderutils: RenderUtils = {
 
                 case 'backgroundColor':
                     // Container background + inactive row background color
-                    if (container) {
+                    if (container || sorter) {
                         if (utils.isValidColor(value)) {
                             const host = inner || element;
                             host.style.backgroundColor = value;
-                            // const row = host.querySelector('.container-item.inactive') as HTMLDivElement | null;
-                            // if (row) row.style.backgroundColor = value;
+                            if (sorter) {
+                                sorterNeedsRender = true;
+                            }
                         } else {
                             value = dataset.backgroundColor;
                             const color = document.getElementById('elbackgroundColor') as HTMLInputElement;
@@ -1343,6 +1493,10 @@ export const renderutils: RenderUtils = {
                             host.querySelectorAll('.container-item:not(.active) .container-text').forEach((item) => {
                                 (item as HTMLElement).style.color = String(value);
                             });
+                        } else if (sorter) {
+                            const host = inner || element;
+                            host.style.color = value;
+                            sorterNeedsRender = true;
                         } else {
                             element.style.color = value;
                         }
@@ -1358,10 +1512,10 @@ export const renderutils: RenderUtils = {
                         if (button && inner) {
                             // Apply border color to button
                             inner.style.borderColor = value;
-                        } else if (container && inner) {
+                        } else if ((container || sorter) && inner) {
                             // Apply border color to container
                             inner.style.borderColor = value;
-                        } else if (button || container) {
+                        } else if (button || container || sorter) {
                             // Fallback for wrapper-level styling
                             element.style.borderColor = value;
                         }
@@ -1384,6 +1538,11 @@ export const renderutils: RenderUtils = {
                             const color = document.getElementById('elactiveBackgroundColor') as HTMLInputElement;
                             color.value = value;
                         }
+                    } else if (sorter) {
+                        if (!utils.isValidColor(value)) {
+                            value = dataset.activeBackgroundColor;
+                        }
+                        sorterNeedsRender = true;
                     }
                     break;
 
@@ -1399,6 +1558,11 @@ export const renderutils: RenderUtils = {
                             const color = document.getElementById('elactiveFontColor') as HTMLInputElement;
                             color.value = value;
                         }
+                    } else if (sorter) {
+                        if (!utils.isValidColor(value)) {
+                            value = dataset.activeFontColor;
+                        }
+                        sorterNeedsRender = true;
                     }
                     break;
 
@@ -1648,6 +1812,14 @@ export const renderutils: RenderUtils = {
                     // For other element types (e.g., Radio, Checkbox, Button, Counter, etc.)
                     // the Value is metadata only and should not alter visible text.
                     break;
+                case 'items':
+                    if (sorter) {
+                        element.dataset.items = String(value || '');
+                        const itemsInput = document.getElementById('elitems') as HTMLInputElement | null;
+                        if (itemsInput) itemsInput.value = String(value || '');
+                        sorterNeedsRender = true;
+                    }
+                    break;
 
                 case 'isEnabled': {
                     const enabled = utils.isTrue(value);
@@ -1705,7 +1877,7 @@ export const renderutils: RenderUtils = {
                         inner.style.pointerEvents = enabled ? '' : 'none';
                     }
 
-                    if (label || separator || container || group) {
+                    if (label || separator || container || sorter || group) {
                         element.style.pointerEvents = enabled ? '' : 'none';
                     }
 
@@ -1792,10 +1964,32 @@ export const renderutils: RenderUtils = {
                     }
                     break;
 
+                case 'sortable':
+                    if (sorter) {
+                        value = utils.isTrue(value) ? 'true' : 'false';
+                        sorterNeedsRender = true;
+                    }
+                    break;
+
+                case 'ordering':
+                    if (sorter) {
+                        value = utils.isTrue(value) ? 'true' : 'false';
+                        sorterNeedsRender = true;
+                    }
+                    break;
+
                 case 'align':
                     if (label) {
                         element.dataset[key] = value;
                         renderutils.updateLabel(element);
+                    } else if (sorter) {
+                        const normalized = String(value || '').toLowerCase();
+                        const allowed = ['left', 'center', 'right'];
+                        const next = allowed.includes(normalized) ? normalized : 'left';
+                        element.dataset.align = next;
+                        const alignInput = document.getElementById('elalign') as HTMLSelectElement | null;
+                        if (alignInput) alignInput.value = next;
+                        sorterNeedsRender = true;
                     }
                     break;
 
@@ -1817,6 +2011,9 @@ export const renderutils: RenderUtils = {
 
         if (counter && counterNeedsResize) {
             renderutils.syncCounterSize(element);
+        }
+        if (sorter && sorterNeedsRender) {
+            renderutils.renderSorter(element);
         }
 
     },
@@ -1853,6 +2050,243 @@ export const renderutils: RenderUtils = {
                 dialog.customJS = out;
             }
         }
+    },
+
+    renderSorter: function(host: HTMLElement, opts: Partial<Record<string, unknown>> = {}, emitChange = true) {
+        const visual = host.classList.contains('sorter')
+            ? host
+            : (host.querySelector('.sorter') as HTMLElement | null);
+
+        if (!visual) {
+            return;
+        }
+
+        const datasetSource = host as HTMLElement;
+
+        const itemsStr = String(opts.items ?? datasetSource.dataset.items ?? datasetSource.dataset.value ?? '');
+
+        // Build a design-time sample state (second item active) for editor only.
+        let sampleStateRaw: string | undefined;
+        if (!renderutils.previewWindow()) {
+            const labels = splitSorterValues(itemsStr);
+            const preferred = labels[1]; // second item, if present
+            sampleStateRaw = preferred
+                ? stringifySorterState(labels.map(text => ({ text, state: text === preferred ? 'asc' : 'off' })))
+                : undefined;
+            (visual as any).__sampleSorterState = sampleStateRaw;
+        } else {
+            (visual as any).__sampleSorterState = undefined;
+        }
+
+        const persistedStateRaw = datasetSource.dataset[SORTER_STATE_KEY];
+        const stateRaw = opts[SORTER_STATE_KEY] !== undefined
+            ? opts[SORTER_STATE_KEY]
+            : (persistedStateRaw && String(persistedStateRaw).trim().length > 0
+                ? persistedStateRaw
+                : sampleStateRaw);
+        const usingSampleState = opts[SORTER_STATE_KEY] === undefined && (
+            !persistedStateRaw || String(persistedStateRaw).trim().length === 0
+        ) && !!sampleStateRaw;
+        const persistState = opts.persistState === undefined ? !usingSampleState : utils.isTrue(opts.persistState);
+
+        const sortable = utils.isTrue(opts.sortable ?? datasetSource.dataset.sortable ?? 'true');
+        const ordering = utils.isTrue(opts.ordering ?? datasetSource.dataset.ordering ?? 'true');
+        let items = normalizeSorterItems(itemsStr, stateRaw);
+
+        if (!ordering) {
+            items = items.map(item => ({
+                text: item.text,
+                state: item.state === 'asc' ? 'asc' : 'off'
+            }));
+        }
+
+        const bg = String(opts.backgroundColor ?? datasetSource.dataset.backgroundColor ?? '#ffffff');
+        const fg = String(opts.fontColor ?? datasetSource.dataset.fontColor ?? '#000000');
+        const activeBg = String(opts.activeBackgroundColor ?? datasetSource.dataset.activeBackgroundColor ?? '#e6f1e6');
+        const activeFg = String(opts.activeFontColor ?? datasetSource.dataset.activeFontColor ?? '#000000');
+        const border = String(opts.borderColor ?? datasetSource.dataset.borderColor ?? '#b8b8b8');
+        const alignRaw = String(opts.align ?? datasetSource.dataset.align ?? 'left').toLowerCase();
+        const align = ['left', 'center', 'right'].includes(alignRaw) ? alignRaw : 'left';
+        const descBg = activeBg;
+
+        visual.style.backgroundColor = bg;
+        visual.style.borderColor = border;
+        visual.style.setProperty('--sorter-bg', bg);
+        visual.style.setProperty('--sorter-fg', fg);
+        visual.style.setProperty('--sorter-active-bg', activeBg);
+        visual.style.setProperty('--sorter-desc-bg', descBg);
+        visual.style.setProperty('--sorter-active-fg', activeFg);
+        datasetSource.dataset.sortable = sortable ? 'true' : 'false';
+        datasetSource.dataset.ordering = ordering ? 'true' : 'false';
+        visual.dataset.sortable = datasetSource.dataset.sortable;
+        visual.dataset.ordering = datasetSource.dataset.ordering;
+
+        const existingList = visual.querySelector('.sorter-list') as HTMLDivElement | null;
+        const list = existingList || document.createElement('div');
+        list.className = 'sorter-list';
+        list.style.position = 'relative';
+        const existingSortable = (list as any).__sortable as { destroy?: () => void } | undefined;
+        if (existingSortable?.destroy) {
+            try { existingSortable.destroy(); } catch { /* noop */ }
+        }
+        delete (list as any).__sortable;
+        list.innerHTML = '';
+
+        if (persistState) {
+            updateSorterDataset(datasetSource, items);
+        } else {
+            const order = items.map(it => it.text).join(',');
+            datasetSource.dataset.items = order;
+            datasetSource.dataset.value = order; // legacy alias
+            datasetSource.dataset.order = order;
+        }
+        visual.dataset.items = datasetSource.dataset.items || '';
+        visual.dataset.value = datasetSource.dataset.value || ''; // legacy
+        visual.dataset.order = datasetSource.dataset.order || '';
+        visual.dataset.activeValues = datasetSource.dataset.activeValues || '';
+        visual.dataset.selected = datasetSource.dataset.selected || '';
+        visual.dataset[SORTER_STATE_KEY] = datasetSource.dataset[SORTER_STATE_KEY] || '';
+
+        const colors = {
+            ascBg: activeBg,
+            descBg,
+            activeFg,
+            baseBg: bg,
+            baseFg: fg
+        };
+
+        const attachRow = (item: SorterItem, index: number) => {
+            const row = document.createElement('div');
+            row.className = 'sorter-item';
+            row.dataset.state = item.state;
+            row.dataset.text = item.text;
+            row.draggable = false;
+            row.dataset.align = align;
+            if (!ordering) {
+                row.classList.add('no-order');
+            }
+
+            const label = document.createElement('span');
+            label.className = 'sorter-label';
+            label.textContent = item.text;
+            label.style.textAlign = align as 'left' | 'center' | 'right';
+
+            const indicator = document.createElement('span');
+            indicator.className = 'sorter-indicator';
+            indicator.textContent = item.state === 'desc' ? '▼' : '▲';
+            indicator.classList.toggle('hidden', !ordering);
+
+            applySorterStateClasses(row, item, colors, ordering ? indicator : null);
+
+            const cycle = () => {
+                item.state = cycleSorterState(item.state, ordering);
+                applySorterStateClasses(row, item, colors, ordering ? indicator : null);
+                if (persistState) {
+                    updateSorterDataset(datasetSource, items);
+                    visual.dataset.value = datasetSource.dataset.value || '';
+                    visual.dataset.order = datasetSource.dataset.order || '';
+                    visual.dataset.activeValues = datasetSource.dataset.activeValues || '';
+                    visual.dataset.selected = datasetSource.dataset.selected || '';
+                    visual.dataset[SORTER_STATE_KEY] = datasetSource.dataset[SORTER_STATE_KEY] || '';
+                    if (emitChange) {
+                        visual.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                } else {
+                    (visual as any).__sampleSorterState = stringifySorterState(items);
+                }
+
+                // Re-apply alignment in case it changed via dataset
+                label.style.textAlign = align as 'left' | 'center' | 'right';
+            };
+
+            row.addEventListener('click', () => {
+                if (list.dataset.dragging === 'true') return;
+                cycle();
+            });
+            label.addEventListener('click', (ev) => {
+                ev.stopPropagation();
+                if (list.dataset.dragging === 'true') return;
+                cycle();
+            });
+            indicator.addEventListener('click', (ev) => {
+                ev.stopPropagation();
+                if (list.dataset.dragging === 'true') return;
+                cycle();
+            });
+
+            row.appendChild(label);
+            row.appendChild(indicator);
+            list.appendChild(row);
+        };
+
+        items.forEach((item, idx) => attachRow(item, idx));
+
+        if (!existingList) {
+            visual.innerHTML = '';
+            visual.appendChild(list);
+        }
+
+        if (sortable) {
+            (list as any).__sortable = new Sortable(list, {
+                animation: 150,
+                draggable: '.sorter-item',
+                ghostClass: 'sorter-ghost',
+                chosenClass: 'sorter-chosen',
+                dragClass: 'sorter-drag',
+                direction: 'vertical',
+                forceFallback: true,
+                fallbackOnBody: false,
+                fallbackBoundingClientRect: visual.getBoundingClientRect(),
+                scroll: false,
+                group: {
+                    name: `choicelist-${datasetSource.id || 'default'}`,
+                    pull: false,
+                    put: false
+                },
+                onMove: (evt) => {
+                    const ev = evt.originalEvent as MouseEvent | DragEvent | undefined;
+                    if (!ev) return true;
+                    const r = visual.getBoundingClientRect();
+                    const x = (ev as MouseEvent).clientX ?? 0;
+                    const y = (ev as MouseEvent).clientY ?? 0;
+                    const inside = x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+                    return inside;
+                },
+                onStart: () => {
+                    list.dataset.dragging = 'true';
+                },
+                onEnd: () => {
+                    // Prevent accidental click-to-toggle after drag end.
+                    setTimeout(() => { delete list.dataset.dragging; }, 0);
+
+                    const rows = Array.from(list.querySelectorAll<HTMLElement>('.sorter-item'));
+                    const order = rows.map(r => String(r.dataset.text || '').trim()).filter(Boolean);
+                    if (order.length === items.length) {
+                        const map = new Map(items.map(it => [it.text, it]));
+                        const next = order.map(t => map.get(t)).filter(Boolean) as SorterItem[];
+                        if (next.length === items.length) {
+                            items = next;
+                        }
+                    }
+
+                if (persistState) {
+                    updateSorterDataset(datasetSource, items);
+                    visual.dataset.value = datasetSource.dataset.value || '';
+                    visual.dataset.order = datasetSource.dataset.order || '';
+                    visual.dataset.activeValues = datasetSource.dataset.activeValues || '';
+                        visual.dataset.selected = datasetSource.dataset.selected || '';
+                        visual.dataset[SORTER_STATE_KEY] = datasetSource.dataset[SORTER_STATE_KEY] || '';
+                        if (emitChange) {
+                            visual.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    } else {
+                        (visual as any).__sampleSorterState = stringifySorterState(items);
+                    }
+                }
+            });
+        }
+
+        return items;
     },
 
     updateButton: function(
@@ -2513,6 +2947,15 @@ export const renderutils: RenderUtils = {
                         item.style.minHeight = rowMinH + 'px';
                     });
 
+                    break;
+                }
+
+                case "ChoiceList": {
+                    element.style.fontSize = fontSize + 'px';
+                    if (inner) {
+                        inner.style.fontSize = fontSize + 'px';
+                    }
+                    renderutils.renderSorter(element);
                     break;
                 }
 

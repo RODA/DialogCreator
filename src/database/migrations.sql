@@ -136,3 +136,22 @@ INSERT INTO elements (element, property, value) VALUES
 ('containerElement', 'borderColor', '#b8b8b8'),
 ('containerElement', 'isEnabled', 'true'),
 ('containerElement', 'isVisible', 'true');
+
+-- sorter
+INSERT INTO elements (element, property, value) VALUES
+('choiceListElement', 'nameid', 'choicelist'),
+('choiceListElement', 'left', '15'),
+('choiceListElement', 'top', '15'),
+('choiceListElement', 'width', '50'),
+('choiceListElement', 'height', '75'),
+('choiceListElement', 'items', 'A,B,C'),
+('choiceListElement', 'align', 'left'),
+('choiceListElement', 'sortable', 'true'),
+('choiceListElement', 'ordering', 'false'),
+('choiceListElement', 'backgroundColor', '#ffffff'),
+('choiceListElement', 'fontColor', '#000000'),
+('choiceListElement', 'activeBackgroundColor', '#589658'),
+('choiceListElement', 'activeFontColor', '#ffffff'),
+('choiceListElement', 'borderColor', '#b8b8b8'),
+('choiceListElement', 'isEnabled', 'true'),
+('choiceListElement', 'isVisible', 'true');

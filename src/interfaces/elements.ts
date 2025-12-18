@@ -154,6 +154,27 @@ export type containerElementType = {
     isVisible: boolean;
     elementIds: string[];
 }
+export type choiceListElementType = {
+    id: string;
+    type: 'ChoiceList';
+    nameid: string;
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+    items: string;
+    backgroundColor: string;
+    fontColor: string;
+    activeBackgroundColor: string;
+    activeFontColor: string;
+    borderColor: string;
+    sortable: boolean;
+    ordering: boolean;
+    align: string;
+    isEnabled: boolean;
+    isVisible: boolean;
+    elementIds: string[];
+}
 export type groupElementType = {
     id: string;
     type: 'Group';
@@ -177,6 +198,7 @@ export interface Elements {
     labelElement: labelElementType;
     separatorElement: separatorElementType;
     containerElement: containerElementType;
+    choiceListElement: choiceListElementType;
     groupElement: groupElementType;
 }
 

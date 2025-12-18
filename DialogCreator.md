@@ -134,6 +134,24 @@ When a Container is selected, the Properties panel exposes an **Item type** drop
 Programmatic population supports type metadata as well. `setValue(container, array)` accepts either plain strings or objects shaped like `{ text, type, active }`. Helpers such as `listVariables()` now return descriptors with both the label and its data type; when that output is paired with a Container whose Item type is set, mismatching rows automatically render as disabled.
 
 
+### ChoiceList
+The choice list element is a list control built for (ordered) choices. Each row acts like a selectable option, and the list itself can optionally be reordered by drag-and-drop. Because it combines sorting and ordering, it can be used in a wide variety of ways:
+
+- **Multi-select**: when Ordering is disabled, rows behave like simple on/off selections from a predefined list.
+- **Sorting selector**: choose which fields are active, and (optionally) their direction (ascending/descending).
+- **Ranking list**: drag rows up and down to establish a priority order (the order of items is the ranking).
+
+Its properties include:
+
+- **Items**: the list of row labels (comma/semicolon separated).
+- **Sortable**: if Yes, rows can be reordered by dragging.
+- **Ordering**: if Yes, a row cycles through `not selected → ascending → descending → not selected`. If No, it cycles through `not selected → selected → not selected` and no arrow is shown.
+- **Align**: text alignment for item labels (left/center/right).
+- **Colors**: Background/Font/Active background/Active font/Border colors affect the list and the active row styling, just like the Container element.
+
+In custom JS, `getValue(choiceList)` returns the ordered rows along with their state (`off`, `asc`, `desc`). `getSelected(choiceList)` returns the active selections (for Ordering-enabled lists, this includes the direction).
+
+
 ## Keyboard shortcuts
 
 Arrange (Z-order) actions:

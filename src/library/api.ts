@@ -240,6 +240,91 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         return tokens.map(text => ({ text }));
     };
 
+    type SorterState = 'off' | 'asc' | 'desc';
+    const normalizeSorterState = (raw: unknown, allowDesc: boolean): SorterState => {
+        const val = String(raw ?? '').toLowerCase();
+        if (val === 'asc') return 'asc';
+        if (val === 'desc' && allowDesc) return 'desc';
+        return 'off';
+    };
+
+    const normalizeSorterInput = (value: unknown, allowDesc: boolean): Array<{ text: string; state: SorterState }> => {
+        const list = Array.isArray(value) ? value : [value];
+        const out: Array<{ text: string; state: SorterState }> = [];
+        list.forEach((entry) => {
+            if (entry === undefined || entry === null) return;
+            if (typeof entry === 'object' && !Array.isArray(entry)) {
+                const text = String((entry as any).text ?? (entry as any).label ?? '').trim();
+                if (!text) return;
+                const st = normalizeSorterState((entry as any).state, allowDesc);
+                out.push({ text, state: st });
+                return;
+            }
+            const raw = String(entry ?? '').trim();
+            if (!raw) return;
+            const [labelPart, statePart] = raw.split(':');
+            const text = labelPart.trim();
+            if (!text) return;
+            const st = normalizeSorterState(statePart || 'asc', allowDesc);
+            out.push({ text, state: st });
+        });
+        return out;
+    };
+
+    const readSorterItems = (host: HTMLElement): Array<{ text: string; state: SorterState }> => {
+        const allowDesc = utils.isTrue(host.dataset.ordering ?? 'true');
+        const raw = host.dataset.sorterState || '';
+        try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+                return normalizeSorterInput(parsed, allowDesc).map(item => ({
+                    text: item.text,
+                    state: normalizeSorterState(item.state, allowDesc)
+                }));
+            }
+        } catch { /* noop */ }
+
+        const rows = Array.from(host.querySelectorAll('.sorter-item')) as HTMLElement[];
+        if (rows.length) {
+            return rows.map(row => ({
+                text: (row.querySelector('.sorter-label') as HTMLElement | null)?.textContent?.trim() || '',
+                state: normalizeSorterState(row.dataset.state || 'off', allowDesc)
+            })).filter(item => item.text);
+        }
+
+        const labels = String(host.dataset.items || host.dataset.value || '')
+            .split(/[;,]/)
+            .map(s => s.trim())
+            .filter(Boolean);
+
+        return labels.map(text => ({ text, state: 'off' as SorterState }));
+    };
+
+    const applySorterItems = (host: HTMLElement, items: Array<{ text: string; state: SorterState }>) => {
+        const allowDesc = utils.isTrue(host.dataset.ordering ?? 'true');
+        const normalized = items
+            .map(item => ({
+                text: String(item.text || '').trim(),
+                state: normalizeSorterState(item.state, allowDesc)
+            }))
+            .filter(item => item.text);
+
+        const visual = host.querySelector('.sorter') as HTMLElement | null;
+        const targets = visual ? [host, visual] : [host];
+
+        const joined = normalized.map(it => it.text).join(',');
+        targets.forEach(node => {
+            node.dataset.sorterState = JSON.stringify(normalized);
+            node.dataset.items = joined;
+            node.dataset.value = joined; // legacy alias
+        });
+
+        renderutils.renderSorter(visual || host, {
+            items: host.dataset.items,
+            sorterState: host.dataset.sorterState
+        });
+    };
+
     const applyItemStyle = (host: HTMLElement, item: HTMLElement, active: boolean) => {
         const label = item.querySelector('.container-text') as HTMLElement | null;
         const normalBg = host.dataset.backgroundColor || '#ffffff';
@@ -504,6 +589,14 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                     }
                     break;
 
+                case 'ChoiceList':
+                    if (prop === 'value') {
+                        applySorterItems(el, normalizeSorterInput(v, utils.isTrue(el.dataset.ordering)));
+                    } else {
+                        warn(`${name}:${prop}`, `Unsupported set(${eltype}, ${prop})`);
+                    }
+                    break;
+
                 default:
                     warn(`${name}:${prop}`, `Unsupported set(${eltype}, ${prop})`);
                     break;
@@ -548,6 +641,10 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 return Number.isFinite(n) ? n : 0;
             }
 
+            if (eltype === 'ChoiceList') {
+                return readSorterItems(el);
+            }
+
             if (eltype === 'Container') {
                 const host = el; // items are direct children of the container element
                 const items = Array.from(host.querySelectorAll('.container-item .container-text')) as HTMLElement[];
@@ -587,6 +684,11 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 if (eltype === 'Container') {
                     const items = parseContainerValue(value);
                     populateContainer(el, items);
+                    return;
+                }
+
+                if (eltype === 'ChoiceList') {
+                    applySorterItems(el, normalizeSorterInput(value, utils.isTrue(el.dataset.ordering)));
                     return;
                 }
 
@@ -645,6 +747,11 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             if (eltype === 'Container') {
                 const items = parseContainerValue(value);
                 populateContainer(el, items);
+                return;
+            }
+
+            if (eltype === 'ChoiceList') {
+                applySorterItems(el, normalizeSorterInput(value, utils.isTrue(el.dataset.ordering)));
                 return;
             }
 
@@ -711,6 +818,12 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                     : [];
 
                 return dsVals.length > 0 ? dsVals : '';
+            }
+
+            if (eltype === 'ChoiceList') {
+                const items = readSorterItems(el).filter(item => item.state !== 'off');
+                if (items.length === 0) return [];
+                return items.map(item => `${item.text}:${item.state}`);
             }
 
             // Radios are handled via radio group names; for a single Radio element,
@@ -1038,6 +1151,20 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 containerEl.dataset.selected = joined;
                 containerEl.dataset.activeValues = joined;
                 renderutils.applyContainerItemFilter(host);
+                return;
+            }
+
+            if (eltype === 'ChoiceList') {
+                const host = el;
+                const allowDesc = utils.isTrue(host.dataset.ordering);
+                const current = readSorterItems(host);
+                const desired = normalizeSorterInput(value, allowDesc);
+                const desiredMap = new Map(desired.map(d => [d.text, d.state]));
+                const merged = current.map(item => {
+                    const next = desiredMap.get(item.text);
+                    return next ? { text: item.text, state: next } : { text: item.text, state: 'off' as SorterState };
+                });
+                applySorterItems(host, merged);
                 return;
             }
 

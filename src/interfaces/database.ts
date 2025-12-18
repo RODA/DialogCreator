@@ -72,4 +72,4 @@ export type Slider    = DBElements['Slider'];
 export type Label     = DBElements['Label'];
 export type Separator = DBElements['Separator'];
 export type Container = DBElements['Container'];
-
+export type ChoiceList = DBElements['ChoiceList'];

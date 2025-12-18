@@ -190,6 +190,29 @@ export const elements: ElementsWithPersist = {
             'nameid','left','top','width','height','selection','itemType','backgroundColor','fontColor','activeBackgroundColor','activeFontColor','disabledBackgroundColor','borderColor','isEnabled','isVisible'
         ] as const
     },
+    choiceListElement: {        id: '',
+        type: 'ChoiceList',
+        nameid: 'choicelist',
+        left: 15,
+        top: 15,
+        width: 50,
+        height: 75,
+        items: 'A,B,C',
+        backgroundColor: '#ffffff',
+        fontColor: '#000000',
+        activeBackgroundColor: '#589658',
+        activeFontColor: '#ffffff',
+        borderColor: '#b8b8b8',
+        sortable: true,
+        ordering: false,
+        align: 'left',
+        isEnabled: true,
+        isVisible: true,
+        elementIds: [],
+        $persist: [
+            'nameid','left','top','width','height','items','backgroundColor','fontColor','activeBackgroundColor','activeFontColor','borderColor','sortable','ordering','align','isEnabled','isVisible'
+        ] as const
+    },
     groupElement: {
         id: '',
         type: 'Group',

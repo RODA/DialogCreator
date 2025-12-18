@@ -160,9 +160,20 @@
                             <label for="elmaxWidth">Width (max)</label>
                             <input name="maxWidth" type="text" id="elmaxWidth" />
                         </div>
+
+                        <div class="element-property hidden-element">
+                            <label for="elheight">Height</label>
+                            <input name="height" type="text" id="elheight" />
+                        </div>
+
                         <div class="element-property hidden-element"> <!-- button -->
                             <label for="ellineClamp">Lines (max)</label>
                             <input name="lineClamp" type="text" id="ellineClamp" />
+                        </div>
+
+                        <div class="element-property hidden-element">
+                            <label for="elitems">Items</label>
+                            <input name="items" type="text" id="elitems" />
                         </div>
 
                         <div class="element-property hidden-element">
@@ -191,17 +202,24 @@
                         </div>
 
                         <div class="element-property hidden-element">
-                            <label for="elheight">Height</label>
-                            <input name="height" type="text" id="elheight" />
-                        </div>
-
-
-
-                        <div class="element-property hidden-element">
                             <label for="elselection">Selection</label>
                             <select name="selection" id="elselection">
                                 <option value="single">Single</option>
                                 <option value="multiple">Multiple</option>
+                            </select>
+                        </div>
+	                        <div class="element-property hidden-element">
+	                            <label for="elsortable">Sortable</label>
+	                            <select name="sortable" id="elsortable">
+	                                <option value="true">Yes</option>
+	                                <option value="false">No</option>
+	                            </select>
+	                        </div>
+                        <div class="element-property hidden-element">
+                            <label for="elordering">Ordering</label>
+                            <select name="ordering" id="elordering">
+                                <option value="true">Yes</option>
+                                <option value="false">No</option>
                             </select>
                         </div>
                         <div class="element-property hidden-element">
@@ -323,6 +341,7 @@
                             <label for="elvalue" id="valuelabel">Value</label>
                             <input name="value" type="text" id="elvalue" />
                         </div>
+
                         <!-- Input type -->
                         <div class="element-property hidden-element" id="divalueType">
                             <label for="elvalueType">Type</label>

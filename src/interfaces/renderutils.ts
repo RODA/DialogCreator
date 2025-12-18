@@ -27,6 +27,7 @@ export interface RenderUtils {
     updateLabel: (element: HTMLElement, properties?: AnyElement) => void;
     updateHandleStyle: (handle: HTMLDivElement, properties: StringNumber) => void;
     syncCounterSize: (wrapper: HTMLElement) => void;
+    renderSorter: (host: HTMLElement, opts?: Partial<Record<string, unknown>>, emitChange?: boolean) => void;
     // Group helpers
     getSelectedIds: () => string[];
     ungroupGroup: (groupId: string) => string[];

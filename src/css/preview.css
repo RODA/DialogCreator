@@ -132,6 +132,113 @@ input:focus, select:focus, textarea:focus {
     color: inherit;
 }
 
+/* Sorter */
+.preview-canvas .sorter {
+    border: 1px solid #777777;
+    border-radius: 2px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.preview-canvas .sorter-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0;
+}
+
+.preview-canvas .sorter-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 24px;
+    border: 1px solid transparent;
+    border-radius: 0;
+    margin-bottom: 1px;
+    width: 100%;
+    box-sizing: border-box;
+    cursor: pointer;
+    background: transparent;
+    user-select: none;
+    padding: 0 4px;
+}
+
+.preview-canvas .sorter-item .sorter-label {
+    padding-right: 12px; /* reserve space for indicator */
+    font-size: inherit;
+    color: inherit;
+    display: block;
+    width: 100%;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.preview-canvas .sorter-item .sorter-indicator {
+    position: absolute;
+    right: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    text-align: center;
+    font-size: 0.85em; /* scales with global font size while remaining smaller */
+    width: 10px;
+    display: block;
+    opacity: 0.4;
+}
+
+.preview-canvas .sorter-item.is-asc {
+    background: var(--sorter-active-bg, #e6f1e6);
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+.preview-canvas .sorter-item.is-desc {
+    background: var(--sorter-desc-bg, #d9e7ff);
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+/* SortableJS drag feedback */
+.preview-canvas .sorter-ghost {
+    opacity: 0.35;
+}
+.preview-canvas .sorter-chosen {
+    opacity: 0.85;
+}
+.preview-canvas .sorter-drag {
+    opacity: 0.85;
+}
+
+.preview-canvas .sorter-indicator.asc {
+    opacity: 1;
+}
+
+.preview-canvas .sorter-indicator.desc {
+    opacity: 1;
+}
+
+.preview-canvas .sorter-indicator.off {
+    opacity: 0.4;
+}
+
+.preview-canvas .sorter-indicator.hidden {
+    visibility: hidden;
+}
+
+/* No-ordering variant: remove reserved space and hide indicator */
+.preview-canvas .sorter-item.no-order {
+    justify-content: center;
+}
+.preview-canvas .sorter-item.no-order .sorter-label {
+    padding-right: 2px;
+}
+.preview-canvas .sorter-item.no-order[data-align="right"] .sorter-label {
+    padding-right: 0;
+}
+.preview-canvas .sorter-item.no-order .sorter-indicator {
+    display: none;
+}
+
 /* Ensure native disabled controls match the disabled-div styling */
 .preview-canvas input:disabled,
 .preview-canvas select:disabled,
