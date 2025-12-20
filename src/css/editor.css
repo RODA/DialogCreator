@@ -513,7 +513,7 @@ input {
 /* --- Counter element --- */
 .counter-wrapper {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     font-family: sans-serif;
     user-select: none;
 }
@@ -524,11 +524,18 @@ input {
     width: 20px;
     text-align: center;
     color: #558855;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Nudge the right-side (increase) arrow slightly away from the number */
 .counter-arrow.up {
     margin-left: 1px;
+    align-self: flex-start;
+}
+.counter-arrow.down {
+    align-self: flex-end;
 }
 
 .counter-value {
