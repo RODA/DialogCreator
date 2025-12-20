@@ -122,7 +122,7 @@ Use this reference when writing custom JavaScript for Dialog Creator. It contain
 
 ```javascript
 const sel = getSelected(radiogroup1);
-const cmd = construct_command(sel);
+const cmd = buildCommand(sel);
 updateSyntax(cmd);
 ```
 
