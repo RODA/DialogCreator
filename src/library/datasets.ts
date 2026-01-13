@@ -28,5 +28,13 @@ export const datasets: Datasets = {
         { text: "len", type: "numeric" },
         { text: "supp", type: "factor" },
         { text: "dose", type: "numeric" }
+    ],
+    Survey: [
+        { text: "age", type: "numeric" },
+        { text: "gender", type: "factor" },
+        { text: "education", type: "factor" },
+        { text: "income", type: "numeric" },
+        { text: "satisfaction", type: "numeric" },
+        { text: "residence", type: "factor" }
     ]
 };
