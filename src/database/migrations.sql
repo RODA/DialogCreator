@@ -128,6 +128,7 @@ INSERT INTO elements (element, property, value) VALUES
 ('containerElement', 'height', '100'),
 ('containerElement', 'selection', 'single'),
 ('containerElement', 'itemType', 'any'),
+('containerElement', 'itemOrder', 'false'),
 ('containerElement', 'backgroundColor', '#ffffff'),
 ('containerElement', 'fontColor', '#000000'),
 ('containerElement', 'activeBackgroundColor', '#589658'),

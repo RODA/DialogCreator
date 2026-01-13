@@ -84,6 +84,36 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
     };
 
     const lastSelectedItem = new WeakMap<HTMLElement, HTMLElement | null>();
+    const splitList = (raw: unknown): string[] => {
+        return String(raw ?? '')
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean);
+    };
+    const normalizeOrderList = (values: string[]): string[] => {
+        const seen = new Set<string>();
+        const out: string[] = [];
+        values.forEach((value) => {
+            const next = String(value || '').trim();
+            if (!next || seen.has(next)) return;
+            seen.add(next);
+            out.push(next);
+        });
+        return out;
+    };
+    const mergeSelectionOrder = (host: HTMLElement, activeItems: string[]): string[] => {
+        const prev = normalizeOrderList(splitList(host.dataset.selectedOrder));
+        const activeSet = new Set(activeItems);
+        const next = prev.filter(v => activeSet.has(v));
+        const seen = new Set(next);
+        activeItems.forEach((value) => {
+            if (!seen.has(value)) {
+                next.push(value);
+                seen.add(value);
+            }
+        });
+        return next;
+    };
 
     const attachContainerItemHandler = (host: HTMLElement, target: HTMLElement, item: HTMLElement) => {
         item.addEventListener('click', (ev) => {
@@ -142,6 +172,12 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 .join(',');
             host.dataset.activeValues = activeValues;
             host.dataset.selected = activeValues;
+            if (utils.isTrue(host.dataset.itemOrder)) {
+                const ordered = mergeSelectionOrder(host, activeValues.split(',').map(s => s.trim()).filter(Boolean));
+                host.dataset.selectedOrder = ordered.join(',');
+            } else if ('selectedOrder' in host.dataset) {
+                delete host.dataset.selectedOrder;
+            }
 
             host.dispatchEvent(new Event('change', { bubbles: true }));
             renderutils.applyContainerItemFilter(host);
@@ -207,6 +243,15 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         host.dataset.activeValues = Array.from(
             target.querySelectorAll<HTMLElement>('.container-item.active')
         ).map(item => item.dataset.value || '').join(',');
+        if (utils.isTrue(host.dataset.itemOrder)) {
+            const active = host.dataset.activeValues
+                ? host.dataset.activeValues.split(',').map(s => s.trim()).filter(Boolean)
+                : [];
+            const ordered = mergeSelectionOrder(host, active);
+            host.dataset.selectedOrder = ordered.join(',');
+        } else if ('selectedOrder' in host.dataset) {
+            delete host.dataset.selectedOrder;
+        }
 
         Array.from(target.querySelectorAll<HTMLElement>('.container-item')).forEach(item => {
             applyItemStyle(host, item, item.classList.contains('active'));
@@ -803,6 +848,12 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             }
 
             if (eltype === 'Container') {
+                if (utils.isTrue((el as HTMLElement).dataset.itemOrder)) {
+                    const ordered = normalizeOrderList(splitList((el as HTMLElement).dataset.selectedOrder));
+                    if (ordered.length > 0) {
+                        return ordered;
+                    }
+                }
                 // Compute from DOM on the container element directly
                 const nodes = Array.from(el.querySelectorAll('.container-item.active .container-text')) as HTMLElement[];
 
@@ -1150,6 +1201,16 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 const containerEl = el as HTMLElement;
                 containerEl.dataset.selected = joined;
                 containerEl.dataset.activeValues = joined;
+                if (utils.isTrue(containerEl.dataset.itemOrder)) {
+                    const desired = normalizeOrderList(selValues);
+                    const appliedSet = new Set(finalValues);
+                    const ordered = desired.filter(v => appliedSet.has(v));
+                    const extras = finalValues.filter(v => !ordered.includes(v));
+                    const next = normalizeOrderList([...ordered, ...extras]);
+                    containerEl.dataset.selectedOrder = next.join(',');
+                } else if ('selectedOrder' in containerEl.dataset) {
+                    delete containerEl.dataset.selectedOrder;
+                }
                 renderutils.applyContainerItemFilter(host);
                 return;
             }
@@ -1202,12 +1263,14 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 const kind = String(el.dataset.selection || h.dataset.selection || 'single').toLowerCase();
                 const multiple = kind === 'multiple';
                 let changed = false;
+                let toggledOn = false;
 
                 if (multiple) {
                     const willActivate = !item.classList.contains('active');
                     item.classList.toggle('active', willActivate);
                     applyItemStyle(h, item, willActivate);
                     changed = true;
+                    toggledOn = willActivate;
                 } else {
                     // Single-select: clear all others then activate this item
                     const prevs = Array.from(h.querySelectorAll('.container-item.active')) as HTMLElement[];
@@ -1234,6 +1297,20 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                     const joined = vals.join(',');
                     el.dataset.selected = joined;
                     h.dataset.activeValues = joined;
+                    if (utils.isTrue(h.dataset.itemOrder)) {
+                        const label = v.trim();
+                        let nextOrder = normalizeOrderList(splitList(h.dataset.selectedOrder));
+                        if (multiple) {
+                            nextOrder = toggledOn
+                                ? normalizeOrderList([...nextOrder.filter(val => val !== label), label])
+                                : nextOrder.filter(val => val !== label);
+                        } else {
+                            nextOrder = label ? [label] : [];
+                        }
+                        h.dataset.selectedOrder = normalizeOrderList(nextOrder).join(',');
+                    } else if ('selectedOrder' in h.dataset) {
+                        delete h.dataset.selectedOrder;
+                    }
                     renderutils.applyContainerItemFilter(h);
                 }
                 return;
@@ -1377,6 +1454,12 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             const joined = vals.join(',');
             el.dataset.selected = joined;
             host.dataset.activeValues = joined;
+            if (utils.isTrue(host.dataset.itemOrder)) {
+                const ordered = mergeSelectionOrder(host, vals);
+                host.dataset.selectedOrder = ordered.join(',');
+            } else if ('selectedOrder' in host.dataset) {
+                delete host.dataset.selectedOrder;
+            }
             renderutils.applyContainerItemFilter(host);
         },
 
@@ -1407,6 +1490,9 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             // Update dataset mirror after clearing
             el.dataset.selected = '';
             host.dataset.activeValues = '';
+            if ('selectedOrder' in host.dataset) {
+                delete host.dataset.selectedOrder;
+            }
             renderutils.applyContainerItemFilter(host);
         },
 
@@ -1455,6 +1541,9 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 items.forEach(item => item.remove());
                 el.dataset.selected = '';
                 host.dataset.activeValues = '';
+                if ('selectedOrder' in host.dataset) {
+                    delete host.dataset.selectedOrder;
+                }
                 renderutils.applyContainerItemFilter(host);
                 return;
             }

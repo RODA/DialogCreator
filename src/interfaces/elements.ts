@@ -150,6 +150,7 @@ export type containerElementType = {
     borderColor: string;
     selection: string;
     itemType: string;
+    itemOrder: boolean;
     isEnabled: boolean;
     isVisible: boolean;
     elementIds: string[];

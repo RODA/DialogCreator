@@ -69,6 +69,39 @@ const resolveContainerItemType = (value: unknown): string => {
     return normalized;
 };
 
+const splitList = (raw: unknown): string[] => {
+    return String(raw ?? '')
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
+};
+
+const normalizeOrderList = (values: string[]): string[] => {
+    const seen = new Set<string>();
+    const out: string[] = [];
+    values.forEach((value) => {
+        const next = String(value || '').trim();
+        if (!next || seen.has(next)) return;
+        seen.add(next);
+        out.push(next);
+    });
+    return out;
+};
+
+const mergeSelectionOrder = (host: HTMLElement, activeItems: string[]): string[] => {
+    const prev = normalizeOrderList(splitList(host.dataset.selectedOrder));
+    const activeSet = new Set(activeItems);
+    const next = prev.filter(v => activeSet.has(v));
+    const seen = new Set(next);
+    activeItems.forEach((value) => {
+        if (!seen.has(value)) {
+            next.push(value);
+            seen.add(value);
+        }
+    });
+    return next;
+};
+
 const applyContainerItemFilter = (host: HTMLElement | null) => {
     if (!(host instanceof HTMLElement)) {
         return;
@@ -131,6 +164,12 @@ const applyContainerItemFilter = (host: HTMLElement | null) => {
         const joined = activeItems.join(',');
         host.dataset.selected = joined;
         host.dataset.activeValues = joined;
+        if (utils.isTrue(host.dataset.itemOrder)) {
+            const ordered = mergeSelectionOrder(host, activeItems);
+            host.dataset.selectedOrder = ordered.join(',');
+        } else if ('selectedOrder' in host.dataset) {
+            delete host.dataset.selectedOrder;
+        }
         host.dispatchEvent(new Event('change', { bubbles: true }));
     }
 };
@@ -1077,6 +1116,9 @@ export const renderutils: RenderUtils = {
             element.style.width = data.width + 'px';
             element.style.height = data.height + 'px';
             element.dataset.itemType = resolveContainerItemType(element.dataset.itemType);
+            if (!('itemOrder' in element.dataset)) {
+                element.dataset.itemOrder = 'false';
+            }
 
             if (renderutils.previewWindow()) {
                 const content = document.createElement('div');
@@ -1799,6 +1841,23 @@ export const renderutils: RenderUtils = {
                     }
                     break;
 
+                case 'itemOrder':
+                    if (container) {
+                        const enabled = utils.isTrue(value);
+                        if (enabled) {
+                            const activeItems = Array.from(element.querySelectorAll('.container-item.active .container-text'))
+                                .map(node => (node as HTMLElement).textContent || '')
+                                .map(text => text.trim())
+                                .filter(Boolean);
+                            const ordered = mergeSelectionOrder(element, activeItems);
+                            element.dataset.selectedOrder = ordered.join(',');
+                        } else if ('selectedOrder' in element.dataset) {
+                            delete element.dataset.selectedOrder;
+                        }
+                        value = enabled ? 'true' : 'false';
+                    }
+                    break;
+
                 case 'value':
                     // Update only the appropriate UI elements
                     if (inner instanceof HTMLInputElement && input) {
@@ -1853,6 +1912,12 @@ export const renderutils: RenderUtils = {
                         element.classList.add('disabled-div');
                         if (renderutils.previewWindow()) {
                             element.style.pointerEvents = 'none';
+                        }
+                    }
+                    if (inner) {
+                        inner.classList.toggle('disabled-div', !enabled);
+                        if (renderutils.previewWindow()) {
+                            inner.style.pointerEvents = enabled ? '' : 'none';
                         }
                     }
 

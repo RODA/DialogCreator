@@ -1631,6 +1631,9 @@ export const editor: Editor = {
                 if (desiredNameId) {
                     wrapper.dataset.nameid = desiredNameId;
                 }
+                if (desiredType === 'Container' && !('itemOrder' in wrapper.dataset)) {
+                    wrapper.dataset.itemOrder = 'false';
+                }
 
                 // Inner element positioned relative to wrapper
                 core.style.left = '0px';
