@@ -902,6 +902,25 @@ export const renderutils: RenderUtils = {
                 </svg>
             `);
             element.style.backgroundImage = `url("data:image/svg+xml,${svg}")`;
+            try {
+                const selectEl = element as HTMLSelectElement;
+                const raw = String((data as any).value ?? selectEl.dataset.value ?? '');
+                const tokens = raw.split(/[;,]/).map(s => s.trim()).filter(s => s.length > 0);
+                selectEl.innerHTML = '';
+                if (tokens.length === 0) {
+                    const opt = document.createElement('option');
+                    opt.value = '';
+                    opt.textContent = '';
+                    selectEl.appendChild(opt);
+                } else {
+                    for (const t of tokens) {
+                        const opt = document.createElement('option');
+                        opt.value = t;
+                        opt.textContent = t;
+                        selectEl.appendChild(opt);
+                    }
+                }
+            } catch { /* ignore select init errors */ }
 
         } else if (data.type == "Checkbox") {
 
