@@ -643,41 +643,169 @@ export const editor: Editor = {
         const source = dialog.getElement(elementId) as HTMLElement | undefined;
         if (!source) return;
 
-        // Prevent duplicate for persistent group container; instead duplicate all selected regular elements
+        const duplicateChildIntoGroup = (child: HTMLElement, groupEl: HTMLElement): string | null => {
+            const datasetEntries = Object.entries(child.dataset || {});
+            const copy: Record<string, unknown> = {};
+
+            const typeFromDataset = child.dataset.type || child.tagName;
+            const elementKinds = elementPropertyKinds.get(typeFromDataset) || {};
+            const template = resolveTemplateForType(typeFromDataset);
+
+            for (const [key, value] of datasetEntries) {
+                if (value === undefined || SKIP_KEYS.has(key)) continue;
+                const kind = elementKinds[key] ?? inferKindFromTemplate(template, key);
+                const templateValue = template[key];
+                copy[key] = coerceDatasetValue(value, kind, templateValue);
+            }
+
+            const type = String(typeFromDataset);
+            copy.type = type;
+            const base = type.toLowerCase();
+            copy.nameid = renderutils.makeUniqueNameID(base);
+
+            const leftRaw = child.dataset.left ?? child.style.left ?? '';
+            const topRaw = child.dataset.top ?? child.style.top ?? '';
+            const left = utils.asNumeric(leftRaw) || parseInt(String(leftRaw).replace(/px$/, ''), 10) || child.offsetLeft;
+            const top = utils.asNumeric(topRaw) || parseInt(String(topRaw).replace(/px$/, ''), 10) || child.offsetTop;
+            copy.left = left;
+            copy.top = top;
+
+            const constructed = renderutils.makeElement({ ...template, ...copy } as AnyElement);
+
+            const wrapper = document.createElement('div');
+            wrapper.classList.add('element-wrapper');
+            wrapper.style.position = 'absolute';
+
+            const origId = constructed.id;
+            wrapper.id = origId;
+            constructed.id = `${origId}-inner`;
+            wrapper.style.left = `${left}px`;
+            wrapper.style.top = `${top}px`;
+            wrapper.dataset.left = String(left);
+            wrapper.dataset.top = String(top);
+
+            for (const [k, v] of Object.entries(constructed.dataset)) {
+                if (typeof v === 'string') {
+                    wrapper.dataset[k] = v;
+                }
+            }
+
+            constructed.style.left = '0px';
+            constructed.style.top = '0px';
+            if (wrapper.dataset.type === 'Button') {
+                constructed.style.position = 'relative';
+            }
+
+            wrapper.appendChild(constructed);
+            groupEl.appendChild(wrapper);
+
+            const innerCover = constructed.querySelector('.elementcover');
+            if (innerCover && innerCover.parentElement) {
+                innerCover.parentElement.removeChild(innerCover);
+            }
+
+            if (!(wrapper.dataset.type === 'Button' || wrapper.dataset.type === 'Label')) {
+                const rect = constructed.getBoundingClientRect();
+                if (rect.width > 0) wrapper.style.width = `${Math.round(rect.width)}px`;
+                if (rect.height > 0) wrapper.style.height = `${Math.round(rect.height)}px`;
+            }
+
+            const cover = document.createElement('div');
+            cover.id = `${wrapper.id}-cover`;
+            cover.className = 'elementcover';
+            wrapper.appendChild(cover);
+
+            editor.addElementListeners(wrapper);
+            dialog.addElement(wrapper);
+
+            if (wrapper.dataset.type === 'Label') {
+                renderutils.updateLabel(wrapper);
+            }
+
+            return wrapper.id;
+        };
+
         if (source.classList.contains('element-group')) {
-        const childIds = Array.from(source.querySelectorAll<HTMLElement>('.element-wrapper')).map(el => el.id);
-        childIds.forEach(id => editor.duplicateElement(id));
+            const groupTemplate = resolveTemplateForType('Group');
+            const groupEntries = Object.entries(source.dataset || {});
+            const groupCopy: Record<string, unknown> = {};
+            const groupKinds = elementPropertyKinds.get('Group') || {};
+
+            for (const [key, value] of groupEntries) {
+                if (value === undefined || SKIP_KEYS.has(key)) continue;
+                const kind = groupKinds[key] ?? inferKindFromTemplate(groupTemplate, key);
+                const templateValue = groupTemplate[key];
+                groupCopy[key] = coerceDatasetValue(value, kind, templateValue);
+            }
+
+            const groupLeftRaw = source.dataset.left ?? source.style.left ?? '';
+            const groupTopRaw = source.dataset.top ?? source.style.top ?? '';
+            const groupLeft = utils.asNumeric(groupLeftRaw) || parseInt(String(groupLeftRaw).replace(/px$/, ''), 10) || source.offsetLeft;
+            const groupTop = utils.asNumeric(groupTopRaw) || parseInt(String(groupTopRaw).replace(/px$/, ''), 10) || source.offsetTop;
+            groupCopy.type = 'Group';
+            groupCopy.nameid = renderutils.makeUniqueNameID('group');
+            groupCopy.left = groupLeft;
+            groupCopy.top = groupTop;
+
+            const groupEl = renderutils.makeElement({ ...groupTemplate, ...groupCopy } as AnyElement);
+            groupEl.dataset.type = 'Group';
+            groupEl.classList.add('element-group');
+            if (source.dataset.persistent === 'true') {
+                groupEl.dataset.persistent = 'true';
+            }
+
+            const rect = source.getBoundingClientRect();
+            const width = utils.asNumeric(source.style.width) || Math.round(rect.width);
+            const height = utils.asNumeric(source.style.height) || Math.round(rect.height);
+            if (width > 0) groupEl.style.width = `${width}px`;
+            if (height > 0) groupEl.style.height = `${height}px`;
+
+            dialog.canvas.appendChild(groupEl);
+            dialog.addElement(groupEl);
+            editor.addElementListeners(groupEl);
+
+            const children = Array.from(source.children)
+                .filter((el): el is HTMLElement => el instanceof HTMLElement && el.classList.contains('element-wrapper'));
+
+            const newIds: string[] = [];
+            for (const child of children) {
+                const id = duplicateChildIntoGroup(child, groupEl);
+                if (id) newIds.push(id);
+            }
+            groupEl.dataset.elementIds = newIds.join(',');
+
+            applySelection([groupEl.id]);
             return;
         }
 
-    const datasetEntries = Object.entries(source.dataset || {});
-    const copy: Record<string, unknown> = {};
+        const datasetEntries = Object.entries(source.dataset || {});
+        const copy: Record<string, unknown> = {};
 
-    const typeFromDataset = source.dataset.type || source.tagName;
-    const elementKinds = elementPropertyKinds.get(typeFromDataset) || {};
-    const template = resolveTemplateForType(typeFromDataset);
+        const typeFromDataset = source.dataset.type || source.tagName;
+        const elementKinds = elementPropertyKinds.get(typeFromDataset) || {};
+        const template = resolveTemplateForType(typeFromDataset);
 
-    for (const [key, value] of datasetEntries) {
-        if (value === undefined || SKIP_KEYS.has(key)) continue;
-        const kind = elementKinds[key] ?? inferKindFromTemplate(template, key);
-        const templateValue = template[key];
-        copy[key] = coerceDatasetValue(value, kind, templateValue);
-    }
+        for (const [key, value] of datasetEntries) {
+            if (value === undefined || SKIP_KEYS.has(key)) continue;
+            const kind = elementKinds[key] ?? inferKindFromTemplate(template, key);
+            const templateValue = template[key];
+            copy[key] = coerceDatasetValue(value, kind, templateValue);
+        }
 
-    const type = String(typeFromDataset);
-    copy.type = type;
-    // Use type-wide base for sequential nameid (e.g., 'label' -> next labelN)
-    const base = type.toLowerCase();
-    copy.nameid = renderutils.makeUniqueNameID(base);
+        const type = String(typeFromDataset);
+        copy.type = type;
+        // Use type-wide base for sequential nameid (e.g., 'label' -> next labelN)
+        const base = type.toLowerCase();
+        copy.nameid = renderutils.makeUniqueNameID(base);
 
-    const leftRaw = source.dataset.left ?? source.style.left ?? '';
-    const topRaw = source.dataset.top ?? source.style.top ?? '';
-    const left = utils.asNumeric(leftRaw) || parseInt(String(leftRaw).replace(/px$/, ''), 10) || source.offsetLeft;
-    const top = utils.asNumeric(topRaw) || parseInt(String(topRaw).replace(/px$/, ''), 10) || source.offsetTop;
-    copy.left = left;
-    copy.top = top;
+        const leftRaw = source.dataset.left ?? source.style.left ?? '';
+        const topRaw = source.dataset.top ?? source.style.top ?? '';
+        const left = utils.asNumeric(leftRaw) || parseInt(String(leftRaw).replace(/px$/, ''), 10) || source.offsetLeft;
+        const top = utils.asNumeric(topRaw) || parseInt(String(topRaw).replace(/px$/, ''), 10) || source.offsetTop;
+        copy.left = left;
+        copy.top = top;
 
-    const constructed = renderutils.makeElement({ ...template, ...copy } as AnyElement);
+        const constructed = renderutils.makeElement({ ...template, ...copy } as AnyElement);
 
         const wrapper = document.createElement('div');
         wrapper.classList.add('element-wrapper');
