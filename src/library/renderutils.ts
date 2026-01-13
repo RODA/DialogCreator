@@ -914,7 +914,9 @@ export const renderutils: RenderUtils = {
             customCheckbox.className = 'custom-checkbox';
             customCheckbox.setAttribute('role', 'checkbox');
             customCheckbox.setAttribute('tabindex', '0');
-            customCheckbox.setAttribute('aria-checked', 'false');
+            const initialChecked = utils.isTrue((data as any).isChecked);
+            customCheckbox.setAttribute('aria-checked', initialChecked ? 'true' : 'false');
+            customCheckbox.classList.toggle('checked', initialChecked);
             customCheckbox.dataset.fill = String(!!data.fill);
             customCheckbox.style.setProperty('--checkbox-color', data.color);
 
