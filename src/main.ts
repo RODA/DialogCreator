@@ -323,6 +323,31 @@ function createSecondWindow(args: { [key: string]: any }) {
 }
 
 function getInfoConfig(page: InfoPage) {
+    const resolveDocPath = (fileName: string) => {
+        const packagedCandidates = [
+            process.resourcesPath ? path.join(process.resourcesPath, "docs", fileName) : '',
+            path.join(app.getAppPath(), "docs", fileName),
+            path.join(__dirname, "../docs", fileName)
+        ].filter(Boolean) as string[];
+
+        const devCandidates = [
+            path.join(__dirname, "../docs", fileName),
+            path.join(app.getAppPath(), "docs", fileName)
+        ].filter(Boolean) as string[];
+
+        const candidates = app.isPackaged ? packagedCandidates : devCandidates;
+
+        for (const candidate of candidates) {
+            try {
+                if (fs.existsSync(candidate)) {
+                    return candidate;
+                }
+            } catch { /* ignore */ }
+        }
+
+        return candidates[0] || path.join(__dirname, "../docs", fileName);
+    };
+
     switch (page) {
         case 'manual':
             return {
@@ -333,7 +358,7 @@ function getInfoConfig(page: InfoPage) {
                 minHeight: 640,
                 resizable: true,
                 maximizable: true,
-                file: path.join(__dirname, "../docs", "manual.html")
+                file: resolveDocPath("manual.html")
             };
         case 'api':
             return {
@@ -344,7 +369,7 @@ function getInfoConfig(page: InfoPage) {
                 minHeight: 640,
                 resizable: true,
                 maximizable: true,
-                file: path.join(__dirname, "../docs", "api.html")
+                file: resolveDocPath("api.html")
             };
         case 'about':
         default:
