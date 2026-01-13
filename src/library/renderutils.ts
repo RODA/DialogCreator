@@ -32,7 +32,7 @@ const KNOWN_CONTAINER_ITEM_TYPES = new Set<string>([
     'calibrated',
     'binary',
     'character',
-    'factor',
+    'categorical',
     'date'
 ]);
 

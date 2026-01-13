@@ -22,19 +22,19 @@ import { Datasets } from "../interfaces/datasets";
 export const datasets: Datasets = {
     PlantGrowth: [
         { text: "weight", type: "numeric" },
-        { text: "group", type: "factor" }
+        { text: "group", type: "categorical" }
     ],
     ToothGrowth: [
         { text: "len", type: "numeric" },
-        { text: "supp", type: "factor" },
+        { text: "supp", type: "categorical" },
         { text: "dose", type: "numeric" }
     ],
     Survey: [
         { text: "age", type: "numeric" },
-        { text: "gender", type: "factor" },
-        { text: "education", type: "factor" },
+        { text: "gender", type: "categorical" },
+        { text: "education", type: "categorical" },
         { text: "income", type: "numeric" },
         { text: "satisfaction", type: "numeric" },
-        { text: "residence", type: "factor" }
+        { text: "residence", type: "categorical" }
     ]
 };
