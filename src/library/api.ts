@@ -156,14 +156,22 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 applyItemStyle(host, item, shouldSelect);
                 lastSelectedItem.set(host, item);
             } else {
-                target.querySelectorAll<HTMLElement>('.container-item.active').forEach(other => {
-                    if (other !== item) {
+                const wasActive = item.classList.contains('active');
+                if (wasActive) {
+                    target.querySelectorAll<HTMLElement>('.container-item.active').forEach(other => {
                         other.classList.remove('active');
                         applyItemStyle(host, other, false);
-                    }
-                });
-                item.classList.add('active');
-                applyItemStyle(host, item, true);
+                    });
+                } else {
+                    target.querySelectorAll<HTMLElement>('.container-item.active').forEach(other => {
+                        if (other !== item) {
+                            other.classList.remove('active');
+                            applyItemStyle(host, other, false);
+                        }
+                    });
+                    item.classList.add('active');
+                    applyItemStyle(host, item, true);
+                }
                 lastSelectedItem.set(host, item);
             }
 

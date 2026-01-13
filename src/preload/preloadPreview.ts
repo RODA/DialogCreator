@@ -545,7 +545,7 @@ function renderPreview(dialog: PreviewDialog) {
     try {
         const rawTop = (dialog as any)?.customJS;
         const code = String(typeof rawTop === 'string' && rawTop.length ? rawTop : '');
-        coms.sendTo('editorWindow', 'consolog', `Preview: customJS detected (${code.trim().length} chars, post-render)`);
+        // coms.sendTo('editorWindow', 'consolog', `Preview: customJS detected (${code.trim().length} chars, post-render)`);
         if (code && code.trim().length) {
             const ui = buildUI(canvas);
             renderutils.exposeNameGlobals(canvas);
@@ -606,7 +606,7 @@ function renderPreview(dialog: PreviewDialog) {
             if (fn) {
                 try {
                     fn(ui, exports);
-                    coms.sendTo('editorWindow', 'consolog', 'Preview: customJS executed after render.');
+                    // coms.sendTo('editorWindow', 'consolog', 'Preview: customJS executed after render.');
                 } catch (e: any) {
                     const msg = `Action code runtime error: ${String(e && e.message ? e.message : e)}`;
                     const overlay = document.createElement('div');
