@@ -12,7 +12,14 @@ const messenger = new EventEmitter();
 // Track which channels have been hooked into ipcRenderer
 const registeredChannels = new Set<string>();
 
-export const coms: Communications = {
+const handlers: Record<string, string> = {
+    addCover: '../modules/cover',
+    removeCover: '../modules/cover',
+    addAvailableElementsTo: '../modules/editor',
+    previewDialog: '../modules/editor',
+};
+
+export const coms = {
     emit(channel, ...args) {
         messenger.emit(channel, ...args);
     },
@@ -62,18 +69,13 @@ export const coms: Communications = {
     },
 
     // IPC dispatcher
-    handlers: {
-        addCover: '../modules/cover',
-        removeCover: '../modules/cover',
-        addAvailableElementsTo: '../modules/editor',
-        previewDialog: '../modules/editor',
-    },
+    handlers,
 
     fontSize: 12,
     fontFamily: "'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, 'Noto Sans', 'Liberation Sans', sans-serif",
     maxWidth: 615,
     maxHeight: 455,
-}
+} satisfies Communications;
 
 // automatically dispatch all events to their respective handlers
 for (const eventName in coms.handlers) {
