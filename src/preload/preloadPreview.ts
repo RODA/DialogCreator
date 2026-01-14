@@ -14,6 +14,22 @@ import { PreviewDialog, PreviewScriptExports, PreviewUI, PreviewUIEnv } from "..
 
 import { API_NAMES, createPreviewUI } from '../library/api';
 
+let initialPreviewDialog: PreviewDialog | null = null;
+const clonePreviewDialog = (input: PreviewDialog): PreviewDialog => {
+    try {
+        return JSON.parse(JSON.stringify(input));
+    } catch {
+        return input;
+    }
+};
+
+
+function resetPreview() {
+    if (!initialPreviewDialog) {
+        return;
+    }
+    renderPreview(clonePreviewDialog(initialPreviewDialog));
+}
 
 function buildUI(canvas: HTMLElement): PreviewUI {
     const env: PreviewUIEnv = {
@@ -29,7 +45,8 @@ function buildUI(canvas: HTMLElement): PreviewUI {
             message,
             detail
         ),
-        openSyntaxPanel: (command: string) => coms.sendTo('main', 'openSyntaxPanel', command)
+        openSyntaxPanel: (command: string) => coms.sendTo('main', 'openSyntaxPanel', command),
+        resetDialog: resetPreview
     };
 
     return createPreviewUI(env);
@@ -39,7 +56,13 @@ function buildUI(canvas: HTMLElement): PreviewUI {
 function renderPreview(dialog: PreviewDialog) {
     const root = document.getElementById("preview-root");
     if (!root) return;
-    root.innerHTML = "";
+    const existingPanel = root.querySelector('.preview-syntax-panel') as HTMLElement | null;
+    Array.from(root.children).forEach((child) => {
+        if (child === existingPanel) {
+            return;
+        }
+        child.remove();
+    });
 
     const width = Number(dialog.properties.width) || 640;
     const height = Number(dialog.properties.height) || 480;
@@ -539,7 +562,11 @@ function renderPreview(dialog: PreviewDialog) {
     }, true);
 
     // Attach canvas to DOM before executing custom code, so style/computedStyle work reliably
-    root.appendChild(canvas);
+    if (existingPanel) {
+        root.insertBefore(canvas, existingPanel);
+    } else {
+        root.appendChild(canvas);
+    }
 
     // Execute custom code after elements (and groups) are in the DOM
     try {
@@ -649,6 +676,7 @@ window.addEventListener("DOMContentLoaded", () => {
     coms.on("renderPreview", (data: unknown) => {
         try {
             const payload = typeof data === "string" ? JSON.parse(data as string) : data;
+            initialPreviewDialog = clonePreviewDialog(payload as PreviewDialog);
             renderPreview(payload);
         } catch (e) {
             coms.sendTo(

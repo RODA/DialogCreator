@@ -24,6 +24,9 @@ export interface PreviewUI {
     /** Update the syntax panel with the provided command. */
     updateSyntax(command: string): void;
 
+    /** Reset the dialog to its initial Preview state (as first opened). */
+    resetDialog(): void;
+
     /** Generic getter (value / dataset-driven) */
     get(name: string, prop: string): unknown;
 
@@ -160,6 +163,8 @@ export interface PreviewUIEnv {
     showDialogMessage: (type: 'info' | 'warning' | 'error' | 'question', message: string, detail: string) => void;
     // Open an external floating run panel near the Preview window
     openSyntaxPanel?: (command: string) => void;
+    // Reset the Preview dialog to its initial state
+    resetDialog: () => void;
     // Experimental bridge to services; returns a Promise and optionally invokes a callback
     // call: (service: string, args?: unknown, cb?: (result: unknown) => void) => Promise<unknown>;
 }

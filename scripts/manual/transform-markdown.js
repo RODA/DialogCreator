@@ -116,6 +116,69 @@ function transformManualMarkdown(md, repoRoot) {
   function wrapToken(tok) {
     const t = tok.trim();
     if (!t) return '';
+    const wrapMixedToken = (input) => {
+      let out = '';
+      let buf = '';
+      let inS = false;
+      let inD = false;
+      let esc = false;
+      const flushParam = () => {
+        if (!buf.length) return;
+        out += `<span class="api-param">${escapeHTML(buf)}</span>`;
+        buf = '';
+      };
+      const flushString = () => {
+        if (!buf.length) return;
+        out += `<span class="hljs-string">${escapeHTML(buf)}</span>`;
+        buf = '';
+      };
+      for (let i = 0; i < input.length; i++) {
+        const ch = input[i];
+        if (esc) {
+          buf += ch;
+          esc = false;
+          continue;
+        }
+        if (ch === '\\') {
+          buf += ch;
+          esc = true;
+          continue;
+        }
+        if (!inD && ch === "'") {
+          if (!inS) {
+            flushParam();
+            inS = true;
+            buf += ch;
+          } else {
+            buf += ch;
+            flushString();
+            inS = false;
+          }
+          continue;
+        }
+        if (!inS && ch === '"') {
+          if (!inD) {
+            flushParam();
+            inD = true;
+            buf += ch;
+          } else {
+            buf += ch;
+            flushString();
+            inD = false;
+          }
+          continue;
+        }
+        buf += ch;
+      }
+      if (buf.length) {
+        if (inS || inD) {
+          flushString();
+        } else {
+          flushParam();
+        }
+      }
+      return out;
+    };
     if (
       (t.startsWith("'") && t.endsWith("'")) ||
       (t.startsWith('"') && t.endsWith('"'))
@@ -129,6 +192,10 @@ function transformManualMarkdown(md, repoRoot) {
 
     if (/^(?:true|false|null|undefined)$/i.test(t)) {
       return `<span class="hljs-keyword">${escapeHTML(t)}</span>`;
+    }
+
+    if (/[\'"]/.test(t)) {
+      return wrapMixedToken(t);
     }
 
     return `<span class="api-param">${escapeHTML(t)}</span>`;
@@ -202,7 +269,17 @@ function transformManualMarkdown(md, repoRoot) {
   function processLine(line) {
     let out = '';
     let i = 0;
-    const controlKeywords = new Set(['if', 'for', 'while', 'switch', 'catch', 'with', 'return', 'else', 'do', 'try', 'finally']);
+    const controlKeywords = new Set([
+      'if', 'for', 'while', 'switch', 'case', 'break', 'continue', 'default',
+      'catch', 'with', 'return', 'else', 'do', 'try', 'finally', 'throw',
+      'const', 'let', 'var', 'function', 'class', 'extends', 'new',
+      'async', 'await', 'yield', 'typeof', 'instanceof', 'in', 'of', 'delete',
+    ]);
+    while (i < line.length && line[i] === ' ') {
+      // Preserve leading indentation even when markdown trims list HTML blocks.
+      out += '&nbsp;';
+      i++;
+    }
     while (i < line.length) {
       const ch = line[i];
 
@@ -299,12 +376,21 @@ function transformManualMarkdown(md, repoRoot) {
             i = closeIdx + 1;
             continue;
           }
+
+          // Highlight function names even when the call spans multiple lines.
+          const parts = ident.split('.');
+          const fn = parts[parts.length - 1];
+          const ns = parts.length > 1 ? `${escapeHTML(parts.slice(0, -1).join('.'))}.` : '';
+          out += `${ns}<span class="hljs-title function_">${escapeHTML(fn)}</span>`;
+          out += escapeHTML(spaceAfter);
+          i = k;
+          continue;
         }
 
         if (/^(?:true|false|null|undefined)$/.test(ident)) {
           out += `<span class="hljs-keyword">${ident}</span>`;
         } else {
-          out += escapeHTML(ident);
+          out += `<span class="api-param">${escapeHTML(ident)}</span>`;
         }
         out += escapeHTML(spaceAfter);
         i = k;
@@ -339,4 +425,3 @@ out = out.replace(/```(\w+)?\n([\s\S]*?)```/g, (m, lang, body) => {
 module.exports = {
   transformManualMarkdown,
 };
-

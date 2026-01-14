@@ -104,19 +104,20 @@ If the text exceeds the maximum width, it will be truncated with an ellipsis (<c
 <p>The Separator element is a visual divider used to separate different sections or groups of elements within the dialog.</p>
 <h3 id="container">Container</h3>
 <p>The Container element is a versatile component that can hold multiple items or rows. It supports single or multi-selection modes and can be populated dynamically via the API.
-The items in a Container can be selected and deselected by clicking, and multi-selection is supported via Shift+click for range selection. Their type can be restricted (e.g., numeric, character, date) so that only items of that type are enabled and selectable.</p>
-<p>Its properties panel exposes an <strong>Item type</strong> dropdown alongside the selection mode. It defaults to <strong>Any</strong>, which allows all items to remain interactive. Choose a specific type (Numeric, Calibrated, Binary, Character, Factor, or Date) to enforce that only items whose metadata matches the selected type stay selectable. Items with a different type are visually muted, ignore clicks, and are removed from the active selection.</p>
+The items in a Container can be selected and deselected by clicking, and multi-selection is supported via Shift+click for range selection. In single-selection mode, clicking the active row clears the selection. Their type can be restricted (e.g., numeric, character, date) so that only items of that type are enabled and selectable.</p>
+<p>Its properties panel exposes an <strong>Item type</strong> dropdown alongside the selection mode. It defaults to <strong>Any</strong>, which allows all items to remain interactive. Choose a specific type (Numeric, Calibrated, Binary, Character, Categorical, or Date) to enforce that only items whose metadata matches the selected type stay selectable. Items with a different type are visually muted, ignore clicks, and are removed from the active selection.</p>
 <p>Containers can be populated by code, using <code class="hljs"><span class="hljs-title function_">setValue</span>(<span class="api-param">container</span>, <span class="api-param">array</span>)</code>. The array can be either:</p>
 <ul>
-<li>an array of labels, such as: <code class="hljs"><span class="hljs-title function_">setValue</span>(<span class="api-param">container</span>, <span class="api-param">["age"</span>, <span class="api-param">"gender"]</span>)</code> to add two plain items, or</li>
-<li>a metadata object containing not just the labels but also the items' type and whether they should be displayed as selected, e.g.:<pre><code class="language-javascript hljs">setValue(container, [
-{ label: <span class="hljs-string">"age"</span>, type: <span class="hljs-string">"numeric"</span>, selected: <span class="hljs-keyword">true</span> },
-{ label: <span class="hljs-string">"gender"</span>, type: <span class="hljs-string">"categorical"</span> }
+<li>an array of labels, such as: <code class="hljs"><span class="hljs-title function_">setValue</span>(<span class="api-param">container</span>, <span class="api-param">[</span><span class="hljs-string">"age"</span>, <span class="hljs-string">"gender"</span><span class="api-param">]</span>)</code> to add two plain items, or</li>
+<li>a metadata object containing not just the labels but also the items' type and whether they should be displayed as selected, e.g.:</li>
+</ul>
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">setValue</span>(<span class="api-param">container</span>, [
+&nbsp;&nbsp;{ <span class="api-param">label</span>: <span class="hljs-string">"age"</span>, <span class="api-param">type</span>: <span class="hljs-string">"numeric"</span>, <span class="api-param">selected</span>: <span class="hljs-keyword">true</span> },
+&nbsp;&nbsp;{ <span class="api-param">label</span>: <span class="hljs-string">"gender"</span>, <span class="api-param">type</span>: <span class="hljs-string">"categorical"</span> }
 ]);
 </code></pre>
-Helpers such as <code class="hljs"><span class="hljs-title function_">listVariables</span>()</code> return precisely such metadata objects; when that output is paired with a Container whose Item type is set, mismatching items will automatically render as disabled.</li>
-</ul>
-<p>This element has another useful property called <strong>Item Order</strong>. When activated, the order in which the items are clicked is duly remembered. For instance in statistics, when creating a cross-tabulation from two categorical variables, it does matter which variable is selected first (on the rows) and which second (on the columns).</p>
+<p>Helpers such as <code class="hljs"><span class="hljs-title function_">listVariables</span>()</code> return precisely such metadata objects; when that output is paired with a Container whose Item type is set, mismatching items will automatically render as disabled.</p>
+<p>This element has another useful property called <strong>Item Order</strong>. When activated, the order in which the items are clicked is duly remembered, and <code class="hljs"><span class="hljs-title function_">getSelected</span>()</code> returns selections in that order. For instance in statistics, when creating a cross-tabulation from two categorical variables, it does matter which variable is selected first (on the rows) and which second (on the columns).</p>
 <h3 id="choicelist">ChoiceList</h3>
 <p>The choice list element is a list control built for (ordered) choices. Each row acts like a selectable option, and the list itself can optionally be reordered by drag-and-drop. Because it combines sorting and ordering, it can be used in a wide variety of ways:</p>
 <ul>
@@ -198,7 +199,7 @@ Helpers such as <code class="hljs"><span class="hljs-title function_">listVariab
 </ul>
 <p>Item selections in Preview</p>
 <ul>
-<li>Containers support multi-selection. Clicking a row toggles its selection (active state). A <code class="hljs"><span class="hljs-string">'change'</span></code> event is dispatched on the Container so that handlers can react.</li>
+<li>Containers support multi-selection. Clicking a row toggles its selection (active state); in single-selection mode, clicking the active row clears it. A <code class="hljs"><span class="hljs-string">'change'</span></code> event is dispatched on the Container so that handlers can react.</li>
 <li>Select elements are single-choice. Changing the selection dispatches <code class="hljs"><span class="hljs-string">'change'</span></code> like native selects.</li>
 </ul>
 <p>Runtime errors in Preview</p>
@@ -222,9 +223,9 @@ Helpers such as <code class="hljs"><span class="hljs-title function_">listVariab
 <ol>
 <li>Show the input's value in a label on change</li>
 </ol>
-<pre><code class="language-javascript hljs">onChange(input1, () =&gt; {
-  const value = <span class="hljs-string">"input1: "</span> + <span class="hljs-title function_">getValue</span>(<span class="api-param">input1</span>);
-  <span class="hljs-title function_">setValue</span>(<span class="api-param">statusLabel</span>, <span class="api-param">value</span>);
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">onChange</span>(<span class="api-param">input1</span>, () =&gt; {
+&nbsp;&nbsp;<span class="hljs-keyword">const</span> <span class="api-param">value</span> = <span class="hljs-string">"input1: "</span> + <span class="hljs-title function_">getValue</span>(<span class="api-param">input1</span>);
+&nbsp;&nbsp;<span class="hljs-title function_">setValue</span>(<span class="api-param">statusLabel</span>, <span class="api-param">value</span>);
 });
 </code></pre>
 
@@ -235,20 +236,20 @@ Helpers such as <code class="hljs"><span class="hljs-title function_">listVariab
 </code></pre>
 
 <p>Which is equivalent to:</p>
-<pre><code class="language-javascript hljs">onClick(checkbox1, () =&gt; {
-  <span class="hljs-keyword">if</span> (<span class="hljs-title function_">isChecked</span>(<span class="api-param">checkbox1</span>)) {
-    <span class="hljs-title function_">show</span>(<span class="api-param">label1</span>);
-  } <span class="hljs-keyword">else</span> {
-    <span class="hljs-title function_">hide</span>(<span class="api-param">label1</span>);
-  }
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">onClick</span>(<span class="api-param">checkbox1</span>, () =&gt; {
+&nbsp;&nbsp;<span class="hljs-keyword">if</span> (<span class="hljs-title function_">isChecked</span>(<span class="api-param">checkbox1</span>)) {
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="hljs-title function_">show</span>(<span class="api-param">label1</span>);
+&nbsp;&nbsp;} <span class="hljs-keyword">else</span> {
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="hljs-title function_">hide</span>(<span class="api-param">label1</span>);
+&nbsp;&nbsp;}
 });
 </code></pre>
 
 <ol start="3">
 <li>Show a select value in a label</li>
 </ol>
-<pre><code class="language-javascript hljs">onChange(countrySelect, () =&gt; {
-  <span class="hljs-title function_">setValue</span>(<span class="api-param">statusLabel</span>, <span class="hljs-string">"Country: "</span> + <span class="hljs-title function_">getValue</span>(<span class="api-param">countrySelect</span>));
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">onChange</span>(<span class="api-param">countrySelect</span>, () =&gt; {
+&nbsp;&nbsp;<span class="hljs-title function_">setValue</span>(<span class="api-param">statusLabel</span>, <span class="hljs-string">"Country: "</span> + <span class="hljs-title function_">getValue</span>(<span class="api-param">countrySelect</span>));
 });
 </code></pre>
 
@@ -280,8 +281,8 @@ Helpers such as <code class="hljs"><span class="hljs-title function_">listVariab
 </ul>
 </li>
 </ul>
-<pre><code class="language-javascript hljs">onClick(button1, () =&gt; {
-  <span class="hljs-comment">// do something</span>
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">onClick</span>(<span class="api-param">button1</span>, () =&gt; {
+&nbsp;&nbsp;<span class="hljs-comment">// do something</span>
 });
 </code></pre>
 

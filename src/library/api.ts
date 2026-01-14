@@ -13,7 +13,7 @@ export const EVENT_NAMES = new Set<string>(EVENT_LIST);
 // Curated helper names exposed as shorthand in user customJS (prelude)
 export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
     // core
-    'showMessage', 'getValue', 'setValue', 'run', 'updateSyntax',
+    'showMessage', 'getValue', 'setValue', 'run', 'updateSyntax', 'resetDialog',
 
     // checkbox/radio
     'check', 'isChecked', 'uncheck', 'isUnchecked',
@@ -43,7 +43,8 @@ const NEUTRAL_NAMES = new Set<keyof PreviewUI>([
     'showMessage',
     'listDatasets',
     'listVariables',
-    'run'
+    'run',
+    'resetDialog'
 ]);
 
 export const ELEMENT_FIRST_ARG_CALLS: ReadonlyArray<keyof PreviewUI> = Object.freeze(
@@ -60,6 +61,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         logToEditor,
         showDialogMessage,
         openSyntaxPanel,
+        resetDialog,
         // call
     } = env;
 
@@ -528,6 +530,15 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             } catch (e: any) {
                 const msg = `updateSyntax() failed: ${String(e && e.message ? e.message : e)}`;
                 logToEditor(msg);
+            }
+        },
+
+        resetDialog: () => {
+            try {
+                resetDialog();
+            } catch (e: any) {
+                const msg = `resetDialog() failed: ${String(e && e.message ? e.message : e)}`;
+                showRuntimeError(msg);
             }
         },
 

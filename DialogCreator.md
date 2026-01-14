@@ -127,13 +127,14 @@ The Separator element is a visual divider used to separate different sections or
 
 ### Container
 The Container element is a versatile component that can hold multiple items or rows. It supports single or multi-selection modes and can be populated dynamically via the API.
-The items in a Container can be selected and deselected by clicking, and multi-selection is supported via Shift+click for range selection. Their type can be restricted (e.g., numeric, character, date) so that only items of that type are enabled and selectable.
+The items in a Container can be selected and deselected by clicking, and multi-selection is supported via Shift+click for range selection. In single-selection mode, clicking the active row clears the selection. Their type can be restricted (e.g., numeric, character, date) so that only items of that type are enabled and selectable.
 
-Its properties panel exposes an **Item type** dropdown alongside the selection mode. It defaults to **Any**, which allows all items to remain interactive. Choose a specific type (Numeric, Calibrated, Binary, Character, Factor, or Date) to enforce that only items whose metadata matches the selected type stay selectable. Items with a different type are visually muted, ignore clicks, and are removed from the active selection.
+Its properties panel exposes an **Item type** dropdown alongside the selection mode. It defaults to **Any**, which allows all items to remain interactive. Choose a specific type (Numeric, Calibrated, Binary, Character, Categorical, or Date) to enforce that only items whose metadata matches the selected type stay selectable. Items with a different type are visually muted, ignore clicks, and are removed from the active selection.
 
 Containers can be populated by code, using `setValue(container, array)`. The array can be either:
 - an array of labels, such as: `setValue(container, ["age", "gender"])` to add two plain items, or
 - a metadata object containing not just the labels but also the items' type and whether they should be displayed as selected, e.g.:
+
 ```javascript
 setValue(container, [
   { label: "age", type: "numeric", selected: true },
@@ -142,7 +143,7 @@ setValue(container, [
 ```
 Helpers such as `listVariables()` return precisely such metadata objects; when that output is paired with a Container whose Item type is set, mismatching items will automatically render as disabled.
 
-This element has another useful property called **Item Order**. When activated, the order in which the items are clicked is duly remembered. For instance in statistics, when creating a cross-tabulation from two categorical variables, it does matter which variable is selected first (on the rows) and which second (on the columns).
+This element has another useful property called **Item Order**. When activated, the order in which the items are clicked is duly remembered, and `getSelected()` returns selections in that order. For instance in statistics, when creating a cross-tabulation from two categorical variables, it does matter which variable is selected first (on the rows) and which second (on the columns).
 
 
 ### ChoiceList
@@ -238,7 +239,7 @@ In the Elements panel (left), click the element to be added. It will be inserted
 
 Item selections in Preview
 
-- Containers support multi-selection. Clicking a row toggles its selection (active state). A `'change'` event is dispatched on the Container so that handlers can react.
+- Containers support multi-selection. Clicking a row toggles its selection (active state); in single-selection mode, clicking the active row clears it. A `'change'` event is dispatched on the Container so that handlers can react.
 - Select elements are single-choice. Changing the selection dispatches `'change'` like native selects.
 
 Runtime errors in Preview

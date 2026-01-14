@@ -25,6 +25,7 @@ Use this reference when writing custom JavaScript for Dialog Creator. It contain
 
 - Set the value/text.
 - Input/Label: set string; Counter: set number within its min/max; Select: set selected option by value; Checkbox/Radio: set boolean state.
+- For Container, pass an array of strings or objects shaped like `{ label, type, selected }`.
 - No-op if the element doesn't exist. Does not dispatch events automatically.
 
 `isChecked(name)`
@@ -41,7 +42,7 @@ Use this reference when writing custom JavaScript for Dialog Creator. It contain
 
 - Read the current selection(s) as an array of values.
 - For Select, returns a single-item array (or empty array if nothing selected).
-- For Container, returns labels of all selected rows.
+- For Container, returns labels of all selected rows. If Item Order is enabled, the array is returned in the click order.
 
 `isVisible(name)`: boolean
 
@@ -126,6 +127,10 @@ const cmd = buildCommand(sel);
 updateSyntax(cmd);
 ```
 
+`resetDialog()`
+
+  - Reset the Preview dialog back to its initial state (reloads the dialog snapshot, restoring default values and selections).
+
 `run(command)`
 
   - Sends the specified command to the backend for execution (for instance to run the R code, if running on top of R).
@@ -148,7 +153,7 @@ Backend helpers (in the developer's responsibility)
 
 `listVariables(dataset)`
 
-  - Returns an array of variable names available in the specified dataset, as well as their types.
+  - Returns an array of variable names available in the specified dataset, as well as their types (often as `{ label, type, selected }` objects).
 
 
 ## Element-specific details

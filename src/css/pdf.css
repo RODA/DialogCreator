@@ -78,19 +78,25 @@ code.hljs .hljs-keyword {
 }
 
 pre code.hljs .hljs-keyword,
+code.hljs .hljs-keyword {
+    color: #000000;
+    font-weight: normal;
+}
+
+pre code.hljs .hljs-string,
 code.hljs .hljs-string {
-    color: #296294; /* example */
+    color: #22863a;
     font-weight: normal;
 }
 
 .hljs-keyword { color: #000000; }
-.hljs-string  { color: #296294; }
+.hljs-string  { color: #22863a; }
 .hljs-number  { color: #e36209; }
 .hljs-comment { color: #296294; font-style: italic; }
 
 pre code.hljs span.api-param,
 code.hljs span.api-param {
-    color: #22863a !important;
+    color: #477D9B !important;
     font-weight: normal !important;
 }
 
