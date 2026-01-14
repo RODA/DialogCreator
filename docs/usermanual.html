@@ -231,7 +231,7 @@
                 // Extract the entire page-with-toc div to get both TOC and main content
                 const pageWithToc = doc.querySelector('.page-with-toc');
                 if (pageWithToc) {
-                    document.getElementById('manual-content').innerHTML = pageWithToc.innerHTML;
+                    document.getElementById('manual-content').innerHTML = pageWithToc.outerHTML;
                 } else {
                     // Fallback to main content only
                     const content = doc.querySelector('main') || doc.body;
