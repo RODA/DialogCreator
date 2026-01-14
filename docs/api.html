@@ -1,5 +1,5 @@
 <!DOCTYPE html><html><head><title></title><meta charset="utf-8">  <title>Dialog Creator — API Reference</title>
-  <link rel="stylesheet" href="../src/css/manual.css">
+  <link rel="stylesheet" href="css/manual.css">
 </head>
 	<body class="">
 <div class="page-with-toc">
@@ -311,7 +311,12 @@ const cmd = <span class="hljs-title function_">buildCommand</span>(<span class="
 <pre><code class="language-javascript hljs">onChange(c_datasets, () =&gt; {
   <span class="hljs-title function_">clearError</span>(<span class="api-param">c_datasets</span>);
   selected_dataset = <span class="hljs-title function_">getSelected</span>(<span class="api-param">c_datasets</span>);
-  <span class="hljs-title function_">setValue</span>(<span class="api-param">c_variables</span>, <span class="hljs-title function_">listVariables</span>(<span class="api-param">selected_dataset</span>));
+  <span class="hljs-keyword">if</span> (selected_dataset.length == <span class="hljs-number">0</span>) {
+    selected_dataset = <span class="hljs-string">'&lt;dataset&gt;'</span>;
+    <span class="hljs-title function_">clearContent</span>(<span class="api-param">c_variables</span>);
+  } <span class="hljs-keyword">else</span> {
+    <span class="hljs-title function_">setValue</span>(<span class="api-param">c_variables</span>, <span class="hljs-title function_">listVariables</span>(<span class="api-param">selected_dataset</span>));
+  }
   selected_variable = <span class="hljs-string">'&lt;variable&gt;'</span>;
   <span class="hljs-title function_">updateSyntax</span>(<span class="hljs-title function_">buildCommand</span>());
 });

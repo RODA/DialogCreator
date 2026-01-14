@@ -223,7 +223,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         target.replaceChildren();
 
         items.forEach((item) => {
-            const value = String(item?.text ?? '');
+            const value = String((item as any)?.text ?? (item as any)?.label ?? '');
             const div = document.createElement('div');
             div.className = 'container-item';
             div.dataset.value = value;
@@ -275,12 +275,20 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
     const parseContainerValue = (value: unknown): Array<{ text: string; active?: boolean; type?: string }> => {
         if (Array.isArray(value)) {
             return value.map(val => {
-                if (typeof val === 'object' && val !== null && 'text' in val) {
-                    return {
-                        text: String(val.text ?? ''),
-                        active: Boolean(val.active),
-                        type: 'type' in val ? String(val.type ?? '') : ('itemType' in val ? String(val.itemType ?? '') : undefined)
-                    };
+                if (typeof val === 'object' && val !== null) {
+                    const text = 'text' in val
+                        ? String((val as any).text ?? '')
+                        : ('label' in val ? String((val as any).label ?? '') : '');
+                    if (text) {
+                        const active = ('active' in val)
+                            ? Boolean((val as any).active)
+                            : Boolean((val as any).selected);
+                        return {
+                            text,
+                            active,
+                            type: 'type' in val ? String((val as any).type ?? '') : ('itemType' in val ? String((val as any).itemType ?? '') : undefined)
+                        };
+                    }
                 }
                 return { text: String(val ?? '') };
             });

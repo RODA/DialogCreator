@@ -184,7 +184,18 @@ async function renderPage({ input, output, title }, repoRoot, outputDir, manualC
 (async function main() {
   const repoRoot = path.resolve(__dirname, '../..');
   const outputDir = path.join(repoRoot, 'docs');
-  const manualCss = path.relative(outputDir, path.join(repoRoot, 'src', 'css', 'manual.css'));
+  const manualCssSource = path.join(repoRoot, 'src', 'css', 'manual.css');
+  const manualCssTarget = path.join(outputDir, 'css', 'manual.css');
+  if (!fs.existsSync(path.dirname(manualCssTarget))) {
+    fs.mkdirSync(path.dirname(manualCssTarget), { recursive: true });
+  }
+  try {
+    fs.copyFileSync(manualCssSource, manualCssTarget);
+  } catch (err) {
+    console.error('Failed to sync manual.css into docs:', err && err.message ? err.message : err);
+    process.exit(1);
+  }
+  const manualCss = path.relative(outputDir, manualCssTarget);
 
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });

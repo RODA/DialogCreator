@@ -314,7 +314,12 @@ The custom code then continues with an event handler for the datasets container,
 onChange(c_datasets, () => {
   clearError(c_datasets);
   selected_dataset = getSelected(c_datasets);
-  setValue(c_variables, listVariables(selected_dataset));
+  if (selected_dataset.length == 0) {
+    selected_dataset = '<dataset>';
+    clearContent(c_variables);
+  } else {
+    setValue(c_variables, listVariables(selected_dataset));
+  }
   selected_variable = '<variable>';
   updateSyntax(buildCommand());
 });

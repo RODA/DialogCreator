@@ -1,5 +1,5 @@
 <!DOCTYPE html><html><head><title></title><meta charset="utf-8">  <title>Dialog Creator — User Manual</title>
-  <link rel="stylesheet" href="../src/css/manual.css">
+  <link rel="stylesheet" href="css/manual.css">
 </head>
 	<body class="">
 <div class="page-with-toc">
@@ -104,9 +104,19 @@ If the text exceeds the maximum width, it will be truncated with an ellipsis (<c
 <p>The Separator element is a visual divider used to separate different sections or groups of elements within the dialog.</p>
 <h3 id="container">Container</h3>
 <p>The Container element is a versatile component that can hold multiple items or rows. It supports single or multi-selection modes and can be populated dynamically via the API.
-The items in a Container can be selected by clicking, and multi-selection is supported via Shift+click for range selection. Their type can be restricted (e.g., numeric, character, date) so that only items of that type are selectable.</p>
-<p>When a Container is selected, the Properties panel exposes an <strong>Item type</strong> dropdown alongside the selection mode. It defaults to <strong>Any</strong>, which allows all rows to remain interactive. Choose a specific type (Numeric, Calibrated, Binary, Character, Categorical, or Date) to enforce that only rows whose metadata matches the selected type stay selectable. Rows with a different type are visually muted, ignore clicks, and are removed from the active selection.</p>
-<p>Programmatic population supports type metadata as well. <code class="hljs"><span class="hljs-title function_">setValue</span>(<span class="api-param">container</span>, <span class="api-param">array</span>)</code> accepts either plain strings or objects shaped like <code class="hljs">{ text, type, active }</code>. Helpers such as <code class="hljs"><span class="hljs-title function_">listVariables</span>()</code> now return descriptors with both the label and its data type; when that output is paired with a Container whose Item type is set, mismatching rows automatically render as disabled.</p>
+The items in a Container can be selected and deselected by clicking, and multi-selection is supported via Shift+click for range selection. Their type can be restricted (e.g., numeric, character, date) so that only items of that type are enabled and selectable.</p>
+<p>Its properties panel exposes an <strong>Item type</strong> dropdown alongside the selection mode. It defaults to <strong>Any</strong>, which allows all items to remain interactive. Choose a specific type (Numeric, Calibrated, Binary, Character, Factor, or Date) to enforce that only items whose metadata matches the selected type stay selectable. Items with a different type are visually muted, ignore clicks, and are removed from the active selection.</p>
+<p>Containers can be populated by code, using <code class="hljs"><span class="hljs-title function_">setValue</span>(<span class="api-param">container</span>, <span class="api-param">array</span>)</code>. The array can be either:</p>
+<ul>
+<li>an array of labels, such as: <code class="hljs"><span class="hljs-title function_">setValue</span>(<span class="api-param">container</span>, <span class="api-param">["age"</span>, <span class="api-param">"gender"]</span>)</code> to add two plain items, or</li>
+<li>a metadata object containing not just the labels but also the items' type and whether they should be displayed as selected, e.g.:<pre><code class="language-javascript hljs">setValue(container, [
+{ label: <span class="hljs-string">"age"</span>, type: <span class="hljs-string">"numeric"</span>, selected: <span class="hljs-keyword">true</span> },
+{ label: <span class="hljs-string">"gender"</span>, type: <span class="hljs-string">"categorical"</span> }
+]);
+</code></pre>
+Helpers such as <code class="hljs"><span class="hljs-title function_">listVariables</span>()</code> return precisely such metadata objects; when that output is paired with a Container whose Item type is set, mismatching items will automatically render as disabled.</li>
+</ul>
+<p>This element has another useful property called <strong>Item Order</strong>. When activated, the order in which the items are clicked is duly remembered. For instance in statistics, when creating a cross-tabulation from two categorical variables, it does matter which variable is selected first (on the rows) and which second (on the columns).</p>
 <h3 id="choicelist">ChoiceList</h3>
 <p>The choice list element is a list control built for (ordered) choices. Each row acts like a selectable option, and the list itself can optionally be reordered by drag-and-drop. Because it combines sorting and ordering, it can be used in a wide variety of ways:</p>
 <ul>
@@ -335,7 +345,7 @@ The items in a Container can be selected by clicking, and multi-selection is sup
 </li>
 </ul>
 
-
+	
 
 </main>
 </div>
