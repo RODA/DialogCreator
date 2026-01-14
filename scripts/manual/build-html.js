@@ -186,13 +186,18 @@ async function renderPage({ input, output, title }, repoRoot, outputDir, manualC
   const outputDir = path.join(repoRoot, 'docs');
   const manualCssSource = path.join(repoRoot, 'src', 'css', 'manual.css');
   const manualCssTarget = path.join(outputDir, 'css', 'manual.css');
+  const manualEmbedSource = path.join(repoRoot, 'src', 'css', 'manual-embed.css');
+  const manualEmbedTarget = path.join(outputDir, 'css', 'manual-embed.css');
   if (!fs.existsSync(path.dirname(manualCssTarget))) {
     fs.mkdirSync(path.dirname(manualCssTarget), { recursive: true });
   }
   try {
     fs.copyFileSync(manualCssSource, manualCssTarget);
+    if (fs.existsSync(manualEmbedSource)) {
+      fs.copyFileSync(manualEmbedSource, manualEmbedTarget);
+    }
   } catch (err) {
-    console.error('Failed to sync manual.css into docs:', err && err.message ? err.message : err);
+    console.error('Failed to sync manual CSS into docs:', err && err.message ? err.message : err);
     process.exit(1);
   }
   const manualCss = path.relative(outputDir, manualCssTarget);
