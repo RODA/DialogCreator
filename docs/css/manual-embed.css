@@ -1,0 +1,341 @@
+#api-content,
+#manual-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    line-height: 1.6;
+}
+
+/* Layout for pages with a sidebar ToC */
+#api-content .page-with-toc,
+#manual-content .page-with-toc {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    column-gap: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px 0;
+}
+
+#api-content .page-with-toc main,
+#manual-content .page-with-toc main {
+    max-width: 900px;
+    margin: 0;
+    padding: 0 0 48px;
+}
+
+#api-content .toc-sidebar,
+#manual-content .toc-sidebar {
+    position: sticky;
+    top: 16px;
+    align-self: start;
+    max-height: calc(100vh - 64px);
+    overflow: auto;
+    padding: 16px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+}
+
+#api-content .toc-list,
+#manual-content .toc-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+#api-content .toc-list > li,
+#manual-content .toc-list > li {
+    margin: 6px 0;
+}
+
+#api-content .toc-sub,
+#manual-content .toc-sub {
+    list-style: none;
+    margin: 6px 0 0 12px;
+    padding: 0;
+}
+
+#api-content .toc-list li.has-children,
+#manual-content .toc-list li.has-children {
+    position: relative;
+}
+
+#api-content .toc-list li.collapsed > .toc-sub,
+#manual-content .toc-list li.collapsed > .toc-sub {
+    display: none;
+}
+
+#api-content .toc-toggle,
+#manual-content .toc-toggle {
+    appearance: none;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0 6px 0 0;
+    cursor: pointer;
+    color: #64748b;
+}
+
+#api-content .toc-toggle::before,
+#manual-content .toc-toggle::before {
+    content: '▾';
+    display: inline-block;
+    width: 1em;
+}
+
+#api-content .collapsed > .toc-toggle::before,
+#manual-content .collapsed > .toc-toggle::before {
+    content: '▸';
+}
+
+#api-content .toc-sidebar a,
+#manual-content .toc-sidebar a {
+    color: #1e81b0;
+    text-decoration: none;
+}
+
+#api-content .toc-sidebar a:hover,
+#manual-content .toc-sidebar a:hover {
+    text-decoration: underline;
+}
+
+#api-content .toc-sidebar a.active,
+#manual-content .toc-sidebar a.active {
+    color: #1f3653;
+    font-weight: 600;
+}
+
+#api-content .toc-heading,
+#manual-content .toc-heading {
+    font-weight: 600;
+    color: #1f3653;
+    margin-bottom: 8px;
+}
+
+#api-content h1,
+#manual-content h1 {
+    font-size: 1.5rem !important;
+}
+
+#api-content h2,
+#manual-content h2 {
+    font-size: 1.25rem !important;
+}
+
+#api-content h3,
+#manual-content h3 {
+    font-size: 1.1rem !important;
+}
+
+#api-content h4,
+#manual-content h4 {
+    font-size: 1.0rem !important;
+}
+
+#api-content h2,
+#manual-content h2,
+#api-content h3,
+#manual-content h3 {
+    position: relative;
+}
+
+#api-content .heading-anchor,
+#manual-content .heading-anchor {
+    margin-left: 8px;
+    font-weight: normal;
+    opacity: 0;
+    text-decoration: none;
+    color: #94a3b8;
+}
+
+#api-content h2:hover .heading-anchor,
+#manual-content h2:hover .heading-anchor,
+#api-content h3:hover .heading-anchor,
+#manual-content h3:hover .heading-anchor {
+    opacity: 1;
+}
+
+#api-content .toc-mobile,
+#manual-content .toc-mobile {
+    display: none !important;
+    margin: 0 0 16px;
+}
+
+#api-content .toc-mobile summary,
+#manual-content .toc-mobile summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: #1f3653;
+}
+
+#api-content .toc-mobile[open],
+#manual-content .toc-mobile[open] {
+    padding: 8px 12px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+}
+
+@media (max-width: 1000px) {
+    #api-content .page-with-toc,
+    #manual-content .page-with-toc {
+        display: block;
+        padding: 0;
+    }
+    #api-content .page-with-toc main,
+    #manual-content .page-with-toc main {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 0 24px 48px;
+    }
+    #api-content .toc-sidebar,
+    #manual-content .toc-sidebar {
+        display: none;
+    }
+    #api-content .toc-mobile,
+    #manual-content .toc-mobile {
+        display: block !important;
+    }
+}
+
+#api-content pre,
+#manual-content pre,
+#api-content code,
+#manual-content code {
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+}
+
+#api-content pre,
+#manual-content pre {
+    background: #f8f9fa !important;
+    border: 1px solid #e9ecef !important;
+    border-radius: 4px !important;
+    padding: 12px !important;
+    margin: 16px 0 !important;
+    overflow-x: auto !important;
+}
+
+#api-content code,
+#manual-content code {
+    background: #f0f4f8 !important;
+    padding: 2px 4px !important;
+    border-radius: 3px !important;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+}
+
+#api-content pre code,
+#manual-content pre code {
+    background: transparent !important;
+    padding: 0 !important;
+    font-size: 14px !important;
+}
+
+#api-content p code,
+#manual-content p code,
+#api-content li code,
+#manual-content li code {
+    font-size: 14px !important;
+    vertical-align: baseline !important;
+}
+
+/* Syntax highlighting for custom API examples */
+#api-content .hljs,
+#manual-content .hljs {
+    background: #f8f9fa !important;
+    color: #333 !important;
+}
+
+#api-content .hljs-title.function_,
+#manual-content .hljs-title.function_ {
+    color: #ae4545 !important;
+    font-weight: normal !important;
+}
+
+#api-content .hljs-string,
+#manual-content .hljs-string {
+    color: #22863a !important;
+}
+
+#api-content .hljs-keyword,
+#manual-content .hljs-keyword {
+    color: #000000 !important;
+    font-weight: normal !important;
+}
+
+#api-content .hljs-number,
+#manual-content .hljs-number {
+    color: #e36209 !important;
+}
+
+#api-content .hljs-comment,
+#manual-content .hljs-comment {
+    color: #296294 !important;
+    font-style: italic;
+}
+
+#api-content span.api-param,
+#manual-content span.api-param {
+    color: #477D9B !important;
+    font-weight: normal !important;
+}
+
+/* Image sizing overrides */
+#api-content img,
+#manual-content img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 1rem auto;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+#api-content img[style*="width: 1200px"],
+#manual-content img[style*="width: 1200px"] {
+    width: 100% !important;
+    max-width: 1000px !important;
+}
+
+#api-content img[style*="width: 793px"],
+#manual-content img[style*="width: 793px"] {
+    width: 100% !important;
+    max-width: 700px !important;
+}
+
+#api-content img[style*="width: 100%"],
+#manual-content img[style*="width: 100%"] {
+    width: 90% !important;
+    max-width: 600px !important;
+}
+
+#api-content img[style*="width: 90%"],
+#manual-content img[style*="width: 90%"] {
+    width: 80% !important;
+    max-width: 800px !important;
+}
+
+#api-content img[style*="width: 60%"],
+#manual-content img[style*="width: 60%"] {
+    width: 60% !important;
+    max-width: 500px !important;
+}
+
+#api-content img[style*="width: 50%"],
+#manual-content img[style*="width: 50%"] {
+    width: 50% !important;
+    max-width: 400px !important;
+}
+
+#api-content img[style*="width: 38%"],
+#manual-content img[style*="width: 38%"] {
+    width: 40% !important;
+    max-width: 300px !important;
+}
+
+#api-content img[style*="width: 30%"],
+#manual-content img[style*="width: 30%"] {
+    width: 35% !important;
+    max-width: 250px !important;
+}
