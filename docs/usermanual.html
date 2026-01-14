@@ -65,8 +65,8 @@
                     document.getElementById('manual-content').innerHTML = content.innerHTML;
                 }
 
-                // Re-run syntax highlighting
-                if (window.Prism) {
+                // Re-run syntax highlighting only if the injected content isn't pre-styled
+                if (window.Prism && !document.querySelector('#manual-content .hljs-title.function_')) {
                     Prism.highlightAll();
                 }
             })
