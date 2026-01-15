@@ -272,7 +272,7 @@ The following section exemplifies, using a step by step approach, how to build a
 
 Similar to any other recoding dialog, the user needs to first select a dataset from a list, then choose a variable from that dataset to recode, and finally specify the recoding rules.
 
-<img src="docs/images/recodesign.png" alt="Recode design part" style="width: 540px;">
+<img src="docs/images/recode_design.png" alt="Recode design part" style="width: 540px;">
 
 The design window contains three Container elements: the top left for datasets and the bottom left for variable, and the right one for the recoding rules. Out of all container properties, the image below highlights the important ones for the dataset container, namely the selection type (single/multiple) and the item type (used for filtering variables). In this particular container, a single dataset can be selected, and the item type is left to the default 'Any' but it could have been set to 'Character', as dataset names are strings.
 
