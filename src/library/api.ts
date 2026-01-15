@@ -1008,9 +1008,41 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             errorhelpers.addTooltip(key, text);
         },
 
-        clearError: (name, message?) => {
-            const key = coerceName(name);
-            errorhelpers.clearTooltip(key, message ? String(message) : undefined);
+        clearError: (...args) => {
+            if (!args.length) {
+                throw new SyntaxError('clearError() expects at least one element');
+            }
+
+            let names: unknown[] = [];
+            let message: string | undefined;
+
+            if (Array.isArray(args[0])) {
+                names = args[0];
+                if (args.length > 1 && args[1] != null) {
+                    const msg = String(args[1] ?? '');
+                    if (msg) message = msg;
+                }
+            } else if (args.length === 2) {
+                const maybeMsg = args[1];
+                if (typeof maybeMsg === 'string' && !findWrapper(maybeMsg)) {
+                    names = [args[0]];
+                    const msg = String(maybeMsg ?? '');
+                    if (msg) message = msg;
+                } else {
+                    names = args;
+                }
+            } else {
+                names = args;
+            }
+
+            if (!names.length) {
+                throw new SyntaxError('clearError() expects at least one element');
+            }
+
+            names.forEach((name) => {
+                const key = coerceName(name);
+                errorhelpers.clearTooltip(key, message ? String(message) : undefined);
+            });
         },
 
         // Simulated workspace datasets listing (e.g., via R connection)
@@ -1544,38 +1576,51 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             }
         },
 
-        clearContent: (name) => {
-            const el = findWrapper(name);
-            if (!el) {
-                throw new SyntaxError(`Element not found: ${String(name)}`);
+        clearContent: (...names) => {
+            const list = (names.length === 1 && Array.isArray(names[0]))
+                ? names[0]
+                : names;
+
+            if (!list.length) {
+                throw new SyntaxError('clearContent() expects at least one element');
             }
 
-            const eltype = typeOf(el);
-
-            if (eltype === 'Input') {
-                const inn = inner(el);
-                const input = (el instanceof HTMLInputElement ? el : (inn as HTMLInputElement | null));
-                if (input) {
-                    input.value = '';
-                    el.dataset.value = '';
+            const clearOne = (name: unknown) => {
+                const key = coerceName(name);
+                const el = findWrapper(key);
+                if (!el) {
+                    throw new SyntaxError(`Element not found: ${String(name)}`);
                 }
-                return;
-            }
 
-            if (eltype === 'Container') {
-                const host = el; // use the container element directly
-                const items = Array.from(host.querySelectorAll('.container-item')) as HTMLElement[];
-                items.forEach(item => item.remove());
-                el.dataset.selected = '';
-                host.dataset.activeValues = '';
-                if ('selectedOrder' in host.dataset) {
-                    delete host.dataset.selectedOrder;
+                const eltype = typeOf(el);
+
+                if (eltype === 'Input') {
+                    const inn = inner(el);
+                    const input = (el instanceof HTMLInputElement ? el : (inn as HTMLInputElement | null));
+                    if (input) {
+                        input.value = '';
+                        el.dataset.value = '';
+                    }
+                    return;
                 }
-                renderutils.applyContainerItemFilter(host);
-                return;
-            }
 
-            throw new SyntaxError(`clearContent() supports only Input and Container elements`);
+                if (eltype === 'Container') {
+                    const host = el; // use the container element directly
+                    const items = Array.from(host.querySelectorAll('.container-item')) as HTMLElement[];
+                    items.forEach(item => item.remove());
+                    el.dataset.selected = '';
+                    host.dataset.activeValues = '';
+                    if ('selectedOrder' in host.dataset) {
+                        delete host.dataset.selectedOrder;
+                    }
+                    renderutils.applyContainerItemFilter(host);
+                    return;
+                }
+
+                throw new SyntaxError(`clearContent() supports only Input and Container elements`);
+            };
+
+            list.forEach(clearOne);
         },
 
         // Update the visible label of a Button element

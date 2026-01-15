@@ -84,6 +84,7 @@ export interface PreviewUI {
     /** Error helpers */
     addError(name: string, message: string): void;
     clearError(name: string, message?: string): void;
+    clearError(...names: string[]): void;
 
     /** Return list of available dataset names from the connected workspace */
     listDatasets(): string[];
@@ -126,7 +127,7 @@ export interface PreviewUI {
     clearInput(name: string): void;
 
     /** Clear content of supported elements (Input, Container). */
-    clearContent(name: string): void;
+    clearContent(...names: string[]): void;
 
     /** Set the visible label text of a Button element. */
     setLabel(name: string, label: string): void;

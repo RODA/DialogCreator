@@ -96,11 +96,11 @@ Use this reference when writing custom JavaScript for Dialog Creator. It contain
   - Does not dispatch a `change` event automatically. For the handlers to run, call `triggerChange(name)` after changing selection.
   - Throws a SyntaxError if the element doesn't exist, the control is missing, the option/row is not found, or the element type doesn't support selection.
 
-`clearContent(element)`
+`clearContent(...elements)`
 
-  - Clears the content/value of supported elements.
-  - Supported: Input (clears the text), Container (removes all rows).
-  - Throws an error if used on unsupported types.
+- Clears the content/value of supported elements.
+- Supported: Input (clears the text), Container (removes all rows).
+- Throws an error if used on unsupported types.
 
 `setLabel(name, label)`
 
@@ -122,8 +122,7 @@ Use this reference when writing custom JavaScript for Dialog Creator. It contain
   - Example:
 
 ```javascript
-const sel = getSelected(radiogroup1);
-const cmd = buildCommand(sel);
+const cmd = buildCommand();
 updateSyntax(cmd);
 ```
 
@@ -141,9 +140,9 @@ Validation and highlight helpers
 
   - Show a tooltip-like validation message attached to the element and apply a visual highlight (glow). Multiple distinct messages on the same element are de-duplicated and the first one is shown. The highlight is removed automatically when all messages are cleared.
 
-`clearError(name, message?)`
+`clearError(name, message?)` / `clearError(...elements)`
 
-  - Clear a previously added validation message. If `message` is provided, only that message is removed; otherwise, all messages for the element are cleared.
+- Clear a previously added validation message. If `message` is provided, only that message is removed; otherwise, all messages for the element are cleared.
 
 Backend helpers (in the developer's responsibility)
 
@@ -448,7 +447,7 @@ The 'Clear' button removes all rules from the rules container. Its handler simpl
 
 ```javascript
 onClick(b_clear, () => {
-  clearContainer(c_rules);
+  clearContent(c_rules);
   updateSyntax(buildCommand());
 });
 ```
@@ -501,7 +500,6 @@ const buildCommand = () => {
 Finally, the main 'Run' button validates the user's selections and either shows validation errors or proceeds to execute the constructed command. Its only purpose in the Preview window is to validate the user's input, and add error messages if needed.
 
 ```javascript
-
 onClick(b_run, () => {
   if (selected_dataset === '<dataset>') {
     addError(c_datasets, "No dataset selected");
