@@ -61,9 +61,11 @@ export interface PreviewUI {
 
     /** Checkbox/Radio convenience: set checked/selected state to true */
     check(name: string): void;
+    check(...names: string[]): void;
 
     /** Checkbox/Radio convenience: set checked/selected state to false */
     uncheck(name: string): void;
+    uncheck(...names: string[]): void;
 
     /** Returns whether the element is currently visible in Preview */
     isVisible(name: string): boolean;

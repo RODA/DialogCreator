@@ -32,10 +32,11 @@ Use this reference when writing custom JavaScript for Dialog Creator. It contain
 
 - For Checkbox/Radio, returns the live checked/selected state as a boolean.
 
-`check(name)` / `uncheck(name)`
+`check(element)` / `uncheck(element)` / `check(...elements)` / `uncheck(...elements)`
 
 - Convenience methods for Checkbox and Radio elements to set on/off.
-- For Radio, `check(name)` also unselects other radios in the same group.
+- For Radio, `check(element)` also unselects other radios in the same group.
+- Passing multiple radios from the same group in a single `check(...)` call throws an error.
 - These do not dispatch events by themselves; for the handlers to run, use `triggerChange()` or `triggerClick()`.
 
 `getSelected(name)`
@@ -415,12 +416,7 @@ If both old and new values have valid content, the 'Add' button (named `b_add` i
 onClick(b_add, () => {
   if (old_value && new_value) {
     addValue(c_rules, old_value + '=' + new_value);
-    clearContent(i_value_old);
-    clearContent(i_lowesto);
-    clearContent(i_from);
-    clearContent(i_to);
-    clearContent(i_tohighest);
-    clearContent(i_value_new);
+    clearContent(i_value_old, i_lowesto, i_from, i_to, i_tohighest, i_value_new);
     clearError(c_rules);
     updateSyntax(buildCommand());
   } else if (old_value) {

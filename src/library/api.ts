@@ -419,55 +419,75 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         },
 
         // Convenience: checkbox/radio check/uncheck
-        check: (name) => {
-            const el = findWrapper(name);
-            if (!el) return;
+        check: (...names) => {
+            const list = (names.length === 1 && Array.isArray(names[0]))
+                ? names[0]
+                : names;
 
-            const eltype = typeOf(el);
-            if (eltype === 'Checkbox') {
-                updateElement(
-                    el,
-                    { isChecked: 'true' }
-                );
-            } else if (eltype === 'Radio') {
-                // Select this radio and unselect others in the same group
-                const custom = el.querySelector('.custom-radio') as HTMLElement | null;
-                const group = custom?.getAttribute('group') || '';
-
-                if (group) {
-                    document.querySelectorAll(`.custom-radio[group="${group}"]`).forEach((r) => {
-                        const host = (r as HTMLElement).closest('.element-div') as HTMLElement | null;
-                        if (host && host !== el) {
-                            updateElement(
-                                host,
-                                { isSelected: 'false' }
-                            );
-                        }
-                    });
-                }
-
-                updateElement(
-                    el,
-                    { isSelected: 'true' }
-                );
+            if (!list.length) {
+                throw new SyntaxError('check() expects at least one element');
             }
+
+            const radioGroups = new Map<string, string>();
+            const resolved: Array<{ el: HTMLElement; type: string; group?: string }> = [];
+
+            list.forEach((name) => {
+                const key = coerceName(name);
+                const el = findWrapper(key);
+                if (!el) return;
+                const eltype = typeOf(el);
+                let group = '';
+                if (eltype === 'Radio') {
+                    const custom = el.querySelector('.custom-radio') as HTMLElement | null;
+                    group = custom?.getAttribute('group') || '';
+                    if (group) {
+                        const existing = radioGroups.get(group);
+                        if (existing && existing !== key) {
+                            throw new SyntaxError(`check() cannot target multiple radios from the same group ('${group}').`);
+                        }
+                        radioGroups.set(group, key);
+                    }
+                }
+                resolved.push({ el, type: eltype, group });
+            });
+
+            resolved.forEach(({ el, type, group }) => {
+                if (type === 'Checkbox') {
+                    updateElement(el, { isChecked: 'true' });
+                } else if (type === 'Radio') {
+                    if (group) {
+                        document.querySelectorAll(`.custom-radio[group="${group}"]`).forEach((r) => {
+                            const host = (r as HTMLElement).closest('.element-div') as HTMLElement | null;
+                            if (host && host !== el) {
+                                updateElement(host, { isSelected: 'false' });
+                            }
+                        });
+                    }
+                    updateElement(el, { isSelected: 'true' });
+                }
+            });
         },
 
-        uncheck: (name) => {
-            const el = findWrapper(name);
-            if (!el) return;
-            const eltype = typeOf(el);
-            if (eltype === 'Checkbox') {
-                updateElement(
-                    el,
-                    { isChecked: 'false' }
-                );
-            } else if (eltype === 'Radio') {
-                updateElement(
-                    el,
-                    { isSelected: 'false' }
-                );
+        uncheck: (...names) => {
+            const list = (names.length === 1 && Array.isArray(names[0]))
+                ? names[0]
+                : names;
+
+            if (!list.length) {
+                throw new SyntaxError('uncheck() expects at least one element');
             }
+
+            list.forEach((name) => {
+                const key = coerceName(name);
+                const el = findWrapper(key);
+                if (!el) return;
+                const eltype = typeOf(el);
+                if (eltype === 'Checkbox') {
+                    updateElement(el, { isChecked: 'false' });
+                } else if (eltype === 'Radio') {
+                    updateElement(el, { isSelected: 'false' });
+                }
+            });
         },
 
         showMessage: (...argsIn: unknown[]) => {
