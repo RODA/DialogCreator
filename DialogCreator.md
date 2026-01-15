@@ -126,8 +126,8 @@ If the text exceeds the maximum width, it will be truncated with an ellipsis (`.
 The Separator element is a visual divider used to separate different sections or groups of elements within the dialog.
 
 ### Container
-The Container element is a versatile component that can hold multiple items or rows. It supports single or multi-selection modes and can be populated dynamically via the API.
-The items in a Container can be selected and deselected by clicking, and multi-selection is supported via Shift+click for range selection. In single-selection mode, clicking the active row clears the selection. Their type can be restricted (e.g., numeric, character, date) so that only items of that type are enabled and selectable.
+The Container element is a versatile component that can hold multiple items. It supports single or multi-selection modes and can be populated dynamically via the API.
+The items in a Container can be selected and deselected by clicking, and multi-selection is supported via Shift+click for range selection. In single-selection mode, clicking the active item clears the selection. Their type can be restricted (e.g., numeric, character, date) so that only items of that type are enabled and selectable.
 
 Its properties panel exposes an **Item type** dropdown alongside the selection mode. It defaults to **Any**, which allows all items to remain interactive. Choose a specific type (Numeric, Calibrated, Binary, Character, Categorical, or Date) to enforce that only items whose metadata matches the selected type stay selectable. Items with a different type are visually muted, ignore clicks, and are removed from the active selection.
 
@@ -146,22 +146,22 @@ Helpers such as `listVariables()` return precisely such metadata objects; when t
 This element has another useful property called **Item Order**. When activated, the order in which the items are clicked is duly remembered, and `getSelected()` returns selections in that order. For instance in statistics, when creating a cross-tabulation from two categorical variables, it does matter which variable is selected first (on the rows) and which second (on the columns).
 
 
-### ChoiceList
-The choice list element is a list control built for (ordered) choices. Each row acts like a selectable option, and the list itself can optionally be reordered by drag-and-drop. Because it combines sorting and ordering, it can be used in a wide variety of ways:
+### Choice
+The Choice element is a list control built for (ordered) choices. Each item acts like a selectable option, and the list itself can optionally be reordered by drag-and-drop. Because it combines sorting and ordering, it can be used in a wide variety of ways:
 
-- **Multi-select**: when Ordering is disabled, rows behave like simple on/off selections from a predefined list.
+- **Multi-select**: when Ordering is disabled, items behave like simple on/off selections from a predefined list.
 - **Sorting selector**: choose which fields are active, and (optionally) their direction (ascending/descending).
-- **Ranking list**: drag rows up and down to establish a priority order (the order of items is the ranking).
+- **Ranking list**: drag items up and down to establish a priority order (the order of items is the ranking).
 
 Its properties include:
 
-- **Items**: the list of row labels (comma/semicolon separated).
-- **Sortable**: if Yes, rows can be reordered by dragging.
-- **Ordering**: if Yes, a row cycles through `not selected → ascending → descending → not selected`. If No, it cycles through `not selected → selected → not selected` and no arrow is shown.
+- **Items**: the list of item labels (comma/semicolon separated).
+- **Sortable**: if Yes, items can be reordered by dragging.
+- **Ordering**: if Yes, an item cycles through `not selected → ascending → descending → not selected`. If No, it cycles through `not selected → selected → not selected` and no arrow is shown.
 - **Align**: text alignment for item labels (left/center/right).
-- **Colors**: Background/Font/Active background/Active font/Border colors affect the list and the active row styling, just like the Container element.
+- **Colors**: Background/Font/Active background/Active font/Border colors affect the list and the active item styling, just like the Container element.
 
-In custom JS, `getValue(choiceList)` returns the ordered rows along with their state (`off`, `asc`, `desc`). `getSelected(choiceList)` returns the active selections (for Ordering-enabled lists, this includes the direction).
+In custom JS, `getValue(element)` returns the ordered items along with their state (`off`, `asc`, `desc`). `getSelected(element)` returns the active selections (for Ordering-enabled lists, this includes the direction).
 
 
 ## Keyboard shortcuts
@@ -239,7 +239,7 @@ In the Elements panel (left), click the element to be added. It will be inserted
 
 Item selections in Preview
 
-- Containers support multi-selection. Clicking a row toggles its selection (active state); in single-selection mode, clicking the active row clears it. A `'change'` event is dispatched on the Container so that handlers can react.
+- Containers support multi-selection. Clicking an item toggles its selection (active state); in single-selection mode, clicking the active item clears it. A `'change'` event is dispatched on the Container so that handlers can react.
 - Select elements are single-choice. Changing the selection dispatches `'change'` like native selects.
 
 Runtime errors in Preview

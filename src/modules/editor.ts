@@ -913,7 +913,9 @@ export const editor: Editor = {
                 li.dataset.elementKey = name;
 
                 // Remove the sufix "Element" from the name of the element
-                li.textContent = utils.capitalize(name.substring(0, name.length - 7));
+                const baseName = name.substring(0, name.length - 7);
+                const displayName = utils.capitalize(baseName);
+                li.textContent = displayName;
 
                 li.addEventListener('click', () => {
 
@@ -938,9 +940,10 @@ export const editor: Editor = {
 
                     } else if (window === "editor") {
                         const elementType = name as keyof Elements;
+                        const elementData = elements[elementType];
                         editor.addElementToDialog(
-                            String(li.textContent),
-                            elements[elementType],
+                            String(elementData.type || displayName),
+                            elementData,
                         );
                     }
                 });
@@ -959,8 +962,8 @@ export const editor: Editor = {
         if (data) {
             // Create the core element as before
             const core = renderutils.makeElement({ ...data });
-            // The core factory often sets dataset.type from data.type, but we normalize it to the name from UI
-            core.dataset.type = name;
+            // Ensure dataset.type uses the canonical element type, not the display label.
+            core.dataset.type = String(data.type || name);
 
             // Build a wrapper that carries the dataset and positioning
             const wrapper = document.createElement('div');

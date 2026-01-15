@@ -191,9 +191,9 @@ export const elements: ElementsWithPersist = {
             'nameid','left','top','width','height','selection','itemType','itemOrder','backgroundColor','fontColor','activeBackgroundColor','activeFontColor','disabledBackgroundColor','borderColor','isEnabled','isVisible'
         ] as const
     },
-    choiceListElement: {        id: '',
-        type: 'ChoiceList',
-        nameid: 'choicelist',
+    choiceElement: {        id: '',
+        type: 'Choice',
+        nameid: 'choice',
         left: 15,
         top: 15,
         width: 50,

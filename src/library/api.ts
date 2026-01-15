@@ -681,7 +681,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                     }
                     break;
 
-                case 'ChoiceList':
+                case 'Choice':
                     if (prop === 'value') {
                         applySorterItems(el, normalizeSorterInput(v, utils.isTrue(el.dataset.ordering)));
                     } else {
@@ -733,7 +733,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 return Number.isFinite(n) ? n : 0;
             }
 
-            if (eltype === 'ChoiceList') {
+            if (eltype === 'Choice') {
                 return readSorterItems(el);
             }
 
@@ -779,7 +779,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                     return;
                 }
 
-                if (eltype === 'ChoiceList') {
+                if (eltype === 'Choice') {
                     applySorterItems(el, normalizeSorterInput(value, utils.isTrue(el.dataset.ordering)));
                     return;
                 }
@@ -842,7 +842,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 return;
             }
 
-            if (eltype === 'ChoiceList') {
+            if (eltype === 'Choice') {
                 applySorterItems(el, normalizeSorterInput(value, utils.isTrue(el.dataset.ordering)));
                 return;
             }
@@ -918,7 +918,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 return dsVals.length > 0 ? dsVals : '';
             }
 
-            if (eltype === 'ChoiceList') {
+            if (eltype === 'Choice') {
                 const items = readSorterItems(el).filter(item => item.state !== 'off');
                 if (items.length === 0) return [];
                 return items.map(item => `${item.text}:${item.state}`);
@@ -1294,7 +1294,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 return;
             }
 
-            if (eltype === 'ChoiceList') {
+            if (eltype === 'Choice') {
                 const host = el;
                 const allowDesc = utils.isTrue(host.dataset.ordering);
                 const current = readSorterItems(host);

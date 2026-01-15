@@ -61,7 +61,7 @@ export type DBElements = {
 
 export type AnyDBElement = DBElements[keyof DBElements];
 
-// Convenient aliases (keep previous names usable externally)
+// Convenient aliases
 export type Button    = DBElements['Button'];
 export type Input     = DBElements['Input'];
 export type Select    = DBElements['Select'];
@@ -72,4 +72,4 @@ export type Slider    = DBElements['Slider'];
 export type Label     = DBElements['Label'];
 export type Separator = DBElements['Separator'];
 export type Container = DBElements['Container'];
-export type ChoiceList = DBElements['ChoiceList'];
+export type Choice = DBElements['Choice'];

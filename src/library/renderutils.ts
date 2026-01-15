@@ -1181,7 +1181,7 @@ export const renderutils: RenderUtils = {
                 element.appendChild(sample);
             }
 
-        } else if (data.type == "ChoiceList") {
+        } else if (data.type == "Choice") {
 
             element.className = 'sorter';
             element.style.width = data.width + 'px';
@@ -1198,7 +1198,7 @@ export const renderutils: RenderUtils = {
             element.dataset.items = String(data.items || '');
             element.dataset.align = String(data.align || 'left');
 
-            // Preview should start with no selection (ChoiceList has no "Value" property).
+            // Preview should start with no selection (Choice has no "Value" property).
             if (renderutils.previewWindow()) {
                 delete element.dataset.selected;
                 delete element.dataset.activeValues;
@@ -1276,7 +1276,7 @@ export const renderutils: RenderUtils = {
         const select = dataset.type === 'Select';
         const slider = dataset.type === 'Slider';
         const container = dataset.type === 'Container';
-        const sorter = dataset.type === 'ChoiceList';
+        const sorter = dataset.type === 'Choice';
         const separator = dataset.type === 'Separator';
         const button = dataset.type === 'Button';
         const label = dataset.type === 'Label';
@@ -2343,7 +2343,7 @@ export const renderutils: RenderUtils = {
                 fallbackBoundingClientRect: visual.getBoundingClientRect(),
                 scroll: false,
                 group: {
-                    name: `choicelist-${datasetSource.id || 'default'}`,
+                    name: `choice-${datasetSource.id || 'default'}`,
                     pull: false,
                     put: false
                 },
@@ -3053,7 +3053,7 @@ export const renderutils: RenderUtils = {
                     break;
                 }
 
-                case "ChoiceList": {
+                case "Choice": {
                     element.style.fontSize = fontSize + 'px';
                     if (inner) {
                         inner.style.fontSize = fontSize + 'px';

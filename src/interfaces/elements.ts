@@ -155,9 +155,9 @@ export type containerElementType = {
     isVisible: boolean;
     elementIds: string[];
 }
-export type choiceListElementType = {
+export type choiceElementType = {
     id: string;
-    type: 'ChoiceList';
+    type: 'Choice';
     nameid: string;
     left: number;
     top: number;
@@ -199,7 +199,7 @@ export interface Elements {
     labelElement: labelElementType;
     separatorElement: separatorElementType;
     containerElement: containerElementType;
-    choiceListElement: choiceListElementType;
+    choiceElement: choiceElementType;
     groupElement: groupElementType;
 }
 
