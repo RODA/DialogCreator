@@ -28,10 +28,10 @@ export interface PreviewUI {
     resetDialog(): void;
 
     /** Generic getter (value / dataset-driven) */
-    get(name: string, prop: string): unknown;
+    get(element: string, prop: string): unknown;
 
     /** Generic setter */
-    set(name: string, prop: string, value: unknown): void;
+    set(element: string, prop: string, value: unknown): void;
 
     /** Unified getters/setters */
     // Returns current value or items depending on element type.
@@ -42,51 +42,51 @@ export interface PreviewUI {
     // - Radio: boolean (selected)
     // - Counter: number
     // - Container: array of row labels (items) or '' when empty
-    getValue(name: string): unknown;
+    getValue(element: string): unknown;
 
     // Sets value or items depending on element type and value type.
     // - If value is an array: for Select/Container, sets items/options/rows
     // - If scalar: sets value for Input/Label/Select/Counter; boolean for Checkbox/Radio
-    setValue(name: string, value: unknown | string[] | ContainerItemDescriptor[]): void;
+    setValue(element: string, value: unknown | string[] | ContainerItemDescriptor[]): void;
 
     // Selected values:
     // - Container: array of selected row labels
     // - Select: array with single selected value (or empty array when none)
     // - Container: array of selected row labels (items) or '' when empty
-    getSelected(name: string): string[] | '';
+    getSelected(element: string): string[] | '';
 
     /** Checkbox/Radio convenience for checked/selected */
-    isChecked(name: string): boolean;
-    isUnchecked(name: string): boolean;
+    isChecked(element: string): boolean;
+    isUnchecked(element: string): boolean;
 
     /** Checkbox/Radio convenience: set checked/selected state to true */
-    check(name: string): void;
-    check(...names: string[]): void;
+    check(element: string): void;
+    check(...elements: string[]): void;
 
     /** Checkbox/Radio convenience: set checked/selected state to false */
-    uncheck(name: string): void;
-    uncheck(...names: string[]): void;
+    uncheck(element: string): void;
+    uncheck(...elements: string[]): void;
 
     /** Returns whether the element is currently visible in Preview */
-    isVisible(name: string): boolean;
-    isHidden(name: string): boolean;
+    isVisible(element: string): boolean;
+    isHidden(element: string): boolean;
 
     /** Returns whether the element is currently enabled (interactive) in Preview */
-    isEnabled(name: string): boolean;
-    isDisabled(name: string): boolean;
+    isEnabled(element: string): boolean;
+    isDisabled(element: string): boolean;
 
     /** Show / hide */
-    show(name: string, on?: boolean): void;
-    hide(name: string, on?: boolean): void;
+    show(element: string, on?: boolean): void;
+    hide(element: string, on?: boolean): void;
 
     /** Enable / disable */
-    enable(name: string, on?: boolean): void;
-    disable(name: string, on?: boolean): void;
+    enable(element: string, on?: boolean): void;
+    disable(element: string, on?: boolean): void;
 
     /** Error helpers */
-    addError(name: string, message: string): void;
-    clearError(name: string, message?: string): void;
-    clearError(...names: string[]): void;
+    addError(element: string, message: string): void;
+    clearError(element: string, message?: string): void;
+    clearError(...elements: string[]): void;
 
     /** Return list of available dataset names from the connected workspace */
     listDatasets(): string[];
@@ -94,45 +94,45 @@ export interface PreviewUI {
     listVariables(dataset: string | string[]): Array<string | ContainerItemDescriptor>;
 
     /** Register an event handler on the wrapper */
-    on(name: string, event: string, handler: (ev: Event, el: HTMLElement) => void): void;
+    on(element: string, event: string, handler: (ev: Event, el: HTMLElement) => void): void;
 
     /** Convenience: onClick/onChange/onInput wrappers */
-    onClick(name: string, handler: (ev: Event, el: HTMLElement) => void): void;
-    onChange(name: string, handler: (ev: Event, el: HTMLElement) => void): void;
-    onInput(name: string, handler: (ev: Event, el: HTMLElement) => void): void;
+    onClick(element: string, handler: (ev: Event, el: HTMLElement) => void): void;
+    onChange(element: string, handler: (ev: Event, el: HTMLElement) => void): void;
+    onInput(element: string, handler: (ev: Event, el: HTMLElement) => void): void;
 
     /** Dispatch an event on the element (bubbling), without changing state. Supported: 'click', 'change', 'input'. Defaults to 'change'. */
-    trigger(name: string, event?: 'click' | 'change' | 'input'): void;
+    trigger(element: string, event?: 'click' | 'change' | 'input'): void;
 
     /** Convenience: trigger a 'change' event on the element. */
-    triggerChange(name: string): void;
+    triggerChange(element: string): void;
 
     /** Convenience: trigger a 'click' event on the element. */
-    triggerClick(name: string): void;
+    triggerClick(element: string): void;
 
     /** Set selection: Select elements (single value) or Container items (accepts string or string[]). */
-    setSelected(name: string, value: string | string[]): void;
+    setSelected(element: string, value: string | string[]): void;
 
     /** Legacy alias (additive for Container). Prefer setSelected for explicit selection. */
-    select(name: string, value: string): void;
+    select(element: string, value: string): void;
 
     /** Add a new item to a Container (does nothing for Select). */
-    addValue(name: string, value: string | ContainerItemDescriptor): void;
+    addValue(element: string, value: string | ContainerItemDescriptor): void;
 
     /** Clear item(s) from a Container by their label(s) (does nothing for Select). */
-    clearValue(name: string, value: string | string[]): void;
+    clearValue(element: string, value: string | string[]): void;
 
     /** Clear the value of an Input element. */
-    clearInput(name: string): void;
+    clearInput(element: string): void;
 
     /** Clear content of supported elements (Input, Container). */
-    clearContent(...names: string[]): void;
+    clearContent(...elements: string[]): void;
 
     /** Set the visible label text of a Button element. */
-    setLabel(name: string, label: string): void;
+    setLabel(element: string, label: string): void;
 
     /** Change the label of a specific item within a Container. */
-    changeValue(name: string, oldValue: string, newValue: string): void;
+    changeValue(element: string, oldValue: string, newValue: string): void;
 
     /**
      * Call a backend service by name. Returns a Promise, and also supports an optional callback for simplicity.
@@ -149,8 +149,8 @@ export interface PreviewUI {
 // Lightweight environment adapters so this module stays import-safe everywhere.
 // Nothing here touches DOM/Electron directly until you call createPreviewUI().
 export interface PreviewUIEnv {
-    // Find the element wrapper by name within canvas
-    findWrapper: (name: string) => HTMLElement | null;
+    // Find the element wrapper by element identifier within canvas
+    findWrapper: (element: string) => HTMLElement | null;
     // Locate radio group members by group name
     findRadioGroupMembers: (group: string) => HTMLElement[];
     // Update element properties (delegates to renderutils.updateElement)

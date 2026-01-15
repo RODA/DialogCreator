@@ -15,86 +15,86 @@ Use this reference when writing custom JavaScript for Dialog Creator. It contain
 - `showMessage('Low disk space', 'Please free up 1GB', 'warning')`
 - `showMessage('Save failed', 'The dialog failed to save your changes.', 'error')`
 
-`getValue(name)`
+`getValue(element)`
 
 - Get the element's value/text.
 - Input/Label/Select/Counter return their current value; Checkbox/Radio return their current boolean state.
 - Returns `null` if the element doesn't exist.
 
-`setValue(name, value)`
+`setValue(element, value)`
 
 - Set the value/text.
 - Input/Label: set string; Counter: set number within its min/max; Select: set selected option by value; Checkbox/Radio: set boolean state.
 - For Container, pass an array of strings or objects shaped like `{ label, type, selected }`.
 - No-op if the element doesn't exist. Does not dispatch events automatically.
 
-`isChecked(name)`
+`isChecked(element)`
 
 - For Checkbox/Radio, returns the live checked/selected state as a boolean.
 
-`check(element)` / `uncheck(element)` / `check(...elements)` / `uncheck(...elements)`
+`check(...elements)` / `uncheck(...elements)`
 
 - Convenience methods for Checkbox and Radio elements to set on/off.
 - For Radio, `check(element)` also unselects other radios in the same group.
 - Passing multiple radios from the same group in a single `check(...)` call throws an error.
 - These do not dispatch events by themselves; for the handlers to run, use `triggerChange()` or `triggerClick()`.
 
-`getSelected(name)`
+`getSelected(element)`
 
 - Read the current selection(s) as an array of values.
 - For Select, returns a single-item array (or empty array if nothing selected).
 - For Container, returns labels of all selected rows. If Item Order is enabled, the array is returned in the click order.
 
-`isVisible(name)`: boolean
+`isVisible(element)`: boolean
 
   - Returns whether the element is currently visible (display not set to 'none').
 
-`isHidden(name)`: boolean
+`isHidden(element)`: boolean
 
-  - Logical complement of `isVisible(name)`.
+  - Logical complement of `isVisible(element)`.
 
-`isEnabled(name)`: boolean
+`isEnabled(element)`: boolean
 
   - Returns whether the element is currently enabled (not marked as disabled).
 
-`isDisabled(name)`: boolean
+`isDisabled(element)`: boolean
 
-  - Logical complement of `isEnabled(name)`.
+  - Logical complement of `isEnabled(element)`.
 
-`show(name, on = true)`
+`show(element, on = true)`
 
-  - Show or hide by boolean. Use `show(name, true)` to show; `show(name, false)` to hide.
+  - Show or hide by boolean. Use `show(element, true)` to show; `show(element, false)` to hide.
 
-`hide(name, on = true)`
+`hide(element, on = true)`
 
-  - Convenience inverse of show: `hide(name)` hides, `hide(name, false)` shows. Internally calls `show(name, !on)`.
+  - Convenience inverse of show: `hide(element)` hides, `hide(element, false)` shows. Internally calls `show(element, !on)`.
 
-`enable(name, on = true)`
+`enable(element, on = true)`
 
-  - Enable or disable by boolean. Use `enable(name, true)` to enable; `enable(name, false)` to disable.
+  - Enable or disable by boolean. Use `enable(element, true)` to enable; `enable(element, false)` to disable.
 
-`disable(name, on = true)`
+`disable(element, on = true)`
 
-  - Convenience inverse of enable: `disable(name)` disables, `disable(name, false)` enables. Internally calls `enable(name, !on)`.
+  - Convenience inverse of enable: `disable(element)` disables, `disable(element, false)` enables. Internally calls `enable(element, !on)`.
 
-`onClick(name, handler)`
+`onClick(element, handler)`
 
-  - Shortcut for `on(name, 'click', handler)`.
+  - Shortcut for `on(element, 'click', handler)`.
 
-`onChange(name, handler)`
+`onChange(element, handler)`
 
-  - Shortcut for `on(name, 'change', handler)`.
+  - Shortcut for `on(element, 'change', handler)`.
 
-`onInput(name, handler)`
+`onInput(element, handler)`
 
-  - Shortcut for `on(name, 'input', handler)`.
+  - Shortcut for `on(element, 'input', handler)`.
 
-`setSelected(name, value)`
+`setSelected(element, value)`
 
   - Programmatically set selection.
   - For Select elements: sets the selected option by value (single-choice).
   - For Container elements: accepts a string or array of strings and replaces the current selection with exactly those labels.
-  - Does not dispatch a `change` event automatically. For the handlers to run, call `triggerChange(name)` after changing selection.
+  - Does not dispatch a `change` event automatically. For the handlers to run, call `triggerChange(element)` after changing selection.
   - Throws a SyntaxError if the element doesn't exist, the control is missing, the option/row is not found, or the element type doesn't support selection.
 
 `clearContent(...elements)`
@@ -103,16 +103,16 @@ Use this reference when writing custom JavaScript for Dialog Creator. It contain
 - Supported: Input (clears the text), Container (removes all rows).
 - Throws an error if used on unsupported types.
 
-`setLabel(name, label)`
+`setLabel(element, label)`
 
   - Set the visible label text of a Button element.
   - Throws a SyntaxError if the element doesn't exist or isn't a Button.
 
-`changeValue(name, oldValue, newValue)`
+`changeValue(element, oldValue, newValue)`
 
   - Rename a specific item within a Container from `oldValue` to `newValue`.
   - If the item is currently selected, the container's selection mirror is updated accordingly.
-  - No event is dispatched automatically; call `triggerChange(name)` for the change handlers to run.
+  - No event is dispatched automatically; call `triggerChange(element)` for the change handlers to run.
   - Throws a SyntaxError if the element doesn't exist or isn't a Container.
 
 `updateSyntax(command)`
@@ -137,11 +137,11 @@ updateSyntax(cmd);
 
 Validation and highlight helpers
 
-`addError(name, message)`
+`addError(element, message)`
 
   - Show a tooltip-like validation message attached to the element and apply a visual highlight (glow). Multiple distinct messages on the same element are de-duplicated and the first one is shown. The highlight is removed automatically when all messages are cleared.
 
-`clearError(name, message?)` / `clearError(...elements)`
+`clearError(element, message?)` / `clearError(...elements)`
 
 - Clear a previously added validation message. If `message` is provided, only that message is removed; otherwise, all messages for the element are cleared.
 
@@ -263,7 +263,7 @@ changeValue(variablesContainer, "Sepal.Length", "Sepal Len");
 Notes
 
 - Programmatic state changes (e.g., `check`, `setValue`) do not automatically dispatch events. Use `triggerChange()` or `triggerClick()` if the dialog should behave as if the user had interacted with the element.
-- The selection command (`setSelected`) also does not auto-dispatch, but it can be paired with `triggerChange(name)` to trigger a change event.
+- The selection command (`setSelected`) also does not auto-dispatch, but it can be paired with `triggerChange(element)` to trigger a change event.
 - Validation helpers (`addError`, `clearError`) are purely visual aids in Preview; they do not block execution or change element values.
 
 ## Case study: recode variables dialog
