@@ -153,44 +153,44 @@ Backend helpers (in the developer's responsibility)
 
 `listVariables(dataset)`
 
-  - Returns an array of variable names available in the specified dataset, as well as their types (often as `{ label, type, selected }` objects).
+  - Returns an array of variable names available in the specified dataset, as well as their types (often as `{ label, type, selected }` components).
 
 
 ## Element-specific details
 
 - Input
 
-  - Read: `getValue(myInput)`: returns a string
-  - Write: `setValue(myInput, 'hello')`
+  - Read: `getValue(element)`: returns a string
+  - Write: `setValue(element, 'hello')`
   - Events: 'change' (on blur) or 'input' (as you type)
 
 - Label
 
-  - Read: `getValue(myLabel)`: returns a string
-  - Write: `setValue(myLabel, 'New text')`
+  - Read: `getValue(element)`: returns a string
+  - Write: `setValue(element, 'New text')`
 
 - Select
 
-  - Read: `getValue(mySelect)`: returns a string
-  - Write: `setValue(mySelect, 'RO')`
+  - Read: `getValue(element)`: returns a string
+  - Write: `setValue(element, 'RO')`
   - Event: 'change'
 
 - Checkbox
 
-  - Read state: `isChecked(myCheckbox)`: returns a boolean
-  - Write state: `check(myCheckbox)` and `uncheck(myCheckbox)`
+  - Read state: `isChecked(element)`: returns a boolean
+  - Write state: `check(element)` and `uncheck(element)`
   - Event: 'click'
 
 - Radio
 
-  - Read state: `isChecked(myRadio)`: returns a boolean
-  - Write state: `check(myRadio)` and `uncheck(myRadio)`
+  - Read state: `isChecked(element)`: returns a boolean
+  - Write state: `check(element)` and `uncheck(element)`
   - Event: 'click'
 
 - Counter
 
-  - Set value within its min/max: `setValue(myCounter, 7)`
-  - Read current number: `getValue(myCounter)`
+  - Set value within its min/max: `setValue(element, 7)`
+  - Read current number: `getValue(element)`
 
 - Button
 
