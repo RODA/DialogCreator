@@ -120,9 +120,6 @@ export interface PreviewUI {
     /** Clear item(s) from a Container by their label(s) (does nothing for Select). */
     clearValue(name: string, value: string | string[]): void;
 
-    /** Clear all items from a Container element. */
-    clearContainer(name: string): void;
-
     /** Clear the value of an Input element. */
     clearInput(name: string): void;
 

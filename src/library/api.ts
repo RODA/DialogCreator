@@ -25,7 +25,7 @@ export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
     'onClick', 'onChange', 'onInput', 'triggerChange', 'triggerClick',
 
     // lists & selection
-    'setSelected', 'getSelected', 'addValue', 'clearValue', 'clearContainer', 'clearInput', 'clearContent',
+    'setSelected', 'getSelected', 'addValue', 'clearValue', 'clearInput', 'clearContent',
     // label and item updates
     'setLabel', 'changeValue',
 
@@ -1517,39 +1517,6 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 const ordered = mergeSelectionOrder(host, vals);
                 host.dataset.selectedOrder = ordered.join(',');
             } else if ('selectedOrder' in host.dataset) {
-                delete host.dataset.selectedOrder;
-            }
-            renderutils.applyContainerItemFilter(host);
-        },
-
-        clearContainer: (name) => {
-            const el = findWrapper(name);
-            if (!el) {
-                throw new SyntaxError(`Element not found: ${String(name)}`);
-            }
-
-            const eltype = typeOf(el);
-
-            if (eltype !== 'Container') {
-                throw new SyntaxError(`clearContainer() can only be applied to container elements`);
-            }
-
-            const host = el; // use the container element directly
-            const items = Array.from(host.querySelectorAll('.container-item')) as HTMLElement[];
-
-            // Apply deleteValue to all items
-            items.forEach(item => {
-                const textElement = item.querySelector('.container-text') as HTMLElement | null;
-                const value = textElement?.textContent || '';
-                if (value) {
-                    item.remove();
-                }
-            });
-
-            // Update dataset mirror after clearing
-            el.dataset.selected = '';
-            host.dataset.activeValues = '';
-            if ('selectedOrder' in host.dataset) {
                 delete host.dataset.selectedOrder;
             }
             renderutils.applyContainerItemFilter(host);
