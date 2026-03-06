@@ -83,7 +83,8 @@ function createMainWindow() {
         webPreferences: {
             contextIsolation: true,
             preload: path.join(__dirname, "preload/preloadEditor.js"),
-            sandbox: false
+            sandbox: false,
+            additionalArguments: ['--dc-window=editorWindow']
         },
         width: 1200,
         height: 800,
@@ -220,6 +221,10 @@ function createSecondWindow(args: { [key: string]: any }) {
     const isCodeWindow = args.html === 'code.html';
     const isPreviewWindow = args.html === 'preview.html';
 
+    const windowName = isCodeWindow
+        ? 'codeWindow'
+        : (isPreviewWindow ? 'previewWindow' : 'secondWindow');
+
     secondWindow = new BrowserWindow({
         width: args.width,
         height: args.height,
@@ -238,6 +243,7 @@ function createSecondWindow(args: { [key: string]: any }) {
 
             preload: path.join(__dirname, 'preload', args.preload),
             sandbox: false,
+            additionalArguments: [`--dc-window=${windowName}`],
         },
         autoHideMenuBar: typeof args.autoHideMenuBar === 'boolean' ? args.autoHideMenuBar : (development ? false : true),
         resizable: isCodeWindow ? true : false,
@@ -406,7 +412,8 @@ function openInfoWindow(page: InfoPage) {
             center: true,
             webPreferences: {
                 contextIsolation: true,
-                sandbox: false
+                sandbox: false,
+                additionalArguments: ['--dc-window=infoWindow']
             }
         });
 
@@ -549,7 +556,8 @@ function setupIPC() {
                                 webPreferences: {
                                     contextIsolation: true,
                                     preload: path.join(__dirname, 'preload', 'preloadSyntaxPanel.js'),
-                                    sandbox: false
+                                    sandbox: false,
+                                    additionalArguments: ['--dc-window=syntaxPanelWindow']
                                 },
                                 autoHideMenuBar: true,
                             });
@@ -901,8 +909,8 @@ function buildMainMenuTemplate(): MenuItemConstructorOptions[] {
                         }
                         // Clear dialog: select all + remove
                         editorWindow.webContents.send('newDialogClear');
-                        // Reset dialog basic properties for a fresh new dialog (Name, Title)
-                        editorWindow.webContents.send('reset-dialog-properties', { name: 'NewDialog', title: 'New dialog' });
+                        // Reset dialog basic properties for a fresh new dialog (Name, Title, Language)
+                        editorWindow.webContents.send('reset-dialog-properties', { name: 'NewDialog', title: 'New dialog', language: 'en' });
                         // Reset state for the new unsaved dialog
                         setCurrentDialogPath(null);
                         // Next renderer JSON becomes the clean baseline

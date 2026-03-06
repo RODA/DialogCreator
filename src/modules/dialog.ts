@@ -12,6 +12,7 @@ export const dialog: Dialog = {
         command: '',
         defaultElements: []
     },
+    i18n: undefined,
     customJS: '',
 
     // Dialog =======================================

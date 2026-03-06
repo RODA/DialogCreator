@@ -1,8 +1,15 @@
 
+export type DialogLocaleDictionary = Record<string, string>;
+
+export interface DialogI18n {
+    baseLocale: string;
+    locales: Record<string, DialogLocaleDictionary>;
+}
 
 export interface DialogProperties {
     name: string;
     title: string;
+    language: string;
     width: string;
     height: string;
     fontSize: string;
@@ -19,6 +26,7 @@ export interface Dialog {
         command: string,
         defaultElements: []
     };
+    i18n?: DialogI18n;
     customJS: string;
     initialize: (obj: DialogProperties) => void;
     updateElementProperties: (id: string, payload: { [key: string]: string }) => void;

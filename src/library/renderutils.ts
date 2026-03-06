@@ -2929,6 +2929,7 @@ export const renderutils: RenderUtils = {
         }
         try {
             const modulePath = path.join(__dirname, handler);
+            const moduleLabel = path.basename(String(handler || '')) || String(handler || '');
 
             if (fs.existsSync(modulePath + '.js')) {
                 const imported = await import(modulePath);
@@ -2942,10 +2943,10 @@ export const renderutils: RenderUtils = {
                 if (typeof func === 'function') {
                     return await func(...args);
                 } else {
-                    console.error(`Function ${eventName} not found in module ${module}`);
+                    console.error(`Function ${eventName} not found in module ${moduleLabel}`);
                 }
             } else {
-                showError(`Module "${module}" not found in the modules/ directory.`);
+                showError(`Module "${moduleLabel}" not found in the modules/ directory.`);
             }
         } catch (error: any) {
             showError(`Error handling ${eventName}: ${error.message}`);
@@ -2953,7 +2954,7 @@ export const renderutils: RenderUtils = {
     },
 
     collectDialogProperties: function() {
-        const properties: NodeListOf<HTMLInputElement> = document.querySelectorAll('#dialog-properties [id^="dialog"]');
+        const properties = document.querySelectorAll<HTMLInputElement | HTMLSelectElement>('#dialog-properties [id^="dialog"]');
         const obj = {} as DialogProperties;
         properties.forEach((item) => {
             const key = item.getAttribute('name') as keyof DialogProperties;
@@ -2961,6 +2962,9 @@ export const renderutils: RenderUtils = {
                 obj[key] = item.value;
             }
         });
+        if (!obj.language || !String(obj.language).trim()) {
+            obj.language = 'en';
+        }
         return obj;
     },
 
@@ -3418,4 +3422,13 @@ export const renderutils: RenderUtils = {
     applyContainerItemFilter: function(host) {
         applyContainerItemFilter(host || null);
     },
+}
+
+
+
+export const expect = <T>(channel: string, ...args: unknown[]) => {
+    return new Promise<T>((resolve) => {
+        coms.once(`${channel}-result`, (payload) => resolve(payload as T));
+        coms.emit(channel, ...args);
+    });
 }

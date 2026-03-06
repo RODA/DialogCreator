@@ -7,7 +7,7 @@
 */
 
 import { showError, coms } from "../modules/coms";
-import { renderutils } from "../library/renderutils";
+import { renderutils, expect } from "../library/renderutils";
 import { utils } from "../library/utils";
 import { Elements, AnyElement, keyofAnyElement, StringNumber } from '../interfaces/elements';
 import { elements as els } from '../modules/elements';
@@ -352,10 +352,10 @@ window.addEventListener("DOMContentLoaded", async () => {
         "maxval"
     ]);
 
-    editor.initializeDialogProperties();
-    editor.makeDialog();
-    editor.addAvailableElementsTo("editor");
-    editor.addDefaultsButton();
+    await editor.initializeDialogProperties();
+    await editor.makeDialog();
+    await editor.addAvailableElementsTo("editor");
+    await editor.addDefaultsButton();
 
     // Debounced JSON notifier to main (dirty indicator)
     const debounce = (fn: () => void, delay: number) => {
@@ -367,8 +367,8 @@ window.addEventListener("DOMContentLoaded", async () => {
     };
     const sendJsonToMain = () => {
         try {
-            const json = editor.stringifyDialog();
-            ipcRenderer.send('send-to', 'main', 'document-json-updated', json);
+            // const json = editor.stringifyDialog();
+            coms.sendTo('main', 'document-json-updated', editor.stringifyDialog());
         } catch { /* noop */ }
     };
     const scheduleJsonUpdate = debounce(sendJsonToMain, 300);
@@ -397,7 +397,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     const codeBtn = document.getElementById('dialog-code') as HTMLButtonElement | null;
     if (codeBtn) {
         codeBtn.disabled = false;
-        codeBtn.addEventListener('click', () => {
+        codeBtn.addEventListener('click', async () => {
             const json = editor.stringifyDialog();
             const screenW = Number(window.innerWidth) || 1024;
             const width = Math.max(560, Math.round(screenW * 0.66));
@@ -658,6 +658,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         // Reset custom code and syntax text so nothing carries over to the new dialog
         try {
             dialog.customJS = '';
+            dialog.i18n = undefined;
             // Preserve defaultElements array; clear only the command text if initialized
             if (!dialog.syntax) {
                 // Defensive: ensure syntax object exists
@@ -671,10 +672,11 @@ window.addEventListener("DOMContentLoaded", async () => {
     });
 
     // Reset dialog basic properties to defaults (Name, Title) on New
-    ipcRenderer.on('reset-dialog-properties', (_ev, data: { name?: string; title?: string } = {}) => {
+    ipcRenderer.on('reset-dialog-properties', (_ev, data: { name?: string; title?: string; language?: string } = {}) => {
         try {
             const dname = document.getElementById('dialogName') as HTMLInputElement | null;
             const dtitle = document.getElementById('dialogTitle') as HTMLInputElement | null;
+            const dlang = document.getElementById('dialogLanguage') as HTMLInputElement | null;
             if (dname) {
                 dname.value = String(data.name ?? 'NewDialog');
                 dname.dispatchEvent(new Event('change', { bubbles: true }));
@@ -684,6 +686,11 @@ window.addEventListener("DOMContentLoaded", async () => {
                 dtitle.value = String(data.title ?? 'New dialog');
                 dtitle.dispatchEvent(new Event('change', { bubbles: true }));
                 dtitle.dispatchEvent(new Event('blur', { bubbles: true }));
+            }
+            if (dlang) {
+                dlang.value = String(data.language ?? 'en');
+                dlang.dispatchEvent(new Event('change', { bubbles: true }));
+                dlang.dispatchEvent(new Event('blur', { bubbles: true }));
             }
         } catch { /* noop */ }
     });

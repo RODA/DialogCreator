@@ -44,7 +44,7 @@ body {
 /* Elements list typography (force) */
 #elementsList,
 #paperAvailableElements {
-    font-size: inherit; /* pick a different size than body’s 0.9rem */
+    font-size: 0.8rem;
     letter-spacing: -0.02em;
     line-height: 1.25;
     font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, 'Noto Sans', 'Liberation Sans', sans-serif;
@@ -57,6 +57,11 @@ body {
 #paperAvailableElements .custombutton {
     font-size: inherit !important;
     line-height: inherit;
+}
+
+#elementsList .custombutton,
+#dialog-properties .custombutton {
+    font-size: 0.8rem;
 }
 
 /* Dialog properties ===================== */
@@ -196,23 +201,32 @@ body {
 }
 
 #dialog-properties {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 0.75rem 7rem;
     border-top: 1px solid rgb(213, 213, 213);
     padding-top: 0.5rem;
 }
 
+#dialog-properties .dialog-properties-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+    gap: 0.5rem 7rem;
+}
+
 #dialog-properties .dialog-properties_property {
-    display: flex;
-    justify-content: space-between;
-    width: 250px;
-    margin: 0.3rem 0;
-    gap: 1rem;
+    display: grid;
+    grid-template-columns: 8fr 12fr;
+    align-items: center;
+    margin: 0;
+    gap: 0.75rem;
 }
 
 #dialog-properties .dialog-properties_property label {
     color: #323232;
     font-size: 0.8rem;
+    text-align: left;
 }
 
 #dialog-properties .dialog-properties_property input {
@@ -221,6 +235,9 @@ body {
     padding: 3px 3px;
     color: #323232;
     font-size: 0.8rem;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 #dialog-properties .dialog-properties_property input:focus-visible,
@@ -231,6 +248,21 @@ body {
 
 #dialog-properties .dialog-properties_property input {
     padding: 3px 5px;
+}
+
+#dialog-properties .dialogButtons {
+    align-self: start;
+}
+
+@media (max-width: 980px) {
+    #dialog-properties {
+        grid-template-columns: 1fr;
+    }
+
+    #dialog-properties .dialog-properties-fields {
+        grid-template-columns: 1fr;
+    }
+
 }
 
 /* Toolbar above dialog */

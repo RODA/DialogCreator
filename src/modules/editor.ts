@@ -3,7 +3,7 @@ import { editorSettings } from './settings';
 import { Editor } from '../interfaces/editor';
 import { Elements, StringNumber, AnyElement } from '../interfaces/elements';
 import { elements } from './elements';
-import { DialogProperties } from "../interfaces/dialog";
+import { DialogProperties, DialogI18n, DialogLocaleDictionary } from "../interfaces/dialog";
 import { v4 as uuidv4 } from 'uuid';
 import { dialog } from './dialog';
 import { renderutils } from '../library/renderutils';
@@ -121,6 +121,101 @@ function resolveTemplateForType(typeName: string | undefined): Record<string, un
     const key = `${typeName.charAt(0).toLowerCase()}${typeName.slice(1)}Element` as keyof Elements;
     const template = elements[key] ?? elements.buttonElement;
     return template as unknown as Record<string, unknown>;
+}
+
+function sanitizeDialogI18n(input: unknown): DialogI18n | undefined {
+    if (!input || typeof input !== 'object') return undefined;
+    const raw = input as Record<string, unknown>;
+    const maybeBase = String(raw.baseLocale ?? 'en').trim();
+    const baseLocale = maybeBase.length ? maybeBase : 'en';
+    const localesRaw = raw.locales;
+    const locales: Record<string, DialogLocaleDictionary> = {};
+
+    if (localesRaw && typeof localesRaw === 'object') {
+        for (const [locale, dictRaw] of Object.entries(localesRaw as Record<string, unknown>)) {
+            if (!dictRaw || typeof dictRaw !== 'object') continue;
+            const dictionary: DialogLocaleDictionary = {};
+            for (const [key, value] of Object.entries(dictRaw as Record<string, unknown>)) {
+                if (typeof value === 'string') {
+                    dictionary[key] = value;
+                }
+            }
+            locales[locale] = dictionary;
+        }
+    }
+
+    return { baseLocale, locales };
+}
+
+function buildGeneratedDialogDictionary(
+    properties: DialogProperties,
+    elementsData: Array<Record<string, unknown>>
+): DialogLocaleDictionary {
+    const dict: DialogLocaleDictionary = {};
+    const title = String(properties.title ?? '').trim();
+    if (title.length) {
+        dict['dialog.title'] = title;
+    }
+
+    const textProps = ['label', 'value'] as const;
+    for (const element of elementsData) {
+        const elementId = String(element.id ?? '').trim();
+        if (!elementId.length) continue;
+
+        for (const prop of textProps) {
+            const raw = element[prop];
+            if (typeof raw !== 'string') continue;
+            const value = raw.trim();
+            if (!value.length) continue;
+            dict[`elements.${elementId}.${prop}`] = value;
+        }
+
+        const rawItems = element.items;
+        if (typeof rawItems === 'string') {
+            const values = rawItems
+                .split(/[;,]/)
+                .map(item => item.trim())
+                .filter(item => item.length > 0);
+            values.forEach((item, index) => {
+                dict[`elements.${elementId}.items.${index}`] = item;
+            });
+        }
+    }
+
+    return dict;
+}
+
+function mergeGeneratedDialogI18n(
+    existing: DialogI18n | undefined,
+    generated: DialogLocaleDictionary,
+    preferredBaseLocale?: string
+): DialogI18n {
+    const baseLocale = String(preferredBaseLocale ?? existing?.baseLocale ?? 'en').trim() || 'en';
+    const locales: Record<string, DialogLocaleDictionary> = {};
+
+    if (existing?.locales) {
+        for (const [locale, dict] of Object.entries(existing.locales)) {
+            locales[locale] = { ...dict };
+        }
+    }
+
+    const baseCurrent = locales[baseLocale] || {};
+    const preservedCustomEntries = Object.fromEntries(
+        Object.entries(baseCurrent).filter(([key]) => {
+            if (key === 'dialog.title') return false;
+            return !key.startsWith('elements.');
+        })
+    ) as DialogLocaleDictionary;
+
+    locales[baseLocale] = {
+        ...preservedCustomEntries,
+        ...generated
+    };
+
+    return {
+        baseLocale,
+        locales
+    };
 }
 
 function inferKindFromTemplate(template: Record<string, unknown>, key: string): PropertyKind | undefined {
@@ -625,7 +720,7 @@ export const editor: Editor = {
             }
         });
 
-        const properties: NodeListOf<HTMLInputElement> = document.querySelectorAll('#dialog-properties [id^="dialog"]');
+        const properties = document.querySelectorAll<HTMLInputElement | HTMLSelectElement>('#dialog-properties [id^="dialog"]');
 
         properties.forEach((item) => {
             const key = item.getAttribute('name') as keyof DialogProperties;
@@ -635,6 +730,7 @@ export const editor: Editor = {
         });
 
         dialog.properties = editorSettings.dialog;
+        dialog.i18n = undefined;
 
     },
 
@@ -1467,16 +1563,18 @@ export const editor: Editor = {
         renderutils.setIntegers(['Width', 'Height', 'FontSize'], 'dialog');
 
         // add dialog props
-        const properties: NodeListOf<HTMLInputElement> = document.querySelectorAll('#dialog-properties [id^="dialog"]');
+        const properties = document.querySelectorAll<HTMLInputElement | HTMLSelectElement>('#dialog-properties [id^="dialog"]');
 
         // update dialog properties
         for (const element of properties) {
-            element.addEventListener('keyup', (ev: KeyboardEvent) => {
-                if (ev.key == 'Enter') {
-                    const el = ev.target as HTMLInputElement;
-                    el.blur();
-                }
-            });
+            if (element instanceof HTMLInputElement) {
+                element.addEventListener('keyup', (ev: KeyboardEvent) => {
+                    if (ev.key == 'Enter') {
+                        const el = ev.target as HTMLInputElement;
+                        el.blur();
+                    }
+                });
+            }
             // save on blur
             element.addEventListener('blur', () => {
                 const id = element.id;
@@ -1499,8 +1597,8 @@ export const editor: Editor = {
                         const dialogprops = renderutils.collectDialogProperties();
                         editor.updateDialogArea(dialogprops);
                     }
-                } else if (idLower === 'dialogname' || idLower === 'dialogtitle') {
-                    // Update name/title into dialog properties as well
+                } else if (idLower === 'dialogname' || idLower === 'dialogtitle' || idLower === 'dialoglanguage') {
+                    // Update text metadata into dialog properties as well
                     const dialogprops = renderutils.collectDialogProperties();
                     editor.updateDialogArea(dialogprops);
                 }
@@ -1644,6 +1742,11 @@ export const editor: Editor = {
             id: dialog.id,
             properties: { ...dialog.properties },
             syntax: { ...dialog.syntax },
+            i18n: mergeGeneratedDialogI18n(
+                dialog.i18n,
+                buildGeneratedDialogDictionary(dialog.properties, flattened),
+                String(dialog.properties.language ?? '')
+            ),
             customJS: dialog.customJS || '',
             elements: flattened
         };
@@ -1694,9 +1797,12 @@ export const editor: Editor = {
 
             // Update dialog properties and UI
             const props = obj.properties as any;
-            dialog.properties = { ...props };
+            const loadedI18n = sanitizeDialogI18n((obj as any).i18n);
+            const loadedLanguage = String(props.language ?? loadedI18n?.baseLocale ?? 'en').trim() || 'en';
+            dialog.properties = { ...props, language: loadedLanguage };
             // Load custom JS if present
             dialog.customJS = String((obj as any).customJS || '');
+            dialog.i18n = loadedI18n ? { ...loadedI18n, baseLocale: loadedLanguage } : undefined;
             const w = Number(props.width) || 640;
             const h = Number(props.height) || 480;
             dialog.canvas.style.width = w + 'px';
@@ -1713,6 +1819,9 @@ export const editor: Editor = {
 
             const dtitle = document.getElementById('dialogTitle') as HTMLInputElement | null;
             if (dtitle) dtitle.value = String(props.title || '');
+
+            const dlang = document.getElementById('dialogLanguage') as HTMLInputElement | null;
+            if (dlang) dlang.value = loadedLanguage;
 
             const dfont = document.getElementById('dialogFontSize') as HTMLInputElement | null;
             if (dfont) dfont.value = String(props.fontSize || '');

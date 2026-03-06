@@ -1,4 +1,4 @@
-import type { Dialog } from './dialog';
+import type { Dialog, DialogI18n } from './dialog';
 import { StringNumber } from './elements';
 
 export interface ContainerItemDescriptor {
@@ -193,5 +193,6 @@ export interface PreviewDialog {
     // Reuse the canonical Dialog.syntax shape for consistency
     syntax: Dialog['syntax'];
     elements: Array<Record<string, any>>; // existing broad shape retained
+    i18n?: DialogI18n;
     customJS?: string;
 }

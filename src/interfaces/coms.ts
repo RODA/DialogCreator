@@ -5,6 +5,7 @@ export interface Communications {
     emit(channel: string, ...args: unknown[]): void;
     send(channel: string, ...args: unknown[]): void;
     sendTo(window: string, channel: string, ...args: unknown[]): void;
+    runLocal(channel: string, ...args: unknown[]): Promise<unknown>;
     on(channel: string, listener: (...args: unknown[]) => void): void;
     once(channel: string, listener: (...args: unknown[]) => void): void;
     handlers: { [key: string]: string };

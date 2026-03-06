@@ -19,6 +19,7 @@ const handlers: Record<string, string> = {
     previewDialog: '../modules/editor',
 };
 
+
 export const coms = {
     emit(channel, ...args) {
         messenger.emit(channel, ...args);
@@ -32,6 +33,11 @@ export const coms = {
 
     sendTo(window, channel, ...args) {
         ipcRenderer.send("send-to", window, channel, ...args);
+    },
+
+    async runLocal(channel, ...args) {
+        const result = await renderutils.handleEvent(channel, ...args);
+        return result;
     },
 
     on(channel, listener) {

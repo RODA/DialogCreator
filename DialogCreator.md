@@ -89,9 +89,53 @@ The whole dialog has properties of its own, for instance width and height to est
 
 It also has a global font size that affects all elements uniformly, all of which are saved with the dialog and reflected in the live Preview window.
 
+The dialog-level **Language** property sets the source language of the dialog text (for example `en`, `fr`, `zh-CN`). This language is exported with the dialog JSON and used as the base locale for translations in target applications.
+
 There is also an Actions button to open the code window for adding custom JavaScript logic for dialog behavior. It can be used to define how the elements interact with each other based on user input: showing/hiding/enabling controls, and updating values programmatically.
 
 <img src="docs/images/dialog_actions.png" alt="The dialog properties and actions" style="width: 793px;">
+
+### Localization in exported JSON
+
+When a dialog is saved, the JSON includes:
+
+- `properties.language`: the source language selected in Dialog properties.
+- `i18n.baseLocale`: set from `properties.language`.
+- `i18n.locales`: locale dictionaries with translatable strings.
+
+The base-locale dictionary is generated from visible dialog text such as:
+
+- `dialog.title`
+- `elements.<id>.label`
+- `elements.<id>.value`
+- `elements.<id>.items.<index>`
+
+This data is meant for the target app that imports the dialog. Dialog Creator does not auto-translate the editor UI.
+
+Example:
+
+```json
+{
+  "properties": {
+    "name": "NewDialog",
+    "title": "Settings",
+    "language": "zh-CN"
+  },
+  "i18n": {
+    "baseLocale": "zh-CN",
+    "locales": {
+      "zh-CN": {
+        "dialog.title": "设置",
+        "elements.button1.label": "确认"
+      },
+      "en": {
+        "dialog.title": "Settings",
+        "elements.button1.label": "Confirm"
+      }
+    }
+  }
+}
+```
 
 
 
