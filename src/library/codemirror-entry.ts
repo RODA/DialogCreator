@@ -640,7 +640,7 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
                     display: 'flex'
                 },
                 '.cm-scroller': {
-                    fontFamily: `'DialogCreator Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace`,
+                    fontFamily: `'DialogCreator Mono', monospace`,
                     fontSize: '12px',
                     lineHeight: '1.5',
                     flex: '1 1 auto'
@@ -671,6 +671,12 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
     });
 
     const view = new EditorView({ state, parent: mount });
+
+    try {
+        void document.fonts?.load?.(`12px "DialogCreator Mono"`, 'ffff ??? Wm <-')?.then?.(() => {
+            try { view.requestMeasure?.(); } catch {}
+        });
+    } catch {}
 
     return {
         view,
