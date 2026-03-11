@@ -640,7 +640,7 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
                     display: 'flex'
                 },
                 '.cm-scroller': {
-                    fontFamily: `ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace`,
+                    fontFamily: `'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace`,
                     fontSize: '12px',
                     lineHeight: '1.5',
                     flex: '1 1 auto'

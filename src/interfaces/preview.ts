@@ -90,7 +90,9 @@ export interface PreviewUI {
 
     /** Return list of available dataset names from the connected workspace */
     listDatasets(): string[];
-    /** Return list of variables specific to a dataset */
+    /** Return list of columns specific to a dataset */
+    listColumns(dataset: string | string[]): Array<string | ContainerItemDescriptor>;
+    /** Legacy alias for listColumns() */
     listVariables(dataset: string | string[]): Array<string | ContainerItemDescriptor>;
 
     /** Register an event handler on the wrapper */

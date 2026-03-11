@@ -307,7 +307,7 @@ input:focus, select:focus, textarea:focus {
     border: 1px solid #d33;
     background: #fff4f4;
     color: #900;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-family: var(--font-mono);
     font-size: 12px;
     padding: 8px 10px;
     border-radius: 6px;
@@ -371,7 +371,7 @@ input:focus, select:focus, textarea:focus {
     color: #111;
     padding: 8px 10px;
     border-radius: 6px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-family: var(--font-mono);
     font-size: 12px;
 }
 .preview-syntax-panel pre {

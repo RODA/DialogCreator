@@ -185,7 +185,7 @@ setValue(container, [
   { label: "gender", type: "categorical" }
 ]);
 ```
-Helpers such as `listVariables()` return precisely such metadata objects; when that output is paired with a Container whose Item type is set, mismatching items will automatically render as disabled.
+Helpers such as `listColumns()` (or its backward-compatible alias `listVariables()`) return precisely such metadata objects; when that output is paired with a Container whose Item type is set, mismatching items will automatically render as disabled.
 
 This element has another useful property called **Item Order**. When activated, the order in which the items are clicked is duly remembered, and `getSelected()` returns selections in that order. For instance in statistics, when creating a cross-tabulation from two categorical variables, it does matter which variable is selected first (on the rows) and which second (on the columns).
 

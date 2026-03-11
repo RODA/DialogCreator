@@ -33,7 +33,7 @@ export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
     'addError', 'clearError',
 
     // datasets/workspace
-    'listDatasets', 'listVariables'
+    'listDatasets', 'listColumns', 'listVariables'
 ]);
 
 // Methods that take (elementName, ...) as first argument; used by the linter.
@@ -42,6 +42,7 @@ export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
 const NEUTRAL_NAMES = new Set<keyof PreviewUI>([
     'showMessage',
     'listDatasets',
+    'listColumns',
     'listVariables',
     'run',
     'resetDialog'
@@ -409,6 +410,22 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             item.style.backgroundColor = normalBg;
             if (label) label.style.color = normalFg;
         }
+    };
+
+    const listColumnsFromDataset = (input: string | string[]): Array<string | { text: string; type: string }> => {
+        const items = Array.isArray(input) ? input : [input];
+        const [datasetName] = items.map(v => String(v ?? '').trim()).filter(Boolean);
+        if (!datasetName) {
+            return [];
+        }
+        const source = datasets[datasetName];
+        if (!Array.isArray(source)) {
+            return [];
+        }
+        return source.map(entry => ({
+            text: String(entry?.text ?? ''),
+            type: String(entry?.type ?? '')
+        }));
     };
 
     const api: PreviewUI = {
@@ -1074,22 +1091,11 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             }
         },
 
-        // Simulated workspace variables listing
-        listVariables: (input) => {
-            const items = Array.isArray(input) ? input : [input];
-            const [datasetName] = items.map(v => String(v ?? '').trim()).filter(Boolean);
-            if (!datasetName) {
-                return [];
-            }
-            const source = datasets[datasetName];
-            if (!Array.isArray(source)) {
-                return [];
-            }
-            return source.map(entry => ({
-                text: String(entry?.text ?? ''),
-                type: String(entry?.type ?? '')
-            }));
-        },
+        // Simulated workspace columns listing
+        listColumns: (input) => listColumnsFromDataset(input),
+
+        // Backward-compatible alias for listColumns()
+        listVariables: (input) => listColumnsFromDataset(input),
 
         on: (name, event, handler: (ev: Event, el: HTMLElement) => void) => {
             const el = findWrapper(name);

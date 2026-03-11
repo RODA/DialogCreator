@@ -151,9 +151,9 @@ Backend helpers (in the developer's responsibility)
 
   - Returns an array of dataset names available in the backend environment (e.g., R).
 
-`listVariables(dataset)`
+`listColumns(dataset)` (alias: `listVariables(dataset)`)
 
-  - Returns an array of variable names available in the specified dataset, as well as their types (often as `{ label, type, selected }` components).
+  - Returns an array of column names available in the specified dataset, as well as their types (often as `{ label, type, selected }` components).
 
 
 ## Element-specific details
@@ -313,7 +313,7 @@ setValue(c_datasets, listDatasets());
 ```
 (note also that the container name `c_datasets` is used here, as manually changed in the design window).
 
-The custom code then continues with an event handler for the datasets container, which triggers whenever the user selects a dataset. Inside this handler, the selected dataset is retrieved via `getSelected()`, and stored in the global variable `selected_dataset`. Then, the variables container is populated with the list of variables from the selected dataset, using another built-in API function `listVariables()`, which returns an array of variable names from the specified dataset, as well as their types. Finally, the syntax panel is updated by calling a custom function `buildCommand()`, which constructs the R command string based on the current selections:
+The custom code then continues with an event handler for the datasets container, which triggers whenever the user selects a dataset. Inside this handler, the selected dataset is retrieved via `getSelected()`, and stored in the global variable `selected_dataset`. Then, the variables container is populated with the list of variables from the selected dataset, using another built-in API function `listColumns()` (with `listVariables()` as a compatible alias), which returns an array of variable names from the specified dataset, as well as their types. Finally, the syntax panel is updated by calling a custom function `buildCommand()`, which constructs the R command string based on the current selections:
 
 ```javascript
 onChange(c_datasets, () => {
@@ -323,7 +323,7 @@ onChange(c_datasets, () => {
     selected_dataset = '<dataset>';
     clearContent(c_variables);
   } else {
-    setValue(c_variables, listVariables(selected_dataset));
+    setValue(c_variables, listColumns(selected_dataset));
   }
   selected_variable = '<variable>';
   updateSyntax(buildCommand());
