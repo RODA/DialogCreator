@@ -3,6 +3,7 @@
 
 const path = require('path');
 const { spawn } = require('child_process');
+const electron = require('electron');
 
 const root = path.resolve(__dirname, '..');
 
@@ -19,12 +20,7 @@ if (process.platform === 'linux') {
   if (process.env.WAYLAND_DISPLAY) delete process.env.WAYLAND_DISPLAY;
 }
 
-const electronBin = path.join(
-  root,
-  'node_modules',
-  '.bin',
-  process.platform === 'win32' ? 'electron.cmd' : 'electron'
-);
+const electronBin = typeof electron === 'string' ? electron : electron.default;
 
 // Compose env for Electron spawn
 const spawnEnv = { ...process.env };
@@ -36,15 +32,18 @@ if (process.platform === 'linux') {
   delete spawnEnv.WAYLAND_DISPLAY; // force X11 even inside a Wayland session
 }
 
-const child = spawn(
-  electronBin,
-  ['--no-sandbox', '--ozone-platform=x11', path.join(root, 'dist', 'main.js')],
-  {
-    stdio: 'inherit',
-    cwd: root,
-    env: spawnEnv,
-  }
-);
+const electronArgs = [path.join(root, 'dist', 'main.js')];
+
+if (process.platform === 'linux') {
+  electronArgs.unshift('--ozone-platform=x11');
+  electronArgs.unshift('--no-sandbox');
+}
+
+const child = spawn(electronBin, electronArgs, {
+  stdio: 'inherit',
+  cwd: root,
+  env: spawnEnv,
+});
 
 child.on('exit', (code) => process.exit(code || 0));
 child.on('error', (err) => {
