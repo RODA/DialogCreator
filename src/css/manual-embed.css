@@ -1,20 +1,20 @@
 @font-face {
-    font-family: 'JetBrains Mono';
-    src: url('../assets/fonts/JetBrains_Mono/JetBrainsMono-Regular.ttf') format('truetype');
+    font-family: 'Liberation Mono';
+    src: url('../assets/fonts/liberation-mono/LiberationMono-Regular.ttf') format('truetype');
     font-weight: 400;
     font-style: normal;
     font-display: swap;
 }
 @font-face {
-    font-family: 'JetBrains Mono';
-    src: url('../assets/fonts/JetBrains_Mono/JetBrainsMono-SemiBold.ttf') format('truetype');
+    font-family: 'Liberation Mono';
+    src: url('../assets/fonts/liberation-mono/LiberationMono-Bold.ttf') format('truetype');
     font-weight: 600;
     font-style: normal;
     font-display: swap;
 }
 @font-face {
-    font-family: 'JetBrains Mono';
-    src: url('../assets/fonts/JetBrains_Mono/JetBrainsMono-Bold.ttf') format('truetype');
+    font-family: 'Liberation Mono';
+    src: url('../assets/fonts/liberation-mono/LiberationMono-Bold.ttf') format('truetype');
     font-weight: 700;
     font-style: normal;
     font-display: swap;
@@ -244,7 +244,7 @@
     background: #f0f4f8 !important;
     padding: 2px 4px !important;
     border-radius: 3px !important;
-    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace !important;
+    font-family: 'Liberation Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Courier New', monospace !important;
 }
 
 #api-content pre code,
