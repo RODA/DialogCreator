@@ -2506,6 +2506,9 @@ export const renderutils: RenderUtils = {
         const host = (element.firstElementChild as HTMLElement | null) || element;
 
         let dataset = element.dataset;
+        const currentLeft = Number(element.dataset.left ?? (parseInt(element.style.left || '0', 10) || 0));
+        const currentWidth = Math.ceil(element.getBoundingClientRect().width || utils.asNumeric(element.style.width.replace('px', '')) || 0);
+        const hasMeasuredWidth = currentWidth > 0;
 
         // Determine effective font size with precedence:
         let fontSize = 0;
@@ -2619,6 +2622,18 @@ export const renderutils: RenderUtils = {
         element.style.maxWidth = maxW > 0 ? `${maxW}px` : '';
         element.style.width = `${finalW}px`;
 
+        let anchoredLeft = currentLeft;
+        if (hasMeasuredWidth) {
+            if (align === 'right') {
+                anchoredLeft = currentLeft + currentWidth - finalW;
+            } else if (align === 'center') {
+                const center = currentLeft + currentWidth / 2;
+                anchoredLeft = Math.round(center - finalW / 2);
+            }
+        }
+        element.style.left = `${anchoredLeft}px`;
+        element.dataset.left = String(anchoredLeft);
+
         // Restore any width settings that were temporarily cleared. Preview hosts (no wrapper)
         // should mirror the final width instead of stretching to 100%.
         if (host === element) {
@@ -2643,8 +2658,14 @@ export const renderutils: RenderUtils = {
             const dialogW = dialog.canvas.getBoundingClientRect().width;
             const elleft = document.getElementById('elleft') as HTMLInputElement | null;
             const left = Number(element.dataset.left ?? (parseInt(element.style.left || '0', 10) || 0));
-            if (left + finalW + 10 > dialogW) {
-                const newleft = Math.max(10, Math.round(dialogW - finalW - 10));
+            let newleft = left;
+            if (left < 10) {
+                newleft = 10;
+            }
+            if (newleft + finalW + 10 > dialogW) {
+                newleft = Math.max(10, Math.round(dialogW - finalW - 10));
+            }
+            if (newleft !== left) {
                 element.style.left = newleft + 'px';
                 element.dataset.left = String(newleft);
                 if (elleft) elleft.value = String(newleft);
