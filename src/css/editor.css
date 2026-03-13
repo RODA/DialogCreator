@@ -782,6 +782,12 @@ input {
     padding: 0;
 }
 
+.sorter[data-orientation="horizontal"] .sorter-list {
+    flex-direction: row;
+    align-items: stretch;
+    height: 100%;
+}
+
 .sorter-item {
     --ml: 0px;     /* label margin-left  */
     --mr: 0px;     /* label margin-right */
@@ -800,6 +806,18 @@ input {
     color: inherit;
     user-select: none;
     text-align: left;
+}
+
+.sorter[data-orientation="horizontal"] .sorter-item {
+    flex: 1 1 0;
+    width: auto;
+    height: 100%;
+    margin-bottom: 0;
+    margin-right: 1px;
+}
+
+.sorter[data-orientation="horizontal"] .sorter-item:last-child {
+    margin-right: 0;
 }
 
 .sorter-item[data-align="left"]{
@@ -851,7 +869,12 @@ input {
     font-size: 0.85em; /* stays smaller, still follows global font size */
     width: 10px;
     display: block;
-    opacity: 0.4;
+    color: inherit;
+    opacity: 1;
+}
+
+.sorter-item.is-off .sorter-indicator {
+    color: #454545;
 }
 
 .sorter-item.is-asc {
@@ -881,14 +904,6 @@ input {
     opacity: 0.85;
 }
 
-.sorter-indicator.asc {
-    opacity: 1;
-}
-
-.sorter-indicator.desc {
-    opacity: 1;
-}
-
 /* No-ordering variant: remove reserved space and hide indicator */
 .sorter-item.no-order {
     justify-content: center;
@@ -903,10 +918,6 @@ input {
 } */
 .sorter-item.no-order .sorter-indicator {
     display: none;
-}
-
-.sorter-indicator.off {
-    opacity: 0.4;
 }
 
 .sorter-indicator.hidden {

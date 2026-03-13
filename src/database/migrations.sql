@@ -151,6 +151,7 @@ INSERT INTO elements (element, property, value) VALUES
 ('choiceElement', 'align', 'left'),
 ('choiceElement', 'sortable', 'true'),
 ('choiceElement', 'ordering', 'no'),
+('choiceElement', 'orientation', 'vertical'),
 ('choiceElement', 'backgroundColor', '#ffffff'),
 ('choiceElement', 'fontColor', '#000000'),
 ('choiceElement', 'activeBackgroundColor', '#589658'),

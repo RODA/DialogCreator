@@ -147,6 +147,12 @@ input:focus, select:focus, textarea:focus {
     padding: 0;
 }
 
+.preview-canvas .sorter[data-orientation="horizontal"] .sorter-list {
+    flex-direction: row;
+    align-items: stretch;
+    height: 100%;
+}
+
 .preview-canvas .sorter-item {
     --ml: 0px;     /* label margin-left  */
     --mr: 0px;     /* label margin-right */
@@ -164,6 +170,18 @@ input:focus, select:focus, textarea:focus {
     background: transparent;
     user-select: none;
     text-align: left;
+}
+
+.preview-canvas .sorter[data-orientation="horizontal"] .sorter-item {
+    flex: 1 1 0;
+    width: auto;
+    height: 100%;
+    margin-bottom: 0;
+    margin-right: 1px;
+}
+
+.preview-canvas .sorter[data-orientation="horizontal"] .sorter-item:last-child {
+    margin-right: 0;
 }
 
 .preview-canvas .sorter-item[data-align="left"]{
@@ -215,7 +233,12 @@ input:focus, select:focus, textarea:focus {
     font-size: 0.85em; /* scales with global font size while remaining smaller */
     width: 10px;
     display: block;
-    opacity: 0.4;
+    color: inherit;
+    opacity: 1;
+}
+
+.preview-canvas .sorter-item.is-off .sorter-indicator {
+    color: #454545;
 }
 
 .preview-canvas .sorter-item.is-asc {
@@ -237,18 +260,6 @@ input:focus, select:focus, textarea:focus {
 }
 .preview-canvas .sorter-drag {
     opacity: 0.85;
-}
-
-.preview-canvas .sorter-indicator.asc {
-    opacity: 1;
-}
-
-.preview-canvas .sorter-indicator.desc {
-    opacity: 1;
-}
-
-.preview-canvas .sorter-indicator.off {
-    opacity: 0.4;
 }
 
 .preview-canvas .sorter-indicator.hidden {

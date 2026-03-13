@@ -173,6 +173,7 @@ export type choiceElementType = {
     borderColor: string;
     sortable: boolean;
     ordering: 'no' | 'increasing' | 'decreasing';
+    orientation: 'horizontal' | 'vertical';
     align: string;
     isEnabled: boolean;
     isVisible: boolean;

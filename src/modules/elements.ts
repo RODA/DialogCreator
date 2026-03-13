@@ -208,12 +208,13 @@ export const elements: ElementsWithPersist = {
         borderColor: '#b8b8b8',
         sortable: true,
         ordering: 'no',
+        orientation: 'vertical',
         align: 'left',
         isEnabled: true,
         isVisible: true,
         elementIds: [],
         $persist: [
-            'nameid','left','top','width','height','items','backgroundColor','fontColor','activeBackgroundColor','activeFontColor','borderColor','sortable','ordering','align','isEnabled','isVisible'
+            'nameid','left','top','width','height','items','backgroundColor','fontColor','activeBackgroundColor','activeFontColor','borderColor','sortable','ordering','orientation','align','isEnabled','isVisible'
         ] as const
     },
     groupElement: {

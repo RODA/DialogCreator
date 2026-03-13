@@ -178,6 +178,7 @@ type SorterState = 'off' | 'asc' | 'desc';
 type SorterItem = { text: string; state: SorterState };
 const SORTER_STATE_KEY = 'sorterState';
 type ChoiceOrderingMode = 'no' | 'increasing' | 'decreasing';
+type ChoiceOrientation = 'horizontal' | 'vertical';
 
 const normalizeChoiceOrdering = (value: unknown): ChoiceOrderingMode => {
     const raw = String(value ?? '').trim().toLowerCase();
@@ -188,6 +189,11 @@ const normalizeChoiceOrdering = (value: unknown): ChoiceOrderingMode => {
         return 'increasing';
     }
     return 'no';
+};
+
+const normalizeChoiceOrientation = (value: unknown): ChoiceOrientation => {
+    const raw = String(value ?? '').trim().toLowerCase();
+    return raw === 'horizontal' ? 'horizontal' : 'vertical';
 };
 
 const preferredSorterState = (mode: ChoiceOrderingMode): Exclude<SorterState, 'off'> => {
@@ -1251,6 +1257,7 @@ export const renderutils: RenderUtils = {
             element.dataset.borderColor = data.borderColor;
             element.dataset.sortable = String(data.sortable);
             element.dataset.ordering = normalizeChoiceOrdering(data.ordering);
+            element.dataset.orientation = normalizeChoiceOrientation((data as Record<string, unknown>).orientation);
             element.dataset.items = String(data.items || '');
             element.dataset.align = String(data.align || 'left');
 
@@ -1276,6 +1283,7 @@ export const renderutils: RenderUtils = {
                 items: data.items,
                 sortable: data.sortable,
                 ordering: data.ordering,
+                orientation: (data as Record<string, unknown>).orientation,
                 align: data.align,
                 backgroundColor: data.backgroundColor,
                 fontColor: data.fontColor,
@@ -2145,6 +2153,15 @@ export const renderutils: RenderUtils = {
                     }
                     break;
 
+                case 'orientation':
+                    if (sorter) {
+                        value = normalizeChoiceOrientation(value);
+                        const orientationInput = document.getElementById('elorientation') as HTMLSelectElement | null;
+                        if (orientationInput) orientationInput.value = value;
+                        sorterNeedsRender = true;
+                    }
+                    break;
+
                 case 'align':
                     if (label) {
                         element.dataset[key] = value;
@@ -2255,6 +2272,7 @@ export const renderutils: RenderUtils = {
 
         const sortable = utils.isTrue(opts.sortable ?? datasetSource.dataset.sortable ?? 'true');
         const orderingMode = normalizeChoiceOrdering(opts.ordering ?? datasetSource.dataset.ordering ?? 'no');
+        const orientation = normalizeChoiceOrientation(opts.orientation ?? datasetSource.dataset.orientation ?? 'vertical');
         const ordering = orderingMode !== 'no';
         let items = normalizeSorterItems(itemsStr, stateRaw);
         items = normalizeSorterItemsForMode(items, orderingMode);
@@ -2275,12 +2293,15 @@ export const renderutils: RenderUtils = {
         visual.style.setProperty('--sorter-active-fg', activeFg);
         datasetSource.dataset.sortable = sortable ? 'true' : 'false';
         datasetSource.dataset.ordering = orderingMode;
+        datasetSource.dataset.orientation = orientation;
         visual.dataset.sortable = datasetSource.dataset.sortable;
         visual.dataset.ordering = datasetSource.dataset.ordering;
+        visual.dataset.orientation = orientation;
 
         const existingList = visual.querySelector('.sorter-list') as HTMLDivElement | null;
         const list = existingList || document.createElement('div');
         list.className = 'sorter-list';
+        list.dataset.orientation = orientation;
         list.style.position = 'relative';
         const existingSortable = (list as any).__sortable as { destroy?: () => void } | undefined;
         if (existingSortable?.destroy) {
@@ -2386,7 +2407,7 @@ export const renderutils: RenderUtils = {
                 ghostClass: 'sorter-ghost',
                 chosenClass: 'sorter-chosen',
                 dragClass: 'sorter-drag',
-                direction: 'vertical',
+                direction: orientation,
                 forceFallback: true,
                 fallbackOnBody: false,
                 fallbackBoundingClientRect: visual.getBoundingClientRect(),
