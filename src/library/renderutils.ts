@@ -1034,6 +1034,7 @@ export const renderutils: RenderUtils = {
             element.className = 'element-div';
             element.style.width = data.size + 'px';
             element.style.height = data.size + 'px';
+            const initialSelected = utils.isTrue((data as any).isSelected);
 
             const wrapperLabel = document.createElement('label');
             wrapperLabel.className = 'custom-radio-wrapper';
@@ -1048,14 +1049,16 @@ export const renderutils: RenderUtils = {
             nativeRadio.style.position = 'absolute';
             nativeRadio.style.opacity = '0';
             nativeRadio.style.pointerEvents = 'auto';
+            nativeRadio.checked = initialSelected;
 
             const customRadio = document.createElement('span');
             customRadio.id = `radio-${uuid}`;
             customRadio.className = 'custom-radio';
             customRadio.setAttribute('role', 'radio');
-            customRadio.setAttribute('aria-checked', 'false');
+            customRadio.setAttribute('aria-checked', initialSelected ? 'true' : 'false');
             customRadio.setAttribute('group', data.group || '');
             customRadio.style.setProperty('--radio-color', data.color);
+            customRadio.classList.toggle('selected', initialSelected);
 
             wrapperLabel.appendChild(nativeRadio);
             wrapperLabel.appendChild(customRadio);
