@@ -177,6 +177,50 @@ const applyContainerItemFilter = (host: HTMLElement | null) => {
 type SorterState = 'off' | 'asc' | 'desc';
 type SorterItem = { text: string; state: SorterState };
 const SORTER_STATE_KEY = 'sorterState';
+type ChoiceOrderingMode = 'no' | 'increasing' | 'decreasing';
+
+const normalizeChoiceOrdering = (value: unknown): ChoiceOrderingMode => {
+    const raw = String(value ?? '').trim().toLowerCase();
+    if (raw === 'decreasing' || raw === 'desc' || raw === 'descending') {
+        return 'decreasing';
+    }
+    if (raw === 'increasing' || raw === 'asc' || raw === 'ascending' || raw === 'true') {
+        return 'increasing';
+    }
+    return 'no';
+};
+
+const preferredSorterState = (mode: ChoiceOrderingMode): Exclude<SorterState, 'off'> => {
+    return mode === 'decreasing' ? 'desc' : 'asc';
+};
+
+const normalizeSorterItemsForMode = (items: SorterItem[], mode: ChoiceOrderingMode): SorterItem[] => {
+    if (mode !== 'no') {
+        return items;
+    }
+
+    return items.map((item) => ({
+        text: item.text,
+        state: item.state === 'off' ? 'off' : 'asc'
+    }));
+};
+
+const buildSorterSampleState = (labels: string[], mode: ChoiceOrderingMode): string | undefined => {
+    if (labels.length === 0) {
+        return undefined;
+    }
+
+    const sample = labels[1];
+    if (!sample) {
+        return undefined;
+    }
+
+    const preferred = mode === 'no' ? 'asc' : preferredSorterState(mode);
+    return stringifySorterState(labels.map(text => ({
+        text,
+        state: text === sample ? preferred : 'off'
+    })));
+};
 
 const splitSorterValues = (value: unknown): string[] => {
     return String(value ?? '')
@@ -215,9 +259,15 @@ const normalizeSorterItems = (itemsValue: unknown, stateRaw: unknown): SorterIte
     }));
 };
 
-const cycleSorterState = (current: SorterState, ordering: boolean): SorterState => {
-    if (current === 'off') return 'asc';
-    if (current === 'asc' && ordering) return 'desc';
+const cycleSorterState = (current: SorterState, mode: ChoiceOrderingMode): SorterState => {
+    if (mode === 'no') {
+        return current === 'off' ? 'asc' : 'off';
+    }
+
+    const preferred = preferredSorterState(mode);
+    const alternate = preferred === 'asc' ? 'desc' : 'asc';
+    if (current === 'off') return preferred;
+    if (current === preferred) return alternate;
     return 'off';
 };
 
@@ -225,11 +275,14 @@ const applySorterStateClasses = (
     row: HTMLElement,
     item: SorterItem,
     colors: { ascBg: string; descBg: string; activeFg: string; baseBg: string; baseFg: string },
+    orderingMode: ChoiceOrderingMode,
     indicator?: HTMLElement | null
 ) => {
     row.classList.remove('is-asc', 'is-desc', 'is-off');
     row.dataset.state = item.state;
-    const indicatorChar = item.state === 'desc' ? '▼' : '▲';
+    const indicatorChar = item.state === 'off'
+        ? (preferredSorterState(orderingMode) === 'desc' ? '▼' : '▲')
+        : (item.state === 'desc' ? '▼' : '▲');
     if (item.state === 'asc') {
         row.classList.add('is-asc');
         row.style.setProperty('--sorter-row-bg', colors.ascBg);
@@ -1194,7 +1247,7 @@ export const renderutils: RenderUtils = {
             element.dataset.activeFontColor = data.activeFontColor;
             element.dataset.borderColor = data.borderColor;
             element.dataset.sortable = String(data.sortable);
-            element.dataset.ordering = String(data.ordering);
+            element.dataset.ordering = normalizeChoiceOrdering(data.ordering);
             element.dataset.items = String(data.items || '');
             element.dataset.align = String(data.align || 'left');
 
@@ -1204,14 +1257,13 @@ export const renderutils: RenderUtils = {
                 delete element.dataset.activeValues;
                 delete element.dataset[SORTER_STATE_KEY];
             } else {
-                // Editor-only visual sample: show an active row by default (prefer second item when present),
-                // but do NOT persist this as dialog data.
+                // Editor-only visual sample: reflect the configured ordering mode without
+                // persisting any sample state into dialog data.
                 const labels = splitSorterValues(data.items || '');
-                const preferred = labels[1]; // second item if exists
-                if (preferred) {
-                    (element as any).__sampleSorterState = stringifySorterState(
-                        labels.map(text => ({ text, state: text === preferred ? 'asc' : 'off' }))
-                    );
+                const orderingMode = normalizeChoiceOrdering(data.ordering);
+                const sampleState = buildSorterSampleState(labels, orderingMode);
+                if (sampleState) {
+                    (element as any).__sampleSorterState = sampleState;
                 } else {
                     delete (element as any).__sampleSorterState;
                 }
@@ -2080,7 +2132,7 @@ export const renderutils: RenderUtils = {
 
                 case 'ordering':
                     if (sorter) {
-                        value = utils.isTrue(value) ? 'true' : 'false';
+                        value = normalizeChoiceOrdering(value);
                         sorterNeedsRender = true;
                     }
                     break;
@@ -2172,14 +2224,11 @@ export const renderutils: RenderUtils = {
 
         const itemsStr = String(opts.items ?? datasetSource.dataset.items ?? '');
 
-        // Build a design-time sample state (second item active) for editor only.
+        // Build a design-time sample state for editor only.
         let sampleStateRaw: string | undefined;
         if (!renderutils.previewWindow()) {
             const labels = splitSorterValues(itemsStr);
-            const preferred = labels[1]; // second item, if present
-            sampleStateRaw = preferred
-                ? stringifySorterState(labels.map(text => ({ text, state: text === preferred ? 'asc' : 'off' })))
-                : undefined;
+            sampleStateRaw = buildSorterSampleState(labels, normalizeChoiceOrdering(opts.ordering ?? datasetSource.dataset.ordering ?? 'no'));
             (visual as any).__sampleSorterState = sampleStateRaw;
         } else {
             (visual as any).__sampleSorterState = undefined;
@@ -2197,15 +2246,10 @@ export const renderutils: RenderUtils = {
         const persistState = opts.persistState === undefined ? !usingSampleState : utils.isTrue(opts.persistState);
 
         const sortable = utils.isTrue(opts.sortable ?? datasetSource.dataset.sortable ?? 'true');
-        const ordering = utils.isTrue(opts.ordering ?? datasetSource.dataset.ordering ?? 'true');
+        const orderingMode = normalizeChoiceOrdering(opts.ordering ?? datasetSource.dataset.ordering ?? 'no');
+        const ordering = orderingMode !== 'no';
         let items = normalizeSorterItems(itemsStr, stateRaw);
-
-        if (!ordering) {
-            items = items.map(item => ({
-                text: item.text,
-                state: item.state === 'asc' ? 'asc' : 'off'
-            }));
-        }
+        items = normalizeSorterItemsForMode(items, orderingMode);
 
         const bg = String(opts.backgroundColor ?? datasetSource.dataset.backgroundColor ?? '#ffffff');
         const fg = String(opts.fontColor ?? datasetSource.dataset.fontColor ?? '#000000');
@@ -2224,7 +2268,7 @@ export const renderutils: RenderUtils = {
         visual.style.setProperty('--sorter-desc-bg', descBg);
         visual.style.setProperty('--sorter-active-fg', activeFg);
         datasetSource.dataset.sortable = sortable ? 'true' : 'false';
-        datasetSource.dataset.ordering = ordering ? 'true' : 'false';
+        datasetSource.dataset.ordering = orderingMode;
         visual.dataset.sortable = datasetSource.dataset.sortable;
         visual.dataset.ordering = datasetSource.dataset.ordering;
 
@@ -2281,11 +2325,11 @@ export const renderutils: RenderUtils = {
             indicator.textContent = item.state === 'desc' ? '▼' : '▲';
             indicator.classList.toggle('hidden', !ordering);
 
-            applySorterStateClasses(row, item, colors, ordering ? indicator : null);
+            applySorterStateClasses(row, item, colors, orderingMode, ordering ? indicator : null);
 
             const cycle = () => {
-                item.state = cycleSorterState(item.state, ordering);
-                applySorterStateClasses(row, item, colors, ordering ? indicator : null);
+                item.state = cycleSorterState(item.state, orderingMode);
+                applySorterStateClasses(row, item, colors, orderingMode, ordering ? indicator : null);
                     if (persistState) {
                         updateSorterDataset(datasetSource, items);
                         visual.dataset.order = datasetSource.dataset.order || '';

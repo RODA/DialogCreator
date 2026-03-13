@@ -19,6 +19,7 @@ Use this reference when writing custom JavaScript for Dialog Creator. It contain
 
 - Get the element's value/text.
 - Input/Label/Select/Counter return their current value; Checkbox/Radio return their current boolean state.
+- Choice returns an array of objects shaped like `{ text, state }`, in the current visible order. `state` is one of `off`, `asc`, or `desc`.
 - Returns `null` if the element doesn't exist.
 
 `setValue(element, value)`
@@ -26,6 +27,8 @@ Use this reference when writing custom JavaScript for Dialog Creator. It contain
 - Set the value/text.
 - Input/Label: set string; Counter: set number within its min/max; Select: set selected option by value; Checkbox/Radio: set boolean state.
 - For Container, pass an array of strings or objects shaped like `{ label, type, selected }`.
+- For Choice, pass either an array of strings like `['var1:asc', 'var2:desc']`, plain strings like `['var1', 'var2']`, or objects shaped like `{ text, state }`.
+- For Choice with Ordering set to `no`, any active state is normalized to a simple selected state. For Ordering set to `increasing` or `decreasing`, both `asc` and `desc` are preserved.
 - No-op if the element doesn't exist. Does not dispatch events automatically.
 
 `isChecked(element)`
@@ -44,6 +47,7 @@ Use this reference when writing custom JavaScript for Dialog Creator. It contain
 - Read the current selection(s) as an array of values.
 - For Select, returns a single-item array (or empty array if nothing selected).
 - For Container, returns labels of all selected rows. If Item Order is enabled, the array is returned in the click order.
+- For Choice, returns the active items. With Ordering set to `increasing` or `decreasing`, each selected value includes the direction suffix, for example `['var1:asc', 'var2:desc']`. With Ordering set to `no`, it returns only the selected labels.
 
 `isVisible(element)`: boolean
 
@@ -94,6 +98,7 @@ Use this reference when writing custom JavaScript for Dialog Creator. It contain
   - Programmatically set selection.
   - For Select elements: sets the selected option by value (single-choice).
   - For Container elements: accepts a string or array of strings and replaces the current selection with exactly those labels.
+  - For Choice elements: accepts a string or array of strings. Values may include a direction suffix such as `income:desc`. For Ordering set to `increasing` or `decreasing`, the first click direction follows the configured mode, but both directions remain available when selected programmatically or by subsequent user clicks.
   - Does not dispatch a `change` event automatically. For the handlers to run, call `triggerChange(element)` after changing selection.
   - Throws a SyntaxError if the element doesn't exist, the control is missing, the option/row is not found, or the element type doesn't support selection.
 
@@ -199,6 +204,18 @@ Backend helpers (in the developer's responsibility)
 
 - Slider
   - Dragging is supported in Preview, and sliders react to changes.
+
+- Choice
+
+  - Read current ordered state: `getValue(element)` returns `[{ text, state }, ...]`
+  - Read active items only: `getSelected(element)`
+  - Replace current ordering/selection: `setValue(element, ['income:desc', 'age:asc'])`
+  - Replace selected items only: `setSelected(element, ['income:desc', 'age:asc'])`
+  - Ordering modes:
+    - `no`: cycles `off → selected → off`, and `getSelected()` returns labels only.
+    - `increasing`: cycles `off → asc → desc → off`; the first selection starts with ascending.
+    - `decreasing`: cycles `off → desc → asc → off`; the first selection starts with descending.
+  - If Sortable is enabled, the array returned by `getValue()` follows the visible drag-and-drop order.
 
 
 Practical patterns

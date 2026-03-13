@@ -148,7 +148,7 @@ INSERT INTO elements (element, property, value) VALUES
 ('choiceElement', 'items', 'A,B,C'),
 ('choiceElement', 'align', 'left'),
 ('choiceElement', 'sortable', 'true'),
-('choiceElement', 'ordering', 'false'),
+('choiceElement', 'ordering', 'no'),
 ('choiceElement', 'backgroundColor', '#ffffff'),
 ('choiceElement', 'fontColor', '#000000'),
 ('choiceElement', 'activeBackgroundColor', '#589658'),

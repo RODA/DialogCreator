@@ -205,7 +205,7 @@ export const elements: ElementsWithPersist = {
         activeFontColor: '#ffffff',
         borderColor: '#b8b8b8',
         sortable: true,
-        ordering: false,
+        ordering: 'no',
         align: 'left',
         isEnabled: true,
         isVisible: true,

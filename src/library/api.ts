@@ -305,6 +305,37 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
     };
 
     type SorterState = 'off' | 'asc' | 'desc';
+    type ChoiceOrderingMode = 'no' | 'increasing' | 'decreasing';
+
+    const normalizeChoiceOrdering = (raw: unknown): ChoiceOrderingMode => {
+        const value = String(raw ?? '').trim().toLowerCase();
+        if (value === 'decreasing' || value === 'desc' || value === 'descending') {
+            return 'decreasing';
+        }
+        if (value === 'increasing' || value === 'asc' || value === 'ascending' || value === 'true') {
+            return 'increasing';
+        }
+        return 'no';
+    };
+
+    const preferredSorterState = (mode: ChoiceOrderingMode): Exclude<SorterState, 'off'> => {
+        return mode === 'decreasing' ? 'desc' : 'asc';
+    };
+
+    const normalizeSorterItemsForMode = (
+        items: Array<{ text: string; state: SorterState }>,
+        orderingMode: ChoiceOrderingMode
+    ): Array<{ text: string; state: SorterState }> => {
+        if (orderingMode !== 'no') {
+            return items;
+        }
+
+        return items.map((item) => ({
+            text: item.text,
+            state: item.state === 'off' ? 'off' : 'asc'
+        }));
+    };
+
     const normalizeSorterState = (raw: unknown, allowDesc: boolean): SorterState => {
         const val = String(raw ?? '').toLowerCase();
         if (val === 'asc') return 'asc';
@@ -312,8 +343,10 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         return 'off';
     };
 
-    const normalizeSorterInput = (value: unknown, allowDesc: boolean): Array<{ text: string; state: SorterState }> => {
+    const normalizeSorterInput = (value: unknown, orderingMode: ChoiceOrderingMode): Array<{ text: string; state: SorterState }> => {
         const list = Array.isArray(value) ? value : [value];
+        const allowDesc = orderingMode !== 'no';
+        const preferred = preferredSorterState(orderingMode);
         const out: Array<{ text: string; state: SorterState }> = [];
         list.forEach((entry) => {
             if (entry === undefined || entry === null) return;
@@ -329,22 +362,20 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             const [labelPart, statePart] = raw.split(':');
             const text = labelPart.trim();
             if (!text) return;
-            const st = normalizeSorterState(statePart || 'asc', allowDesc);
+            const st = normalizeSorterState(statePart || preferred, allowDesc);
             out.push({ text, state: st });
         });
-        return out;
+        return normalizeSorterItemsForMode(out, orderingMode);
     };
 
     const readSorterItems = (host: HTMLElement): Array<{ text: string; state: SorterState }> => {
-        const allowDesc = utils.isTrue(host.dataset.ordering ?? 'true');
+        const orderingMode = normalizeChoiceOrdering(host.dataset.ordering ?? 'no');
+        const allowDesc = orderingMode !== 'no';
         const raw = host.dataset.sorterState || '';
         try {
             const parsed = JSON.parse(raw);
             if (Array.isArray(parsed)) {
-                return normalizeSorterInput(parsed, allowDesc).map(item => ({
-                    text: item.text,
-                    state: normalizeSorterState(item.state, allowDesc)
-                }));
+                return normalizeSorterInput(parsed, orderingMode);
             }
         } catch { /* noop */ }
 
@@ -365,20 +396,21 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
     };
 
     const applySorterItems = (host: HTMLElement, items: Array<{ text: string; state: SorterState }>) => {
-        const allowDesc = utils.isTrue(host.dataset.ordering ?? 'true');
+        const orderingMode = normalizeChoiceOrdering(host.dataset.ordering ?? 'no');
         const normalized = items
             .map(item => ({
                 text: String(item.text || '').trim(),
-                state: normalizeSorterState(item.state, allowDesc)
+                state: normalizeSorterState(item.state, orderingMode !== 'no')
             }))
             .filter(item => item.text);
+        const coerced = normalizeSorterItemsForMode(normalized, orderingMode);
 
         const visual = host.querySelector('.sorter') as HTMLElement | null;
         const targets = visual ? [host, visual] : [host];
 
-        const joined = normalized.map(it => it.text).join(',');
+        const joined = coerced.map(it => it.text).join(',');
         targets.forEach(node => {
-            node.dataset.sorterState = JSON.stringify(normalized);
+            node.dataset.sorterState = JSON.stringify(coerced);
             node.dataset.items = joined;
             node.dataset.value = joined; // legacy alias
         });
@@ -700,7 +732,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
 
                 case 'Choice':
                     if (prop === 'value') {
-                        applySorterItems(el, normalizeSorterInput(v, utils.isTrue(el.dataset.ordering)));
+                        applySorterItems(el, normalizeSorterInput(v, normalizeChoiceOrdering(el.dataset.ordering)));
                     } else {
                         warn(`${name}:${prop}`, `Unsupported set(${eltype}, ${prop})`);
                     }
@@ -797,7 +829,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 }
 
                 if (eltype === 'Choice') {
-                    applySorterItems(el, normalizeSorterInput(value, utils.isTrue(el.dataset.ordering)));
+                    applySorterItems(el, normalizeSorterInput(value, normalizeChoiceOrdering(el.dataset.ordering)));
                     return;
                 }
 
@@ -860,7 +892,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             }
 
             if (eltype === 'Choice') {
-                applySorterItems(el, normalizeSorterInput(value, utils.isTrue(el.dataset.ordering)));
+                applySorterItems(el, normalizeSorterInput(value, normalizeChoiceOrdering(el.dataset.ordering)));
                 return;
             }
 
@@ -1302,9 +1334,9 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
 
             if (eltype === 'Choice') {
                 const host = el;
-                const allowDesc = utils.isTrue(host.dataset.ordering);
+                const orderingMode = normalizeChoiceOrdering(host.dataset.ordering);
                 const current = readSorterItems(host);
-                const desired = normalizeSorterInput(value, allowDesc);
+                const desired = normalizeSorterInput(value, orderingMode);
                 const desiredMap = new Map(desired.map(d => [d.text, d.state]));
                 const merged = current.map(item => {
                     const next = desiredMap.get(item.text);

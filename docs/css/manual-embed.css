@@ -1,23 +1,23 @@
 @font-face {
-    font-family: 'Liberation Mono';
-    src: url('../fonts/liberation-mono/LiberationMono-Regular.ttf') format('truetype');
+    font-family: 'DialogCreator Mono';
+    src: url('../assets/fonts/liberation-mono/LiberationMono-Regular.ttf') format('truetype');
     font-weight: 400;
     font-style: normal;
-    font-display: swap;
+    font-display: block;
 }
 @font-face {
-    font-family: 'Liberation Mono';
-    src: url('../fonts/liberation-mono/LiberationMono-Bold.ttf') format('truetype');
+    font-family: 'DialogCreator Mono';
+    src: url('../assets/fonts/liberation-mono/LiberationMono-Bold.ttf') format('truetype');
     font-weight: 600;
     font-style: normal;
-    font-display: swap;
+    font-display: block;
 }
 @font-face {
-    font-family: 'Liberation Mono';
-    src: url('../fonts/liberation-mono/LiberationMono-Bold.ttf') format('truetype');
+    font-family: 'DialogCreator Mono';
+    src: url('../assets/fonts/liberation-mono/LiberationMono-Bold.ttf') format('truetype');
     font-weight: 700;
     font-style: normal;
-    font-display: swap;
+    font-display: block;
 }
 
 #api-content,
@@ -244,7 +244,7 @@
     background: #f0f4f8 !important;
     padding: 2px 4px !important;
     border-radius: 3px !important;
-    font-family: 'Liberation Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Courier New', monospace !important;
+    font-family: 'DialogCreator Mono', monospace !important;
 }
 
 #api-content pre code,

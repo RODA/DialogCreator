@@ -170,7 +170,7 @@ export type choiceElementType = {
     activeFontColor: string;
     borderColor: string;
     sortable: boolean;
-    ordering: boolean;
+    ordering: 'no' | 'increasing' | 'decreasing';
     align: string;
     isEnabled: boolean;
     isVisible: boolean;

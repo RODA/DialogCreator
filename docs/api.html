@@ -31,6 +31,7 @@
 <ul>
 <li>Get the element's value/text.</li>
 <li>Input/Label/Select/Counter return their current value; Checkbox/Radio return their current boolean state.</li>
+<li>Choice returns an array of objects shaped like <code class="hljs">{ text, state }</code>, in the current visible order. <code class="hljs"><span class="api-param">state</span></code> is one of <code class="hljs"><span class="api-param">off</span></code>, <code class="hljs"><span class="api-param">asc</span></code>, or <code class="hljs"><span class="api-param">desc</span></code>.</li>
 <li>Returns <code class="hljs"><span class="api-param">null</span></code> if the element doesn't exist.</li>
 </ul>
 <h3 id="api-setvalue"><code class="hljs"><span class="hljs-title function_">setValue</span>(<span class="api-param">element</span>, <span class="api-param">value</span>)</code></h3>
@@ -38,6 +39,8 @@
 <li>Set the value/text.</li>
 <li>Input/Label: set string; Counter: set number within its min/max; Select: set selected option by value; Checkbox/Radio: set boolean state.</li>
 <li>For Container, pass an array of strings or objects shaped like <code class="hljs">{ label, type, selected }</code>.</li>
+<li>For Choice, pass either an array of strings like <code class="hljs">['var<span class="hljs-number">1</span>:asc', 'var<span class="hljs-number">2</span>:desc']</code>, plain strings like <code class="hljs">['var<span class="hljs-number">1</span>', 'var<span class="hljs-number">2</span>']</code>, or objects shaped like <code class="hljs">{ text, state }</code>.</li>
+<li>For Choice with Ordering set to <code class="hljs"><span class="api-param">no</span></code>, any active state is normalized to a simple selected state. For Ordering set to <code class="hljs"><span class="api-param">increasing</span></code> or <code class="hljs"><span class="api-param">decreasing</span></code>, both <code class="hljs"><span class="api-param">asc</span></code> and <code class="hljs"><span class="api-param">desc</span></code> are preserved.</li>
 <li>No-op if the element doesn't exist. Does not dispatch events automatically.</li>
 </ul>
 <h3 id="api-ischecked"><code class="hljs"><span class="hljs-title function_">isChecked</span>(<span class="api-param">element</span>)</code></h3>
@@ -56,6 +59,7 @@
 <li>Read the current selection(s) as an array of values.</li>
 <li>For Select, returns a single-item array (or empty array if nothing selected).</li>
 <li>For Container, returns labels of all selected rows. If Item Order is enabled, the array is returned in the click order.</li>
+<li>For Choice, returns the active items. With Ordering set to <code class="hljs"><span class="api-param">increasing</span></code> or <code class="hljs"><span class="api-param">decreasing</span></code>, each selected value includes the direction suffix, for example <code class="hljs">['var<span class="hljs-number">1</span>:asc', 'var<span class="hljs-number">2</span>:desc']</code>. With Ordering set to <code class="hljs"><span class="api-param">no</span></code>, it returns only the selected labels.</li>
 </ul>
 <h3 id="api-isvisible"><code class="hljs"><span class="hljs-title function_">isVisible</span>(<span class="api-param">element</span>)</code>: boolean</h3>
 <ul>
@@ -106,6 +110,7 @@
 <li>Programmatically set selection.</li>
 <li>For Select elements: sets the selected option by value (single-choice).</li>
 <li>For Container elements: accepts a string or array of strings and replaces the current selection with exactly those labels.</li>
+<li>For Choice elements: accepts a string or array of strings. Values may include a direction suffix such as <code class="hljs">income:desc</code>. For Ordering set to <code class="hljs"><span class="api-param">increasing</span></code> or <code class="hljs"><span class="api-param">decreasing</span></code>, the first click direction follows the configured mode, but both directions remain available when selected programmatically or by subsequent user clicks.</li>
 <li>Does not dispatch a <code class="hljs"><span class="api-param">change</span></code> event automatically. For the handlers to run, call <code class="hljs"><span class="hljs-title function_">triggerChange</span>(<span class="api-param">element</span>)</code> after changing selection.</li>
 <li>Throws a SyntaxError if the element doesn't exist, the control is missing, the option/row is not found, or the element type doesn't support selection.</li>
 </ul>
@@ -215,6 +220,21 @@
 <li><p>Slider</p>
 <ul>
 <li>Dragging is supported in Preview, and sliders react to changes.</li>
+</ul>
+</li>
+<li><p>Choice</p>
+<ul>
+<li>Read current ordered state: <code class="hljs"><span class="hljs-title function_">getValue</span>(<span class="api-param">element</span>)</code> returns <code class="hljs">[{ text, state }, ...]</code></li>
+<li>Read active items only: <code class="hljs"><span class="hljs-title function_">getSelected</span>(<span class="api-param">element</span>)</code></li>
+<li>Replace current ordering/selection: <code class="hljs"><span class="hljs-title function_">setValue</span>(<span class="api-param">element</span>, <span class="api-param">[</span><span class="hljs-string">'income:desc'</span>, <span class="hljs-string">'age:asc'</span><span class="api-param">]</span>)</code></li>
+<li>Replace selected items only: <code class="hljs"><span class="hljs-title function_">setSelected</span>(<span class="api-param">element</span>, <span class="api-param">[</span><span class="hljs-string">'income:desc'</span>, <span class="hljs-string">'age:asc'</span><span class="api-param">]</span>)</code></li>
+<li>Ordering modes:<ul>
+<li><code class="hljs"><span class="api-param">no</span></code>: cycles <code class="hljs">off → selected → off</code>, and <code class="hljs"><span class="hljs-title function_">getSelected</span>()</code> returns labels only.</li>
+<li><code class="hljs"><span class="api-param">increasing</span></code>: cycles <code class="hljs">off → asc → desc → off</code>; the first selection starts with ascending.</li>
+<li><code class="hljs"><span class="api-param">decreasing</span></code>: cycles <code class="hljs">off → desc → asc → off</code>; the first selection starts with descending.</li>
+</ul>
+</li>
+<li>If Sortable is enabled, the array returned by <code class="hljs"><span class="hljs-title function_">getValue</span>()</code> follows the visible drag-and-drop order.</li>
 </ul>
 </li>
 </ul>

@@ -201,11 +201,11 @@ Its properties include:
 
 - **Items**: the list of item labels (comma/semicolon separated).
 - **Sortable**: if Yes, items can be reordered by dragging.
-- **Ordering**: if Yes, an item cycles through `not selected → ascending → descending → not selected`. If No, it cycles through `not selected → selected → not selected` and no arrow is shown.
+- **Ordering**: stored values are `increasing`, `decreasing`, or `no`. `Yes, increasing` cycles through `not selected → ascending → descending → not selected`; `Yes, decreasing` cycles through `not selected → descending → ascending → not selected`; `No` cycles through `not selected → selected → not selected` and no arrow is shown.
 - **Align**: text alignment for item labels (left/center/right).
 - **Colors**: Background/Font/Active background/Active font/Border colors affect the list and the active item styling, just like the Container element.
 
-In custom JS, `getValue(element)` returns the ordered items along with their state (`off`, `asc`, `desc`). `getSelected(element)` returns the active selections (for Ordering-enabled lists, this includes the direction).
+In custom JS, `getValue(element)` returns the ordered items along with their state (`off`, `asc`, `desc`). `getSelected(element)` returns the active selections; for Ordering-enabled lists, this includes the direction suffix, while for `No` it returns labels only. Programmatic updates via `setValue()` or `setSelected()` may also include direction suffixes such as `income:desc`.
 
 
 ## Keyboard shortcuts
