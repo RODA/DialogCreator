@@ -1750,7 +1750,7 @@ export const editor: Editor = {
             customJS: dialog.customJS || '',
             elements: flattened
         };
-        return JSON.stringify(result);
+        return JSON.stringify(result, null, 4);
     },
 
     previewDialog: function() {
