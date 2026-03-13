@@ -39,11 +39,12 @@ export const elements: ElementsWithPersist = {
         width: 60,
         value: '',
         valueType: 'String',
+        borderColor: '#8c8c8c',
         isEnabled: true,
         isVisible: true,
         elementIds: [],
         $persist: [
-            'nameid','left','top','width','value','valueType','isEnabled','isVisible'
+            'nameid','left','top','width','value','valueType','borderColor','isEnabled','isVisible'
         ] as const
     },
     selectElement: {
@@ -70,12 +71,13 @@ export const elements: ElementsWithPersist = {
         size: 14,
         fill: true,
         color: '#70a470',
+        borderColor: '#8c8c8c',
         isChecked: false,
         isEnabled: true,
         isVisible: true,
         elementIds: [],
         $persist: [
-            'nameid','left','top','size','color','fill','isChecked','isEnabled','isVisible'
+            'nameid','left','top','size','color','fill','borderColor','isChecked','isEnabled','isVisible'
         ] as const
     },
     radioElement: {
@@ -182,7 +184,7 @@ export const elements: ElementsWithPersist = {
         fontColor: '#000000',
         activeBackgroundColor: '##589658',
         activeFontColor: '#ffffff',
-        disabledBackgroundColor: '#ececec',
+        disabledBackgroundColor: '#d8d8d8',
         borderColor: '#b8b8b8',
         isEnabled: true,
         isVisible: true,

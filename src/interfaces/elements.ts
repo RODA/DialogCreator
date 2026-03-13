@@ -24,6 +24,7 @@ export type inputElementType = {
     width: number;
     value: string;
     valueType: string; // 'Numeric' | 'String'
+    borderColor: string;
     isEnabled: boolean;
     isVisible: boolean;
     elementIds: string[];
@@ -52,6 +53,7 @@ export type checkboxElementType = {
     size: number;
     fill: boolean;
     color: string;
+    borderColor: string;
     isChecked: boolean;
     isEnabled: boolean;
     isVisible: boolean;

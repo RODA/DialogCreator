@@ -119,7 +119,7 @@ const applyContainerItemFilter = (host: HTMLElement | null) => {
     const normalFg = host.dataset.fontColor || '#000000';
     const activeBg = host.dataset.activeBackgroundColor || '##589658';
     const activeFg = host.dataset.activeFontColor || '#ffffff';
-    const disabledBg = host.dataset.disabledBackgroundColor || '#ececec';
+    const disabledBg = host.dataset.disabledBackgroundColor || '#d8d8d8';
     let selectionChanged = false;
 
     items.forEach((item) => {
@@ -274,7 +274,7 @@ const cycleSorterState = (current: SorterState, mode: ChoiceOrderingMode): Sorte
 const applySorterStateClasses = (
     row: HTMLElement,
     item: SorterItem,
-    colors: { ascBg: string; descBg: string; activeFg: string; baseBg: string; baseFg: string },
+    colors: { activeBg: string; activeFg: string; baseBg: string; baseFg: string },
     orderingMode: ChoiceOrderingMode,
     indicator?: HTMLElement | null
 ) => {
@@ -285,11 +285,11 @@ const applySorterStateClasses = (
         : (item.state === 'desc' ? '▼' : '▲');
     if (item.state === 'asc') {
         row.classList.add('is-asc');
-        row.style.setProperty('--sorter-row-bg', colors.ascBg);
+        row.style.setProperty('--sorter-row-bg', colors.activeBg);
         row.style.color = colors.activeFg;
     } else if (item.state === 'desc') {
         row.classList.add('is-desc');
-        row.style.setProperty('--sorter-row-bg', colors.descBg);
+        row.style.setProperty('--sorter-row-bg', colors.activeBg);
         row.style.color = colors.activeFg;
     } else {
         row.classList.add('is-off');
@@ -940,6 +940,7 @@ export const renderutils: RenderUtils = {
             element.type = 'text';
             element.value = data.value || '';
             element.style.width = data.width + 'px';
+            element.style.borderColor = data.borderColor || '#8c8c8c';
             // element.style.maxHeight = data.height + 'px';
             // element.style.maxWidth = data.maxWidth + 'px';
 
@@ -991,6 +992,8 @@ export const renderutils: RenderUtils = {
             customCheckbox.classList.toggle('checked', initialChecked);
             customCheckbox.dataset.fill = String(!!data.fill);
             customCheckbox.style.setProperty('--checkbox-color', data.color);
+            customCheckbox.style.setProperty('--checkbox-border-color', data.borderColor || '#8c8c8c');
+            customCheckbox.style.borderColor = data.borderColor || '#8c8c8c';
 
             const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -1219,7 +1222,7 @@ export const renderutils: RenderUtils = {
                 const fg = String(data.fontColor) || '#000000';
                 const abg = String(data.activeBackgroundColor) || '##589658';
                 const afg = String(data.activeFontColor) || '#ffffff';
-                const dbg = String((data as Record<string, unknown>).disabledBackgroundColor ?? '#ececec');
+                const dbg = String((data as Record<string, unknown>).disabledBackgroundColor ?? '#d8d8d8');
                 inactive.label.style.color = fg;
                 active.row.style.backgroundColor = abg;
                 active.label.style.color = afg;
@@ -1637,15 +1640,20 @@ export const renderutils: RenderUtils = {
                         if (button && inner) {
                             // Apply border color to button
                             inner.style.borderColor = value;
+                        } else if (input && inner) {
+                            inner.style.borderColor = value;
+                        } else if (checkbox && customCheckbox) {
+                            customCheckbox.style.borderColor = value;
+                            customCheckbox.style.setProperty('--checkbox-border-color', value);
                         } else if ((container || sorter) && inner) {
                             // Apply border color to container
                             inner.style.borderColor = value;
-                        } else if (button || container || sorter) {
+                        } else if (button || container || sorter || input) {
                             // Fallback for wrapper-level styling
                             element.style.borderColor = value;
                         }
                     } else {
-                        value = dataset.border;
+                        value = dataset.borderColor;
                         const color = document.getElementById('elborderColor') as HTMLInputElement;
                         color.value = value;
                     }
@@ -1700,7 +1708,7 @@ export const renderutils: RenderUtils = {
                             });
                             renderutils.applyContainerItemFilter(element as HTMLElement);
                         } else {
-                            value = dataset.disabledBackgroundColor || '#ececec';
+                            value = dataset.disabledBackgroundColor || '#d8d8d8';
                             const color = document.getElementById('eldisabledBackgroundColor') as HTMLInputElement;
                             if (color) color.value = value;
                         }
@@ -2258,14 +2266,12 @@ export const renderutils: RenderUtils = {
         const border = String(opts.borderColor ?? datasetSource.dataset.borderColor ?? '#b8b8b8');
         const alignRaw = String(opts.align ?? datasetSource.dataset.align ?? 'left').toLowerCase();
         const align = ['left', 'center', 'right'].includes(alignRaw) ? alignRaw : 'left';
-        const descBg = activeBg;
 
         visual.style.backgroundColor = bg;
         visual.style.borderColor = border;
         visual.style.setProperty('--sorter-bg', bg);
         visual.style.setProperty('--sorter-fg', fg);
         visual.style.setProperty('--sorter-active-bg', activeBg);
-        visual.style.setProperty('--sorter-desc-bg', descBg);
         visual.style.setProperty('--sorter-active-fg', activeFg);
         datasetSource.dataset.sortable = sortable ? 'true' : 'false';
         datasetSource.dataset.ordering = orderingMode;
@@ -2297,8 +2303,7 @@ export const renderutils: RenderUtils = {
             visual.dataset[SORTER_STATE_KEY] = datasetSource.dataset[SORTER_STATE_KEY] || '';
 
         const colors = {
-            ascBg: activeBg,
-            descBg,
+            activeBg,
             activeFg,
             baseBg: bg,
             baseFg: fg

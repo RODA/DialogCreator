@@ -345,9 +345,8 @@ body {
 }
 
 .disabled-div {
-    /* background-color: #808080; */
-    opacity: 0.5; /* Make it look visually disabled */
-    filter: grayscale(100%);
+    opacity: 0.6;
+    filter: grayscale(100%) brightness(0.92);
 }
 
 .design-hidden {
@@ -358,12 +357,13 @@ body {
 
 /* Element: checkbox */
 .custom-checkbox {
+    --checkbox-border-color: #8c8c8c;
     display: inline-block;
     width: 100%; /* Matches the wrapper div size */
     height: 100%;
     position: relative;
     background-color: #fff;
-    border: 1px solid #777777;
+    border: 1px solid var(--checkbox-border-color);
     border-radius: 0.1em;
     box-sizing: border-box;
     overflow: visible;
@@ -372,7 +372,7 @@ body {
 /* Style the checked state for custom checkbox */
 .custom-checkbox[aria-checked="true"] {
     background-color: var(--checkbox-color, #70a470);
-    border-color: #777777;
+    border-color: var(--checkbox-border-color);
 }
 /* If fill disabled, keep background white even when checked */
 .custom-checkbox[data-fill="false"][aria-checked="true"] {
@@ -469,7 +469,7 @@ input[type="text"] {
 #dialog input:disabled,
 #dialog select:disabled,
 #dialog textarea:disabled {
-    background-color: #ececec;
+    background-color: #d8d8d8;
     border: 1px solid #686868;
     color: #444;
     -webkit-text-fill-color: #444; /* Safari/WebKit */
@@ -755,7 +755,7 @@ input {
 }
 
 .container-sample .container-item-disabled {
-    background-color: #ececec;
+    background-color: #d8d8d8;
     color: #444;
     cursor: not-allowed;
 }
@@ -861,7 +861,7 @@ input {
 }
 
 .sorter-item.is-desc {
-    background: var(--sorter-desc-bg, #d9e7ff);
+    background: var(--sorter-active-bg, #e6f1e6);
     border-color: rgba(0, 0, 0, 0.08);
     color: var(--sorter-active-fg, #000000);
 }

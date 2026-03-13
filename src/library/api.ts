@@ -427,7 +427,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         const normalFg = host.dataset.fontColor || '#000000';
         const activeBg = host.dataset.activeBackgroundColor || '##589658';
         const activeFg = host.dataset.activeFontColor || '#ffffff';
-        const disabledBg = host.dataset.disabledBackgroundColor || '#ececec';
+        const disabledBg = host.dataset.disabledBackgroundColor || '#d8d8d8';
 
         if (item.dataset.disabled === 'true') {
             item.style.backgroundColor = disabledBg;

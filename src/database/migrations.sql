@@ -36,6 +36,7 @@ INSERT INTO elements (element, property, value) VALUES
 ('inputElement', 'width', '60'),
 ('inputElement', 'value', ''),
 ('inputElement', 'valueType', 'String'),
+('inputElement', 'borderColor', '#8c8c8c'),
 ('inputElement', 'isEnabled', 'true'),
 ('inputElement', 'isVisible', 'true'),
 
@@ -56,6 +57,7 @@ INSERT INTO elements (element, property, value) VALUES
 ('checkboxElement', 'size', '14'),
 ('checkboxElement', 'fill', 'true'),
 ('checkboxElement', 'color', '#70a470'),
+('checkboxElement', 'borderColor', '#8c8c8c'),
 ('checkboxElement', 'isChecked', 'false'),
 ('checkboxElement', 'isEnabled', 'true'),
 ('checkboxElement', 'isVisible', 'true'),
