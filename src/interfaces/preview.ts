@@ -88,8 +88,8 @@ export interface PreviewUI {
     clearError(element: string, message?: string): void;
     clearError(...elements: string[]): void;
 
-    /** Return list of available dataset names from the connected workspace */
-    listDatasets(): string[];
+    /** Return list of available objects for the requested workspace type */
+    listObjects(type: string): string[];
     /** Return list of columns specific to a dataset */
     listColumns(dataset: string | string[]): Array<string | ContainerItemDescriptor>;
     /** Legacy alias for listColumns() */

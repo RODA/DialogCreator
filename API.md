@@ -152,9 +152,11 @@ Validation and highlight helpers
 
 Backend helpers (in the developer's responsibility)
 
-`listDatasets()`
+`listObjects(type)`
 
-  - Returns an array of dataset names available in the backend environment (e.g., R).
+  - Returns an array of object names available in the backend environment for the requested `type`.
+  - Use `listObjects('datasets')` to retrieve dataset names.
+  - Other strings can be used for backend-specific object groups such as arrays, lists, or custom classes.
 
 `listColumns(dataset)` (alias: `listVariables(dataset)`)
 
@@ -323,10 +325,10 @@ This looks like a lot of work, but in reality it only requires a few lines of co
 
 The syntax construction is left entirely to the user's imagination, and a dedicated custom function `buildCommand()` will be introduced later. In the above image, the code starts by defining a few global variables to hold the selected dataset and variable names, as well as the recoded variable name (which is updated via a checkbox handler, also shown later).
 
-Once the Preview window is started, the first action is to populate the datasets container with the list of available datasets. This is done via the API function `setValue()`, which accepts an array of strings to render as container items. Here, the built-in API function `listDatasets()` is used to retrieve the list of datasets from R (it is the developer's responsibility to provide this function in the host application). This is done only once, at the start of the Preview:
+Once the Preview window is started, the first action is to populate the datasets container with the list of available datasets. This is done via the API function `setValue()`, which accepts an array of strings to render as container items. Here, the built-in API function `listObjects('datasets')` is used to retrieve the list of datasets from R (it is the developer's responsibility to provide this function in the host application). This is done only once, at the start of the Preview:
 
 ```javascript
-setValue(c_datasets, listDatasets());
+setValue(c_datasets, listObjects('datasets'));
 ```
 (note also that the container name `c_datasets` is used here, as manually changed in the design window).
 

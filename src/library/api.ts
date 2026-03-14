@@ -33,7 +33,7 @@ export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
     'addError', 'clearError',
 
     // datasets/workspace
-    'listDatasets', 'listColumns', 'listVariables'
+    'listObjects', 'listColumns', 'listVariables'
 ]);
 
 // Methods that take (elementName, ...) as first argument; used by the linter.
@@ -41,7 +41,7 @@ export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
 // then exclude the non-element-first helpers explicitly (currently just 'showMessage').
 const NEUTRAL_NAMES = new Set<keyof PreviewUI>([
     'showMessage',
-    'listDatasets',
+    'listObjects',
     'listColumns',
     'listVariables',
     'run',
@@ -458,6 +458,24 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             text: String(entry?.text ?? ''),
             type: String(entry?.type ?? '')
         }));
+    };
+
+    const listObjectsByType = (type: string): string[] => {
+        const normalized = String(type ?? '').trim().toLowerCase();
+        if (!normalized) {
+            return [];
+        }
+
+        switch (normalized) {
+            case 'datasets':
+                try {
+                    return utils.getKeys(datasets);
+                } catch {
+                    return [];
+                }
+            default:
+                return [];
+        }
     };
 
     const api: PreviewUI = {
@@ -1114,14 +1132,8 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             });
         },
 
-        // Simulated workspace datasets listing (e.g., via R connection)
-        listDatasets: () => {
-            try {
-                return utils.getKeys(datasets);
-            } catch {
-                return [];
-            }
-        },
+        // Simulated workspace object listing (e.g., via R connection)
+        listObjects: (type) => listObjectsByType(type),
 
         // Simulated workspace columns listing
         listColumns: (input) => listColumnsFromDataset(input),
