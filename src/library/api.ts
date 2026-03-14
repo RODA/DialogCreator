@@ -1035,13 +1035,30 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         isEnabled: (name) => {
             const el = findWrapper(name);
             if (!el) return false;
-            return !el.classList.contains('disabled-div');
+            if (el.classList.contains('disabled-div')) {
+                return false;
+            }
+
+            const input = el.querySelector('input, select, textarea') as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null;
+            if (input?.disabled) {
+                return false;
+            }
+
+            const customCheckbox = el.querySelector('.custom-checkbox[aria-disabled="true"]');
+            if (customCheckbox) {
+                return false;
+            }
+
+            const customRadio = el.querySelector('.custom-radio[aria-disabled="true"]');
+            if (customRadio) {
+                return false;
+            }
+
+            return true;
         },
 
         isDisabled: (name) => {
-            const el = findWrapper(name);
-            if (!el) return false;
-            return el.classList.contains('disabled-div');
+            return !api.isEnabled(name);
         },
 
         show: (name, on = true) => {

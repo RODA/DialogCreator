@@ -2,6 +2,7 @@
     --main-bg-color: #a6a6a6;
     --main-blue-color: dodgerblue;
     --control-border-width: 1px;
+    --control-disabled-background-color: #dedede;
 }
 
 html,
@@ -364,6 +365,7 @@ body {
 
 .custom-checkbox {
     --checkbox-border-color: #8c8c8c;
+    --checkbox-disabled-background-color: #dedede;
     display: inline-block;
     width: 100%; /* Matches the wrapper div size */
     height: 100%;
@@ -383,6 +385,10 @@ body {
 /* If fill disabled, keep background white even when checked */
 .custom-checkbox[data-fill="false"][aria-checked="true"] {
     background-color: #fff;
+}
+
+.custom-checkbox[aria-disabled="true"] {
+    background-color: var(--checkbox-disabled-background-color) !important;
 }
 
 /* SVG styling */
@@ -413,6 +419,7 @@ body {
 /* Element: radio button */
 .custom-radio {
     --radio-color: #5b855b; /* Default color */
+    --radio-disabled-background-color: #dedede;
     background-color: #fff;
     border: var(--control-border-width) solid #777777;
     border-radius: 50%;
@@ -447,6 +454,10 @@ body {
     display: block;
 }
 
+.custom-radio[aria-disabled="true"] {
+    background-color: var(--radio-disabled-background-color);
+}
+
 
 /* Other elements */
 
@@ -461,6 +472,7 @@ input[type="text"] {
 }
 /* Normalize Input controls inside the canvas to match Preview */
 #dialog input[type="text"] {
+    --input-disabled-background-color: #dedede;
     box-sizing: border-box;
     padding: 3px 5px;
     height: 22px;            /* match Preview */
@@ -475,7 +487,7 @@ input[type="text"] {
 #dialog input:disabled,
 #dialog select:disabled,
 #dialog textarea:disabled {
-    background-color: #d8d8d8;
+    background-color: var(--input-disabled-background-color, #dedede);
     border: var(--control-border-width) solid #686868;
     color: #444;
     -webkit-text-fill-color: #444; /* Safari/WebKit */
@@ -559,13 +571,18 @@ input {
 .counter-arrow {
     cursor: pointer;
     display: flex;
-    align-items: center;
+    align-items: stretch;
     justify-content: center;
     position: relative;
     flex: 0 0 auto;
 }
 
+.counter-arrow.down {
+    align-self: flex-start;
+}
+
 .counter-arrow.up {
+    align-self: flex-end;
     margin-left: 1px;
 }
 
@@ -575,6 +592,7 @@ input {
     height: 100%;
     --counter-arrow-border-color: #8c8c8c;
     --counter-arrow-fill-color: #558855;
+    --counter-arrow-disabled-fill-color: var(--control-disabled-background-color);
 }
 
 .counter-arrow-shape {
@@ -590,6 +608,7 @@ input {
     font-size: 14px;
     padding: 0px 4px;
     border: none;
+    line-height: 1;
 }
 
 

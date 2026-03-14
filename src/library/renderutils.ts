@@ -102,6 +102,70 @@ const mergeSelectionOrder = (host: HTMLElement, activeItems: string[]): string[]
     return next;
 };
 
+const getDisabledBackgroundColor = (source: Record<string, unknown> | DOMStringMap): string => {
+    const raw = String(source.disabledBackgroundColor ?? '').trim();
+    return raw || '#d8d8d8';
+};
+
+const getDisabledColor = (source: Record<string, unknown> | DOMStringMap): string => {
+    const raw = String(source.disabledColor ?? source.disabledBackgroundColor ?? '').trim();
+    return raw || '#dedede';
+};
+
+const applyControlDisabledAppearance = (
+    opts: {
+        input?: HTMLInputElement | HTMLSelectElement | null;
+        checkbox?: HTMLElement | null;
+        radio?: HTMLElement | null;
+        enabled: boolean;
+        source: Record<string, unknown> | DOMStringMap;
+    }
+): void => {
+    const disabledBg = getDisabledColor(opts.source);
+
+    if (opts.input) {
+        opts.input.style.setProperty('--input-disabled-background-color', disabledBg);
+        opts.input.style.backgroundColor = opts.enabled ? '#ffffff' : disabledBg;
+    }
+
+    if (opts.checkbox) {
+        opts.checkbox.style.setProperty('--checkbox-disabled-background-color', disabledBg);
+        opts.checkbox.setAttribute('aria-disabled', String(!opts.enabled));
+        if (opts.enabled) {
+            opts.checkbox.style.removeProperty('background-color');
+        } else {
+            opts.checkbox.style.backgroundColor = disabledBg;
+        }
+    }
+
+    if (opts.radio) {
+        opts.radio.style.setProperty('--radio-disabled-background-color', disabledBg);
+        opts.radio.setAttribute('aria-disabled', String(!opts.enabled));
+        if (opts.enabled) {
+            opts.radio.style.removeProperty('background-color');
+        } else {
+            opts.radio.style.backgroundColor = disabledBg;
+        }
+    }
+};
+
+const applyCounterDisabledAppearance = (
+    host: HTMLElement | null,
+    enabled: boolean,
+    source: Record<string, unknown> | DOMStringMap
+): void => {
+    if (!(host instanceof HTMLElement)) {
+        return;
+    }
+
+    const fillColor = String(source.color ?? '').trim() || '#558855';
+    const disabledFill = getDisabledColor(source);
+    const glyphs = host.querySelectorAll<HTMLElement>('.counter-arrow-glyph');
+    glyphs.forEach((glyph) => {
+        glyph.style.setProperty('--counter-arrow-fill-color', enabled ? fillColor : disabledFill);
+    });
+};
+
 const applyContainerItemFilter = (host: HTMLElement | null) => {
     if (!(host instanceof HTMLElement)) {
         return;
@@ -947,6 +1011,7 @@ export const renderutils: RenderUtils = {
             element.value = data.value || '';
             element.style.width = data.width + 'px';
             element.style.borderColor = data.borderColor || '#8c8c8c';
+            element.style.setProperty('--input-disabled-background-color', getDisabledColor(data as Record<string, unknown>));
             // element.style.maxHeight = data.height + 'px';
             // element.style.maxWidth = data.maxWidth + 'px';
 
@@ -954,6 +1019,7 @@ export const renderutils: RenderUtils = {
 
             element.className = 'custom-select';
             element.style.width = data.width + 'px';
+            element.style.setProperty('--input-disabled-background-color', getDisabledColor(data as Record<string, unknown>));
             // Set arrow color via inline SVG data URI if provided
             const color = data.arrowColor || '#000000';
             const svg = encodeURIComponent(`
@@ -999,6 +1065,7 @@ export const renderutils: RenderUtils = {
             customCheckbox.dataset.fill = String(!!data.fill);
             customCheckbox.style.setProperty('--checkbox-color', data.color);
             customCheckbox.style.setProperty('--checkbox-border-color', data.borderColor || '#8c8c8c');
+            customCheckbox.style.setProperty('--checkbox-disabled-background-color', getDisabledColor(data as Record<string, unknown>));
             customCheckbox.style.borderColor = data.borderColor || '#8c8c8c';
 
             const SVG_NS = "http://www.w3.org/2000/svg";
@@ -1058,6 +1125,7 @@ export const renderutils: RenderUtils = {
             customRadio.setAttribute('aria-checked', initialSelected ? 'true' : 'false');
             customRadio.setAttribute('group', data.group || '');
             customRadio.style.setProperty('--radio-color', data.color);
+            customRadio.style.setProperty('--radio-disabled-background-color', getDisabledColor(data as Record<string, unknown>));
             customRadio.classList.toggle('selected', initialSelected);
 
             wrapperLabel.appendChild(nativeRadio);
@@ -1104,6 +1172,7 @@ export const renderutils: RenderUtils = {
 
                 glyph.style.setProperty('--counter-arrow-border-color', borderColor);
                 glyph.style.setProperty('--counter-arrow-fill-color', arrowColor);
+                glyph.style.setProperty('--counter-arrow-disabled-fill-color', getDisabledColor(data as Record<string, unknown>));
                 glyph.appendChild(polygon);
 
                 return glyph;
@@ -1336,7 +1405,28 @@ export const renderutils: RenderUtils = {
         }
 
         if (utils.isFalse(data.isEnabled)) {
-            element.classList.add('disabled-div');
+            if (!utils.isElementOf(data.type, ["Input", "Select", "Checkbox", "Radio", "Counter"])) {
+                element.classList.add('disabled-div');
+            }
+            if (data.type === 'Input' && element instanceof HTMLInputElement) {
+                element.disabled = true;
+                applyControlDisabledAppearance({ input: element, enabled: false, source: data as Record<string, unknown> });
+            } else if (data.type === 'Select' && element instanceof HTMLSelectElement) {
+                element.disabled = true;
+                applyControlDisabledAppearance({ input: element, enabled: false, source: data as Record<string, unknown> });
+            } else if (data.type === 'Checkbox') {
+                const customCheckbox = element.querySelector('.custom-checkbox') as HTMLElement | null;
+                applyControlDisabledAppearance({ checkbox: customCheckbox, enabled: false, source: data as Record<string, unknown> });
+            } else if (data.type === 'Radio') {
+                const nativeRadio = element.querySelector('.native-radio') as HTMLInputElement | null;
+                const customRadio = element.querySelector('.custom-radio') as HTMLElement | null;
+                if (nativeRadio) {
+                    nativeRadio.disabled = true;
+                }
+                applyControlDisabledAppearance({ radio: customRadio, enabled: false, source: data as Record<string, unknown> });
+            } else if (data.type === 'Counter') {
+                applyCounterDisabledAppearance(element, false, data as Record<string, unknown>);
+            }
         }
 
         element.id = uuid;
@@ -1595,11 +1685,18 @@ export const renderutils: RenderUtils = {
                         } else if (counter) {
                             const decreaseGlyph = counterDecrease?.querySelector('.counter-arrow-glyph') as HTMLDivElement | null;
                             const increaseGlyph = counterIncrease?.querySelector('.counter-arrow-glyph') as HTMLDivElement | null;
+                            const enabled = utils.isTrue(dataset.isEnabled ?? 'true');
                             if (decreaseGlyph) {
-                                decreaseGlyph.style.setProperty('--counter-arrow-fill-color', value);
+                                decreaseGlyph.style.setProperty(
+                                    '--counter-arrow-fill-color',
+                                    enabled ? value : getDisabledBackgroundColor(dataset)
+                                );
                             }
                             if (increaseGlyph) {
-                                increaseGlyph.style.setProperty('--counter-arrow-fill-color', value);
+                                increaseGlyph.style.setProperty(
+                                    '--counter-arrow-fill-color',
+                                    enabled ? value : getDisabledBackgroundColor(dataset)
+                                );
                             }
                         } else if (button && inner) {
                             inner.style.backgroundColor = value;
@@ -1750,6 +1847,79 @@ export const renderutils: RenderUtils = {
                             value = dataset.activeFontColor;
                         }
                         sorterNeedsRender = true;
+                    }
+                    break;
+
+                case 'disabledColor':
+                    if (input) {
+                        if (utils.isValidColor(value)) {
+                            const inputEl = (element instanceof HTMLInputElement ? element : inner) as HTMLInputElement | null;
+                            applyControlDisabledAppearance({
+                                input: inputEl,
+                                enabled: !inputEl?.disabled,
+                                source: { ...dataset, disabledColor: value }
+                            });
+                        } else {
+                            value = dataset.disabledColor || dataset.disabledBackgroundColor || '#dedede';
+                            const color = document.getElementById('eldisabledColor') as HTMLInputElement | null;
+                            if (color) color.value = value;
+                        }
+                    } else if (select) {
+                        if (utils.isValidColor(value)) {
+                            const selectEl = (element instanceof HTMLSelectElement ? element : inner) as HTMLSelectElement | null;
+                            applyControlDisabledAppearance({
+                                input: selectEl,
+                                enabled: !selectEl?.disabled,
+                                source: { ...dataset, disabledColor: value }
+                            });
+                        } else {
+                            value = dataset.disabledColor || '#dedede';
+                            const color = document.getElementById('eldisabledColor') as HTMLInputElement | null;
+                            if (color) color.value = value;
+                        }
+                    } else if (checkbox) {
+                        if (utils.isValidColor(value)) {
+                            applyControlDisabledAppearance({
+                                checkbox: customCheckbox,
+                                enabled: customCheckbox?.getAttribute('aria-disabled') !== 'true',
+                                source: { ...dataset, disabledColor: value }
+                            });
+                        } else {
+                            value = dataset.disabledColor || dataset.disabledBackgroundColor || '#dedede';
+                            const color = document.getElementById('eldisabledColor') as HTMLInputElement | null;
+                            if (color) color.value = value;
+                        }
+                    } else if (radio) {
+                        if (utils.isValidColor(value)) {
+                            applyControlDisabledAppearance({
+                                radio: customRadio,
+                                enabled: customRadio?.getAttribute('aria-disabled') !== 'true',
+                                source: { ...dataset, disabledColor: value }
+                            });
+                        } else {
+                            value = dataset.disabledColor || dataset.disabledBackgroundColor || '#dedede';
+                            const color = document.getElementById('eldisabledColor') as HTMLInputElement | null;
+                            if (color) color.value = value;
+                        }
+                    } else if (counter) {
+                        if (utils.isValidColor(value)) {
+                            const decreaseGlyph = counterDecrease?.querySelector('.counter-arrow-glyph') as HTMLElement | null;
+                            const increaseGlyph = counterIncrease?.querySelector('.counter-arrow-glyph') as HTMLElement | null;
+                            if (decreaseGlyph) {
+                                decreaseGlyph.style.setProperty('--counter-arrow-disabled-fill-color', value);
+                            }
+                            if (increaseGlyph) {
+                                increaseGlyph.style.setProperty('--counter-arrow-disabled-fill-color', value);
+                            }
+                            applyCounterDisabledAppearance(element, utils.isTrue(dataset.isEnabled ?? 'true'), {
+                                ...dataset,
+                                disabledColor: value
+                            });
+                        } else {
+                            value = dataset.disabledColor || dataset.disabledBackgroundColor || '#dedede';
+                            const color = document.getElementById('eldisabledColor') as HTMLInputElement | null;
+                            if (color) color.value = value;
+                        }
                     }
                     break;
 
@@ -2030,19 +2200,28 @@ export const renderutils: RenderUtils = {
 
                 case 'isEnabled': {
                     const enabled = utils.isTrue(value);
+                    const usesCustomDisabledColor = input || select || checkbox || radio || counter;
                     if (enabled) {
                         element.classList.remove('disabled-div');
                         if (renderutils.previewWindow()) {
                             element.style.pointerEvents = '';
                         }
                     } else {
-                        element.classList.add('disabled-div');
+                        if (!usesCustomDisabledColor) {
+                            element.classList.add('disabled-div');
+                        } else {
+                            element.classList.remove('disabled-div');
+                        }
                         if (renderutils.previewWindow()) {
                             element.style.pointerEvents = 'none';
                         }
                     }
                     if (inner) {
-                        inner.classList.toggle('disabled-div', !enabled);
+                        if (usesCustomDisabledColor) {
+                            inner.classList.remove('disabled-div');
+                        } else {
+                            inner.classList.toggle('disabled-div', !enabled);
+                        }
                         if (renderutils.previewWindow()) {
                             inner.style.pointerEvents = enabled ? '' : 'none';
                         }
@@ -2084,6 +2263,7 @@ export const renderutils: RenderUtils = {
                                 arrow.classList.remove('disabled');
                             }
                         });
+                        applyCounterDisabledAppearance(element, enabled, dataset);
                     }
 
                     if (button && inner) {
@@ -2097,14 +2277,25 @@ export const renderutils: RenderUtils = {
                     const inputEl = (element instanceof HTMLInputElement ? element : (inner as HTMLInputElement | null));
                     if (inputEl && input) {
                         inputEl.disabled = !enabled;
+                        applyControlDisabledAppearance({ input: inputEl, enabled, source: dataset });
+                    }
+
+                    const selectEl = (element instanceof HTMLSelectElement ? element : (inner as HTMLSelectElement | null));
+                    if (selectEl && select) {
+                        selectEl.disabled = !enabled;
+                        applyControlDisabledAppearance({ input: selectEl, enabled, source: dataset });
                     }
 
                     if (checkbox && customCheckbox) {
-                        customCheckbox.setAttribute('aria-disabled', String(!enabled));
+                        applyControlDisabledAppearance({ checkbox: customCheckbox, enabled, source: dataset });
                     }
 
                     if (radio && customRadio) {
-                        customRadio.setAttribute('aria-disabled', String(!enabled));
+                        applyControlDisabledAppearance({ radio: customRadio, enabled, source: dataset });
+                        const nativeRadio = element.querySelector('.native-radio') as HTMLInputElement | null;
+                        if (nativeRadio) {
+                            nativeRadio.disabled = !enabled;
+                        }
                     }}
                     break;
 
@@ -3376,10 +3567,20 @@ export const renderutils: RenderUtils = {
             return null;
         }
 
-        // Prefer the top-level element that carries a real element type, to avoid matching inner nodes
+        // Prefer the top-level preview wrapper; inner controls duplicate the same data-nameid/type.
         const matches = Array.from(canvas.querySelectorAll<HTMLElement>(`[data-nameid="${n}"]`));
         if (matches.length === 0) {
             return null;
+        }
+
+        const wrapper = matches.find(el => el.classList.contains('element-wrapper'));
+        if (wrapper) {
+            return wrapper;
+        }
+
+        const topLevel = matches.find(el => el.parentElement === canvas);
+        if (topLevel) {
+            return topLevel;
         }
 
         const withType = matches.find(el => (el.dataset?.type || '').length > 0);

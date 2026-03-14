@@ -40,11 +40,12 @@ export const elements: ElementsWithPersist = {
         value: '',
         valueType: 'String',
         borderColor: '#8c8c8c',
+        disabledColor: '#dedede',
         isEnabled: true,
         isVisible: true,
         elementIds: [],
         $persist: [
-            'nameid','left','top','width','value','valueType','borderColor','isEnabled','isVisible'
+            'nameid','left','top','width','value','valueType','borderColor','disabledColor','isEnabled','isVisible'
         ] as const
     },
     selectElement: {
@@ -56,11 +57,12 @@ export const elements: ElementsWithPersist = {
         width: 120,
         value: '',
         arrowColor: '#5b855b',
+        disabledColor: '#dedede',
         isEnabled: true,
         isVisible: true,
         elementIds: [],
         $persist: [
-            'nameid','left','top','width','value','arrowColor','isEnabled','isVisible'
+            'nameid','left','top','width','value','arrowColor','disabledColor','isEnabled','isVisible'
         ] as const
     },
     checkboxElement: {        id: '',
@@ -72,12 +74,13 @@ export const elements: ElementsWithPersist = {
         fill: true,
         color: '#70a470',
         borderColor: '#8c8c8c',
+        disabledColor: '#dedede',
         isChecked: false,
         isEnabled: true,
         isVisible: true,
         elementIds: [],
         $persist: [
-            'nameid','left','top','size','color','fill','borderColor','isChecked','isEnabled','isVisible'
+            'nameid','left','top','size','color','fill','borderColor','disabledColor','isChecked','isEnabled','isVisible'
         ] as const
     },
     radioElement: {
@@ -89,12 +92,13 @@ export const elements: ElementsWithPersist = {
         top: 10,
         size: 14,
         color: '#5b855b',
+        disabledColor: '#dedede',
         isSelected: false,
         isEnabled: true,
         isVisible: true,
         elementIds: [],
         $persist: [
-            'nameid','group','left','top','size','color','isSelected','isEnabled','isVisible'
+            'nameid','group','left','top','size','color','disabledColor','isSelected','isEnabled','isVisible'
         ] as const
     },
     counterElement: {        id: '',
@@ -105,6 +109,7 @@ export const elements: ElementsWithPersist = {
         space: 4,
         color: '#558855',
         borderColor: '#8c8c8c',
+        disabledColor: '#dedede',
         minval: 1,
         startval: 1,
         maxval: 5,
@@ -113,7 +118,7 @@ export const elements: ElementsWithPersist = {
         isVisible: true,
         elementIds: [],
         $persist: [
-            'nameid','left','top','space','color','borderColor','minval','startval','maxval','updownsize','isEnabled','isVisible'
+            'nameid','left','top','space','color','borderColor','disabledColor','minval','startval','maxval','updownsize','isEnabled','isVisible'
         ] as const
     },
     sliderElement: {

@@ -9,6 +9,7 @@ html, body {
 
 :root {
     --control-border-width: 1px;
+    --control-disabled-background-color: #dedede;
 }
 
 #preview-root {
@@ -60,6 +61,62 @@ html, body {
     cursor: default !important;
 }
 
+/* Preview keeps disabled elements fully visible; grey them out without fading */
+.preview-canvas .element-wrapper.disabled-div,
+.preview-canvas .disabled-div {
+    opacity: 1;
+}
+
+.preview-canvas .element-wrapper.disabled-div > *,
+.preview-canvas .disabled-div {
+    filter: grayscale(100%);
+}
+
+.preview-canvas .element-wrapper.disabled-div .smart-button,
+.preview-canvas .element-wrapper.disabled-div .container,
+.preview-canvas .element-wrapper.disabled-div .sorter,
+.preview-canvas .element-wrapper.disabled-div .separator {
+    background-color: var(--control-disabled-background-color) !important;
+    border-color: #8c8c8c !important;
+}
+
+.preview-canvas .element-wrapper.disabled-div .smart-button,
+.preview-canvas .element-wrapper.disabled-div .container,
+.preview-canvas .element-wrapper.disabled-div .sorter,
+.preview-canvas .element-wrapper.disabled-div .container-text,
+.preview-canvas .element-wrapper.disabled-div .sorter-label,
+.preview-canvas .element-wrapper.disabled-div .counter-value,
+.preview-canvas .element-wrapper.disabled-div label,
+.preview-canvas .element-wrapper.disabled-div span,
+.preview-canvas .element-wrapper.disabled-div {
+    color: #666 !important;
+}
+
+.preview-canvas .element-wrapper.disabled-div .container-item.active,
+.preview-canvas .element-wrapper.disabled-div .sorter-item.is-asc,
+.preview-canvas .element-wrapper.disabled-div .sorter-item.is-desc,
+.preview-canvas .element-wrapper.disabled-div .sorter-item.no-order {
+    background-color: #b8b8b8 !important;
+    color: #444 !important;
+}
+
+.preview-canvas .element-wrapper.disabled-div .custom-radio {
+    background-color: var(--radio-disabled-background-color, #dedede) !important;
+    border-color: #8c8c8c !important;
+}
+
+.preview-canvas .element-wrapper.disabled-div .custom-radio::after {
+    background-color: #7a7a7a !important;
+}
+
+.preview-canvas .element-wrapper.disabled-div .custom-checkbox {
+    border-color: #8c8c8c !important;
+}
+
+.preview-canvas .element-wrapper.disabled-div .counter-arrow-glyph {
+    --counter-arrow-fill-color: #8a8a8a !important;
+}
+
 /* Force blue focus ring in Preview (thinner + fuzzy) */
 input:focus, select:focus, textarea:focus {
     outline: none !important;
@@ -75,6 +132,7 @@ input:focus, select:focus, textarea:focus {
 /* Normalize control sizing so enabled/disabled are identical */
 .preview-canvas input[type="text"],
 .preview-canvas select {
+    --input-disabled-background-color: #dedede;
     box-sizing: border-box;
     padding: 3px 5px;                  /* consistent box */
     height: 22px;                      /* fixed height to avoid jump */
@@ -292,7 +350,7 @@ input:focus, select:focus, textarea:focus {
 .preview-canvas textarea:disabled {
     color: #444 !important;
     -webkit-text-fill-color: #444 !important;     /* Safari/WebKit */
-    background-color: #d8d8d8 !important;
+    background-color: var(--input-disabled-background-color, #dedede) !important;
     border: var(--control-border-width) solid #686868 !important; /* match editor */
     box-shadow: none !important;                  /* match editor */
     appearance: none !important;                  /* keep platform-neutral look */

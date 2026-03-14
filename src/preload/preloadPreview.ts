@@ -374,8 +374,7 @@ function renderPreview(dialog: PreviewDialog) {
         }
 
         if (!utils.isTrue(data.isEnabled)) {
-            wrapper.classList.add('disabled-div');
-            core.style.pointerEvents = 'none';
+            renderutils.updateElement(wrapper, { isEnabled: 'false' });
         }
     }
 

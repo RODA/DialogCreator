@@ -25,6 +25,7 @@ export type inputElementType = {
     value: string;
     valueType: string; // 'Numeric' | 'String'
     borderColor: string;
+    disabledColor: string;
     isEnabled: boolean;
     isVisible: boolean;
     elementIds: string[];
@@ -40,6 +41,7 @@ export type selectElementType = {
     // Robjects: string;   // too R specific
     value: string;
     arrowColor: string;
+    disabledColor: string;
     isEnabled: boolean;
     isVisible: boolean;
     elementIds: string[];
@@ -54,6 +56,7 @@ export type checkboxElementType = {
     fill: boolean;
     color: string;
     borderColor: string;
+    disabledColor: string;
     isChecked: boolean;
     isEnabled: boolean;
     isVisible: boolean;
@@ -68,6 +71,7 @@ export type radioElementType = {
     top: number;
     size: number;
     color: string;
+    disabledColor: string;
     isSelected: boolean;
     isEnabled: boolean;
     isVisible: boolean;
@@ -82,6 +86,7 @@ export type counterElementType = {
     space: number;
     color: string;
     borderColor: string;
+    disabledColor: string;
     minval: number;
     startval: number;
     maxval: number;
