@@ -1,13 +1,16 @@
 html, body {
     margin: 0;
     padding: 0;
+    height: 100%;
     background: #ffffff;
+    overflow: hidden;
 }
 
 .code-container {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    overflow: hidden;
 }
 
 .code-title {
@@ -20,8 +23,10 @@ html, body {
     flex: 1;
     display: flex;
     position: relative;
+    min-width: 0;
     min-height: 0; /* allow flex child to shrink */
     border-bottom: 1px solid #e5e5e5;
+    overflow: hidden;
 }
 
 #codeMount {
@@ -29,6 +34,7 @@ html, body {
     min-width: 0;
     min-height: 0; /* critical for nested flex to allow child to take full height */
     display: flex; /* so CodeMirror root can flex */
+    overflow: hidden;
 }
 
 .code-gutter {
@@ -78,6 +84,7 @@ html, body {
 /* Ensure the code editor uses a true monospace font and disables programming ligatures
    so sequences like =>, >=, -> are shown literally and not rendered as single glyphs. */
 .cm-editor,
+.cm-scroller,
 .cm-editor *,
 .cm-editor .cm-scroller,
 .cm-editor .cm-content,
@@ -91,6 +98,18 @@ html, body {
     font-variant-ligatures: none !important;
     -webkit-font-feature-settings: "liga" 0, "calt" 0, "clig" 0;
     font-feature-settings: "liga" 0, "calt" 0, "clig" 0;
+}
+
+.cm-editor {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.cm-editor .cm-scroller {
+    overflow: auto;
 }
 
 /* Also apply to the textarea fallback to keep behavior consistent */
