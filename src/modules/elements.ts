@@ -104,6 +104,7 @@ export const elements: ElementsWithPersist = {
         top: 15,
         space: 4,
         color: '#558855',
+        borderColor: '#8c8c8c',
         minval: 1,
         startval: 1,
         maxval: 5,
@@ -112,7 +113,7 @@ export const elements: ElementsWithPersist = {
         isVisible: true,
         elementIds: [],
         $persist: [
-            'nameid','left','top','space','color','minval','startval','maxval','updownsize','isEnabled','isVisible'
+            'nameid','left','top','space','color','borderColor','minval','startval','maxval','updownsize','isEnabled','isVisible'
         ] as const
     },
     sliderElement: {

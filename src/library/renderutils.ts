@@ -1083,16 +1083,40 @@ export const renderutils: RenderUtils = {
         } else if (data.type == "Counter") {
 
             element.className = "counter-wrapper";
+            const borderColor = String(data.borderColor || '#8c8c8c');
+            element.dataset.borderColor = borderColor;
+            const arrowColor = String(data.color || '#558855');
+            const arrowSize = Number(data.updownsize || 8);
+            const arrowHeight = 1.5 * arrowSize;
+            const createCounterGlyph = (direction: 'up' | 'down') => {
+                const svgNS = 'http://www.w3.org/2000/svg';
+                const glyph = document.createElementNS(svgNS, 'svg');
+                glyph.setAttribute('class', `counter-arrow-glyph ${direction}`);
+                glyph.setAttribute('viewBox', '0 0 100 80');
+                glyph.setAttribute('aria-hidden', 'true');
+
+                const polygon = document.createElementNS(svgNS, 'polygon');
+                polygon.setAttribute('class', 'counter-arrow-shape');
+                polygon.setAttribute(
+                    'points',
+                    direction === 'up' ? '50,10 12,70 88,70' : '12,10 88,10 50,70'
+                );
+
+                glyph.style.setProperty('--counter-arrow-border-color', borderColor);
+                glyph.style.setProperty('--counter-arrow-fill-color', arrowColor);
+                glyph.appendChild(polygon);
+
+                return glyph;
+            };
 
             const decrease = document.createElement("div");
             decrease.className = "counter-arrow down";
             decrease.id = "counter-decrease-" + uuid;
-            decrease.style.width = '0px';
-            decrease.style.height = '0px';
-            decrease.style.borderLeft = (data.updownsize || 8) + 'px solid transparent';
-            decrease.style.borderRight = (data.updownsize || 8) + 'px solid transparent';
-            decrease.style.borderTop = (1.5 * (data.updownsize || 8)) + 'px solid ' + data.color;
-            decrease.style.borderBottom = '';
+            decrease.style.width = `${Math.ceil(arrowSize * 2)}px`;
+            decrease.style.height = `${Math.ceil(arrowHeight)}px`;
+
+            const decreaseGlyph = createCounterGlyph('down');
+            decrease.appendChild(decreaseGlyph);
 
             const display = document.createElement("div");
             display.className = "counter-value";
@@ -1108,6 +1132,7 @@ export const renderutils: RenderUtils = {
 
             display.style.padding = '0px ' + data.space + 'px';
             display.dataset.nameid = nameid;
+            display.style.boxSizing = 'border-box';
 
             display.style.fontFamily = coms.fontFamily;
             display.style.fontSize = coms.fontSize + 'px';
@@ -1117,12 +1142,11 @@ export const renderutils: RenderUtils = {
             const increase = document.createElement("div");
             increase.className = "counter-arrow up";
             increase.id = "counter-increase-" + uuid;
-            increase.style.width = '0px';
-            increase.style.height = '0px';
-            increase.style.borderLeft = (data.updownsize || 8) + 'px solid transparent';
-            increase.style.borderRight = (data.updownsize || 8) + 'px solid transparent';
-            increase.style.borderBottom = (1.5 * (data.updownsize || 8)) + 'px solid ' + data.color;
-            increase.style.borderTop = '';
+            increase.style.width = `${Math.ceil(arrowSize * 2)}px`;
+            increase.style.height = `${Math.ceil(arrowHeight)}px`;
+
+            const increaseGlyph = createCounterGlyph('up');
+            increase.appendChild(increaseGlyph);
 
             element.appendChild(decrease);
             element.appendChild(display);
@@ -1366,6 +1390,8 @@ export const renderutils: RenderUtils = {
             const customCheckbox = document.querySelector(`#checkbox-${element.id}`) as HTMLDivElement;
             const customRadio = document.querySelector(`#radio-${element.id}`) as HTMLDivElement;
             const countervalue = document.querySelector(`#counter-value-${element.id}`) as HTMLDivElement | null;
+            const counterDecrease = document.querySelector(`#counter-decrease-${element.id}`) as HTMLDivElement | null;
+            const counterIncrease = document.querySelector(`#counter-increase-${element.id}`) as HTMLDivElement | null;
             const handle = document.querySelector(`#slider-handle-${element.id}`) as HTMLDivElement;
             const elwidth = document.getElementById('elwidth') as HTMLInputElement;
             const elheight = document.getElementById('elheight') as HTMLInputElement;
@@ -1567,10 +1593,14 @@ export const renderutils: RenderUtils = {
                         if (customRadio) {
                             customRadio.style.setProperty('--radio-color', value);
                         } else if (counter) {
-                            const decrease = document.querySelector(`#counter-decrease-${element.id}`) as HTMLDivElement;
-                            decrease.style.color = value;
-                            const increase = document.querySelector(`#counter-increase-${element.id}`) as HTMLDivElement;
-                            increase.style.color = value;
+                            const decreaseGlyph = counterDecrease?.querySelector('.counter-arrow-glyph') as HTMLDivElement | null;
+                            const increaseGlyph = counterIncrease?.querySelector('.counter-arrow-glyph') as HTMLDivElement | null;
+                            if (decreaseGlyph) {
+                                decreaseGlyph.style.setProperty('--counter-arrow-fill-color', value);
+                            }
+                            if (increaseGlyph) {
+                                increaseGlyph.style.setProperty('--counter-arrow-fill-color', value);
+                            }
                         } else if (button && inner) {
                             inner.style.backgroundColor = value;
                         } else if (separator && inner) {
@@ -1653,6 +1683,19 @@ export const renderutils: RenderUtils = {
                             inner.style.borderColor = value;
                         } else if (input && inner) {
                             inner.style.borderColor = value;
+                        } else if (counter) {
+                            if (counterDecrease) {
+                                const decreaseGlyph = counterDecrease.querySelector('.counter-arrow-glyph') as HTMLDivElement | null;
+                                if (decreaseGlyph) {
+                                    decreaseGlyph.style.setProperty('--counter-arrow-border-color', value);
+                                }
+                            }
+                            if (counterIncrease) {
+                                const increaseGlyph = counterIncrease.querySelector('.counter-arrow-glyph') as HTMLDivElement | null;
+                                if (increaseGlyph) {
+                                    increaseGlyph.style.setProperty('--counter-arrow-border-color', value);
+                                }
+                            }
                         } else if (checkbox && customCheckbox) {
                             customCheckbox.style.borderColor = value;
                             customCheckbox.style.setProperty('--checkbox-border-color', value);
@@ -1814,24 +1857,16 @@ export const renderutils: RenderUtils = {
 
                 case 'updownsize':
                     if (counter) {
-                        const decrease = document.querySelector(`#counter-decrease-${element.id}`) as HTMLDivElement;
-                        const increase = document.querySelector(`#counter-increase-${element.id}`) as HTMLDivElement;
                         const size = Number(value || 8);
-                        const sideSize = size + 'px';
-                        const tipSize = (1.5 * size) + 'px';
-                        const color = element.dataset.color || '#558855';
-
-                        if (decrease) {
-                            decrease.style.borderLeft = sideSize + ' solid transparent';
-                            decrease.style.borderRight = sideSize + ' solid transparent';
-                            decrease.style.borderTop = tipSize + ' solid ' + color;
-                            decrease.style.borderBottom = '';
+                        const glyphWidth = `${Math.ceil(size * 2)}px`;
+                        const glyphHeight = `${Math.ceil(1.5 * size)}px`;
+                        if (counterDecrease) {
+                            counterDecrease.style.width = glyphWidth;
+                            counterDecrease.style.height = glyphHeight;
                         }
-                        if (increase) {
-                            increase.style.borderLeft = sideSize + ' solid transparent';
-                            increase.style.borderRight = sideSize + ' solid transparent';
-                            increase.style.borderBottom = tipSize + ' solid ' + color;
-                            increase.style.borderTop = '';
+                        if (counterIncrease) {
+                            counterIncrease.style.width = glyphWidth;
+                            counterIncrease.style.height = glyphHeight;
                         }
                     }
                     counterNeedsResize = counterNeedsResize || counter;

@@ -7,6 +7,10 @@ html, body {
     background: #ffffff;
 }
 
+:root {
+    --control-border-width: 1px;
+}
+
 #preview-root {
     margin: 0;
     padding: 0;
@@ -33,7 +37,7 @@ html, body {
 
 .preview-button {
     padding: 4px 8px;
-    border: 1px solid #888;
+    border: var(--control-border-width) solid #888;
     border-radius: 3px;
     cursor: pointer;
 }
@@ -75,7 +79,7 @@ input:focus, select:focus, textarea:focus {
     padding: 3px 5px;                  /* consistent box */
     height: 22px;                      /* fixed height to avoid jump */
     line-height: 1.2;
-    border: 1px solid #777777;         /* flat border */
+    border: var(--control-border-width) solid #777777; /* flat border */
     appearance: none;
     -webkit-appearance: none;
     box-shadow: none;
@@ -134,7 +138,7 @@ input:focus, select:focus, textarea:focus {
 
 /* Sorter */
 .preview-canvas .sorter {
-    border: 1px solid #777777;
+    border: var(--control-border-width) solid #777777;
     border-radius: 2px;
     box-sizing: border-box;
     overflow: hidden;
@@ -289,7 +293,7 @@ input:focus, select:focus, textarea:focus {
     color: #444 !important;
     -webkit-text-fill-color: #444 !important;     /* Safari/WebKit */
     background-color: #d8d8d8 !important;
-    border: 1px solid #686868 !important;            /* match editor */
+    border: var(--control-border-width) solid #686868 !important; /* match editor */
     box-shadow: none !important;                  /* match editor */
     appearance: none !important;                  /* keep platform-neutral look */
     -webkit-appearance: none !important;
