@@ -124,6 +124,7 @@ export type labelElementType = {
     fontColor: string;
     value: string;
     align: string;
+    rotate: number;
     isEnabled?: boolean;
     isVisible: boolean;
     elementIds: string[];
@@ -154,7 +155,7 @@ export type containerElementType = {
     fontColor: string;
     activeBackgroundColor: string;
     activeFontColor: string;
-    disabledBackgroundColor: string;
+    disabledColor: string;
     borderColor: string;
     selection: string;
     itemType: string;

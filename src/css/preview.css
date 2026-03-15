@@ -67,17 +67,11 @@ html, body {
     opacity: 1;
 }
 
-.preview-canvas .element-wrapper.disabled-div > *,
-.preview-canvas .disabled-div {
-    filter: grayscale(100%);
-}
-
 .preview-canvas .element-wrapper.disabled-div .smart-button,
 .preview-canvas .element-wrapper.disabled-div .container,
 .preview-canvas .element-wrapper.disabled-div .sorter,
 .preview-canvas .element-wrapper.disabled-div .separator {
     background-color: var(--control-disabled-background-color) !important;
-    border-color: #8c8c8c !important;
 }
 
 .preview-canvas .element-wrapper.disabled-div .smart-button,
@@ -96,21 +90,34 @@ html, body {
 .preview-canvas .element-wrapper.disabled-div .sorter-item.is-asc,
 .preview-canvas .element-wrapper.disabled-div .sorter-item.is-desc,
 .preview-canvas .element-wrapper.disabled-div .sorter-item.no-order {
-    background-color: #b8b8b8 !important;
-    color: #444 !important;
+    box-shadow: inset 0 0 0 9999px rgba(216, 216, 216, 0.42) !important;
+}
+
+.preview-canvas .element-wrapper.disabled-div .container-item.active .container-text {
+    color: var(--container-active-fg, #f2f2f2) !important;
+}
+
+.preview-canvas .element-wrapper.disabled-div .sorter-item.is-asc,
+.preview-canvas .element-wrapper.disabled-div .sorter-item.is-desc,
+.preview-canvas .element-wrapper.disabled-div .sorter-item.no-order {
+    color: var(--sorter-active-fg, #f2f2f2) !important;
+}
+
+.preview-canvas .element-wrapper.disabled-div .sorter-item.is-asc .sorter-label,
+.preview-canvas .element-wrapper.disabled-div .sorter-item.is-desc .sorter-label,
+.preview-canvas .element-wrapper.disabled-div .sorter-item.no-order .sorter-label,
+.preview-canvas .element-wrapper.disabled-div .sorter-item.is-asc .sorter-indicator,
+.preview-canvas .element-wrapper.disabled-div .sorter-item.is-desc .sorter-indicator,
+.preview-canvas .element-wrapper.disabled-div .sorter-item.no-order .sorter-indicator {
+    color: inherit !important;
 }
 
 .preview-canvas .element-wrapper.disabled-div .custom-radio {
     background-color: var(--radio-disabled-background-color, #dedede) !important;
-    border-color: #8c8c8c !important;
 }
 
 .preview-canvas .element-wrapper.disabled-div .custom-radio::after {
     background-color: #7a7a7a !important;
-}
-
-.preview-canvas .element-wrapper.disabled-div .custom-checkbox {
-    border-color: #8c8c8c !important;
 }
 
 .preview-canvas .element-wrapper.disabled-div .counter-arrow-glyph {
@@ -351,7 +358,6 @@ input:focus, select:focus, textarea:focus {
     color: #444 !important;
     -webkit-text-fill-color: #444 !important;     /* Safari/WebKit */
     background-color: var(--input-disabled-background-color, #dedede) !important;
-    border: var(--control-border-width) solid #686868 !important; /* match editor */
     box-shadow: none !important;                  /* match editor */
     appearance: none !important;                  /* keep platform-neutral look */
     -webkit-appearance: none !important;

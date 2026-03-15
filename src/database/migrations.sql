@@ -37,6 +37,7 @@ INSERT INTO elements (element, property, value) VALUES
 ('inputElement', 'value', ''),
 ('inputElement', 'valueType', 'String'),
 ('inputElement', 'borderColor', '#8c8c8c'),
+('inputElement', 'disabledColor', '#dedede'),
 ('inputElement', 'isEnabled', 'true'),
 ('inputElement', 'isVisible', 'true'),
 
@@ -47,6 +48,7 @@ INSERT INTO elements (element, property, value) VALUES
 ('selectElement', 'width', '120'),
 ('selectElement', 'value', ''),
 ('selectElement', 'arrowColor', '#5b855b'),
+('selectElement', 'disabledColor', '#dedede'),
 ('selectElement', 'isEnabled', 'true'),
 ('selectElement', 'isVisible', 'true'),
 
@@ -58,6 +60,7 @@ INSERT INTO elements (element, property, value) VALUES
 ('checkboxElement', 'fill', 'true'),
 ('checkboxElement', 'color', '#70a470'),
 ('checkboxElement', 'borderColor', '#8c8c8c'),
+('checkboxElement', 'disabledColor', '#dedede'),
 ('checkboxElement', 'isChecked', 'false'),
 ('checkboxElement', 'isEnabled', 'true'),
 ('checkboxElement', 'isVisible', 'true'),
@@ -69,6 +72,7 @@ INSERT INTO elements (element, property, value) VALUES
 ('radioElement', 'top', '10'),
 ('radioElement', 'size', '14'),
 ('radioElement', 'color', '#5b855b'),
+('radioElement', 'disabledColor', '#dedede'),
 ('radioElement', 'isSelected', 'false'),
 ('radioElement', 'isEnabled', 'true'),
 ('radioElement', 'isVisible', 'true'),
@@ -80,6 +84,7 @@ INSERT INTO elements (element, property, value) VALUES
 ('counterElement', 'space', '4'),
 ('counterElement', 'color', '#558855'),
 ('counterElement', 'borderColor', '#8c8c8c'),
+('counterElement', 'disabledColor', '#dedede'),
 ('counterElement', 'minval', '1'),
 ('counterElement', 'startval', '1'),
 ('counterElement', 'maxval', '5'),
@@ -136,7 +141,7 @@ INSERT INTO elements (element, property, value) VALUES
 ('containerElement', 'fontColor', '#000000'),
 ('containerElement', 'activeBackgroundColor', '#589658'),
 ('containerElement', 'activeFontColor', '#ffffff'),
-('containerElement', 'disabledBackgroundColor', '#ececec'),
+('containerElement', 'disabledColor', '#ececec'),
 ('containerElement', 'borderColor', '#b8b8b8'),
 ('containerElement', 'isEnabled', 'true'),
 ('containerElement', 'isVisible', 'true');

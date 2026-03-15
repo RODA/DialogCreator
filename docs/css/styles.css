@@ -4,7 +4,7 @@
     font-weight: 400;
     font-style: normal;
     font-display: swap;
-    letter-spacing: -0.02em;
+    /* letter-spacing: -0.02em; */
 }
 @font-face {
     font-family: 'Liberation Mono';
@@ -33,7 +33,7 @@
     font-weight: 700;
     font-style: normal;
     font-display: swap;
-    letter-spacing: -0.02em;
+    /* letter-spacing: -0.02em; */
 }
 
 /* Box sizing rules */

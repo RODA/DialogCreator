@@ -397,6 +397,15 @@ function makeGroupFromSelection(persistent = false) {
 }
 
 export const editor: Editor = {
+    requestEditorResizeToFitDialog: function(width: unknown, height: unknown) {
+        const dialogWidth = Number(width);
+        const dialogHeight = Number(height);
+        if (!Number.isFinite(dialogWidth) || !Number.isFinite(dialogHeight)) {
+            return;
+        }
+        coms.sendTo('main', 'resize-editorWindow', dialogWidth, dialogHeight);
+    },
+
     alignSelection: function(mode: 'left' | 'top' | 'middle' | 'right' | 'bottom' | 'center') {
         const orderedIds = selectionOrder.length >= 2
             ? selectionOrder.slice()
@@ -558,7 +567,7 @@ export const editor: Editor = {
         dialog.canvas.style.backgroundColor = editorSettings.dialog.background || '#ffffff';
         dialog.canvas.style.border = '1px solid gray';
 
-        dialog.canvas.addEventListener('click', (event: MouseEvent) => {
+        const handleEmptyCanvasClick = (event: MouseEvent, allowOuterDialog = false) => {
             // Ignore the synthetic click that follows a lasso selection
             if (skipCanvasClickOnce) {
                 skipCanvasClickOnce = false;
@@ -567,7 +576,10 @@ export const editor: Editor = {
                 return;
             }
             hideContextMenu();
-            if ((event.target as HTMLDivElement).id === dialog.id) {
+            const target = event.target as HTMLElement | null;
+            const clickedCanvas = !!target && target.id === dialog.id;
+            const clickedOuterDialog = !!target && allowOuterDialog && target.id === 'dialog';
+            if (clickedCanvas || clickedOuterDialog) {
                 // If a property input is active, blur it first to commit changes
                 const active = document.activeElement as HTMLElement | null;
                 if (active && active.closest('#propertiesList')) {
@@ -575,7 +587,9 @@ export const editor: Editor = {
                 }
                 editor.deselectAll();
             }
-        });
+        };
+
+        dialog.canvas.addEventListener('click', handleEmptyCanvasClick);
         dialog.canvas.addEventListener("drop", (event: MouseEvent) => {
             event.preventDefault();
         });
@@ -700,6 +714,12 @@ export const editor: Editor = {
         const dialogdiv = document.getElementById('dialog') as HTMLDivElement;
         if (dialogdiv) {
             dialogdiv.append(dialog.canvas);
+            dialogdiv.addEventListener('click', (event: MouseEvent) => {
+                if (event.target !== dialogdiv) {
+                    return;
+                }
+                handleEmptyCanvasClick(event, true);
+            });
         }
 
         contextMenu = document.getElementById('element-context-menu');
@@ -1584,12 +1604,7 @@ export const editor: Editor = {
                     if (value) {
                         const dialogprops = renderutils.collectDialogProperties();
                         editor.updateDialogArea(dialogprops);
-                        coms.sendTo(
-                            'main',
-                            'resize-editorWindow',
-                            Number(dialog.properties.width),
-                            Number(dialog.properties.height)
-                        );
+                        editor.requestEditorResizeToFitDialog(dialog.properties.width, dialog.properties.height);
                     }
                 } else if (idLower === 'dialogfontsize') {
                     const value = element.value;
@@ -1807,6 +1822,7 @@ export const editor: Editor = {
             const h = Number(props.height) || 480;
             dialog.canvas.style.width = w + 'px';
             dialog.canvas.style.height = h + 'px';
+            editor.requestEditorResizeToFitDialog(w, h);
 
             const dwidth = document.getElementById('dialogWidth') as HTMLInputElement | null;
             if (dwidth) dwidth.value = String(props.width || '');
@@ -1835,6 +1851,7 @@ export const editor: Editor = {
             // Recreate elements
             const arr = Array.isArray(obj.elements) ? obj.elements : [];
             const groups: any[] = [];
+            const loadedLabelPositions = new Map<string, { left: number; top: number }>();
             for (const element of arr) {
                 if (String(element.type || '').toLowerCase() === 'group') {
                     groups.push(element);
@@ -1859,6 +1876,9 @@ export const editor: Editor = {
                 const top = Number(element.top ?? (parseInt(core.style.top || '0', 10) || 0));
                 wrapper.style.left = `${left}px`;
                 wrapper.style.top = `${top}px`;
+                if (desiredType === 'Label') {
+                    loadedLabelPositions.set(wrapper.id, { left, top });
+                }
 
                 // Copy dataset from JSON into wrapper
                 for (const [key, value] of Object.entries(element)) {
@@ -1903,7 +1923,16 @@ export const editor: Editor = {
                 if (dec) dec.id = `counter-decrease-${wid}`;
 
                 const sh = core.querySelector('.slider-handle') as HTMLDivElement | null;
-                if (sh) sh.id = `slider-handle-${wid}`;
+                if (sh) {
+                    sh.id = `slider-handle-${wid}`;
+                    renderutils.updateHandleStyle(sh, {
+                        handleshape: wrapper.dataset.handleshape || core.dataset.handleshape || 'triangle',
+                        direction: wrapper.dataset.direction || core.dataset.direction || 'horizontal',
+                        handlesize: wrapper.dataset.handlesize || core.dataset.handlesize || '8',
+                        handleColor: wrapper.dataset.handleColor || core.dataset.handleColor || '#558855',
+                        handlepos: wrapper.dataset.handlepos || core.dataset.handlepos || '50'
+                    });
+                }
 
                 dialog.canvas.appendChild(wrapper);
 
@@ -1965,6 +1994,16 @@ export const editor: Editor = {
             if (Number.isFinite(coms.fontSize) && coms.fontSize > 0) {
                 renderutils.updateFont(coms.fontSize);
             }
+
+            // Keep saved label positions authoritative on load, even if reflow changes size.
+            loadedLabelPositions.forEach((pos, id) => {
+                const labelEl = dialog.getElement(id) as HTMLElement | undefined;
+                if (!labelEl) return;
+                labelEl.style.left = `${pos.left}px`;
+                labelEl.style.top = `${pos.top}px`;
+                labelEl.dataset.left = String(pos.left);
+                labelEl.dataset.top = String(pos.top);
+            });
         } catch (error) {
             console.error('loadDialogFromJson failed', error);
         }

@@ -153,11 +153,12 @@ export const elements: ElementsWithPersist = {
         fontColor: '#000000',
         value: 'Label',
         align: 'left',
+        rotate: 0,
         isEnabled: true,
         isVisible: true,
         elementIds: [],
         $persist: [
-            'left','top','maxWidth','lineClamp','fontColor','value','align','isEnabled','isVisible'
+            'left','top','maxWidth','lineClamp','fontColor','value','align','rotate','isEnabled','isVisible'
         ] as const
     },
     separatorElement: {        id: '',
@@ -188,15 +189,15 @@ export const elements: ElementsWithPersist = {
         itemOrder: false,
         backgroundColor: '#ffffff',
         fontColor: '#000000',
-        activeBackgroundColor: '##589658',
+        activeBackgroundColor: '#589658',
         activeFontColor: '#ffffff',
-        disabledBackgroundColor: '#d8d8d8',
+        disabledColor: '#d8d8d8',
         borderColor: '#b8b8b8',
         isEnabled: true,
         isVisible: true,
         elementIds: [],
         $persist: [
-            'nameid','left','top','width','height','selection','itemType','itemOrder','backgroundColor','fontColor','activeBackgroundColor','activeFontColor','disabledBackgroundColor','borderColor','isEnabled','isVisible'
+            'nameid','left','top','width','height','selection','itemType','itemOrder','backgroundColor','fontColor','activeBackgroundColor','activeFontColor','disabledColor','borderColor','isEnabled','isVisible'
         ] as const
     },
     choiceElement: {        id: '',

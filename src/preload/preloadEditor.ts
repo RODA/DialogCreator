@@ -333,9 +333,12 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     // Run the main setup logic for the editor window
     // (mimics the previous top-level code in this file)
-    renderutils.setIntegers([
+    renderutils.setDouble([
         "width",
-        "height",
+        "height"
+    ]);
+
+    renderutils.setIntegers([
         "size",
         "space",
         "left",

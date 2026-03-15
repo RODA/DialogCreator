@@ -163,7 +163,16 @@ function renderPreview(dialog: PreviewDialog) {
                 if (dec) dec.id = `counter-decrease-${desiredId}`;
             } else if (desiredType === 'Slider') {
                 const handle = core.querySelector('.slider-handle') as HTMLDivElement | null;
-                if (handle) handle.id = `slider-handle-${desiredId}`;
+                if (handle) {
+                    handle.id = `slider-handle-${desiredId}`;
+                    renderutils.updateHandleStyle(handle, {
+                        handleshape: String((data as any).handleshape ?? core.dataset.handleshape ?? 'triangle'),
+                        direction: String((data as any).direction ?? core.dataset.direction ?? 'horizontal'),
+                        handlesize: String((data as any).handlesize ?? core.dataset.handlesize ?? '8'),
+                        handleColor: String((data as any).handleColor ?? core.dataset.handleColor ?? '#558855'),
+                        handlepos: String((data as any).handlepos ?? core.dataset.handlepos ?? '50')
+                    } as StringNumber);
+                }
             }
         } catch {}
 
@@ -211,6 +220,10 @@ function renderPreview(dialog: PreviewDialog) {
         if (desiredType === 'Label') {
             try {
                 renderutils.updateLabel(wrapper);
+                wrapper.style.left = `${left}px`;
+                wrapper.style.top = `${top}px`;
+                wrapper.dataset.left = String(left);
+                wrapper.dataset.top = String(top);
             } catch {}
         }
 

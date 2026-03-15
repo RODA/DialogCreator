@@ -17,9 +17,12 @@ let defaultElementSelected = "";
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    renderutils.setIntegers([
+    renderutils.setDouble([
         "width",
-        "height",
+        "height"
+    ]);
+
+    renderutils.setIntegers([
         "size",
         "space",
         "left",

@@ -102,14 +102,69 @@ const mergeSelectionOrder = (host: HTMLElement, activeItems: string[]): string[]
     return next;
 };
 
-const getDisabledBackgroundColor = (source: Record<string, unknown> | DOMStringMap): string => {
-    const raw = String(source.disabledBackgroundColor ?? '').trim();
-    return raw || '#d8d8d8';
+const getDisabledColor = (source: Record<string, unknown> | DOMStringMap): string => {
+    const raw = String(source.disabledColor ?? '').trim();
+    return raw || '#dedede';
 };
 
-const getDisabledColor = (source: Record<string, unknown> | DOMStringMap): string => {
-    const raw = String(source.disabledColor ?? source.disabledBackgroundColor ?? '').trim();
-    return raw || '#dedede';
+const parseCssColor = (value: string): [number, number, number] | null => {
+    const raw = String(value || '').trim();
+    if (!raw || typeof document === 'undefined' || !document.body) {
+        return null;
+    }
+    const probe = document.createElement('span');
+    probe.style.color = raw;
+    if (!probe.style.color) {
+        return null;
+    }
+    probe.style.display = 'none';
+    document.body.appendChild(probe);
+    const resolved = getComputedStyle(probe).color;
+    probe.remove();
+    const match = resolved.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+    if (!match) {
+        return null;
+    }
+    return [Number(match[1]), Number(match[2]), Number(match[3])];
+};
+
+const blendCssColors = (foreground: string, background: string, foregroundWeight = 0.62): string | null => {
+    const fg = parseCssColor(foreground);
+    const bg = parseCssColor(background);
+    if (!fg || !bg) {
+        return null;
+    }
+    const w = Math.max(0, Math.min(1, foregroundWeight));
+    const mix = (a: number, b: number) => Math.round((a * w) + (b * (1 - w)));
+    return `rgb(${mix(fg[0], bg[0])}, ${mix(fg[1], bg[1])}, ${mix(fg[2], bg[2])})`;
+};
+
+const applyEditorContainerSampleState = (
+    host: HTMLElement | null,
+    source: Record<string, unknown> | DOMStringMap,
+    enabled: boolean
+): void => {
+    if (!(host instanceof HTMLElement) || previewWindow()) {
+        return;
+    }
+
+    const activeRow = host.querySelector('.container-sample .container-item.active') as HTMLDivElement | null;
+    const activeLabel = activeRow?.querySelector('.container-text') as HTMLElement | null;
+    if (!activeRow) {
+        return;
+    }
+
+    const activeBg = String(source.activeBackgroundColor ?? '').trim() || '#589658';
+    const activeFg = String(source.activeFontColor ?? '').trim() || '#ffffff';
+    const disabledBg = getDisabledColor(source);
+    const disabledActiveBg = blendCssColors(activeBg, disabledBg, 0.62) || activeBg;
+
+    host.style.setProperty('--container-disabled-bg', disabledBg);
+    host.style.setProperty('--container-disabled-active-bg', disabledActiveBg);
+    activeRow.style.backgroundColor = enabled ? activeBg : disabledActiveBg;
+    if (activeLabel) {
+        activeLabel.style.color = activeFg;
+    }
 };
 
 const applyControlDisabledAppearance = (
@@ -181,9 +236,9 @@ const applyContainerItemFilter = (host: HTMLElement | null) => {
     const items = Array.from(host.querySelectorAll<HTMLElement>('.container-item'));
     const normalBg = host.dataset.backgroundColor || '#ffffff';
     const normalFg = host.dataset.fontColor || '#000000';
-    const activeBg = host.dataset.activeBackgroundColor || '##589658';
+    const activeBg = host.dataset.activeBackgroundColor || '#589658';
     const activeFg = host.dataset.activeFontColor || '#ffffff';
-    const disabledBg = host.dataset.disabledBackgroundColor || '#d8d8d8';
+    const disabledBg = host.dataset.disabledColor || '#d8d8d8';
     let selectionChanged = false;
 
     items.forEach((item) => {
@@ -1291,6 +1346,13 @@ export const renderutils: RenderUtils = {
             element.className = 'container';
             element.style.backgroundColor = data.backgroundColor;
             element.style.borderColor = data.borderColor;
+            element.style.setProperty('--container-active-fg', String(data.activeFontColor || '#ffffff'));
+            element.style.setProperty('--container-disabled-bg', String((data as Record<string, unknown>).disabledColor ?? '#d8d8d8'));
+            element.dataset.backgroundColor = String(data.backgroundColor || '#ffffff');
+            element.dataset.fontColor = String(data.fontColor || '#000000');
+            element.dataset.activeBackgroundColor = String(data.activeBackgroundColor || '#589658');
+            element.dataset.activeFontColor = String(data.activeFontColor || '#ffffff');
+            element.dataset.disabledColor = String((data as Record<string, unknown>).disabledColor ?? '#d8d8d8');
             element.dataset.borderColor = data.borderColor;
             element.style.width = data.width + 'px';
             element.style.height = data.height + 'px';
@@ -1322,9 +1384,9 @@ export const renderutils: RenderUtils = {
                 const disabled = mkRow('container-item-disabled disabled', 'disabled / blocked');
 
                 const fg = String(data.fontColor) || '#000000';
-                const abg = String(data.activeBackgroundColor) || '##589658';
+                const abg = String(data.activeBackgroundColor) || '#589658';
                 const afg = String(data.activeFontColor) || '#ffffff';
-                const dbg = String((data as Record<string, unknown>).disabledBackgroundColor ?? '#d8d8d8');
+                const dbg = String((data as Record<string, unknown>).disabledColor ?? '#d8d8d8');
                 inactive.label.style.color = fg;
                 active.row.style.backgroundColor = abg;
                 active.label.style.color = afg;
@@ -1337,6 +1399,7 @@ export const renderutils: RenderUtils = {
                 sample.appendChild(active.row);
                 sample.appendChild(disabled.row);
                 element.appendChild(sample);
+                applyEditorContainerSampleState(element, data as Record<string, unknown>, !utils.isFalse(data.isEnabled));
             }
 
         } else if (data.type == "Choice") {
@@ -1426,6 +1489,9 @@ export const renderutils: RenderUtils = {
                 applyControlDisabledAppearance({ radio: customRadio, enabled: false, source: data as Record<string, unknown> });
             } else if (data.type === 'Counter') {
                 applyCounterDisabledAppearance(element, false, data as Record<string, unknown>);
+            } else if (data.type === 'Container') {
+                element.style.backgroundColor = getDisabledColor(data as Record<string, unknown>);
+                applyEditorContainerSampleState(element, data as Record<string, unknown>, false);
             }
         }
 
@@ -1689,13 +1755,13 @@ export const renderutils: RenderUtils = {
                             if (decreaseGlyph) {
                                 decreaseGlyph.style.setProperty(
                                     '--counter-arrow-fill-color',
-                                    enabled ? value : getDisabledBackgroundColor(dataset)
+                                    enabled ? value : getDisabledColor(dataset)
                                 );
                             }
                             if (increaseGlyph) {
                                 increaseGlyph.style.setProperty(
                                     '--counter-arrow-fill-color',
-                                    enabled ? value : getDisabledBackgroundColor(dataset)
+                                    enabled ? value : getDisabledColor(dataset)
                                 );
                             }
                         } else if (button && inner) {
@@ -1817,6 +1883,7 @@ export const renderutils: RenderUtils = {
                             host.querySelectorAll('.container-item.active').forEach((r) => {
                                 (r as HTMLDivElement).style.backgroundColor = String(value);
                             });
+                            applyEditorContainerSampleState(host as HTMLElement, { ...dataset, activeBackgroundColor: value }, utils.isTrue(dataset.isEnabled ?? 'true'));
                         } else {
                             value = dataset.activeBackgroundColor;
                             const color = document.getElementById('elactiveBackgroundColor') as HTMLInputElement;
@@ -1834,9 +1901,11 @@ export const renderutils: RenderUtils = {
                     if (container) {
                         if (utils.isValidColor(value)) {
                             const host = inner || element;
+                            host.style.setProperty('--container-active-fg', String(value));
                             host.querySelectorAll('.container-item.active .container-text').forEach((n) => {
                                 (n as HTMLElement).style.color = String(value);
                             });
+                            applyEditorContainerSampleState(host as HTMLElement, { ...dataset, activeFontColor: value }, utils.isTrue(dataset.isEnabled ?? 'true'));
                         } else {
                             value = dataset.activeFontColor;
                             const color = document.getElementById('elactiveFontColor') as HTMLInputElement;
@@ -1860,7 +1929,7 @@ export const renderutils: RenderUtils = {
                                 source: { ...dataset, disabledColor: value }
                             });
                         } else {
-                            value = dataset.disabledColor || dataset.disabledBackgroundColor || '#dedede';
+                            value = dataset.disabledColor || '#dedede';
                             const color = document.getElementById('eldisabledColor') as HTMLInputElement | null;
                             if (color) color.value = value;
                         }
@@ -1885,7 +1954,7 @@ export const renderutils: RenderUtils = {
                                 source: { ...dataset, disabledColor: value }
                             });
                         } else {
-                            value = dataset.disabledColor || dataset.disabledBackgroundColor || '#dedede';
+                            value = dataset.disabledColor || '#dedede';
                             const color = document.getElementById('eldisabledColor') as HTMLInputElement | null;
                             if (color) color.value = value;
                         }
@@ -1897,7 +1966,7 @@ export const renderutils: RenderUtils = {
                                 source: { ...dataset, disabledColor: value }
                             });
                         } else {
-                            value = dataset.disabledColor || dataset.disabledBackgroundColor || '#dedede';
+                            value = dataset.disabledColor || '#dedede';
                             const color = document.getElementById('eldisabledColor') as HTMLInputElement | null;
                             if (color) color.value = value;
                         }
@@ -1916,24 +1985,25 @@ export const renderutils: RenderUtils = {
                                 disabledColor: value
                             });
                         } else {
-                            value = dataset.disabledColor || dataset.disabledBackgroundColor || '#dedede';
+                            value = dataset.disabledColor || '#dedede';
                             const color = document.getElementById('eldisabledColor') as HTMLInputElement | null;
                             if (color) color.value = value;
                         }
-                    }
-                    break;
-
-                case 'disabledBackgroundColor':
-                    if (container) {
+                    } else if (container) {
                         if (utils.isValidColor(value)) {
                             const host = (inner || element) as HTMLElement;
+                            host.style.setProperty('--container-disabled-bg', String(value));
                             host.querySelectorAll('.container-item-disabled').forEach((r) => {
                                 (r as HTMLDivElement).style.backgroundColor = String(value);
                             });
+                            applyEditorContainerSampleState(host, { ...dataset, disabledColor: value }, utils.isTrue(dataset.isEnabled ?? 'true'));
                             renderutils.applyContainerItemFilter(element as HTMLElement);
+                            if (!utils.isTrue(dataset.isEnabled ?? 'true')) {
+                                host.style.backgroundColor = String(value);
+                            }
                         } else {
-                            value = dataset.disabledBackgroundColor || '#d8d8d8';
-                            const color = document.getElementById('eldisabledBackgroundColor') as HTMLInputElement;
+                            value = dataset.disabledColor || '#d8d8d8';
+                            const color = document.getElementById('eldisabledColor') as HTMLInputElement | null;
                             if (color) color.value = value;
                         }
                     }
@@ -2274,6 +2344,28 @@ export const renderutils: RenderUtils = {
                         element.style.pointerEvents = enabled ? '' : 'none';
                     }
 
+                    if (container) {
+                        const normalBg = String(dataset.backgroundColor || '#ffffff');
+                        const disabledBg = String(dataset.disabledColor || '#d8d8d8');
+                        const host = inner || element;
+                        host.style.backgroundColor = enabled ? normalBg : disabledBg;
+                        if (host !== element) {
+                            element.style.backgroundColor = enabled ? normalBg : disabledBg;
+                        }
+                        applyEditorContainerSampleState(host as HTMLElement, dataset, enabled);
+                        applyContainerItemFilter(element);
+                    }
+
+                    if (sorter) {
+                        const host = inner || element;
+                        const normalBg = String(dataset.backgroundColor || '#ffffff');
+                        host.style.backgroundColor = normalBg;
+                        if (host !== element) {
+                            element.style.backgroundColor = normalBg;
+                        }
+                        sorterNeedsRender = true;
+                    }
+
                     const inputEl = (element instanceof HTMLInputElement ? element : (inner as HTMLInputElement | null));
                     if (inputEl && input) {
                         inputEl.disabled = !enabled;
@@ -2403,6 +2495,17 @@ export const renderutils: RenderUtils = {
                         const alignInput = document.getElementById('elalign') as HTMLSelectElement | null;
                         if (alignInput) alignInput.value = next;
                         sorterNeedsRender = true;
+                    }
+                    break;
+
+                case 'rotate':
+                    if (label) {
+                        const allowed = new Set(['0', '90', '180', '270']);
+                        value = allowed.has(String(value)) ? String(value) : '0';
+                        element.dataset[key] = value;
+                        const rotateInput = document.getElementById('elrotate') as HTMLSelectElement | null;
+                        if (rotateInput) rotateInput.value = value;
+                        renderutils.updateLabel(element);
                     }
                     break;
 
@@ -2733,8 +2836,11 @@ export const renderutils: RenderUtils = {
 
         let dataset = element.dataset;
         const currentLeft = Number(element.dataset.left ?? (parseInt(element.style.left || '0', 10) || 0));
+        const currentTop = Number(element.dataset.top ?? (parseInt(element.style.top || '0', 10) || 0));
         const currentWidth = Math.ceil(element.getBoundingClientRect().width || utils.asNumeric(element.style.width.replace('px', '')) || 0);
+        const currentHeight = Math.ceil(element.getBoundingClientRect().height || utils.asNumeric(element.style.height.replace('px', '')) || 0);
         const hasMeasuredWidth = currentWidth > 0;
+        const hasMeasuredHeight = currentHeight > 0;
 
         // Determine effective font size with precedence:
         let fontSize = 0;
@@ -2765,6 +2871,7 @@ export const renderutils: RenderUtils = {
         const text = dataset.value ? dataset.value : '';
         let lines = dataset.lineClamp ? Number(dataset.lineClamp) : 1;
         let maxW = dataset.maxWidth ? Number(dataset.maxWidth) : 100;
+        const rotate = new Set([0, 90, 180, 270]).has(Number(dataset.rotate)) ? Number(dataset.rotate) : 0;
 
 
     // Apply text and font styles
@@ -2844,31 +2951,46 @@ export const renderutils: RenderUtils = {
     // Add a small cross-platform safety buffer to avoid right-edge clipping on Windows
     // where glyph rasterization can exceed measured widths by ~1px.
     const fudge = 2; // px
-    const finalW = Math.max(0, maxW > 0 ? Math.min(natural + fudge, maxW) : (natural + fudge));
-        element.style.maxWidth = maxW > 0 ? `${maxW}px` : '';
-        element.style.width = `${finalW}px`;
+        const finalW = Math.max(0, maxW > 0 ? Math.min(natural + fudge, maxW) : (natural + fudge));
+        const naturalH = Math.max(
+            0,
+            Math.ceil(host.scrollHeight || 0),
+            Math.ceil(host.getBoundingClientRect().height || 0),
+            singleLineHeight
+        );
+        const finalBoxW = (rotate === 90 || rotate === 270) ? naturalH : finalW;
+        const finalBoxH = (rotate === 90 || rotate === 270) ? finalW : naturalH;
+        element.style.maxWidth = '';
+        element.style.width = `${finalBoxW}px`;
+        element.style.height = `${finalBoxH}px`;
 
         let anchoredLeft = currentLeft;
+        let anchoredTop = currentTop;
         if (hasMeasuredWidth) {
             if (align === 'right') {
-                anchoredLeft = currentLeft + currentWidth - finalW;
+                anchoredLeft = currentLeft + currentWidth - finalBoxW;
             } else if (align === 'center') {
                 const center = currentLeft + currentWidth / 2;
-                anchoredLeft = Math.round(center - finalW / 2);
+                anchoredLeft = Math.round(center - finalBoxW / 2);
+            }
+        }
+        if ((rotate === 90 || rotate === 270) && hasMeasuredHeight) {
+            if (align === 'right') {
+                anchoredTop = currentTop + currentHeight - finalBoxH;
+            } else if (align === 'center') {
+                const center = currentTop + currentHeight / 2;
+                anchoredTop = Math.round(center - finalBoxH / 2);
             }
         }
         element.style.left = `${anchoredLeft}px`;
+        element.style.top = `${anchoredTop}px`;
         element.dataset.left = String(anchoredLeft);
+        element.dataset.top = String(anchoredTop);
 
         // Restore any width settings that were temporarily cleared. Preview hosts (no wrapper)
         // should mirror the final width instead of stretching to 100%.
-        if (host === element) {
-            host.style.maxWidth = maxW > 0 ? `${maxW}px` : '';
-            host.style.width = `${finalW}px`;
-        } else {
-            host.style.maxWidth = '100%';
-            host.style.width = '100%';
-        }
+        host.style.maxWidth = maxW > 0 ? `${maxW}px` : '';
+        host.style.width = `${finalW}px`;
 
         // Toggle ellipsis only when needed (single-line labels)
         if (lines <= 1) {
@@ -2882,19 +3004,79 @@ export const renderutils: RenderUtils = {
         // Keep in canvas bounds (Editor only). In Preview, do not auto-shift position.
         if (!renderutils.previewWindow()) {
             const dialogW = dialog.canvas.getBoundingClientRect().width;
+            const dialogH = dialog.canvas.getBoundingClientRect().height;
             const elleft = document.getElementById('elleft') as HTMLInputElement | null;
+            const eltop = document.getElementById('eltop') as HTMLInputElement | null;
             const left = Number(element.dataset.left ?? (parseInt(element.style.left || '0', 10) || 0));
+            const top = Number(element.dataset.top ?? (parseInt(element.style.top || '0', 10) || 0));
             let newleft = left;
+            let newtop = top;
             if (left < 10) {
                 newleft = 10;
             }
-            if (newleft + finalW + 10 > dialogW) {
-                newleft = Math.max(10, Math.round(dialogW - finalW - 10));
+            if (newleft + finalBoxW + 10 > dialogW) {
+                newleft = Math.max(10, Math.round(dialogW - finalBoxW - 10));
+            }
+            if (top < 10) {
+                newtop = 10;
+            }
+            if (newtop + finalBoxH + 10 > dialogH) {
+                newtop = Math.max(10, Math.round(dialogH - finalBoxH - 10));
             }
             if (newleft !== left) {
                 element.style.left = newleft + 'px';
                 element.dataset.left = String(newleft);
                 if (elleft) elleft.value = String(newleft);
+            }
+            if (newtop !== top) {
+                element.style.top = newtop + 'px';
+                element.dataset.top = String(newtop);
+                if (eltop) eltop.value = String(newtop);
+            }
+        }
+
+        host.style.transformOrigin = 'top left';
+        if (host !== element && rotate !== 0) {
+            element.style.display = 'block';
+            element.style.alignItems = '';
+            element.style.justifyContent = '';
+            host.style.position = 'absolute';
+            switch (rotate) {
+                case 90:
+                    host.style.left = `${finalBoxW}px`;
+                    host.style.top = '0px';
+                    host.style.transform = 'rotate(90deg)';
+                    break;
+                case 180:
+                    host.style.left = `${finalW}px`;
+                    host.style.top = `${finalBoxH}px`;
+                    host.style.transform = 'rotate(180deg)';
+                    break;
+                case 270:
+                    host.style.left = '0px';
+                    host.style.top = `${finalW}px`;
+                    host.style.transform = 'rotate(270deg)';
+                    break;
+                default:
+                    break;
+            }
+        } else {
+            host.style.removeProperty('position');
+            host.style.removeProperty('left');
+            host.style.removeProperty('top');
+            switch (rotate) {
+                case 90:
+                    host.style.transform = 'rotate(90deg) translateY(-100%)';
+                    break;
+                case 180:
+                    host.style.transform = 'rotate(180deg) translate(-100%, -100%)';
+                    break;
+                case 270:
+                    host.style.transform = 'rotate(270deg) translateX(-100%)';
+                    break;
+                default:
+                    host.style.transform = '';
+                    break;
             }
         }
 
