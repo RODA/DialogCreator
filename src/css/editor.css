@@ -20,6 +20,8 @@ body {
     display: flex;
     align-items: stretch;
     justify-content: space-around;
+    height: 100vh;
+    overflow: hidden;
 }
 
 /* Elements ===================== */
@@ -29,6 +31,7 @@ body {
     background-color: #f0f0f0;
     width: 160px;
     max-width: 160px;
+    overflow-y: auto;
 }
 
 #paperAvailableElements {
@@ -73,15 +76,25 @@ body {
     display: flex;
     flex-direction: column;
     text-align: center;
+    min-height: 0;
 }
 
 .dialog-section #dialog {
     border: 1px solid #7f7f7f;
     background-color: var(--main-bg-color);
-    height: calc(100vh - 200px - var(--editor-toolbar-height, 0px));
     display: flex;
-    align-items: center;
-    justify-content: center;
+    align-items: flex-start;
+    justify-content: flex-start;
+    flex: 1 1 auto;
+    min-height: 220px;
+    overflow: auto;
+    padding: 12px;
+    box-sizing: border-box;
+}
+
+.dialog-section #dialog > div {
+    flex: 0 0 auto;
+    margin: auto;
 }
 
 /* Force Inter for all elements placed on the canvas */
@@ -115,6 +128,7 @@ body {
     min-width: 240px;
     width: 240px;
     max-width: 250px;
+    overflow-y: auto;
 }
 
 #propertiesList {
