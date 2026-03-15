@@ -87,9 +87,9 @@ function createMainWindow() {
             additionalArguments: ['--dc-window=editorWindow']
         },
         width: 1200,
-        height: 800,
+        height: 660,
         minWidth: 1200,
-        minHeight: 800,
+        minHeight: 640,
         center: true,
         icon: path.join(__dirname, 'icons', 'icon.png')
     });
