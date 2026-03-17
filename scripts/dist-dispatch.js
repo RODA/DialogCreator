@@ -26,6 +26,10 @@ function run(cmd, args, opts = {}) {
   });
 }
 
+function writeChecksums() {
+  return run(process.execPath, ['scripts/write-artifact-checksums.js']);
+}
+
 (function initNpmHelpers() {
   const cli = process.env.npm_execpath; // points to npm-cli.js when invoked via npm
   // Helper to run `npm run <script>` reliably cross-platform
@@ -47,6 +51,7 @@ function run(cmd, args, opts = {}) {
     // Use the Linux-specific builder to avoid mac config, then rename
     await run(process.execPath, ['scripts/build-linux.js']);
     await run.npm('rename:linux');
+    await writeChecksums();
     return;
   }
 
@@ -56,16 +61,19 @@ function run(cmd, args, opts = {}) {
 
   if (isMac) {
     await run.npm('rename:mac');
+    await writeChecksums();
     return;
   }
 
   if (isWin) {
     await run.npm('rename:win');
+    await writeChecksums();
     return;
   }
 
   // Fallback for other platforms
   console.warn('Unknown platform, ran electron-builder only.');
+  await writeChecksums();
 })().catch((err) => {
   console.error(err && err.message ? err.message : err);
   process.exit(1);
