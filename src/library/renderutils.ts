@@ -1649,8 +1649,8 @@ export const renderutils: RenderUtils = {
                         if (widthInput) widthInput.value = value;
                     }
 
-                    if (select && Number(value) < 100) {
-                        value = '100';
+                    if (select && Number(value) < 50) {
+                        value = '50';
                     }
 
                     if (button && inner) {
