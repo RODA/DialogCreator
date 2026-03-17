@@ -79,7 +79,7 @@ body {
 .dialog-section #dialog {
     border: 1px solid #7f7f7f;
     background-color: var(--main-bg-color);
-    height: clamp(410px, calc(100vh - 140px - var(--editor-toolbar-height, 0px)), 620px);
+    height: clamp(430px, calc(100vh - 160px - var(--editor-toolbar-height, 0px)), 620px);
     display: flex;
     align-items: center;
     justify-content: center;

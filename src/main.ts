@@ -12,7 +12,7 @@ const OS_Windows = process.platform == 'win32';
 const OS_Linux = process.platform == 'linux';
 const OS_Mac = process.platform == 'darwin';
 
-import { app, BrowserWindow, dialog, ipcMain, Menu } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, Menu, screen } from "electron";
 import { utils } from "./library/utils";
 import * as path from "path";
 import * as fs from "fs";
@@ -64,6 +64,7 @@ const SYNTAX_GAP = 8; // pixels below the preview content/frame
 let lastEditorBounds: Electron.Rectangle | null = null;
 let infoWindow: BrowserWindow | null = null;
 type InfoPage = 'manual' | 'api' | 'about';
+const EDITOR_WINDOW_STATE_FILE = 'editor-window-state.json';
 
 
 const gotTheLock = app.requestSingleInstanceLock();
@@ -76,8 +77,55 @@ const windowid: { [key: string]: number } = {
     secondWindow: 2
 }
 
+function getEditorWindowStatePath() {
+    return path.join(app.getPath('userData'), EDITOR_WINDOW_STATE_FILE);
+}
+
+function loadEditorWindowState(): Electron.Rectangle | null {
+    try {
+        const statePath = getEditorWindowStatePath();
+        if (!fs.existsSync(statePath)) return null;
+        const raw = JSON.parse(fs.readFileSync(statePath, 'utf8')) as Partial<Electron.Rectangle>;
+        const width = Math.max(1200, Math.round(Number(raw.width) || 0));
+        const height = Math.max(680, Math.round(Number(raw.height) || 0));
+        const x = Math.round(Number(raw.x));
+        const y = Math.round(Number(raw.y));
+        if (!Number.isFinite(width) || !Number.isFinite(height) || !Number.isFinite(x) || !Number.isFinite(y)) {
+            return null;
+        }
+
+        const displays = screen.getAllDisplays();
+        const fitsSomeDisplay = displays.some((display) => {
+            const area = display.workArea;
+            return (
+                x >= area.x &&
+                y >= area.y &&
+                x + 120 <= area.x + area.width &&
+                y + 120 <= area.y + area.height
+            );
+        });
+        if (!fitsSomeDisplay) return null;
+
+        return { x, y, width, height };
+    } catch {
+        return null;
+    }
+}
+
+function saveEditorWindowState(win: BrowserWindow | null) {
+    if (!win || win.isDestroyed()) return;
+    try {
+        const bounds = win.getBounds();
+        const statePath = getEditorWindowStatePath();
+        fs.writeFileSync(statePath, JSON.stringify(bounds, null, 2));
+    } catch {
+        // ignore persistence failures
+    }
+}
+
 
 function createMainWindow() {
+    const restoredBounds = loadEditorWindowState();
     editorWindow = new BrowserWindow({
         title: 'Dialog creator',
         webPreferences: {
@@ -86,11 +134,13 @@ function createMainWindow() {
             sandbox: false,
             additionalArguments: ['--dc-window=editorWindow']
         },
-        width: 1200,
-        height: 660,
+        width: restoredBounds?.width ?? 1200,
+        height: restoredBounds?.height ?? 680,
         minWidth: 1200,
-        minHeight: 640,
-        center: true,
+        minHeight: 680,
+        x: restoredBounds?.x,
+        y: restoredBounds?.y,
+        center: restoredBounds ? false : true,
         icon: path.join(__dirname, 'icons', 'icon.png')
     });
 
@@ -179,6 +229,9 @@ function createMainWindow() {
 
     editorWindow.on('move', syncChildrenOnMove);
     editorWindow.on('moved', syncChildrenOnMove);
+    editorWindow.on('resize', () => saveEditorWindowState(editorWindow));
+    editorWindow.on('moved', () => saveEditorWindowState(editorWindow));
+    editorWindow.on('close', () => saveEditorWindowState(editorWindow));
 }
 
 app.whenReady().then(() => {
