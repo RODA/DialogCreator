@@ -309,6 +309,13 @@ The items in a Container can be selected and deselected by clicking, and multi-s
 </code></pre>
 
 <p>This helper is useful when one control repopulates one or more dependent <code class="hljs"><span class="api-param">Container</span></code> or <code class="hljs"><span class="api-param">Choice</span></code> controls. Each source value gets its own remembered selection, but nothing is persisted after the dialog closes.</p>
+<ol start="6">
+<li>Make an input act like a search box for a container</li>
+</ol>
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">searchIn</span>(<span class="api-param">i_search</span>, <span class="api-param">c_variables</span>);
+</code></pre>
+
+<p>As the user types in the input, the container is filtered live by item name. The match is case-insensitive, partial matches are allowed, and the current search remains active even if the container is repopulated later with <code class="hljs"><span class="hljs-title function_">setValue</span>()</code>.</p>
 <p>Events:</p>
 <ul>
 <li>Buttons and custom checkboxes/radios usually use <code class="hljs"><span class="hljs-string">'click'</span></code>.</li>
