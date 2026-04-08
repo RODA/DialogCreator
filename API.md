@@ -93,6 +93,16 @@ Use this reference when writing custom JavaScript for Dialog Creator. It contain
 
   - Shortcut for `on(element, 'input', handler)`.
 
+`rememberSelectionBy(source, ...dependents)`
+
+  - Remembers the current selection of each dependent control while the dialog is open, keyed by the current value/selection of `source`.
+  - Intended for the common pattern where one control (for example a dataset list) repopulates one or more dependent controls (for example variable lists).
+  - After a remembered dependent is repopulated via `setValue()`, its previous selection for the current source key is restored automatically.
+  - If no remembered selection exists for the current source key, the dependent is cleared instead of carrying over the previous source's selection.
+  - Invalid remembered values are ignored silently if they are not present in the newly populated items.
+  - Supported dependents: `Container` and `Choice`.
+  - Memory is temporary and lasts only while the dialog remains open; `resetDialog()` also clears it.
+
 `setSelected(element, value)`
 
   - Programmatically set selection.
@@ -263,6 +273,19 @@ onClick(lockCheckbox, () => {
 ```javascript
 setSelected(variablesContainer, ["Sepal.Width"]);
 triggerChange(variablesContainer);
+```
+
+- Remember variable selections separately for each selected dataset:
+
+```javascript
+rememberSelectionBy(c_datasets, c_x, c_y);
+
+onChange(c_datasets, () => {
+  const dataset = getSelected(c_datasets)[0] || '';
+  const variables = dataset ? listColumns(dataset) : [];
+  setValue(c_x, variables);
+  setValue(c_y, variables);
+});
 ```
 
 - Add or remove items in a Container:

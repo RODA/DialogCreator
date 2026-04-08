@@ -295,6 +295,20 @@ The items in a Container can be selected and deselected by clicking, and multi-s
 <pre><code class="language-javascript hljs"><span class="hljs-title function_">setValue</span>(<span class="api-param">statusLabel</span>, <span class="hljs-string">"Ready"</span>);
 </code></pre>
 
+<ol start="5">
+<li>Remember dependent variable selections for each dataset while the dialog stays open</li>
+</ol>
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">rememberSelectionBy</span>(<span class="api-param">c_datasets</span>, <span class="api-param">c_x</span>, <span class="api-param">c_y</span>);
+
+<span class="hljs-title function_">onChange</span>(<span class="api-param">c_datasets</span>, () =&gt; {
+&nbsp;&nbsp;<span class="hljs-keyword">const</span> <span class="api-param">dataset</span> = <span class="hljs-title function_">getSelected</span>(<span class="api-param">c_datasets</span>)[<span class="hljs-number">0</span>] || <span class="hljs-string">''</span>;
+&nbsp;&nbsp;<span class="hljs-keyword">const</span> <span class="api-param">variables</span> = <span class="api-param">dataset</span> ? <span class="hljs-title function_">listColumns</span>(<span class="api-param">dataset</span>) : [];
+&nbsp;&nbsp;<span class="hljs-title function_">setValue</span>(<span class="api-param">c_x</span>, <span class="api-param">variables</span>);
+&nbsp;&nbsp;<span class="hljs-title function_">setValue</span>(<span class="api-param">c_y</span>, <span class="api-param">variables</span>);
+});
+</code></pre>
+
+<p>This helper is useful when one control repopulates one or more dependent <code class="hljs"><span class="api-param">Container</span></code> or <code class="hljs"><span class="api-param">Choice</span></code> controls. Each source value gets its own remembered selection, but nothing is persisted after the dialog closes.</p>
 <p>Events:</p>
 <ul>
 <li>Buttons and custom checkboxes/radios usually use <code class="hljs"><span class="hljs-string">'click'</span></code>.</li>

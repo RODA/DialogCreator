@@ -353,6 +353,21 @@ onChange(countrySelect, () => {
 setValue(statusLabel, "Ready");
 ```
 
+5. Remember dependent variable selections for each dataset while the dialog stays open
+
+```javascript
+rememberSelectionBy(c_datasets, c_x, c_y);
+
+onChange(c_datasets, () => {
+  const dataset = getSelected(c_datasets)[0] || '';
+  const variables = dataset ? listColumns(dataset) : [];
+  setValue(c_x, variables);
+  setValue(c_y, variables);
+});
+```
+
+This helper is useful when one control repopulates one or more dependent `Container` or `Choice` controls. Each source value gets its own remembered selection, but nothing is persisted after the dialog closes.
+
 Events:
 
 - Buttons and custom checkboxes/radios usually use `'click'`.
