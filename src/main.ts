@@ -65,6 +65,8 @@ let lastEditorBounds: Electron.Rectangle | null = null;
 let infoWindow: BrowserWindow | null = null;
 type InfoPage = 'manual' | 'api' | 'about';
 const EDITOR_WINDOW_STATE_FILE = 'editor-window-state.json';
+const RECENT_DIALOGS_FILE = 'recent-dialogs.json';
+const MAX_RECENT_DIALOGS = 10;
 
 
 const gotTheLock = app.requestSingleInstanceLock();
@@ -79,6 +81,68 @@ const windowid: { [key: string]: number } = {
 
 function getEditorWindowStatePath() {
     return path.join(app.getPath('userData'), EDITOR_WINDOW_STATE_FILE);
+}
+
+function getRecentDialogsPath() {
+    return path.join(app.getPath('userData'), RECENT_DIALOGS_FILE);
+}
+
+function loadRecentDialogPaths(): string[] {
+    try {
+        const recentPath = getRecentDialogsPath();
+        if (!fs.existsSync(recentPath)) return [];
+        const raw = JSON.parse(fs.readFileSync(recentPath, 'utf8'));
+        if (!Array.isArray(raw)) return [];
+        return raw
+            .map((entry) => String(entry || '').trim())
+            .filter((entry) => entry.length > 0);
+    } catch {
+        return [];
+    }
+}
+
+function saveRecentDialogPaths(paths: string[]) {
+    try {
+        fs.writeFileSync(getRecentDialogsPath(), JSON.stringify(paths, null, 2));
+    } catch {
+        // ignore persistence failures
+    }
+}
+
+function rebuildApplicationMenu() {
+    if (!app.isReady()) return;
+    const mainMenu = Menu.buildFromTemplate(buildMainMenuTemplate());
+    Menu.setApplicationMenu(mainMenu);
+}
+
+function addRecentDialogPath(filePath: string) {
+    const normalized = String(filePath || '').trim();
+    if (!normalized) return;
+    const next = [
+        normalized,
+        ...loadRecentDialogPaths().filter((entry) => entry !== normalized && fs.existsSync(entry))
+    ].slice(0, MAX_RECENT_DIALOGS);
+    saveRecentDialogPaths(next);
+    rebuildApplicationMenu();
+}
+
+function clearRecentDialogPaths() {
+    saveRecentDialogPaths([]);
+    rebuildApplicationMenu();
+}
+
+async function loadDialogFromPath(filePath: string) {
+    try {
+        const content = fs.readFileSync(filePath, 'utf-8');
+        editorWindow.webContents.send('load-dialog-json', content);
+        pendingCanonicalUpdate = true;
+        dialogModified = false;
+        setCurrentDialogPath(filePath);
+        addRecentDialogPath(filePath);
+        updateWindowTitle();
+    } catch (e: any) {
+        dialog.showErrorBox('Load failed', String((e && e.message) ? e.message : e));
+    }
 }
 
 function loadEditorWindowState(): Electron.Rectangle | null {
@@ -841,6 +905,33 @@ let dialogModified = false;
 let pendingCanonicalUpdate = false; // next JSON update should reset baseline
 let quittingInProgress = false; // guard to avoid re-entrant quit prompts
 
+function buildRecentDialogsSubmenu(): MenuItemConstructorOptions[] {
+    const recents = loadRecentDialogPaths().filter((filePath) => fs.existsSync(filePath));
+    if (recents.length === 0) {
+        return [
+            { label: 'No recent dialogs', enabled: false }
+        ];
+    }
+
+    const items: MenuItemConstructorOptions[] = recents.map((filePath) => ({
+        label: path.basename(filePath),
+        sublabel: filePath,
+        click: () => {
+            loadDialogFromPath(filePath);
+        }
+    }));
+
+    items.push({ type: 'separator' });
+    items.push({
+        label: 'Clear menu',
+        click: () => {
+            clearRecentDialogPaths();
+        }
+    });
+
+    return items;
+}
+
 // Prompt to save changes if dialog is dirty. Returns true if app should quit.
 async function confirmQuitIfDirty(): Promise<boolean> {
     try {
@@ -872,6 +963,7 @@ async function confirmQuitIfDirty(): Promise<boolean> {
                     if (currentFilePath && currentFilePath.length > 0) {
                         fs.writeFileSync(currentFilePath, data, 'utf-8');
                         lastSavedJson = data;
+                        addRecentDialogPath(currentFilePath);
                         dialogModified = false;
                         updateWindowTitle();
                         resolve(true);
@@ -889,6 +981,7 @@ async function confirmQuitIfDirty(): Promise<boolean> {
                     fs.writeFileSync(filePath, data, 'utf-8');
                     lastSavedJson = data;
                     setCurrentDialogPath(filePath);
+                    addRecentDialogPath(filePath);
                     dialogModified = false;
                     updateWindowTitle();
                     resolve(true);
@@ -950,6 +1043,7 @@ function buildMainMenuTemplate(): MenuItemConstructorOptions[] {
                                         lastSavedJson = current;
                                         // Remember path used for saving the previous file
                                         setCurrentDialogPath(filePath);
+                                        addRecentDialogPath(filePath);
                                     } else {
                                         // user canceled save dialog => abort New
                                         return;
@@ -1002,18 +1096,12 @@ function buildMainMenuTemplate(): MenuItemConstructorOptions[] {
                     properties: ['openFile']
                 });
                 if (canceled || !filePaths || filePaths.length === 0) return;
-                try {
-                    const fs = require('fs');
-                    const content = fs.readFileSync(filePaths[0], 'utf-8');
-                    editorWindow.webContents.send('load-dialog-json', content);
-                    pendingCanonicalUpdate = true;
-                    dialogModified = false;
-                    setCurrentDialogPath(filePaths[0]);
-                    updateWindowTitle();
-                } catch (e: any) {
-                    dialog.showErrorBox('Load failed', String((e && e.message) ? e.message : e));
-                }
+                await loadDialogFromPath(filePaths[0]);
             }
+        },
+        {
+            label: 'Recently used',
+            submenu: buildRecentDialogsSubmenu()
         },
         { // Save
             label: 'Save',
@@ -1028,6 +1116,7 @@ function buildMainMenuTemplate(): MenuItemConstructorOptions[] {
                         if (currentFilePath && currentFilePath.length > 0) {
                             fs.writeFileSync(currentFilePath, data, 'utf-8');
                             lastSavedJson = data;
+                            addRecentDialogPath(currentFilePath);
                             dialogModified = false;
                             updateWindowTitle();
                             return;
@@ -1041,6 +1130,7 @@ function buildMainMenuTemplate(): MenuItemConstructorOptions[] {
                         fs.writeFileSync(filePath, data, 'utf-8');
                         lastSavedJson = data;
                         setCurrentDialogPath(filePath);
+                        addRecentDialogPath(filePath);
                         dialogModified = false;
                         updateWindowTitle();
                     } catch (e: any) {
@@ -1074,6 +1164,7 @@ function buildMainMenuTemplate(): MenuItemConstructorOptions[] {
                         fs.writeFileSync(filePath, data, 'utf-8');
                         lastSavedJson = data;
                         setCurrentDialogPath(filePath);
+                        addRecentDialogPath(filePath);
                     } catch (e: any) {
                         dialog.showErrorBox('Save failed', String((e && e.message) ? e.message : e));
                     }
