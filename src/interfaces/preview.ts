@@ -41,18 +41,19 @@ export interface PreviewUI {
     // - Checkbox: boolean (checked)
     // - Radio: boolean (selected)
     // - Counter: number
-    // - Container: array of row labels (items) or '' when empty
+    // - Container/Choice: array of item labels or '' when empty
     getValue(element: string): unknown;
 
     // Sets value or items depending on element type and value type.
-    // - If value is an array: for Select/Container, sets items/options/rows
+    // - If value is an array: for Select/Container/Choice, sets items/options/rows
     // - If scalar: sets value for Input/Label/Select/Counter; boolean for Checkbox/Radio
     setValue(element: string, value: unknown | string[] | ContainerItemDescriptor[]): void;
 
     // Selected values:
     // - Container: array of selected row labels
+    // - Choice: array of selected item labels with state suffixes
     // - Select: array with single selected value (or empty array when none)
-    // - Container: array of selected row labels (items) or '' when empty
+    // - Container/Choice: array of selected labels/items or '' when empty
     getSelected(element: string): string[] | '';
 
     /** Checkbox/Radio convenience for checked/selected */
@@ -112,7 +113,10 @@ export interface PreviewUI {
     /** Convenience: trigger a 'click' event on the element. */
     triggerClick(element: string): void;
 
-    /** Set selection: Select elements (single value) or Container items (accepts string or string[]). */
+    /** Remember dependent selections while the dialog remains open, keyed by the current source value/selection. */
+    rememberSelectionBy(source: string, ...dependents: string[]): void;
+
+    /** Set selection: Select elements (single value) or Container/Choice items (accepts string or string[]). */
     setSelected(element: string, value: string | string[]): void;
 
     /** Legacy alias (additive for Container). Prefer setSelected for explicit selection. */

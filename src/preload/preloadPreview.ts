@@ -15,6 +15,171 @@ import { PreviewDialog, PreviewScriptExports, PreviewUI, PreviewUIEnv } from "..
 import { API_NAMES, createPreviewUI } from '../library/api';
 
 let initialPreviewDialog: PreviewDialog | null = null;
+const previewLastSelectedContainerItem = new WeakMap<HTMLElement, HTMLElement | null>();
+
+const splitPreviewList = (raw: unknown): string[] => {
+    return String(raw ?? '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+};
+
+const normalizePreviewOrderList = (values: string[]): string[] => {
+    const seen = new Set<string>();
+    const out: string[] = [];
+    values.forEach((value) => {
+        const next = String(value || '').trim();
+        if (!next || seen.has(next)) return;
+        seen.add(next);
+        out.push(next);
+    });
+    return out;
+};
+
+const mergePreviewSelectionOrder = (host: HTMLElement, activeItems: string[]): string[] => {
+    const prev = normalizePreviewOrderList(splitPreviewList(host.dataset.selectedOrder));
+    const activeSet = new Set(activeItems);
+    const next = prev.filter((value) => activeSet.has(value));
+    const seen = new Set(next);
+    activeItems.forEach((value) => {
+        if (!seen.has(value)) {
+            next.push(value);
+            seen.add(value);
+        }
+    });
+    return next;
+};
+
+const applyPreviewContainerItemStyle = (host: HTMLElement, item: HTMLElement, active: boolean) => {
+    const label = item.querySelector('.container-text') as HTMLElement | null;
+    const normalBg = host.dataset.backgroundColor || '#ffffff';
+    const normalFg = host.dataset.fontColor || '#000000';
+    const activeBg = host.dataset.activeBackgroundColor || '#589658';
+    const activeFg = host.dataset.activeFontColor || '#ffffff';
+    const disabledBg = host.dataset.disabledColor || '#d8d8d8';
+
+    if (item.dataset.disabled === 'true' || item.classList.contains('container-item-disabled')) {
+        item.style.backgroundColor = disabledBg;
+        if (label) label.style.color = normalFg;
+        return;
+    }
+
+    if (active) {
+        item.style.backgroundColor = activeBg;
+        if (label) label.style.color = activeFg;
+    } else {
+        item.style.backgroundColor = normalBg;
+        if (label) label.style.color = normalFg;
+    }
+};
+
+const syncPreviewContainerSelection = (host: HTMLElement, target: HTMLElement, core?: HTMLElement | null) => {
+    const activeItems = Array.from(target.querySelectorAll<HTMLElement>('.container-item.active'))
+        .map((item) => item.dataset.value || '')
+        .map((value) => String(value).trim())
+        .filter(Boolean);
+    const joined = activeItems.join(',');
+
+    host.dataset.activeValues = joined;
+    host.dataset.selected = joined;
+    if (core) {
+        core.dataset.activeValues = joined;
+        core.dataset.selected = joined;
+    }
+
+    if (utils.isTrue(host.dataset.itemOrder)) {
+        const ordered = mergePreviewSelectionOrder(host, activeItems);
+        host.dataset.selectedOrder = ordered.join(',');
+        if (core) {
+            core.dataset.selectedOrder = host.dataset.selectedOrder;
+        }
+    } else {
+        delete host.dataset.selectedOrder;
+        if (core && 'selectedOrder' in core.dataset) {
+            delete core.dataset.selectedOrder;
+        }
+    }
+};
+
+const attachPreviewContainerHandlers = (host: HTMLElement, core: HTMLElement) => {
+    const target = host.querySelector('.container-content') as HTMLElement | null;
+    if (!target) {
+        return;
+    }
+
+    const items = Array.from(target.querySelectorAll<HTMLElement>('.container-item'));
+    items.forEach((item) => {
+        applyPreviewContainerItemStyle(host, item, item.classList.contains('active'));
+        item.addEventListener('click', (ev) => {
+            if (!utils.isTrue(host.dataset.isEnabled)) {
+                ev.preventDefault();
+                return;
+            }
+
+            if (item.dataset.disabled === 'true' || item.classList.contains('container-item-disabled')) {
+                ev.preventDefault();
+                return;
+            }
+
+            const selectionMode = String(host.dataset.selection || 'single').toLowerCase();
+            const forcedSingle = selectionMode === 'single-radio';
+            const multiple = selectionMode === 'multiple';
+
+            if (multiple && ev instanceof MouseEvent && ev.shiftKey) {
+                const all = Array.from(target.querySelectorAll<HTMLElement>('.container-item'));
+                const last = previewLastSelectedContainerItem.get(host);
+                const lastIndex = last ? all.indexOf(last) : -1;
+                const currentIndex = all.indexOf(item);
+
+                if (lastIndex !== -1 && currentIndex !== -1) {
+                    const [start, end] = lastIndex < currentIndex ? [lastIndex, currentIndex] : [currentIndex, lastIndex];
+                    const shouldActivate = !item.classList.contains('active');
+                    all.slice(start, end + 1).forEach((candidate) => {
+                        if (candidate.dataset.disabled === 'true' || candidate.classList.contains('container-item-disabled')) {
+                            candidate.classList.remove('active');
+                            applyPreviewContainerItemStyle(host, candidate, false);
+                            return;
+                        }
+                        candidate.classList.toggle('active', shouldActivate);
+                        applyPreviewContainerItemStyle(host, candidate, shouldActivate);
+                    });
+                    previewLastSelectedContainerItem.set(host, item);
+                } else {
+                    const shouldActivate = !item.classList.contains('active');
+                    item.classList.toggle('active', shouldActivate);
+                    applyPreviewContainerItemStyle(host, item, shouldActivate);
+                    previewLastSelectedContainerItem.set(host, item);
+                }
+            } else if (multiple) {
+                const shouldActivate = !item.classList.contains('active');
+                item.classList.toggle('active', shouldActivate);
+                applyPreviewContainerItemStyle(host, item, shouldActivate);
+                previewLastSelectedContainerItem.set(host, item);
+            } else {
+                const wasActive = item.classList.contains('active');
+                target.querySelectorAll<HTMLElement>('.container-item.active').forEach((other) => {
+                    if (other !== item || (wasActive && !forcedSingle)) {
+                        other.classList.remove('active');
+                        applyPreviewContainerItemStyle(host, other, false);
+                    }
+                });
+                if (!wasActive) {
+                    item.classList.add('active');
+                    applyPreviewContainerItemStyle(host, item, true);
+                }
+                previewLastSelectedContainerItem.set(host, item);
+            }
+
+            syncPreviewContainerSelection(host, target, core);
+            host.dispatchEvent(new Event('change', { bubbles: true }));
+            renderutils.applyContainerItemFilter(host);
+        });
+    });
+
+    syncPreviewContainerSelection(host, target, core);
+    renderutils.applyContainerItemFilter(host);
+};
+
 const clonePreviewDialog = (input: PreviewDialog): PreviewDialog => {
     try {
         return JSON.parse(JSON.stringify(input));
@@ -379,7 +544,10 @@ function renderPreview(dialog: PreviewDialog) {
             });
         }
 
-        // Container remains as-is for now
+        // Container: enable preview-time single/multi selection, including Shift range selection.
+        if (desiredType === 'Container') {
+            attachPreviewContainerHandlers(wrapper, core);
+        }
 
         // Visibility / Enabled
         if (!utils.isTrue(data.isVisible)) {

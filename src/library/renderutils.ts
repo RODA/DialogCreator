@@ -298,6 +298,7 @@ type SorterItem = { text: string; state: SorterState };
 const SORTER_STATE_KEY = 'sorterState';
 type ChoiceOrderingMode = 'no' | 'increasing' | 'decreasing';
 type ChoiceOrientation = 'horizontal' | 'vertical';
+type ChoiceSelectionMode = 'single-radio' | 'single' | 'multiple';
 
 const normalizeChoiceOrdering = (value: unknown): ChoiceOrderingMode => {
     const raw = String(value ?? '').trim().toLowerCase();
@@ -315,8 +316,47 @@ const normalizeChoiceOrientation = (value: unknown): ChoiceOrientation => {
     return raw === 'horizontal' ? 'horizontal' : 'vertical';
 };
 
+const normalizeChoiceSelection = (value: unknown): ChoiceSelectionMode => {
+    const raw = String(value ?? '').trim().toLowerCase();
+    if (raw === 'single-radio' || raw === 'single_forced' || raw === 'radio') {
+        return 'single-radio';
+    }
+    if (raw === 'single') {
+        return 'single';
+    }
+    return 'multiple';
+};
+
 const preferredSorterState = (mode: ChoiceOrderingMode): Exclude<SorterState, 'off'> => {
     return mode === 'decreasing' ? 'desc' : 'asc';
+};
+
+const coerceSorterItemsForSelection = (
+    items: SorterItem[],
+    selectionMode: ChoiceSelectionMode,
+    orderingMode: ChoiceOrderingMode
+): SorterItem[] => {
+    if (selectionMode === 'multiple') {
+        return items;
+    }
+
+    let kept = false;
+    const next: SorterItem[] = items.map((item) => {
+        if (item.state === 'off') {
+            return item;
+        }
+        if (!kept) {
+            kept = true;
+            return item;
+        }
+        return { ...item, state: 'off' as SorterState };
+    });
+
+    if (selectionMode === 'single-radio' && !next.some((item) => item.state !== 'off') && next.length > 0) {
+        next[0] = { ...next[0], state: preferredSorterState(orderingMode) };
+    }
+
+    return next;
 };
 
 const normalizeSorterItemsForMode = (items: SorterItem[], mode: ChoiceOrderingMode): SorterItem[] => {
@@ -1414,6 +1454,7 @@ export const renderutils: RenderUtils = {
             element.dataset.activeBackgroundColor = data.activeBackgroundColor;
             element.dataset.activeFontColor = data.activeFontColor;
             element.dataset.borderColor = data.borderColor;
+            element.dataset.selection = normalizeChoiceSelection((data as Record<string, unknown>).selection);
             element.dataset.sortable = String(data.sortable);
             element.dataset.ordering = normalizeChoiceOrdering(data.ordering);
             element.dataset.orientation = normalizeChoiceOrientation((data as Record<string, unknown>).orientation);
@@ -1448,7 +1489,8 @@ export const renderutils: RenderUtils = {
                 fontColor: data.fontColor,
                 activeBackgroundColor: data.activeBackgroundColor,
                 activeFontColor: data.activeFontColor,
-                borderColor: data.borderColor
+                borderColor: data.borderColor,
+                selection: (data as Record<string, unknown>).selection
             });
 
         }
@@ -2196,6 +2238,10 @@ export const renderutils: RenderUtils = {
                                 }
                             });
                         }
+                    } else if (sorter) {
+                        value = normalizeChoiceSelection(value);
+                        dataset.selection = value;
+                        renderutils.renderSorter(element);
                     }
                     break;
 
@@ -2605,9 +2651,11 @@ export const renderutils: RenderUtils = {
         const sortable = utils.isTrue(opts.sortable ?? datasetSource.dataset.sortable ?? 'true');
         const orderingMode = normalizeChoiceOrdering(opts.ordering ?? datasetSource.dataset.ordering ?? 'no');
         const orientation = normalizeChoiceOrientation(opts.orientation ?? datasetSource.dataset.orientation ?? 'vertical');
+        const selectionMode = normalizeChoiceSelection(opts.selection ?? datasetSource.dataset.selection ?? 'multiple');
         const ordering = orderingMode !== 'no';
         let items = normalizeSorterItems(itemsStr, stateRaw);
         items = normalizeSorterItemsForMode(items, orderingMode);
+        items = coerceSorterItemsForSelection(items, selectionMode, orderingMode);
 
         const bg = String(opts.backgroundColor ?? datasetSource.dataset.backgroundColor ?? '#ffffff');
         const fg = String(opts.fontColor ?? datasetSource.dataset.fontColor ?? '#000000');
@@ -2626,9 +2674,11 @@ export const renderutils: RenderUtils = {
         datasetSource.dataset.sortable = sortable ? 'true' : 'false';
         datasetSource.dataset.ordering = orderingMode;
         datasetSource.dataset.orientation = orientation;
+        datasetSource.dataset.selection = selectionMode;
         visual.dataset.sortable = datasetSource.dataset.sortable;
         visual.dataset.ordering = datasetSource.dataset.ordering;
         visual.dataset.orientation = orientation;
+        visual.dataset.selection = selectionMode;
 
         const existingList = visual.querySelector('.sorter-list') as HTMLDivElement | null;
         const list = existingList || document.createElement('div');
@@ -2686,8 +2736,30 @@ export const renderutils: RenderUtils = {
             applySorterStateClasses(row, item, colors, orderingMode, ordering ? indicator : null);
 
             const cycle = () => {
-                item.state = cycleSorterState(item.state, orderingMode);
+                const nextState = cycleSorterState(item.state, orderingMode);
+                const forcedSingle = selectionMode === 'single-radio';
+                const plainSingle = selectionMode === 'single';
+
+                if ((forcedSingle || plainSingle) && nextState !== 'off') {
+                    items.forEach((candidate, candidateIndex) => {
+                        candidate.state = candidateIndex === index ? nextState : 'off';
+                    });
+                } else if (forcedSingle && nextState === 'off') {
+                    item.state = item.state === 'off' ? preferredSorterState(orderingMode) : item.state;
+                } else {
+                    item.state = nextState;
+                }
                 applySorterStateClasses(row, item, colors, orderingMode, ordering ? indicator : null);
+                if (forcedSingle || plainSingle) {
+                    Array.from(list.querySelectorAll<HTMLElement>('.sorter-item')).forEach((otherRow, otherIndex) => {
+                        if (otherIndex === index) return;
+                        const otherItem = items[otherIndex];
+                        const otherIndicator = otherRow.querySelector('.sorter-indicator') as HTMLElement | null;
+                        if (otherItem) {
+                            applySorterStateClasses(otherRow, otherItem, colors, orderingMode, ordering ? otherIndicator : null);
+                        }
+                    });
+                }
                     if (persistState) {
                         updateSorterDataset(datasetSource, items);
                         visual.dataset.order = datasetSource.dataset.order || '';

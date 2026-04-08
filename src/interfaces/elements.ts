@@ -178,6 +178,7 @@ export type choiceElementType = {
     activeBackgroundColor: string;
     activeFontColor: string;
     borderColor: string;
+    selection: 'single-radio' | 'single' | 'multiple';
     sortable: boolean;
     ordering: 'no' | 'increasing' | 'decreasing';
     orientation: 'horizontal' | 'vertical';

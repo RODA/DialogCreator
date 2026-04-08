@@ -123,6 +123,38 @@ function resolveTemplateForType(typeName: string | undefined): Record<string, un
     return template as unknown as Record<string, unknown>;
 }
 
+function getDialogCanvasSize() {
+    const rect = dialog.canvas.getBoundingClientRect();
+    const width = Math.round(rect.width || dialog.canvas.clientWidth || utils.asNumeric(dialog.canvas.style.width) || 0);
+    const height = Math.round(rect.height || dialog.canvas.clientHeight || utils.asNumeric(dialog.canvas.style.height) || 0);
+    return { width, height };
+}
+
+function getDragTargetSize(target: HTMLElement) {
+    const datasetWidth = utils.asNumeric(target.dataset.width ?? '');
+    const datasetHeight = utils.asNumeric(target.dataset.height ?? '');
+    const styleWidth = utils.asNumeric(target.style.width || '');
+    const styleHeight = utils.asNumeric(target.style.height || '');
+    const rect = target.getBoundingClientRect();
+
+    const width = Math.round(
+        datasetWidth ||
+        styleWidth ||
+        target.offsetWidth ||
+        rect.width ||
+        0
+    );
+    const height = Math.round(
+        datasetHeight ||
+        styleHeight ||
+        target.offsetHeight ||
+        rect.height ||
+        0
+    );
+
+    return { width, height };
+}
+
 function sanitizeDialogI18n(input: unknown): DialogI18n | undefined {
     if (!input || typeof input !== 'object') return undefined;
     const raw = input as Record<string, unknown>;
@@ -1222,8 +1254,6 @@ export const editor: Editor = {
     },
 
     addDragAndDrop(element) {
-        const dialogW = dialog.canvas.getBoundingClientRect().width;
-        const dialogH = dialog.canvas.getBoundingClientRect().height;
         let top = 0;
         let left = 0;
         let elementWidth = 0;
@@ -1285,7 +1315,8 @@ export const editor: Editor = {
                     const canvasRect = dialog.canvas.getBoundingClientRect();
                     const left0 = rect.left - canvasRect.left;
                     const top0 = rect.top - canvasRect.top;
-                    multiDragSnapshot.set(id, { left: left0, top: top0, width: rect.width, height: rect.height });
+                    const size = getDragTargetSize(el);
+                    multiDragSnapshot.set(id, { left: left0, top: top0, width: size.width, height: size.height });
                     // Do not suppress click yet; only suppress after we actually move on mouseup
                 }
             } else if (!isGroupEl) {
@@ -1299,8 +1330,9 @@ export const editor: Editor = {
                 }
             }
 
-            elementWidth = dragTarget.getBoundingClientRect().width;
-            elementHeight = dragTarget.getBoundingClientRect().height;
+            const targetSize = getDragTargetSize(dragTarget);
+            elementWidth = targetSize.width;
+            elementHeight = targetSize.height;
 
             // Store pointer offset within the drag target for stable single dragging
             const rect = dragTarget.getBoundingClientRect();
@@ -1316,6 +1348,7 @@ export const editor: Editor = {
             if (!isDragging) return;
 
             const canvasRect = dialog.canvas.getBoundingClientRect();
+            const { width: dialogW, height: dialogH } = getDialogCanvasSize();
 
             if (multiDragActive && multiSelected.size > 1 && !currentGroupId) {
                 // Move all selected wrappers by the same delta
