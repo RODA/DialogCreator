@@ -368,6 +368,14 @@ onChange(c_datasets, () => {
 
 This helper is useful when one control repopulates one or more dependent `Container` or `Choice` controls. Each source value gets its own remembered selection, but nothing is persisted after the dialog closes.
 
+6. Make an input act like a search box for a container
+
+```javascript
+searchIn(i_search, c_variables);
+```
+
+As the user types in the input, the container is filtered live by item name. The match is case-insensitive, partial matches are allowed, and the current search remains active even if the container is repopulated later with `setValue()`.
+
 Events:
 
 - Buttons and custom checkboxes/radios usually use `'click'`.

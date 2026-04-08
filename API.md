@@ -103,6 +103,15 @@ Use this reference when writing custom JavaScript for Dialog Creator. It contain
   - Supported dependents: `Container` and `Choice`.
   - Memory is temporary and lasts only while the dialog remains open; `resetDialog()` also clears it.
 
+`searchIn(input, ...containers)`
+
+  - Makes an Input behave like a live search box for one or more Container elements.
+  - Filtering is case-insensitive and matches item names by partial text.
+  - Matching rows stay visible; non-matching rows are hidden.
+  - Search filtering does not clear the current selection automatically.
+  - The current search remains active if the target container is later repopulated with `setValue()`.
+  - Throws a SyntaxError if the first argument is not an Input, if a target does not exist, or if a target is not a Container.
+
 `setSelected(element, value)`
 
   - Programmatically set selection.
@@ -286,6 +295,12 @@ onChange(c_datasets, () => {
   setValue(c_x, variables);
   setValue(c_y, variables);
 });
+```
+
+- Make an input act as a search box for a container:
+
+```javascript
+searchIn(i_search, c_variables);
 ```
 
 - Add or remove items in a Container:

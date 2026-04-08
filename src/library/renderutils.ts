@@ -233,6 +233,7 @@ const applyContainerItemFilter = (host: HTMLElement | null) => {
 
     const allowed = resolveContainerItemType(host.dataset.itemType);
     const allowAll = allowed === 'any';
+    const query = String(host.dataset.searchQuery || '').trim().toLowerCase();
     const items = Array.from(host.querySelectorAll<HTMLElement>('.container-item'));
     const normalBg = host.dataset.backgroundColor || '#ffffff';
     const normalFg = host.dataset.fontColor || '#000000';
@@ -247,6 +248,10 @@ const applyContainerItemFilter = (host: HTMLElement | null) => {
         const hasExplicitType = Boolean(rawItemType);
         const blocked = !allowAll && hasExplicitType && itemType !== allowed;
         const label = item.querySelector('.container-text') as HTMLElement | null;
+        const text = String(label?.textContent || item.dataset.value || '').trim().toLowerCase();
+        const matchesQuery = !query || text.includes(query);
+
+        item.style.display = matchesQuery ? '' : 'none';
 
         if (blocked) {
             item.classList.add('container-item-disabled');

@@ -25,7 +25,7 @@ export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
     'onClick', 'onChange', 'onInput', 'triggerChange', 'triggerClick',
 
     // in-dialog selection memory
-    'rememberSelectionBy',
+    'rememberSelectionBy', 'searchIn',
 
     // lists & selection
     'setSelected', 'getSelected', 'addValue', 'clearValue', 'clearInput', 'clearContent',
@@ -1518,6 +1518,51 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                     api.onChange(dependentName, () => storeDependentSelectionForCurrentSource(dependentName));
                 }
             });
+        },
+
+        searchIn: (input, ...containers) => {
+            const inputName = coerceName(input);
+            const inputEl = findWrapper(inputName);
+            if (!inputEl) {
+                throw new SyntaxError(`Element not found: ${String(input)}`);
+            }
+
+            const inputType = typeOf(inputEl);
+            if (inputType !== 'Input') {
+                throw new SyntaxError(`searchIn() expects an Input as the first argument; ${inputName} is ${inputType}`);
+            }
+
+            if (!containers.length) {
+                throw new SyntaxError('searchIn() expects at least one container');
+            }
+
+            const readQuery = () => String(api.getValue(inputName) ?? '').trim();
+            const applyQuery = () => {
+                const query = readQuery();
+                containers.forEach((container) => {
+                    const containerName = coerceName(container);
+                    const containerEl = findWrapper(containerName);
+                    if (!containerEl) {
+                        throw new SyntaxError(`Element not found: ${containerName}`);
+                    }
+
+                    const containerType = typeOf(containerEl);
+                    if (containerType !== 'Container') {
+                        throw new SyntaxError(`searchIn() supports only Container targets; ${containerName} is ${containerType}`);
+                    }
+
+                    if (query) {
+                        containerEl.dataset.searchQuery = query;
+                    } else if ('searchQuery' in containerEl.dataset) {
+                        delete containerEl.dataset.searchQuery;
+                    }
+                    renderutils.applyContainerItemFilter(containerEl);
+                });
+            };
+
+            api.onInput(inputName, applyQuery);
+            api.onChange(inputName, applyQuery);
+            applyQuery();
         },
 
         setSelected: (name, value) => {

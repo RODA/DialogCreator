@@ -116,6 +116,9 @@ export interface PreviewUI {
     /** Remember dependent selections while the dialog remains open, keyed by the current source value/selection. */
     rememberSelectionBy(source: string, ...dependents: string[]): void;
 
+    /** Make an Input behave like a live search box for one or more Container elements. */
+    searchIn(input: string, ...containers: string[]): void;
+
     /** Set selection: Select elements (single value) or Container/Choice items (accepts string or string[]). */
     setSelected(element: string, value: string | string[]): void;
 
