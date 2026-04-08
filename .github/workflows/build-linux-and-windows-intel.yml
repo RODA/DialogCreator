@@ -81,7 +81,7 @@ jobs:
           name: windows-intel-build
           path: |
             build/output/*_setup_*.exe
-            build/output/*.zip
+            build/output/*_intel.exe
             build/output/SHA256SUMS.txt
             build/output/SHA512SUMS.txt
           if-no-files-found: error
