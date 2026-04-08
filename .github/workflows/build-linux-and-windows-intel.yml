@@ -1,0 +1,87 @@
+name: build-linux-and-windows-intel
+
+on:
+  workflow_dispatch:
+
+jobs:
+  linux-intel:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build TypeScript output
+        run: npm run build
+
+      - name: Build Electron app (Linux intel)
+        run: node scripts/build-linux.js --x64
+
+      - name: Rename Linux artifacts
+        run: npm run rename:linux
+
+      - name: Write artifact checksums
+        run: node scripts/write-artifact-checksums.js
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-intel-build
+          path: |
+            build/output/*_intel.AppImage
+            build/output/*_intel.deb
+            build/output/SHA256SUMS.txt
+            build/output/SHA512SUMS.txt
+          if-no-files-found: error
+
+  windows-intel:
+    runs-on: windows-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build TypeScript output
+        run: npm run build
+
+      - name: Build Electron app (Windows intel)
+        run: npx electron-builder --win nsis portable --x64 --publish never
+
+      - name: Rename Windows artifacts
+        run: npm run rename:win
+
+      - name: Write artifact checksums
+        run: node scripts/write-artifact-checksums.js
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-intel-build
+          path: |
+            build/output/*_setup_*.exe
+            build/output/*.zip
+            build/output/SHA256SUMS.txt
+            build/output/SHA512SUMS.txt
+          if-no-files-found: error

@@ -6,13 +6,19 @@ VERSION=$(node -p "require('./package.json').version")
 NAME=$(node -p "(p=> (p.build && p.build.productName) ? p.build.productName : p.name)(require('./package.json'))")
 # Use a filename-safe variant (replace spaces with underscores)
 NAME_FILE=$(printf '%s' "$NAME" | sed 's/[[:space:]]\+/_/g')
+PACKAGE_NAME=$(node -p "String(require('./package.json').name || '').toLowerCase()")
 
-# Optional Linux artifacts (if you add Linux target later)
 ORIGINAL_LINUX_ARM="build/output/${NAME}-${VERSION}-arm64.AppImage"
 NEW_LINUX_ARM="${NAME_FILE}_${VERSION}_silicon.AppImage"
 
 ORIGINAL_LINUX_INTEL="build/output/${NAME}-${VERSION}.AppImage"
 NEW_LINUX_INTEL="${NAME_FILE}_${VERSION}_intel.AppImage"
+
+ORIGINAL_DEB_ARM="build/output/${PACKAGE_NAME}_${VERSION}_arm64.deb"
+NEW_DEB_ARM="${NAME_FILE}_${VERSION}_silicon.deb"
+
+ORIGINAL_DEB_INTEL="build/output/${PACKAGE_NAME}_${VERSION}_amd64.deb"
+NEW_DEB_INTEL="${NAME_FILE}_${VERSION}_intel.deb"
 
 renamed_any=0
 
@@ -25,6 +31,18 @@ fi
 if [ -f "$ORIGINAL_LINUX_INTEL" ]; then
     echo "Renaming $(basename "$ORIGINAL_LINUX_INTEL") -> $NEW_LINUX_INTEL"
     mv "$ORIGINAL_LINUX_INTEL" "build/output/$NEW_LINUX_INTEL"
+    renamed_any=1
+fi
+
+if [ -f "$ORIGINAL_DEB_ARM" ]; then
+    echo "Renaming $(basename "$ORIGINAL_DEB_ARM") -> $NEW_DEB_ARM"
+    mv "$ORIGINAL_DEB_ARM" "build/output/$NEW_DEB_ARM"
+    renamed_any=1
+fi
+
+if [ -f "$ORIGINAL_DEB_INTEL" ]; then
+    echo "Renaming $(basename "$ORIGINAL_DEB_INTEL") -> $NEW_DEB_INTEL"
+    mv "$ORIGINAL_DEB_INTEL" "build/output/$NEW_DEB_INTEL"
     renamed_any=1
 fi
 

@@ -6,22 +6,58 @@ $name = if ($packageJson.build -and $packageJson.build.productName) { $packageJs
 # Normalize name used in filenames (avoid spaces in file names we create)
 $nameForFile = ($name -replace "\s+", "_")
 
-# Define original and new file names (installer)
-$originalFile = "build/output/${name} Setup $version.exe"
-$newName = "${nameForFile}_setup_${version}.exe"
-$newPath = "build/output/$newName"
+$artifactDir = "build/output"
 
-# Rename if file exists
-if (Test-Path $originalFile) {
-    Rename-Item -Path $originalFile -NewName $newName
-    Write-Host "Renamed to $newName"
-} else {
-    Write-Error "Original file not found: $originalFile"
+function Rename-Artifact {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $SourcePath,
+        [Parameter(Mandatory = $true)]
+        [string] $TargetName
+    )
+
+    if (-not (Test-Path -LiteralPath $SourcePath)) {
+        return $false
+    }
+
+    Rename-Item -LiteralPath $SourcePath -NewName $TargetName -Force
+    Write-Host "Renamed to $TargetName"
+    return $true
+}
+
+# Rename NSIS installer to NAME_setup_VERSION_intel.exe
+$installerCandidates = @(
+    Get-ChildItem -Path $artifactDir -Filter "*.exe" -File -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -match [regex]::Escape("Setup $version") }
+)
+
+if ($installerCandidates.Count -eq 0) {
+    Write-Error "Installer artifact not found in $artifactDir"
     exit 1
-} 
+}
+
+$installerTargetName = "${nameForFile}_setup_${version}_intel.exe"
+[void](Rename-Artifact -SourcePath $installerCandidates[0].FullName -TargetName $installerTargetName)
+
+# Rename portable executable to NAME_VERSION_intel.exe
+$portableCandidates = @(
+    Get-ChildItem -Path $artifactDir -Filter "*.exe" -File -ErrorAction SilentlyContinue |
+        Where-Object {
+            $_.Name -ne $installerTargetName -and
+            $_.Name -notmatch [regex]::Escape("Setup $version") -and
+            $_.Name -notmatch [regex]::Escape("_setup_${version}_intel.exe")
+        }
+)
+
+if ($portableCandidates.Count -eq 0) {
+    Write-Error "Portable executable artifact not found in $artifactDir"
+    exit 1
+}
+
+$portableTargetName = "${nameForFile}_${version}_intel.exe"
+[void](Rename-Artifact -SourcePath $portableCandidates[0].FullName -TargetName $portableTargetName)
 
 # Also remove update metadata artifacts we don't want to ship alongside the installer
-$artifactDir = "build/output"
 $patterns = @("*.yml", "*.yaml", "*.blockmap")
 
 foreach ($pattern in $patterns) {
