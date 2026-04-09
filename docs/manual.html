@@ -316,6 +316,13 @@ The items in a Container can be selected and deselected by clicking, and multi-s
 </code></pre>
 
 <p>As the user types in the input, the container is filtered live by item name. The match is case-insensitive, partial matches are allowed, and the current search remains active even if the container is repopulated later with <code class="hljs"><span class="hljs-title function_">setValue</span>()</code>.</p>
+<ol start="7">
+<li>Enable transient <code class="hljs">Cmd/Ctrl+F</code> search for specific containers</li>
+</ol>
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">enableSearch</span>(<span class="api-param">c_outcome</span>, <span class="api-param">c_condition</span>);
+</code></pre>
+
+<p>When the pointer is over an enabled registered container, pressing <code class="hljs">Cmd/Ctrl+F</code> opens a transient search box above that container in Preview. Only one transient search box can be open at a time. <code class="hljs">Esc</code> closes it and clears the filter; if it loses focus while empty, it closes automatically.</p>
 <p>Events:</p>
 <ul>
 <li>Buttons and custom checkboxes/radios usually use <code class="hljs"><span class="hljs-string">'click'</span></code>.</li>

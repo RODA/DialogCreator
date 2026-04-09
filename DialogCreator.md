@@ -376,6 +376,14 @@ searchIn(i_search, c_variables);
 
 As the user types in the input, the container is filtered live by item name. The match is case-insensitive, partial matches are allowed, and the current search remains active even if the container is repopulated later with `setValue()`.
 
+7. Enable transient `Cmd/Ctrl+F` search for specific containers
+
+```javascript
+enableSearch(c_outcome, c_condition);
+```
+
+When the pointer is over an enabled registered container, pressing `Cmd/Ctrl+F` opens a transient search box above that container in Preview. Only one transient search box can be open at a time. `Esc` closes it and clears the filter; if it loses focus while empty, it closes automatically.
+
 Events:
 
 - Buttons and custom checkboxes/radios usually use `'click'`.

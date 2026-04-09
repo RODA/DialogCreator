@@ -16,6 +16,131 @@ import { API_NAMES, createPreviewUI } from '../library/api';
 
 let initialPreviewDialog: PreviewDialog | null = null;
 const previewLastSelectedContainerItem = new WeakMap<HTMLElement, HTMLElement | null>();
+let previewHoveredContainer: HTMLElement | null = null;
+let previewSearchContainer: HTMLElement | null = null;
+let previewSearchInput: HTMLInputElement | null = null;
+
+const isPreviewContainerSearchable = (host: HTMLElement | null): host is HTMLElement => {
+    if (!(host instanceof HTMLElement)) {
+        return false;
+    }
+
+    if (String(host.dataset.type || '') !== 'Container') {
+        return false;
+    }
+
+    if (host.style.display === 'none' || !utils.isTrue(host.dataset.isVisible ?? 'true')) {
+        return false;
+    }
+
+    if (!utils.isTrue(host.dataset.isEnabled ?? 'true')) {
+        return false;
+    }
+
+    if (!utils.isTrue(host.dataset.autoSearchEnabled ?? 'false')) {
+        return false;
+    }
+
+    return Boolean(host.querySelector('.container-content'));
+};
+
+const syncPreviewContainerSearchQuery = (host: HTMLElement, query: string) => {
+    const trimmed = String(query || '').trim();
+    if (trimmed) {
+        host.dataset.searchQuery = trimmed;
+    } else if ('searchQuery' in host.dataset) {
+        delete host.dataset.searchQuery;
+    }
+    renderutils.applyContainerItemFilter(host);
+};
+
+const closePreviewContainerSearch = (clearQuery = true) => {
+    const host = previewSearchContainer;
+    const input = previewSearchInput;
+
+    if (input && input.parentElement) {
+        input.parentElement.remove();
+    }
+
+    document.querySelectorAll('.preview-container-search').forEach((node) => {
+        if (node.parentElement) {
+            node.parentElement.removeChild(node);
+        }
+    });
+
+    if (clearQuery && host) {
+        syncPreviewContainerSearchQuery(host, '');
+    }
+
+    if (host) {
+        delete host.dataset.searchActive;
+    }
+
+    previewSearchInput = null;
+    previewSearchContainer = null;
+};
+
+const openPreviewContainerSearch = (host: HTMLElement) => {
+    if (!isPreviewContainerSearchable(host)) {
+        return;
+    }
+
+    document.querySelectorAll('.preview-container-search').forEach((node) => {
+        if (node.parentElement && node.parentElement !== host) {
+            node.parentElement.removeChild(node);
+        }
+    });
+
+    if (previewSearchContainer && previewSearchContainer !== host) {
+        closePreviewContainerSearch(true);
+    }
+
+    if (previewSearchContainer === host && previewSearchInput) {
+        previewSearchInput.focus();
+        previewSearchInput.select();
+        return;
+    }
+
+    const overlay = document.createElement('div');
+    overlay.className = 'preview-container-search';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'preview-container-search-input';
+    input.placeholder = 'Search';
+    input.value = String(host.dataset.searchQuery || '');
+    input.setAttribute('aria-label', 'Search in container');
+
+    input.addEventListener('input', () => {
+        syncPreviewContainerSearchQuery(host, input.value);
+    });
+
+    input.addEventListener('keydown', (ev: KeyboardEvent) => {
+        if (ev.key === 'Escape' || ev.key === 'Esc') {
+            ev.preventDefault();
+            ev.stopPropagation();
+            closePreviewContainerSearch(true);
+        }
+    });
+
+    input.addEventListener('blur', () => {
+        if (!String(input.value || '').trim()) {
+            closePreviewContainerSearch(true);
+        }
+    });
+
+    overlay.appendChild(input);
+    host.appendChild(overlay);
+    host.dataset.searchActive = 'true';
+    previewSearchContainer = host;
+    previewSearchInput = input;
+    syncPreviewContainerSearchQuery(host, input.value);
+
+    queueMicrotask(() => {
+        input.focus();
+        input.select();
+    });
+};
 
 const splitPreviewList = (raw: unknown): string[] => {
     return String(raw ?? '')
@@ -106,6 +231,18 @@ const attachPreviewContainerHandlers = (host: HTMLElement, core: HTMLElement) =>
     if (!target) {
         return;
     }
+
+    host.addEventListener('mouseenter', () => {
+        if (isPreviewContainerSearchable(host)) {
+            previewHoveredContainer = host;
+        }
+    });
+
+    host.addEventListener('mouseleave', () => {
+        if (previewHoveredContainer === host) {
+            previewHoveredContainer = null;
+        }
+    });
 
     const items = Array.from(target.querySelectorAll<HTMLElement>('.container-item'));
     items.forEach((item) => {
@@ -219,6 +356,9 @@ function buildUI(canvas: HTMLElement): PreviewUI {
 
 
 function renderPreview(dialog: PreviewDialog) {
+    closePreviewContainerSearch(false);
+    previewHoveredContainer = null;
+
     const root = document.getElementById("preview-root");
     if (!root) return;
     const existingPanel = root.querySelector('.preview-syntax-panel') as HTMLElement | null;
@@ -291,6 +431,8 @@ function renderPreview(dialog: PreviewDialog) {
         wrapper.style.top = `${top}px`;
         wrapper.dataset.left = String(left);
         wrapper.dataset.top = String(top);
+        wrapper.style.width = `${Number((data as any).width ?? core.clientWidth ?? 0)}px`;
+        wrapper.style.height = `${Number((data as any).height ?? core.clientHeight ?? 0)}px`;
         if (desiredType) wrapper.dataset.type = desiredType;
         if (desiredNameId) wrapper.dataset.nameid = desiredNameId;
 
@@ -718,7 +860,28 @@ function renderPreview(dialog: PreviewDialog) {
 
     document.addEventListener('keydown', (ev: KeyboardEvent) => {
         const key = ev.key || ev.code;
+        const lowerKey = String(key || '').toLowerCase();
+        if ((ev.metaKey || ev.ctrlKey) && lowerKey === 'f') {
+            ev.preventDefault();
+            ev.stopPropagation();
+            if (previewHoveredContainer) {
+                openPreviewContainerSearch(previewHoveredContainer);
+                return;
+            }
+            if (previewSearchContainer) {
+                openPreviewContainerSearch(previewSearchContainer);
+            }
+            return;
+        }
+
         if (key === 'Escape' || key === 'Esc') {
+            if (previewSearchContainer) {
+                closePreviewContainerSearch(true);
+                ev.preventDefault();
+                ev.stopPropagation();
+                return;
+            }
+
             // Dismiss color pickers
             Array.from(document.querySelectorAll('.color-popover')).forEach((el) => {
                 (el as HTMLElement).style.display = 'none';

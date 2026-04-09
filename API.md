@@ -112,6 +112,15 @@ Use this reference when writing custom JavaScript for Dialog Creator. It contain
   - The current search remains active if the target container is later repopulated with `setValue()`.
   - Throws a SyntaxError if the first argument is not an Input, if a target does not exist, or if a target is not a Container.
 
+`enableSearch(...containers)`
+
+  - Enables transient `Cmd/Ctrl+F` search for the specified Container elements in Preview.
+  - The hovered enabled container becomes the search target when the shortcut is pressed.
+  - Only one transient search box can be open at a time.
+  - `Esc` closes the current transient search and clears its filter.
+  - If the transient search input loses focus while empty, it closes automatically.
+  - Throws a SyntaxError if no targets are provided, if a target does not exist, or if a target is not a Container.
+
 `setSelected(element, value)`
 
   - Programmatically set selection.
@@ -301,6 +310,12 @@ onChange(c_datasets, () => {
 
 ```javascript
 searchIn(i_search, c_variables);
+```
+
+- Enable transient `Cmd/Ctrl+F` search for specific containers:
+
+```javascript
+enableSearch(c_outcome, c_condition);
 ```
 
 - Add or remove items in a Container:

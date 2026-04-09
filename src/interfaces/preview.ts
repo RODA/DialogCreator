@@ -119,6 +119,9 @@ export interface PreviewUI {
     /** Make an Input behave like a live search box for one or more Container elements. */
     searchIn(input: string, ...containers: string[]): void;
 
+    /** Enable transient Cmd/Ctrl+F search for specific Container elements. */
+    enableSearch(...containers: string[]): void;
+
     /** Set selection: Select elements (single value) or Container/Choice items (accepts string or string[]). */
     setSelected(element: string, value: string | string[]): void;
 

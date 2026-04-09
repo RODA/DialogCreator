@@ -25,7 +25,7 @@ export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
     'onClick', 'onChange', 'onInput', 'triggerChange', 'triggerClick',
 
     // in-dialog selection memory
-    'rememberSelectionBy', 'searchIn',
+    'rememberSelectionBy', 'searchIn', 'enableSearch',
 
     // lists & selection
     'setSelected', 'getSelected', 'addValue', 'clearValue', 'clearInput', 'clearContent',
@@ -1563,6 +1563,27 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             api.onInput(inputName, applyQuery);
             api.onChange(inputName, applyQuery);
             applyQuery();
+        },
+
+        enableSearch: (...containers) => {
+            if (!containers.length) {
+                throw new SyntaxError('enableSearch() expects at least one container');
+            }
+
+            containers.forEach((container) => {
+                const containerName = coerceName(container);
+                const containerEl = findWrapper(containerName);
+                if (!containerEl) {
+                    throw new SyntaxError(`Element not found: ${containerName}`);
+                }
+
+                const containerType = typeOf(containerEl);
+                if (containerType !== 'Container') {
+                    throw new SyntaxError(`enableSearch() supports only Container targets; ${containerName} is ${containerType}`);
+                }
+
+                containerEl.dataset.autoSearchEnabled = 'true';
+            });
         },
 
         setSelected: (name, value) => {
