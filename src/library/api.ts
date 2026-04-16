@@ -13,7 +13,7 @@ export const EVENT_NAMES = new Set<string>(EVENT_LIST);
 // Curated helper names exposed as shorthand in user customJS (prelude)
 export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
     // core
-    'showMessage', 'getValue', 'setValue', 'run', 'updateSyntax', 'resetDialog',
+    'showMessage', 'getValue', 'setValue', 'run', 'callExternal', 'updateSyntax', 'resetDialog',
 
     // checkbox/radio
     'check', 'isChecked', 'uncheck', 'isUnchecked',
@@ -47,6 +47,7 @@ const NEUTRAL_NAMES = new Set<keyof PreviewUI>([
     'listObjects',
     'listColumns',
     'listVariables',
+    'callExternal',
     'run',
     'resetDialog'
 ]);
@@ -722,6 +723,17 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
 
         run: (_command: string) => {
             // Intentionally left as a no-op to preserve legacy API surface.
+        },
+
+        callExternal: async (name: string, parameters?: unknown) => {
+            const callName = String(name ?? '').trim();
+            if (!callName) {
+                throw new SyntaxError('callExternal() expects a non-empty function name');
+            }
+            if (typeof env.callExternal !== 'function') {
+                return undefined;
+            }
+            return env.callExternal(callName, parameters);
         },
 
         updateSyntax: (command: string) => {
@@ -2045,8 +2057,6 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 el.dataset.selected = vals.join(',');
             } catch {}
         },
-
-        // call: (service, args?, cb?) => call(service, args, cb),
 
         // items() and values() removed in favor of getValue/setValue/getSelected
 

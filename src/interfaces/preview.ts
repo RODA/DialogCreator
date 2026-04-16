@@ -21,6 +21,12 @@ export interface PreviewUI {
     /** Legacy stub retained for compatibility. Does nothing in Preview. */
     run(command: string): void;
 
+    /**
+     * Call an app-specific external function.
+     * In Dialog Creator Preview this is a no-op; target apps may override it.
+     */
+    callExternal(name: string, parameters?: unknown): Promise<unknown>;
+
     /** Update the syntax panel with the provided command. */
     updateSyntax(command: string): void;
 
@@ -173,6 +179,8 @@ export interface PreviewUIEnv {
     logToEditor: (msg: string) => void;
     // Show an app-level dialog message via main process
     showDialogMessage: (type: 'info' | 'warning' | 'error' | 'question', message: string, detail: string) => void;
+    // Optional app-specific external function bridge
+    callExternal?: (name: string, parameters?: unknown) => Promise<unknown>;
     // Open an external floating run panel near the Preview window
     openSyntaxPanel?: (command: string) => void;
     // Reset the Preview dialog to its initial state

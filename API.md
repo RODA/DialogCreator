@@ -168,6 +168,27 @@ updateSyntax(cmd);
 
   - Sends the specified command to the backend for execution (for instance to run the R code, if running on top of R).
 
+`callExternal(name, parameters?)`
+
+  - Calls an app-specific external function.
+  - Use this when a dialog needs behavior that is intentionally outside Dialog Creator's documented UI API.
+  - `name` is the external function identifier; `parameters` is any serializable object or value the target app expects.
+  - Returns a Promise.
+  - In Dialog Creator Preview, this is a no-op and resolves silently so dialogs that use app-specific extensions remain valid here.
+  - Example:
+
+```javascript
+onChange(c_y, async () => {
+  await callExternal('xyplot', {
+    dataset: getSelected(c_datasets)[0] || '',
+    xVariableName: getSelected(c_x)[0] || '',
+    yVariableName: getSelected(c_y)[0] || '',
+    showCaseLabels: isChecked(cases),
+    jitter: isChecked(jitter)
+  });
+});
+```
+
 Validation and highlight helpers
 
 `addError(element, message)`
