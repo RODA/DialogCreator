@@ -99,7 +99,7 @@
     "@types/emscripten": "^1.41.5",
     "@types/sqlite3": "^3.1.11",
     "@types/uuid": "^10.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.53.0",
+    "@typescript-eslint/eslint-plugin": "^8.58.2",
     "@typescript-eslint/parser": "^8.53.0",
     "cross-env": "^10.1.0",
     "electron": "^39.2.7",
