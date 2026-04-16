@@ -116,16 +116,18 @@ jobs:
           name: windows-intel-build
           path: release-assets/windows-intel
 
-      - name: Resolve release version
-        id: version
-        run: echo "version=$(node -p 'require(\"./package.json\").version')" >> "$GITHUB_OUTPUT"
+      - name: Resolve release metadata
+        id: release
+        run: |
+          echo "tag=latest" >> "$GITHUB_OUTPUT"
+          echo "name=Latest build" >> "$GITHUB_OUTPUT"
 
       - name: Publish assets to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.version.outputs.version }}
+          tag_name: ${{ steps.release.outputs.tag }}
           target_commitish: ${{ github.sha }}
-          name: ${{ steps.version.outputs.version }}
+          name: ${{ steps.release.outputs.name }}
           generate_release_notes: false
           draft: false
           prerelease: false
