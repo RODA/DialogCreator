@@ -94,8 +94,6 @@ jobs:
     needs:
       - linux-intel
       - windows-intel
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - name: Checkout repo
@@ -122,22 +120,19 @@ jobs:
         id: version
         run: echo "version=$(node -p 'require(\"./package.json\").version')" >> "$GITHUB_OUTPUT"
 
-      - name: Create release if missing
-        run: |
-          gh release view "${{ steps.version.outputs.version }}" >/dev/null 2>&1 || \
-          gh release create "${{ steps.version.outputs.version }}" \
-            --target "${{ github.sha }}" \
-            --title "${{ steps.version.outputs.version }}" \
-            --notes ""
-
-      - name: Upload release assets
-        shell: bash
-        run: |
-          shopt -s nullglob
-          files=(release-assets/linux-intel/* release-assets/windows-intel/*)
-          if [ ${#files[@]} -eq 0 ]; then
-            echo "No release assets were downloaded." >&2
-            exit 1
-          fi
-
-          gh release upload "${{ steps.version.outputs.version }}" "${files[@]}" --clobber
+      - name: Publish assets to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          target_commitish: ${{ github.sha }}
+          name: ${{ steps.version.outputs.version }}
+          generate_release_notes: false
+          draft: false
+          prerelease: false
+          fail_on_unmatched_files: true
+          overwrite_files: true
+          append_body: false
+          make_latest: false
+          files: |
+            release-assets/linux-intel/*
+            release-assets/windows-intel/*
