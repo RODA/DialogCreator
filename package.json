@@ -107,7 +107,7 @@
     "esbuild": "^0.27.2",
     "eslint": "^9.39.2",
     "md-to-pdf": "^5.2.5",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.2"
   },
   "dependencies": {
     "@jaames/iro": "^5.5.2",
