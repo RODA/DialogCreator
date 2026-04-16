@@ -3,6 +3,9 @@ name: build-linux-and-windows-intel
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   linux-intel:
     runs-on: ubuntu-latest
@@ -85,3 +88,56 @@ jobs:
             build/output/SHA256SUMS.txt
             build/output/SHA512SUMS.txt
           if-no-files-found: error
+
+  publish-release:
+    runs-on: ubuntu-latest
+    needs:
+      - linux-intel
+      - windows-intel
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-intel-build
+          path: release-assets/linux-intel
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-intel-build
+          path: release-assets/windows-intel
+
+      - name: Resolve release version
+        id: version
+        run: echo "version=$(node -p 'require(\"./package.json\").version')" >> "$GITHUB_OUTPUT"
+
+      - name: Create release if missing
+        run: |
+          gh release view "${{ steps.version.outputs.version }}" >/dev/null 2>&1 || \
+          gh release create "${{ steps.version.outputs.version }}" \
+            --target "${{ github.sha }}" \
+            --title "${{ steps.version.outputs.version }}" \
+            --notes ""
+
+      - name: Upload release assets
+        shell: bash
+        run: |
+          shopt -s nullglob
+          files=(release-assets/linux-intel/* release-assets/windows-intel/*)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No release assets were downloaded." >&2
+            exit 1
+          fi
+
+          gh release upload "${{ steps.version.outputs.version }}" "${files[@]}" --clobber
