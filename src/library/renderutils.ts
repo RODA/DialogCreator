@@ -6,6 +6,7 @@ import { dialog } from '../modules/dialog';
 import { elements } from '../modules/elements';
 import { DialogProperties } from "../interfaces/dialog";
 import {
+    AnyElement,
     PrimitiveKind,
     AssertOptions,
     BuildOptions,
@@ -86,6 +87,95 @@ const normalizeOrderList = (values: string[]): string[] => {
         out.push(next);
     });
     return out;
+};
+
+const ELEMENT_ICON_ALIASES: Record<string, string> = {
+    none: 'none',
+    minus: 'dash',
+    remove: 'dash',
+    plus: 'plus',
+    add: 'plus',
+    x: 'close'
+};
+
+const normalizeElementIcon = (value: unknown): string => {
+    const raw = String(value ?? '').trim().toLowerCase();
+    if (!raw || raw === 'none') return 'none';
+    return ELEMENT_ICON_ALIASES[raw] ?? raw;
+};
+
+const resolveElementIconSize = (iconSize: unknown, fallback: number): number => {
+    const parsed = Number(iconSize);
+    if (Number.isFinite(parsed) && parsed > 0) {
+        return parsed;
+    }
+    return fallback;
+};
+
+const resolveElementTemplate = (typeName: unknown): Record<string, unknown> => {
+    const rawType = String(typeName ?? '').trim();
+    if (!rawType) {
+        return elements.buttonElement as unknown as Record<string, unknown>;
+    }
+    const key = `${rawType.charAt(0).toLowerCase()}${rawType.slice(1)}Element`;
+    const template = (elements as unknown as Record<string, unknown>)[key];
+    return (template && typeof template === 'object')
+        ? template as Record<string, unknown>
+        : elements.buttonElement as unknown as Record<string, unknown>;
+};
+
+const ensureElementTextNode = (host: HTMLElement, className: string): HTMLSpanElement => {
+    let span = host.querySelector(`.${className}`) as HTMLSpanElement | null;
+    if (!span) {
+        span = document.createElement('span');
+        span.className = className;
+        host.appendChild(span);
+    }
+    return span;
+};
+
+const ensureElementIconNode = (host: HTMLElement, className: string): HTMLSpanElement => {
+    let icon = host.querySelector(`.${className}`) as HTMLSpanElement | null;
+    if (!icon) {
+        icon = document.createElement('span');
+        icon.className = className;
+        host.appendChild(icon);
+    }
+    return icon;
+};
+
+const syncElementPresentation = (
+    host: HTMLElement,
+    text: string,
+    iconName: unknown,
+    textClassName: string,
+    iconClassName: string,
+    datasetKey?: string
+): void => {
+    const span = ensureElementTextNode(host, textClassName);
+    const icon = ensureElementIconNode(host, iconClassName);
+    const normalized = normalizeElementIcon(iconName);
+
+    span.textContent = text;
+
+    if (normalized === 'none') {
+        icon.className = `${iconClassName} codicon`;
+        icon.innerHTML = '';
+        icon.style.display = 'none';
+        span.style.display = 'block';
+        if (datasetKey) {
+            delete host.dataset[datasetKey];
+        }
+        return;
+    }
+
+    icon.className = `${iconClassName} codicon codicon-${normalized}`;
+    icon.innerHTML = '';
+    icon.style.display = 'flex';
+    span.style.display = 'none';
+    if (datasetKey) {
+        host.dataset[datasetKey] = normalized;
+    }
 };
 
 const mergeSelectionOrder = (host: HTMLElement, activeItems: string[]): string[] => {
@@ -997,6 +1087,9 @@ export const renderutils: RenderUtils = {
             showError('Invalid settings for this element.');
         }
 
+        const template = resolveElementTemplate((data as Record<string, unknown>)?.type);
+        data = { ...template, ...data } as AnyElement;
+
         const uuid = uuidv4();
         // Determine effective nameid:
         // - If user provided a non-empty, valid identifier and it is not already used, keep it verbatim.
@@ -1076,33 +1169,35 @@ export const renderutils: RenderUtils = {
             element.className = 'smart-button';
             element.style.backgroundColor = data.color;
             element.style.borderColor = data.borderColor;
+            element.style.color = data.fontColor;
             element.dataset.borderColor = data.borderColor;
             element.style.width = data.width + 'px';
             element.style.maxWidth = data.width + 'px';
+            element.style.height = data.height + 'px';
             element.dataset.width = String(data.width);
+            element.dataset.height = String(data.height);
 
             const lineHeight = coms.fontSize * 1.2;
             const paddingY = 3; // px
             const maxHeight = (lineHeight * data.lineClamp) + 3 * paddingY;
             element.style.maxHeight = maxHeight + 'px';
 
-            const span = document.createElement('span');
-            span.className = 'smart-button-text';
+            const span = ensureElementTextNode(element, 'smart-button-text');
             span.style.fontFamily = coms.fontFamily;
             span.style.overflow = 'hidden';
             span.style.textOverflow = 'ellipsis';
             span.style.whiteSpace = 'nowrap';
-            /* --- textContent instead of innerHTML or innerText --- */
-            span.textContent = data.label;
-
-            element.appendChild(span);
+            syncElementPresentation(element, data.label, data.icon, 'smart-button-text', 'smart-button-icon', 'buttonIcon');
 
             renderutils.updateButton(
                 element as HTMLDivElement,
                 data.label,
                 coms.fontSize,
                 data.lineClamp,
-                data.width
+                data.width,
+                data.icon,
+                data.height,
+                data.iconSize
             )
 
         } else if (data.type == "Input" && element instanceof HTMLInputElement) {
@@ -1345,10 +1440,11 @@ export const renderutils: RenderUtils = {
         } else if (data.type == "Label") {
 
             // Initial label setup: single span-like behavior within the core node
-            element.textContent = data.value || '';
+            syncElementPresentation(element, data.value || '', data.icon, 'smart-label-text', 'smart-label-icon', 'elementIcon');
             element.style.fontFamily = coms.fontFamily;
             element.style.fontSize = coms.fontSize + 'px';
             element.style.lineHeight = '1.2';
+            element.style.color = data.fontColor || '#000000';
             element.style.overflow = 'hidden';
             element.style.textOverflow = 'ellipsis';
             // Place in normal flow so width measures to content
@@ -1647,7 +1743,19 @@ export const renderutils: RenderUtils = {
                     }
                     // Apply height to wrapper by default, and also to inner for visual elements
                     element.style.height = value + 'px';
-                    if (inner && (input || select || container || sorter || separator || slider || checkbox || radio)) {
+                    if (button) {
+                        const host = (inner as HTMLDivElement) || element;
+                        renderutils.updateButton(
+                            host,
+                            String(props.label ?? dataset.label ?? ''),
+                            parseFloat(window.getComputedStyle(host).fontSize || '0') || Number(dataset.fontSize) || coms.fontSize,
+                            Number(props.lineClamp ?? dataset.lineClamp) || 1,
+                            Number(props.width ?? dataset.width) || Math.round(host.getBoundingClientRect().width || 0) || 60,
+                            props.icon ?? dataset.icon ?? 'none',
+                            Number(value),
+                            Number(props.iconSize ?? dataset.iconSize) || 0
+                        );
+                    } else if (inner && (input || select || container || sorter || separator || slider || checkbox || radio)) {
                         inner.style.height = value + 'px';
                         // Also resize the custom control node if present
                         if (checkbox && customCheckbox) customCheckbox.style.height = value + 'px';
@@ -1679,7 +1787,55 @@ export const renderutils: RenderUtils = {
 
                     // For button, let wrapper height auto-follow content
                     if (button) {
-                        element.style.height = '';
+                        const host = (inner as HTMLDivElement) || element;
+                        renderutils.updateButton(
+                            host,
+                            String(value),
+                            parseFloat(window.getComputedStyle(host).fontSize || '0') || Number(dataset.fontSize) || coms.fontSize,
+                            Number(props.lineClamp ?? dataset.lineClamp) || 1,
+                            Number(props.width ?? dataset.width) || Math.round(host.getBoundingClientRect().width || 0) || 60,
+                            props.icon ?? dataset.icon ?? 'none',
+                            Number(props.height ?? dataset.height) || undefined,
+                            Number(props.iconSize ?? dataset.iconSize) || 0
+                        );
+                    }
+                    break;
+
+                case 'icon':
+                    if (button) {
+                        const host = (inner as HTMLDivElement) || element;
+                        renderutils.updateButton(
+                            host,
+                            String(props.label ?? dataset.label ?? ''),
+                            parseFloat(window.getComputedStyle(host).fontSize || '0') || Number(dataset.fontSize) || coms.fontSize,
+                            Number(props.lineClamp ?? dataset.lineClamp) || 1,
+                            Number(props.width ?? dataset.width) || Math.round(host.getBoundingClientRect().width || 0) || 60,
+                            value,
+                            Number(props.height ?? dataset.height) || undefined,
+                            Number(props.iconSize ?? dataset.iconSize) || 0
+                        );
+                    } else if (label) {
+                        element.dataset[key] = value;
+                        renderutils.updateLabel(element);
+                    }
+                    break;
+
+                case 'iconSize':
+                    if (button) {
+                        const host = (inner as HTMLDivElement) || element;
+                        renderutils.updateButton(
+                            host,
+                            String(props.label ?? dataset.label ?? ''),
+                            parseFloat(window.getComputedStyle(host).fontSize || '0') || Number(dataset.fontSize) || coms.fontSize,
+                            Number(props.lineClamp ?? dataset.lineClamp) || 1,
+                            Number(props.width ?? dataset.width) || Math.round(host.getBoundingClientRect().width || 0) || 60,
+                            props.icon ?? dataset.icon ?? 'none',
+                            Number(props.height ?? dataset.height) || undefined,
+                            Number(value) || 0
+                        );
+                    } else if (label) {
+                        element.dataset[key] = value;
+                        renderutils.updateLabel(element);
                     }
                     break;
 
@@ -1710,8 +1866,16 @@ export const renderutils: RenderUtils = {
                         inner.style.setProperty('max-width', '100%', 'important');
                         inner.style.minWidth = '0';
                         inner.style.setProperty('min-width', '0', 'important');
-                        // Allow wrapper to auto-size vertically
-                        element.style.height = '';
+                        renderutils.updateButton(
+                            inner as HTMLDivElement,
+                            String(props.label ?? dataset.label ?? ''),
+                            parseFloat(window.getComputedStyle(inner).fontSize || '0') || Number(dataset.fontSize) || coms.fontSize,
+                            Number(props.lineClamp ?? dataset.lineClamp) || 1,
+                            Number(value),
+                            props.icon ?? dataset.icon ?? 'none',
+                            Number(props.height ?? dataset.height) || undefined,
+                            Number(props.iconSize ?? dataset.iconSize) || 0
+                        );
 
                     } else if (label) {
                         element.dataset[key] = value;
@@ -1751,7 +1915,8 @@ export const renderutils: RenderUtils = {
                         // Compute max height based on computed font size, padding, and borders
                         const host = (inner as HTMLDivElement) || element;
                         const span = host.querySelector('.smart-button-text') as HTMLSpanElement | null;
-                        const spanCS = window.getComputedStyle(span || host);
+                        const icon = host.querySelector('.smart-button-icon') as HTMLSpanElement | null;
+                        const spanCS = window.getComputedStyle((span && span.style.display !== 'none') ? span : (icon || host));
                         const fs = parseFloat(spanCS.fontSize || '0') || Number(dataset.fontSize) || coms.fontSize;
                         const lineHeightPx = fs * 1.2;
                         const hostCS = window.getComputedStyle(host);
@@ -1766,9 +1931,6 @@ export const renderutils: RenderUtils = {
                         if (span) {
                             span.style.setProperty('-webkit-line-clamp', String(clamp));
                         }
-
-                        // Allow wrapper height to auto-size
-                        element.style.height = '';
                     } else if (label) {
                         element.dataset[key] = value;
                         renderutils.updateLabel(element);
@@ -1859,6 +2021,10 @@ export const renderutils: RenderUtils = {
                             const span = inner.querySelector('.smart-button-text') as HTMLSpanElement | null;
                             if (span) {
                                 span.style.color = value;
+                            }
+                            const icon = inner.querySelector('.smart-button-icon') as HTMLSpanElement | null;
+                            if (icon) {
+                                icon.style.color = value;
                             }
                         } else if (label && inner) {
                             inner.style.color = value;
@@ -2876,7 +3042,11 @@ export const renderutils: RenderUtils = {
         text,
         fontSize,
         lineClamp,
-        width
+        width,
+        icon = 'none'
+        ,
+        height,
+        iconSize
     ) {
         button.style.width = width + 'px';
         button.style.setProperty('width', width + 'px', 'important');
@@ -2887,8 +3057,18 @@ export const renderutils: RenderUtils = {
         const paddingY = 3; // px
         const maxHeight = (lineHeight * lineClamp) + 3 * paddingY;
         button.style.maxHeight = maxHeight + 'px';
+        if (Number.isFinite(height) && Number(height) > 0) {
+            button.style.height = Number(height) + 'px';
+            button.style.minHeight = Number(height) + 'px';
+        } else {
+            button.style.removeProperty('height');
+            button.style.removeProperty('min-height');
+        }
+
+        syncElementPresentation(button, text, icon, 'smart-button-text', 'smart-button-icon', 'buttonIcon');
 
         const span = button.querySelector('.smart-button-text') as HTMLSpanElement;
+        const iconNode = button.querySelector('.smart-button-icon') as HTMLSpanElement | null;
         span.style.fontSize = fontSize + 'px';
         span.style.lineHeight = '1.2';
         span.style.overflow = 'hidden';
@@ -2896,10 +3076,14 @@ export const renderutils: RenderUtils = {
         span.style.whiteSpace = 'nowrap';
         // Use CSS property setter for vendor-prefixed line clamp
         span.style.setProperty('-webkit-line-clamp', String(lineClamp));
+        if (iconNode) {
+            iconNode.style.fontSize = resolveElementIconSize(iconSize, fontSize) + 'px';
+            iconNode.style.lineHeight = '1';
+        }
 
-        span.textContent = text;
-
-        if (span.scrollHeight > span.offsetHeight) {
+        if (normalizeElementIcon(icon) !== 'none') {
+            button.title = text;
+        } else if (span.scrollHeight > span.offsetHeight) {
             button.title = text;
         } else {
             button.removeAttribute('title');
@@ -2946,27 +3130,63 @@ export const renderutils: RenderUtils = {
         }
 
         const text = dataset.value ? dataset.value : '';
+        const iconName = dataset.icon ? dataset.icon : 'none';
+        const iconSize = resolveElementIconSize(dataset.iconSize, fontSize);
         let lines = dataset.lineClamp ? Number(dataset.lineClamp) : 1;
         let maxW = dataset.maxWidth ? Number(dataset.maxWidth) : 100;
         const rotate = new Set([0, 90, 180, 270]).has(Number(dataset.rotate)) ? Number(dataset.rotate) : 0;
+        const align = dataset.align || 'left';
 
 
     // Apply text and font styles
-    host.textContent = text;
+    syncElementPresentation(host, text, iconName, 'smart-label-text', 'smart-label-icon', 'elementIcon');
+    const textNode = host.querySelector('.smart-label-text') as HTMLSpanElement | null;
+    const iconNode = host.querySelector('.smart-label-icon') as HTMLSpanElement | null;
+    const iconMode = normalizeElementIcon(iconName) !== 'none';
     host.style.fontSize = fontSize + 'px';
     host.style.lineHeight = '1.2';
     host.style.overflow = 'hidden';
+    host.style.color = dataset.fontColor || '#000000';
     // textOverflow is finalized after measuring; set a safe default now
     host.style.textOverflow = 'ellipsis';
+
+        if (textNode) {
+            textNode.style.fontSize = fontSize + 'px';
+            textNode.style.lineHeight = '1.2';
+        }
+        if (iconNode) {
+            iconNode.style.fontSize = iconSize + 'px';
+            iconNode.style.lineHeight = '1';
+            iconNode.style.alignItems = 'center';
+            iconNode.style.justifyContent = align === 'right' ? 'flex-end' : (align === 'center' ? 'center' : 'flex-start');
+        }
 
         const singleLineHeight = Math.ceil(fontSize * 1.2);
 
         // Apply text alignment
-        const align = dataset.align || 'left';
         host.style.textAlign = align;
 
         // Configure clamp/ellipsis behavior and vertical centering
-        if (lines > 1) {
+        if (iconMode) {
+            host.style.display = 'flex';
+            host.style.whiteSpace = 'nowrap';
+            host.style.overflow = 'visible';
+            host.style.textOverflow = 'clip';
+            host.style.removeProperty('-webkit-line-clamp');
+            host.style.removeProperty('-webkit-box-orient');
+            host.style.removeProperty('word-break');
+            host.style.removeProperty('max-height');
+            host.style.removeProperty('height');
+            host.style.removeProperty('position');
+            host.style.removeProperty('top');
+            host.style.removeProperty('transform');
+            host.style.removeProperty('vertical-align');
+
+            element.style.display = 'flex';
+            element.style.alignItems = 'center';
+            element.style.justifyContent = align === 'right' ? 'flex-end' : (align === 'center' ? 'center' : 'flex-start');
+            element.style.removeProperty('max-height');
+        } else if (lines > 1) {
             // Multi-line: use flexbox for vertical centering
             host.style.display = '-webkit-box';
             host.style.whiteSpace = 'normal';
@@ -3022,7 +3242,7 @@ export const renderutils: RenderUtils = {
         const measuredBox = Math.ceil(host.getBoundingClientRect().width || 0);
         let natural = Math.max(measuredScroll, measuredBox);
         if (!Number.isFinite(natural) || natural <= 0) {
-            natural = utils.textWidth(text, fontSize, coms.fontFamily);
+            natural = iconMode ? Math.ceil(iconSize * 1.1) : utils.textWidth(text, fontSize, coms.fontFamily);
         }
 
     // Add a small cross-platform safety buffer to avoid right-edge clipping on Windows
@@ -3033,7 +3253,7 @@ export const renderutils: RenderUtils = {
             0,
             Math.ceil(host.scrollHeight || 0),
             Math.ceil(host.getBoundingClientRect().height || 0),
-            singleLineHeight
+            iconMode ? Math.ceil(iconSize * 1.1) : singleLineHeight
         );
         const finalBoxW = (rotate === 90 || rotate === 270) ? naturalH : finalW;
         const finalBoxH = (rotate === 90 || rotate === 270) ? finalW : naturalH;
@@ -3599,11 +3819,12 @@ export const renderutils: RenderUtils = {
                             dataset.label || '',
                             fontSize,
                             Number(dataset.lineClamp) || 1,
-                            widthPx
+                            widthPx,
+                            dataset.icon || 'none',
+                            Number(dataset.height) || undefined,
+                            Number(dataset.iconSize) || 0
                         );
                     }
-                    // Let wrapper height auto-follow content
-                    element.style.height = '';
                     break;
 
                 case "Counter": {

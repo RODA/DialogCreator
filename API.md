@@ -93,16 +93,6 @@ Use this reference when writing custom JavaScript for Dialog Creator. It contain
 
   - Shortcut for `on(element, 'input', handler)`.
 
-`rememberSelectionBy(source, ...dependents)`
-
-  - Remembers the current selection of each dependent control while the dialog is open, keyed by the current value/selection of `source`.
-  - Intended for the common pattern where one control (for example a dataset list) repopulates one or more dependent controls (for example variable lists).
-  - After a remembered dependent is repopulated via `setValue()`, its previous selection for the current source key is restored automatically.
-  - If no remembered selection exists for the current source key, the dependent is cleared instead of carrying over the previous source's selection.
-  - Invalid remembered values are ignored silently if they are not present in the newly populated items.
-  - Supported dependents: `Container` and `Choice`.
-  - Memory is temporary and lasts only while the dialog remains open; `resetDialog()` also clears it.
-
 `searchIn(input, ...containers)`
 
   - Makes an Input behave like a live search box for one or more Container elements.
@@ -172,6 +162,7 @@ updateSyntax(cmd);
 
   - Calls an app-specific external function.
   - Use this when a dialog needs behavior that is intentionally outside Dialog Creator's documented UI API.
+  - App-specific helpers such as remembering dependent selections should live here rather than in the shared scripting API.
   - `name` is the external function identifier; `parameters` is any serializable object or value the target app expects.
   - Returns a Promise.
   - In Dialog Creator Preview, this is a no-op and resolves silently so dialogs that use app-specific extensions remain valid here.
@@ -188,6 +179,17 @@ onChange(c_y, async () => {
   });
 });
 ```
+
+  - Migration example: if a target app wants to preserve the old `rememberSelectionBy()` convenience, it can expose the same behavior through `callExternal()`:
+
+```javascript
+await callExternal('rememberSelectionBy', {
+  source: c_datasets,
+  dependents: [c_x, c_y]
+});
+```
+
+  - That keeps the behavior available without making it part of Dialog Creator's shared UI API.
 
 Validation and highlight helpers
 
@@ -314,16 +316,14 @@ setSelected(variablesContainer, ["Sepal.Width"]);
 triggerChange(variablesContainer);
 ```
 
-- Remember variable selections separately for each selected dataset:
+- Delegate dataset-specific selection memory to the host app when needed:
 
 ```javascript
-rememberSelectionBy(c_datasets, c_x, c_y);
-
-onChange(c_datasets, () => {
-  const dataset = getSelected(c_datasets)[0] || '';
-  const variables = dataset ? listColumns(dataset) : [];
-  setValue(c_x, variables);
-  setValue(c_y, variables);
+onChange(c_datasets, async () => {
+  await callExternal('rememberSelectionBy', {
+    source: c_datasets,
+    dependents: [c_x, c_y]
+  });
 });
 ```
 

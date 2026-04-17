@@ -268,33 +268,20 @@ function enhanceColorInput(input: HTMLInputElement) {
     // Wrap input + add swatch button
     const wrapper = document.createElement('div');
 
-    wrapper.className = 'color-input-wrapper';
-    // Inline layout to override any conflicting rules
-    wrapper.style.position = 'relative';
-    wrapper.style.display = 'grid';
-    wrapper.style.gridTemplateColumns = 'minmax(0, 1fr) 18px';
-    wrapper.style.alignItems = 'center';
-    wrapper.style.columnGap = '4px';
-    wrapper.style.width = '100%';
+    wrapper.className = 'color-input-wrapper property-action-wrapper';
 
     parent.insertBefore(wrapper, input);
     wrapper.appendChild(input);
-    input.style.width = '100%';
-    input.style.gridColumn = '1 / 2';
 
     const swatch = document.createElement('button');
     swatch.type = 'button';
-    swatch.className = 'color-swatch-btn';
+    swatch.className = 'color-swatch-btn property-action-btn';
     swatch.title = 'Pick color';
-    swatch.style.width = '18px';
-    swatch.style.height = '18px';
     swatch.style.background = utils.isValidColor(input.value) ? input.value : '#000000';
     swatch.style.border = '0.5px solid #000000';
     swatch.setAttribute('tabindex', '-1'); // do not take focus
     swatch.addEventListener('mousedown', (e) => e.preventDefault()); // prevent focus ring on mouse
     swatch.addEventListener('keydown', (e) => e.preventDefault()); // ignore keyboard focus actions
-    swatch.style.gridColumn = '2 / 3';
-    swatch.style.justifySelf = 'end';
     wrapper.appendChild(swatch);
     swatchMap.set(input, swatch);
 

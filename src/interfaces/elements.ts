@@ -4,9 +4,12 @@ export type buttonElementType = {
     type: 'Button';
     nameid: string;
     label: string;
+    icon: string;
+    iconSize: number;
     left: number;
     top: number;
     width: number;
+    height: number;
     lineClamp: number;
     color: string;
     fontColor: string;
@@ -123,6 +126,8 @@ export type labelElementType = {
     lineClamp: number;
     fontColor: string;
     value: string;
+    icon: string;
+    iconSize: number;
     align: string;
     rotate: number;
     isEnabled?: boolean;

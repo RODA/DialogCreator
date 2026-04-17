@@ -1,3 +1,5 @@
+@import url('../assets/codicons/codicon.css');
+
 /* App font: Inter (embedded) */
 @font-face {
     font-family: 'Inter';
@@ -49,6 +51,10 @@ html, body {
 body, body *, input, select, textarea, button {
     font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, 'Noto Sans', 'Liberation Sans', sans-serif !important;
 }
+
+.codicon[class*='codicon-'] {
+    font-family: 'codicon' !important;
+}
 .mt-2px {
     margin-top: 2px;
 }
@@ -84,7 +90,185 @@ body, body *, input, select, textarea, button {
     margin-left: 5px;
 }
 
+.property-action-wrapper {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 20px;
+    align-items: center;
+    column-gap: 5px;
+    width: 100%;
+    min-width: 0;
+}
 
+.property-action-wrapper > input[type="text"] {
+    width: 100% !important;
+    min-width: 0;
+    box-sizing: border-box;
+    display: inline-block;
+    vertical-align: middle;
+    grid-column: 1 / 2;
+}
+
+.property-action-btn {
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    display: block;
+    grid-column: 2 / 3;
+    justify-self: end;
+    cursor: pointer;
+}
+
+.icon-property-control {
+    width: 100%;
+    min-width: 0;
+}
+
+.icon-picker-trigger {
+    border: 0.5px solid #000000;
+    background: #ffffff;
+    color: #444444;
+    font-size: 11px;
+    line-height: 16px;
+    text-align: center;
+}
+
+.icon-picker-trigger:hover,
+.icon-picker-trigger:focus-visible {
+    outline: 1px solid dodgerblue;
+    outline-offset: 1px;
+    box-shadow: none;
+}
+
+.icon-picker-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-picker-modal.hidden {
+    display: none;
+}
+
+.icon-picker-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(22, 22, 22, 0.36);
+}
+
+.icon-picker-modal__dialog {
+    position: relative;
+    width: min(880px, calc(100vw - 32px));
+    max-height: min(760px, calc(100vh - 32px));
+    background: #f7f7f7;
+    border: 1px solid #d7d7d7;
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    gap: 12px;
+}
+
+.icon-picker-modal__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.icon-picker-modal__header h2 {
+    margin: 0;
+    font-size: 1rem;
+    color: #222222;
+}
+
+.icon-picker-modal__header p {
+    margin: 4px 0 0;
+    font-size: 0.8rem;
+    color: #666666;
+}
+
+.icon-picker-modal__controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+}
+
+.icon-picker-modal__action.custombutton {
+    width: auto;
+    min-width: 74px;
+    height: 26px;
+    padding: 0 12px;
+    margin: 0;
+    white-space: nowrap;
+}
+
+.icon-picker-modal__controls input {
+    border: 1px solid #d7d7d7;
+    padding: 7px 10px;
+    font-size: 0.9rem;
+    min-width: 0;
+}
+
+.icon-picker-modal__body {
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding-right: 2px;
+}
+
+.icon-picker-section h3 {
+    margin: 0 0 8px;
+    font-size: 0.85rem;
+    color: #333333;
+}
+
+.icon-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+    gap: 8px;
+}
+
+.icon-picker__item {
+    border: 1px solid #d8d8d8;
+    background: #ffffff;
+    min-height: 72px;
+    padding: 8px 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.icon-picker__item:hover,
+.icon-picker__item:focus-visible {
+    border-color: dodgerblue;
+    outline: none;
+    box-shadow: 0 0 0 1px rgba(30, 144, 255, 0.24);
+}
+
+.icon-picker__item.is-active {
+    border-color: #2f6fda;
+    background: #eef4ff;
+}
+
+.icon-picker__glyph {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.icon-picker__label {
+    font-size: 0.74rem;
+    color: #333333;
+    line-height: 1.2;
+    word-break: break-word;
+}
 
 .hidden {
     display: none;
@@ -135,34 +319,18 @@ body, body *, input, select, textarea, button {
 }
 
 /* === Color picker helpers (shared) === */
-/* The wrapper must occupy the entire grid cell and split into input + 18px swatch */
 #propertiesList .element-property .color-input-wrapper,
 .color-input-wrapper {
-    position: relative;
     width: 100%;
     min-width: 0;
 }
-/* Input occupies the cell minus the swatch width */
 .color-input-wrapper > input[type="text"],
 #propertiesList .element-property .color-input-wrapper > input {
-    width: calc(100% - 22px) !important; /* 18px swatch + 4px gap */
-    min-width: 0;
-    box-sizing: border-box;
-    display: inline-block;
-    vertical-align: middle;
+    width: 100% !important;
 }
 .color-swatch-btn {
-    position: absolute;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 18px;
-    height: 18px;
     border: 0.5px solid #000000; /* thinner hairline on retina */
     background: #000000;
-    padding: 0;
-    cursor: pointer;
-    display: block;
 }
 /* Prevent any focus ring on the swatch button */
 .color-swatch-btn:focus,

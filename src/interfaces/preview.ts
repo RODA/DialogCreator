@@ -119,9 +119,6 @@ export interface PreviewUI {
     /** Convenience: trigger a 'click' event on the element. */
     triggerClick(element: string): void;
 
-    /** Remember dependent selections while the dialog remains open, keyed by the current source value/selection. */
-    rememberSelectionBy(source: string, ...dependents: string[]): void;
-
     /** Make an Input behave like a live search box for one or more Container elements. */
     searchIn(input: string, ...containers: string[]): void;
 

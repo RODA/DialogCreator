@@ -24,8 +24,8 @@ export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
     // events
     'onClick', 'onChange', 'onInput', 'triggerChange', 'triggerClick',
 
-    // in-dialog selection memory
-    'rememberSelectionBy', 'searchIn', 'enableSearch',
+    // search helpers
+    'searchIn', 'enableSearch',
 
     // lists & selection
     'setSelected', 'getSelected', 'addValue', 'clearValue', 'clearInput', 'clearContent',
@@ -97,14 +97,6 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             .map(s => s.trim())
             .filter(Boolean);
     };
-    type RememberedSelectionBinding = {
-        source: string;
-        dependents: Set<string>;
-        lastKey: string;
-    };
-    const selectionMemoryBindings = new Map<string, RememberedSelectionBinding>();
-    const selectionMemoryByDependent = new Map<string, string>();
-    const selectionMemoryStore = new Map<string, Map<string, string[]>>();
     const normalizeOrderList = (values: string[]): string[] => {
         const seen = new Set<string>();
         const out: string[] = [];
@@ -129,116 +121,6 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         });
         return next;
     };
-    const getBindingForDependent = (dependent: string): RememberedSelectionBinding | null => {
-        const source = selectionMemoryByDependent.get(dependent);
-        if (!source) {
-            return null;
-        }
-        return selectionMemoryBindings.get(source) || null;
-    };
-    const getSelectionMemoryBucket = (dependent: string): Map<string, string[]> => {
-        let bucket = selectionMemoryStore.get(dependent);
-        if (!bucket) {
-            bucket = new Map<string, string[]>();
-            selectionMemoryStore.set(dependent, bucket);
-        }
-        return bucket;
-    };
-    const readSelectionValuesForMemory = (name: string): string[] => {
-        const selected = api.getSelected(name);
-        if (Array.isArray(selected)) {
-            return selected.map(v => String(v).trim()).filter(Boolean);
-        }
-        if (typeof selected === 'string' && selected.trim()) {
-            return [selected.trim()];
-        }
-        return [];
-    };
-    const readSourceMemoryKey = (name: string): string => {
-        const selected = api.getSelected(name);
-        if (Array.isArray(selected) && selected.length > 0) {
-            return selected.map(v => String(v).trim()).filter(Boolean).join('\u001f');
-        }
-        if (typeof selected === 'string' && selected.trim()) {
-            return selected.trim();
-        }
-        const value = api.getValue(name);
-        if (Array.isArray(value)) {
-            const items = value.map((entry) => {
-                if (typeof entry === 'string') {
-                    return entry.trim();
-                }
-                if (entry && typeof entry === 'object') {
-                    if ('text' in entry && (entry as { text?: unknown }).text != null) {
-                        return String((entry as { text?: unknown }).text).trim();
-                    }
-                    if ('label' in entry && (entry as { label?: unknown }).label != null) {
-                        return String((entry as { label?: unknown }).label).trim();
-                    }
-                }
-                return String(entry ?? '').trim();
-            }).filter(Boolean);
-            return items.join('\u001f');
-        }
-        if (value === null || value === undefined) {
-            return '';
-        }
-        return String(value).trim();
-    };
-    const storeDependentSelectionForKey = (dependent: string, key: string) => {
-        if (!key) {
-            return;
-        }
-        getSelectionMemoryBucket(dependent).set(key, readSelectionValuesForMemory(dependent));
-    };
-    const storeDependentSelectionForCurrentSource = (dependent: string) => {
-        const binding = getBindingForDependent(dependent);
-        if (!binding) {
-            return;
-        }
-        const key = binding.lastKey || readSourceMemoryKey(binding.source);
-        binding.lastKey = key;
-        storeDependentSelectionForKey(dependent, key);
-    };
-    const clearRememberedSelection = (name: string) => {
-        const el = findWrapper(name);
-        if (!el) {
-            return;
-        }
-        const eltype = typeOf(el);
-        if (eltype === 'Container' || eltype === 'Choice') {
-            api.setSelected(name, []);
-        }
-    };
-    const restoreDependentSelectionFromMemory = (dependent: string) => {
-        const binding = getBindingForDependent(dependent);
-        if (!binding) {
-            return;
-        }
-        const key = binding.lastKey || readSourceMemoryKey(binding.source);
-        binding.lastKey = key;
-        if (!key) {
-            clearRememberedSelection(dependent);
-            return;
-        }
-        const remembered = getSelectionMemoryBucket(dependent).get(key) || [];
-        const el = findWrapper(dependent);
-        if (!el) {
-            return;
-        }
-        const eltype = typeOf(el);
-        if (eltype !== 'Container' && eltype !== 'Choice') {
-            return;
-        }
-        api.setSelected(dependent, remembered);
-    };
-    const resetSelectionMemory = () => {
-        selectionMemoryBindings.forEach((binding) => {
-            binding.lastKey = '';
-        });
-        selectionMemoryStore.clear();
-    };
-
     const attachContainerItemHandler = (host: HTMLElement, target: HTMLElement, item: HTMLElement) => {
         item.addEventListener('click', (ev) => {
             if (item.dataset.disabled === 'true') {
@@ -787,7 +669,6 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
 
         resetDialog: () => {
             try {
-                resetSelectionMemory();
                 resetDialog();
             } catch (e: any) {
                 const msg = `resetDialog() failed: ${String(e && e.message ? e.message : e)}`;
@@ -909,8 +790,6 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                     if (prop === 'value') {
                         const items = parseContainerValue(v);
                         populateContainer(el, items);
-                        restoreDependentSelectionFromMemory(name);
-                        storeDependentSelectionForCurrentSource(name);
                     } else {
                         warn(`${name}:${prop}`, `Unsupported set(${eltype}, ${prop})`);
                     }
@@ -919,8 +798,6 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 case 'Choice':
                     if (prop === 'value') {
                         applySorterItems(el, normalizeSorterInput(v, normalizeChoiceOrdering(el.dataset.ordering)));
-                        restoreDependentSelectionFromMemory(name);
-                        storeDependentSelectionForCurrentSource(name);
                     } else {
                         warn(`${name}:${prop}`, `Unsupported set(${eltype}, ${prop})`);
                     }
@@ -1013,15 +890,11 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 if (eltype === 'Container') {
                     const items = parseContainerValue(value);
                     populateContainer(el, items);
-                    restoreDependentSelectionFromMemory(name);
-                    storeDependentSelectionForCurrentSource(name);
                     return;
                 }
 
                 if (eltype === 'Choice') {
                     applySorterItems(el, normalizeSorterInput(value, normalizeChoiceOrdering(el.dataset.ordering)));
-                    restoreDependentSelectionFromMemory(name);
-                    storeDependentSelectionForCurrentSource(name);
                     return;
                 }
 
@@ -1080,15 +953,11 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             if (eltype === 'Container') {
                 const items = parseContainerValue(value);
                 populateContainer(el, items);
-                restoreDependentSelectionFromMemory(name);
-                storeDependentSelectionForCurrentSource(name);
                 return;
             }
 
             if (eltype === 'Choice') {
                 applySorterItems(el, normalizeSorterInput(value, normalizeChoiceOrdering(el.dataset.ordering)));
-                restoreDependentSelectionFromMemory(name);
-                storeDependentSelectionForCurrentSource(name);
                 return;
             }
 
@@ -1468,70 +1337,6 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         triggerChange: (name) => api.trigger(name, 'change'),
         triggerClick: (name) => api.trigger(name, 'click'),
 
-        rememberSelectionBy: (source, ...dependents) => {
-            const sourceName = coerceName(source);
-            const sourceEl = findWrapper(sourceName);
-            if (!sourceEl) {
-                throw new SyntaxError(`Element not found: ${String(source)}`);
-            }
-
-            const sourceType = typeOf(sourceEl);
-            if (!new Set(['Container', 'Choice', 'Select', 'Input', 'Checkbox', 'Radio', 'Counter']).has(sourceType)) {
-                throw new SyntaxError(`rememberSelectionBy() does not support source element type ${sourceType}`);
-            }
-
-            if (!dependents.length) {
-                throw new SyntaxError('rememberSelectionBy() expects at least one dependent element');
-            }
-
-            let binding = selectionMemoryBindings.get(sourceName);
-            if (!binding) {
-                binding = {
-                    source: sourceName,
-                    dependents: new Set<string>(),
-                    lastKey: readSourceMemoryKey(sourceName)
-                };
-                selectionMemoryBindings.set(sourceName, binding);
-
-                api.onChange(sourceName, () => {
-                    const current = selectionMemoryBindings.get(sourceName);
-                    if (!current) {
-                        return;
-                    }
-                    if (current.lastKey) {
-                        current.dependents.forEach((dependent) => {
-                            storeDependentSelectionForKey(dependent, current.lastKey);
-                        });
-                    }
-                    current.lastKey = readSourceMemoryKey(sourceName);
-                });
-            }
-
-            dependents.forEach((dependent) => {
-                const dependentName = coerceName(dependent);
-                const dependentEl = findWrapper(dependentName);
-                if (!dependentEl) {
-                    throw new SyntaxError(`Element not found: ${dependentName}`);
-                }
-
-                const dependentType = typeOf(dependentEl);
-                if (dependentType !== 'Container' && dependentType !== 'Choice') {
-                    throw new SyntaxError(`rememberSelectionBy() supports only Container and Choice dependents; ${dependentName} is ${dependentType}`);
-                }
-
-                const existingSource = selectionMemoryByDependent.get(dependentName);
-                if (existingSource && existingSource !== sourceName) {
-                    throw new SyntaxError(`Dependent element "${dependentName}" is already bound to source "${existingSource}"`);
-                }
-
-                if (!binding.dependents.has(dependentName)) {
-                    binding.dependents.add(dependentName);
-                    selectionMemoryByDependent.set(dependentName, sourceName);
-                    api.onChange(dependentName, () => storeDependentSelectionForCurrentSource(dependentName));
-                }
-            });
-        },
-
         searchIn: (input, ...containers) => {
             const inputName = coerceName(input);
             const inputEl = findWrapper(inputName);
@@ -1671,7 +1476,6 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                     delete containerEl.dataset.selectedOrder;
                 }
                 renderutils.applyContainerItemFilter(host);
-                storeDependentSelectionForCurrentSource(name);
                 return;
             }
 
@@ -1686,7 +1490,6 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                     return next ? { text: item.text, state: next } : { text: item.text, state: 'off' as SorterState };
                 });
                 applySorterItems(host, merged);
-                storeDependentSelectionForCurrentSource(name);
                 return;
             }
 
@@ -1778,7 +1581,6 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                         delete h.dataset.selectedOrder;
                     }
                     renderutils.applyContainerItemFilter(h);
-                    storeDependentSelectionForCurrentSource(name);
                 }
                 return;
             }
@@ -1928,7 +1730,6 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 delete host.dataset.selectedOrder;
             }
             renderutils.applyContainerItemFilter(host);
-            storeDependentSelectionForCurrentSource(name);
         },
 
         clearInput: (name) => {
@@ -1990,7 +1791,6 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                         delete host.dataset.selectedOrder;
                     }
                     renderutils.applyContainerItemFilter(host);
-                    storeDependentSelectionForCurrentSource(key);
                     return;
                 }
 

@@ -22,7 +22,10 @@ export interface RenderUtils {
         text: string,
         fontSize: number,
         lineClamp: number,
-        widthMax: number
+        widthMax: number,
+        icon?: string,
+        height?: number,
+        iconSize?: number
     ) => void;
     updateLabel: (element: HTMLElement, properties?: AnyElement) => void;
     updateHandleStyle: (handle: HTMLDivElement, properties: StringNumber) => void;

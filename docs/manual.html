@@ -296,19 +296,17 @@ The items in a Container can be selected and deselected by clicking, and multi-s
 </code></pre>
 
 <ol start="5">
-<li>Remember dependent variable selections for each dataset while the dialog stays open</li>
+<li>Preserve the old selection-memory behavior as an app-specific external helper</li>
 </ol>
-<pre><code class="language-javascript hljs"><span class="hljs-title function_">rememberSelectionBy</span>(<span class="api-param">c_datasets</span>, <span class="api-param">c_x</span>, <span class="api-param">c_y</span>);
-
-<span class="hljs-title function_">onChange</span>(<span class="api-param">c_datasets</span>, () =&gt; {
-&nbsp;&nbsp;<span class="hljs-keyword">const</span> <span class="api-param">dataset</span> = <span class="hljs-title function_">getSelected</span>(<span class="api-param">c_datasets</span>)[<span class="hljs-number">0</span>] || <span class="hljs-string">''</span>;
-&nbsp;&nbsp;<span class="hljs-keyword">const</span> <span class="api-param">variables</span> = <span class="api-param">dataset</span> ? <span class="hljs-title function_">listColumns</span>(<span class="api-param">dataset</span>) : [];
-&nbsp;&nbsp;<span class="hljs-title function_">setValue</span>(<span class="api-param">c_x</span>, <span class="api-param">variables</span>);
-&nbsp;&nbsp;<span class="hljs-title function_">setValue</span>(<span class="api-param">c_y</span>, <span class="api-param">variables</span>);
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">onChange</span>(<span class="api-param">c_datasets</span>, <span class="hljs-keyword">async</span> () =&gt; {
+&nbsp;&nbsp;<span class="hljs-keyword">await</span> <span class="hljs-title function_">callExternal</span>(<span class="hljs-string">'rememberSelectionBy'</span>, {
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="api-param">source</span>: <span class="api-param">c_datasets</span>,
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="api-param">dependents</span>: [<span class="api-param">c_x</span>, <span class="api-param">c_y</span>]
+&nbsp;&nbsp;});
 });
 </code></pre>
 
-<p>This helper is useful when one control repopulates one or more dependent <code class="hljs"><span class="api-param">Container</span></code> or <code class="hljs"><span class="api-param">Choice</span></code> controls. Each source value gets its own remembered selection, but nothing is persisted after the dialog closes.</p>
+<p>This keeps the old idea available as a host-app extension without keeping it in Dialog Creator's core UI API.</p>
 <ol start="6">
 <li>Make an input act like a search box for a container</li>
 </ol>
@@ -322,7 +320,7 @@ The items in a Container can be selected and deselected by clicking, and multi-s
 <pre><code class="language-javascript hljs"><span class="hljs-title function_">enableSearch</span>(<span class="api-param">c_outcome</span>, <span class="api-param">c_condition</span>);
 </code></pre>
 
-<p>When the pointer is over an enabled registered container, pressing <code class="hljs">Cmd/Ctrl+F</code> opens a transient search box above that container in Preview. Only one transient search box can be open at a time. <code class="hljs">Esc</code> closes it and clears the filter; if it loses focus while empty, it closes automatically.</p>
+<p>When the pointer is over an enabled registered container, pressing <code class="hljs">Cmd/Ctrl+F</code> opens a transient search box above that container in Preview. Only one transient search box can be open at a time. <code class="hljs"><span class="api-param">Esc</span></code> closes it and clears the filter; if it loses focus while empty, it closes automatically.</p>
 <p>Events:</p>
 <ul>
 <li>Buttons and custom checkboxes/radios usually use <code class="hljs"><span class="hljs-string">'click'</span></code>.</li>

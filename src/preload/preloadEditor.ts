@@ -12,6 +12,7 @@ import { utils } from "../library/utils";
 import { Elements, AnyElement, keyofAnyElement, StringNumber } from '../interfaces/elements';
 import { elements as els } from '../modules/elements';
 import { attachColorPickers, syncColorPickers } from '../library/colorpicker';
+import { attachIconPickers, syncIconPickers } from '../library/iconpicker';
 import { dialog } from "../modules/dialog";
 import { ipcRenderer } from 'electron';
 
@@ -48,6 +49,13 @@ const propertyUpdateOnEnter = (ev: KeyboardEvent) => {
 let ephemeralLeftBlurHandler: ((ev: Event) => void) | null = null;
 let ephemeralTopBlurHandler: ((ev: Event) => void) | null = null;
 
+const effectiveIconSizeValue = (raw: string): string => {
+    if (String(raw ?? '').trim() === '0') {
+        return String(coms.fontSize || 12);
+    }
+    return String(raw ?? '');
+};
+
 coms.on('elementSelected', (id) => {
     elementSelected = true;
     // enable arrange toolbar buttons
@@ -78,6 +86,24 @@ coms.on('elementSelected', (id) => {
         (propsList as HTMLDivElement).dataset.currentElementId = String(id);
     }
     const element = document.getElementById(id as string) as HTMLElement;
+    const typeName = String(element?.dataset?.type || '').trim();
+    if (typeName) {
+        const templateKey = `${typeName.charAt(0).toLowerCase()}${typeName.slice(1)}Element` as keyof Elements;
+        const template = elements[templateKey] as unknown as Record<string, unknown> | undefined;
+        const inner = element.firstElementChild as HTMLElement | null;
+        if (template) {
+            for (const [key, rawValue] of Object.entries(template)) {
+                if (key.startsWith('$') || rawValue === undefined || rawValue === null) continue;
+                const serialized = Array.isArray(rawValue) ? rawValue.map(String).join(',') : String(rawValue);
+                if (!(key in element.dataset)) {
+                    element.dataset[key] = serialized;
+                }
+                if (inner && !(key in inner.dataset)) {
+                    inner.dataset[key] = serialized;
+                }
+            }
+        }
+    }
     const dataset = element.dataset;
 
     const ellist = document.querySelectorAll('#propertiesList [id^="el"]');
@@ -95,6 +121,9 @@ coms.on('elementSelected', (id) => {
             // Normalize boolean select values to 'true'/'false' strings
             const booleanProps = new Set(['isEnabled', 'isVisible', 'isSelected', 'isChecked']);
             let valueToSet = dataset[item.name] || '';
+            if (item.name === 'iconSize') {
+                valueToSet = effectiveIconSizeValue(valueToSet);
+            }
             if (item.tagName === 'SELECT' && booleanProps.has(item.name)) {
                 valueToSet = utils.isTrue(valueToSet) ? 'true' : 'false';
             }
@@ -120,6 +149,7 @@ coms.on('elementSelected', (id) => {
 
     // After values are populated, sync color swatches with current input values
     syncColorPickers();
+    syncIconPickers();
 
     const colorlabel = document.getElementById('colorlabel') as HTMLLabelElement;
 
@@ -343,6 +373,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         "space",
         "left",
         "top",
+        "iconSize",
         "handlesize",
         "updownsize",
         "handlepos",
@@ -421,6 +452,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     // Attach color pickers to all color-related fields in the properties panel
     attachColorPickers();
+    attachIconPickers({ mode: 'editor' });
 
     // Enhance custom buttons with press feedback
     renderutils.enhanceButtons(document);

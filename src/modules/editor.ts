@@ -123,6 +123,23 @@ function resolveTemplateForType(typeName: string | undefined): Record<string, un
     return template as unknown as Record<string, unknown>;
 }
 
+function hydrateElementDatasetDefaults(wrapper: HTMLElement) {
+    const typeName = String(wrapper.dataset.type || '').trim();
+    if (!typeName) return;
+    const template = resolveTemplateForType(typeName);
+    const inner = wrapper.firstElementChild as HTMLElement | null;
+
+    for (const [key, rawValue] of Object.entries(template)) {
+        if (key.startsWith('$')) continue;
+        if (!(key in wrapper.dataset) && rawValue !== undefined && rawValue !== null) {
+            wrapper.dataset[key] = Array.isArray(rawValue) ? rawValue.map(String).join(',') : String(rawValue);
+        }
+        if (inner && !(key in inner.dataset) && rawValue !== undefined && rawValue !== null) {
+            inner.dataset[key] = Array.isArray(rawValue) ? rawValue.map(String).join(',') : String(rawValue);
+        }
+    }
+}
+
 function getDialogCanvasSize() {
     const rect = dialog.canvas.getBoundingClientRect();
     const width = Math.round(rect.width || dialog.canvas.clientWidth || utils.asNumeric(dialog.canvas.style.width) || 0);
@@ -1131,6 +1148,7 @@ export const editor: Editor = {
             for (const [k, v] of Object.entries(core.dataset)) {
                 if (typeof v === 'string') wrapper.dataset[k] = v;
             }
+            hydrateElementDatasetDefaults(wrapper);
 
             // The inner element should sit at (0,0) inside the wrapper
             core.style.left = '0px';
@@ -1884,7 +1902,7 @@ export const editor: Editor = {
             // Recreate elements
             const arr = Array.isArray(obj.elements) ? obj.elements : [];
             const groups: any[] = [];
-            const loadedLabelPositions = new Map<string, { left: number; top: number }>();
+            const loadedElementPositions = new Map<string, { left: number; top: number }>();
             for (const element of arr) {
                 if (String(element.type || '').toLowerCase() === 'group') {
                     groups.push(element);
@@ -1909,9 +1927,7 @@ export const editor: Editor = {
                 const top = Number(element.top ?? (parseInt(core.style.top || '0', 10) || 0));
                 wrapper.style.left = `${left}px`;
                 wrapper.style.top = `${top}px`;
-                if (desiredType === 'Label') {
-                    loadedLabelPositions.set(wrapper.id, { left, top });
-                }
+                loadedElementPositions.set(wrapper.id, { left, top });
 
                 // Copy dataset from JSON into wrapper
                 for (const [key, value] of Object.entries(element)) {
@@ -1927,6 +1943,7 @@ export const editor: Editor = {
                 if (desiredType === 'Container' && !('itemOrder' in wrapper.dataset)) {
                     wrapper.dataset.itemOrder = 'false';
                 }
+                hydrateElementDatasetDefaults(wrapper);
 
                 // Inner element positioned relative to wrapper
                 core.style.left = '0px';
@@ -2028,14 +2045,28 @@ export const editor: Editor = {
                 renderutils.updateFont(coms.fontSize);
             }
 
-            // Keep saved label positions authoritative on load, even if reflow changes size.
-            loadedLabelPositions.forEach((pos, id) => {
-                const labelEl = dialog.getElement(id) as HTMLElement | undefined;
-                if (!labelEl) return;
-                labelEl.style.left = `${pos.left}px`;
-                labelEl.style.top = `${pos.top}px`;
-                labelEl.dataset.left = String(pos.left);
-                labelEl.dataset.top = String(pos.top);
+            // Keep saved element positions authoritative on load, even if reflow changes size.
+            loadedElementPositions.forEach((pos, id) => {
+                const el = dialog.getElement(id) as HTMLElement | undefined;
+                if (!el) return;
+
+                const parent = el.parentElement as HTMLElement | null;
+                if (parent && parent.classList.contains('element-group')) {
+                    const groupLeft = Number(parent.dataset.left ?? (parseInt(parent.style.left || '0', 10) || 0));
+                    const groupTop = Number(parent.dataset.top ?? (parseInt(parent.style.top || '0', 10) || 0));
+                    const relLeft = pos.left - groupLeft;
+                    const relTop = pos.top - groupTop;
+                    el.style.left = `${relLeft}px`;
+                    el.style.top = `${relTop}px`;
+                    el.dataset.left = String(relLeft);
+                    el.dataset.top = String(relTop);
+                    return;
+                }
+
+                el.style.left = `${pos.left}px`;
+                el.style.top = `${pos.top}px`;
+                el.dataset.left = String(pos.left);
+                el.dataset.top = String(pos.top);
             });
         } catch (error) {
             console.error('loadDialogFromJson failed', error);

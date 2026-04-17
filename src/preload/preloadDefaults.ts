@@ -12,8 +12,16 @@ import { DBElements, DBElementsProps } from "../interfaces/database";
 import { GeneralElements } from "../interfaces/elements";
 import { elements } from "../modules/elements";
 import { attachColorPickers, syncColorPickers } from "../library/colorpicker";
+import { attachIconPickers, syncIconPickers } from "../library/iconpicker";
 
 let defaultElementSelected = "";
+
+const effectiveIconSizeValue = (raw: string): string => {
+    if (String(raw ?? '').trim() === '0') {
+        return String(coms.fontSize || 12);
+    }
+    return String(raw ?? '');
+};
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -27,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
         "space",
         "left",
         "top",
+        "iconSize",
         "handlesize",
         "updownsize",
         "handlepos",
@@ -35,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Attach color pickers once DOM is ready
     attachColorPickers();
+    attachIconPickers({ mode: 'defaults' });
 
     // Enhance custom buttons with press feedback
     renderutils.enhanceButtons(document);
@@ -86,17 +96,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (row) row.classList.remove('hidden-element');
 
             const rawValue = values[propName] ?? '';
+            const displayValue = propName === 'iconSize' ? effectiveIconSizeValue(rawValue) : rawValue;
             if (field.tagName === 'SELECT') {
                 const select = field as HTMLSelectElement;
-                const exact = Array.from(select.options).find(opt => opt.value === rawValue);
-                const icase = exact || Array.from(select.options).find(opt => opt.value.toLowerCase() === rawValue.toLowerCase());
+                const exact = Array.from(select.options).find(opt => opt.value === displayValue);
+                const icase = exact || Array.from(select.options).find(opt => opt.value.toLowerCase() === displayValue.toLowerCase());
                 if (icase) {
                     select.value = icase.value;
                 } else {
-                    select.value = rawValue;
+                    select.value = displayValue;
                 }
             } else {
-                (field as HTMLInputElement).value = rawValue;
+                (field as HTMLInputElement).value = displayValue;
             }
 
             if (!field.dataset.defaultsBound) {
@@ -164,6 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
         applyPropertiesToPanel(name, baseline);
         adjustSpecialUI(name);
         syncColorPickers();
+        syncIconPickers();
     });
 
     coms.on('propertiesFromDB', (...args: unknown[]) => {
@@ -194,6 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
         applyPropertiesToPanel(name, merged);
         adjustSpecialUI(name);
         syncColorPickers();
+        syncIconPickers();
     });
 
 
@@ -217,6 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         syncColorPickers();
+        syncIconPickers();
     });
 
 });

@@ -16,9 +16,12 @@ export const elements: ElementsWithPersist = {
         nameid: 'button',
         type: 'Button',
         label: 'Button',
+        icon: 'none',
+        iconSize: 0,
         left: 15,
         top: 15,
         width: 60,
+        height: 22,
         lineClamp: 1,
         color: '#efefef',
         fontColor: '#000000',
@@ -27,7 +30,7 @@ export const elements: ElementsWithPersist = {
         isVisible: true,
         elementIds: [],
         $persist: [
-            'nameid','label','left','top','width','lineClamp','color','fontColor','borderColor','isEnabled','isVisible'
+            'nameid','label','icon','iconSize','left','top','width','height','lineClamp','color','fontColor','borderColor','isEnabled','isVisible'
         ] as const
     },
     inputElement: {
@@ -152,13 +155,15 @@ export const elements: ElementsWithPersist = {
         lineClamp: 1,
         fontColor: '#000000',
         value: 'Label',
+        icon: 'none',
+        iconSize: 0,
         align: 'left',
         rotate: 0,
         isEnabled: true,
         isVisible: true,
         elementIds: [],
         $persist: [
-            'left','top','maxWidth','lineClamp','fontColor','value','align','rotate','isEnabled','isVisible'
+            'left','top','maxWidth','lineClamp','fontColor','value','icon','iconSize','align','rotate','isEnabled','isVisible'
         ] as const
     },
     separatorElement: {        id: '',
