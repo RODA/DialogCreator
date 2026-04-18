@@ -13,7 +13,7 @@ export const EVENT_NAMES = new Set<string>(EVENT_LIST);
 // Curated helper names exposed as shorthand in user customJS (prelude)
 export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
     // core
-    'showMessage', 'getValue', 'setValue', 'run', 'callExternal', 'updateSyntax', 'resetDialog',
+    'showMessage', 'getValue', 'setValue', 'run', 'callExternal', 'updateSyntax', 'resetDialog', 'closeDialog',
 
     // checkbox/radio
     'check', 'isChecked', 'uncheck', 'isUnchecked',
@@ -49,7 +49,8 @@ const NEUTRAL_NAMES = new Set<keyof PreviewUI>([
     'listVariables',
     'callExternal',
     'run',
-    'resetDialog'
+    'resetDialog',
+    'closeDialog'
 ]);
 
 export const ELEMENT_FIRST_ARG_CALLS: ReadonlyArray<keyof PreviewUI> = Object.freeze(
@@ -67,6 +68,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         showDialogMessage,
         openSyntaxPanel,
         resetDialog,
+        closeDialog,
         // call
     } = env;
 
@@ -672,6 +674,17 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 resetDialog();
             } catch (e: any) {
                 const msg = `resetDialog() failed: ${String(e && e.message ? e.message : e)}`;
+                showRuntimeError(msg);
+            }
+        },
+
+        closeDialog: () => {
+            try {
+                if (typeof closeDialog === 'function') {
+                    void closeDialog();
+                }
+            } catch (e: any) {
+                const msg = `closeDialog() failed: ${String(e && e.message ? e.message : e)}`;
                 showRuntimeError(msg);
             }
         },

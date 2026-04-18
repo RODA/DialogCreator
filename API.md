@@ -154,6 +154,12 @@ updateSyntax(cmd);
 
   - Reset the Preview dialog back to its initial state (reloads the dialog snapshot, restoring default values and selections).
 
+`closeDialog()`
+
+  - Requests that the dialog be closed.
+  - In Dialog Creator Preview, this closes only the Preview window.
+  - In a target app, this is intended as a semantic signal that the dialog should be closed by the host.
+
 `run(command)`
 
   - Sends the specified command to the backend for execution (for instance to run the R code, if running on top of R).

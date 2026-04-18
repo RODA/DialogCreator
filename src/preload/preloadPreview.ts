@@ -349,7 +349,8 @@ function buildUI(canvas: HTMLElement): PreviewUI {
         ),
         callExternal: async (_name: string, _parameters?: unknown) => undefined,
         openSyntaxPanel: (command: string) => coms.sendTo('main', 'openSyntaxPanel', command),
-        resetDialog: resetPreview
+        resetDialog: resetPreview,
+        closeDialog: () => coms.sendTo('main', 'close-previewWindow')
     };
 
     return createPreviewUI(env);

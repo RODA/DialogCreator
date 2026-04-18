@@ -33,6 +33,13 @@ export interface PreviewUI {
     /** Reset the dialog to its initial Preview state (as first opened). */
     resetDialog(): void;
 
+    /**
+     * Request that the dialog be closed.
+     * In Dialog Creator Preview this closes only the Preview window;
+     * target apps may interpret it as a host-app close signal.
+     */
+    closeDialog(): void;
+
     /** Generic getter (value / dataset-driven) */
     get(element: string, prop: string): unknown;
 
@@ -182,6 +189,8 @@ export interface PreviewUIEnv {
     openSyntaxPanel?: (command: string) => void;
     // Reset the Preview dialog to its initial state
     resetDialog: () => void;
+    // Request that the host app closes the dialog
+    closeDialog?: () => void | Promise<void>;
     // Experimental bridge to services; returns a Promise and optionally invokes a callback
     // call: (service: string, args?: unknown, cb?: (result: unknown) => void) => Promise<unknown>;
 }
