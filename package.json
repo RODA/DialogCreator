@@ -113,7 +113,7 @@
     "@jaames/iro": "^5.5.2",
     "@vscode/codicons": "^0.0.45",
     "acorn": "^8.12.1",
-    "sortablejs": "^1.15.6",
+    "sortablejs": "^1.15.7",
     "sqlite3": "^5.1.7",
     "tippy.js": "^6.3.7",
     "uuid": "^13.0.0"
