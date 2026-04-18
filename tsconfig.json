@@ -5,6 +5,8 @@
     "strict": true,
     "noImplicitAny": true,
     "inlineSourceMap": true,
+    "rootDir": "src",
+    "skipLibCheck": true,
     "outDir": "dist"
   },
   "include": [
