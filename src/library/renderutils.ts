@@ -192,6 +192,58 @@ const mergeSelectionOrder = (host: HTMLElement, activeItems: string[]): string[]
     return next;
 };
 
+const reorderContainerItemsForPinOnTop = (host: HTMLElement): void => {
+    const content = host.querySelector('.container-content') as HTMLElement | null;
+    if (!content) {
+        return;
+    }
+
+    const items = Array.from(content.querySelectorAll<HTMLElement>(':scope > .container-item'));
+    if (items.length < 2) {
+        return;
+    }
+
+    const pinnedValues = utils.isTrue(host.dataset.itemOrder)
+        ? normalizeOrderList(splitList(host.dataset.selectedOrder))
+        : [];
+    const pinnedIndex = new Map<string, number>(pinnedValues.map((value, index) => [value, index]));
+    const pinOnTop = utils.isTrue(host.dataset.pinontop);
+
+    const decorated = items.map((item, index) => ({
+        item,
+        index,
+        baseOrder: Number.parseInt(String(item.dataset.baseOrder || index), 10),
+        active: item.classList.contains('active'),
+        value: String(item.dataset.value || '').trim()
+    }));
+
+    decorated.sort((left, right) => {
+        if (!pinOnTop) {
+            return left.baseOrder - right.baseOrder;
+        }
+        if (left.active !== right.active) {
+            return left.active ? -1 : 1;
+        }
+        if (!left.active) {
+            return left.baseOrder - right.baseOrder;
+        }
+
+        const leftPinned = pinnedIndex.get(left.value);
+        const rightPinned = pinnedIndex.get(right.value);
+        if (leftPinned !== undefined || rightPinned !== undefined) {
+            if (leftPinned === undefined) return 1;
+            if (rightPinned === undefined) return -1;
+            if (leftPinned !== rightPinned) return leftPinned - rightPinned;
+        }
+
+        return left.baseOrder - right.baseOrder;
+    });
+
+    decorated.forEach(({ item }) => {
+        content.appendChild(item);
+    });
+};
+
 const getDisabledColor = (source: Record<string, unknown> | DOMStringMap): string => {
     const raw = String(source.disabledColor ?? '').trim();
     return raw || '#dedede';
@@ -386,6 +438,8 @@ const applyContainerItemFilter = (host: HTMLElement | null) => {
         }
         host.dispatchEvent(new Event('change', { bubbles: true }));
     }
+
+    reorderContainerItemsForPinOnTop(host);
 };
 
 type SorterState = 'off' | 'asc' | 'desc';
@@ -1501,6 +1555,9 @@ export const renderutils: RenderUtils = {
             if (!('itemOrder' in element.dataset)) {
                 element.dataset.itemOrder = 'false';
             }
+            if (!('pinontop' in element.dataset)) {
+                element.dataset.pinontop = 'false';
+            }
 
             if (renderutils.previewWindow()) {
                 const content = document.createElement('div');
@@ -2439,6 +2496,14 @@ export const renderutils: RenderUtils = {
                             delete element.dataset.selectedOrder;
                         }
                         value = enabled ? 'true' : 'false';
+                    }
+                    break;
+
+                case 'pinontop':
+                    if (container) {
+                        value = utils.isTrue(value) ? 'true' : 'false';
+                        dataset.pinontop = value;
+                        applyContainerItemFilter(element);
                     }
                     break;
 

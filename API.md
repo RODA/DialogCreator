@@ -27,6 +27,7 @@ Use this reference when writing custom JavaScript for Dialog Creator. It contain
 - Set the value/text.
 - Input/Label: set string; Counter: set number within its min/max; Select: set selected option by value; Checkbox/Radio: set boolean state.
 - For Container, pass an array of strings or objects shaped like `{ label, type, selected }`.
+- For Container with **Pin on top** enabled, selected rows are re-rendered above unselected rows in Preview after the value update. If **Item Order** is also enabled, pinned rows follow the stored selection order.
 - For Choice, pass either an array of strings like `['var1:asc', 'var2:desc']`, plain strings like `['var1', 'var2']`, or objects shaped like `{ text, state }`.
 - For Choice with Ordering set to `no`, any active state is normalized to a simple selected state. For Ordering set to `increasing` or `decreasing`, both `asc` and `desc` are preserved.
 - No-op if the element doesn't exist. Does not dispatch events automatically.
@@ -47,6 +48,7 @@ Use this reference when writing custom JavaScript for Dialog Creator. It contain
 - Read the current selection(s) as an array of values.
 - For Select, returns a single-item array (or empty array if nothing selected).
 - For Container, returns labels of all selected rows. If Item Order is enabled, the array is returned in the click order.
+- For Container with Pin on top enabled, this changes only the visible row order in Preview; the returned values still follow the selection-order rule above.
 - For Choice, returns the active items. With Ordering set to `increasing` or `decreasing`, each selected value includes the direction suffix, for example `['var1:asc', 'var2:desc']`. With Ordering set to `no`, it returns only the selected labels.
 
 `isVisible(element)`: boolean
@@ -116,6 +118,7 @@ Use this reference when writing custom JavaScript for Dialog Creator. It contain
   - Programmatically set selection.
   - For Select elements: sets the selected option by value (single-choice).
   - For Container elements: accepts a string or array of strings and replaces the current selection with exactly those labels.
+  - For Container with Pin on top enabled, the new selection is immediately moved to the top of the visible list in Preview. If Item Order is enabled, the pinned rows follow that stored selection order.
   - For Choice elements: accepts a string or array of strings. Values may include a direction suffix such as `income:desc`. For Ordering set to `increasing` or `decreasing`, the first click direction follows the configured mode, but both directions remain available when selected programmatically or by subsequent user clicks.
   - Does not dispatch a `change` event automatically. For the handlers to run, call `triggerChange(element)` after changing selection.
   - Throws a SyntaxError if the element doesn't exist, the control is missing, the option/row is not found, or the element type doesn't support selection.
@@ -263,6 +266,16 @@ Backend helpers (in the developer's responsibility)
 
 - Slider
   - Dragging is supported in Preview, and sliders react to changes.
+
+- Container
+
+  - Read current items: `getValue(element)`
+  - Read active items: `getSelected(element)`
+  - Replace the item list: `setValue(element, [...])`
+  - Replace the current selection: `setSelected(element, [...])`
+  - If Item Order is enabled, `getSelected()` returns selected values in click order rather than visible row order.
+  - If Pin on top is enabled, selected rows move to the top of the visible list in Preview while unselected rows keep their original relative order.
+  - When Pin on top and Item Order are both enabled, the pinned block follows the same selection order returned by `getSelected()`.
 
 - Choice
 

@@ -39,6 +39,7 @@
 <li>Set the value/text.</li>
 <li>Input/Label: set string; Counter: set number within its min/max; Select: set selected option by value; Checkbox/Radio: set boolean state.</li>
 <li>For Container, pass an array of strings or objects shaped like <code class="hljs">{ label, type, selected }</code>.</li>
+<li>For Container with <strong>Pin on top</strong> enabled, selected rows are re-rendered above unselected rows in Preview after the value update. If <strong>Item Order</strong> is also enabled, pinned rows follow the stored selection order.</li>
 <li>For Choice, pass either an array of strings like <code class="hljs">['var<span class="hljs-number">1</span>:asc', 'var<span class="hljs-number">2</span>:desc']</code>, plain strings like <code class="hljs">['var<span class="hljs-number">1</span>', 'var<span class="hljs-number">2</span>']</code>, or objects shaped like <code class="hljs">{ text, state }</code>.</li>
 <li>For Choice with Ordering set to <code class="hljs"><span class="api-param">no</span></code>, any active state is normalized to a simple selected state. For Ordering set to <code class="hljs"><span class="api-param">increasing</span></code> or <code class="hljs"><span class="api-param">decreasing</span></code>, both <code class="hljs"><span class="api-param">asc</span></code> and <code class="hljs"><span class="api-param">desc</span></code> are preserved.</li>
 <li>No-op if the element doesn't exist. Does not dispatch events automatically.</li>
@@ -59,6 +60,7 @@
 <li>Read the current selection(s) as an array of values.</li>
 <li>For Select, returns a single-item array (or empty array if nothing selected).</li>
 <li>For Container, returns labels of all selected rows. If Item Order is enabled, the array is returned in the click order.</li>
+<li>For Container with Pin on top enabled, this changes only the visible row order in Preview; the returned values still follow the selection-order rule above.</li>
 <li>For Choice, returns the active items. With Ordering set to <code class="hljs"><span class="api-param">increasing</span></code> or <code class="hljs"><span class="api-param">decreasing</span></code>, each selected value includes the direction suffix, for example <code class="hljs">['var<span class="hljs-number">1</span>:asc', 'var<span class="hljs-number">2</span>:desc']</code>. With Ordering set to <code class="hljs"><span class="api-param">no</span></code>, it returns only the selected labels.</li>
 </ul>
 <h3 id="api-isvisible"><code class="hljs"><span class="hljs-title function_">isVisible</span>(<span class="api-param">element</span>)</code>: boolean</h3>
@@ -128,6 +130,7 @@
 <li>Programmatically set selection.</li>
 <li>For Select elements: sets the selected option by value (single-choice).</li>
 <li>For Container elements: accepts a string or array of strings and replaces the current selection with exactly those labels.</li>
+<li>For Container with Pin on top enabled, the new selection is immediately moved to the top of the visible list in Preview. If Item Order is enabled, the pinned rows follow that stored selection order.</li>
 <li>For Choice elements: accepts a string or array of strings. Values may include a direction suffix such as <code class="hljs">income:desc</code>. For Ordering set to <code class="hljs"><span class="api-param">increasing</span></code> or <code class="hljs"><span class="api-param">decreasing</span></code>, the first click direction follows the configured mode, but both directions remain available when selected programmatically or by subsequent user clicks.</li>
 <li>Does not dispatch a <code class="hljs"><span class="api-param">change</span></code> event automatically. For the handlers to run, call <code class="hljs"><span class="hljs-title function_">triggerChange</span>(<span class="api-param">element</span>)</code> after changing selection.</li>
 <li>Throws a SyntaxError if the element doesn't exist, the control is missing, the option/row is not found, or the element type doesn't support selection.</li>
@@ -279,6 +282,17 @@
 <li><p>Slider</p>
 <ul>
 <li>Dragging is supported in Preview, and sliders react to changes.</li>
+</ul>
+</li>
+<li><p>Container</p>
+<ul>
+<li>Read current items: <code class="hljs"><span class="hljs-title function_">getValue</span>(<span class="api-param">element</span>)</code></li>
+<li>Read active items: <code class="hljs"><span class="hljs-title function_">getSelected</span>(<span class="api-param">element</span>)</code></li>
+<li>Replace the item list: <code class="hljs"><span class="hljs-title function_">setValue</span>(<span class="api-param">element</span>, <span class="api-param">[...]</span>)</code></li>
+<li>Replace the current selection: <code class="hljs"><span class="hljs-title function_">setSelected</span>(<span class="api-param">element</span>, <span class="api-param">[...]</span>)</code></li>
+<li>If Item Order is enabled, <code class="hljs"><span class="hljs-title function_">getSelected</span>()</code> returns selected values in click order rather than visible row order.</li>
+<li>If Pin on top is enabled, selected rows move to the top of the visible list in Preview while unselected rows keep their original relative order.</li>
+<li>When Pin on top and Item Order are both enabled, the pinned block follows the same selection order returned by <code class="hljs"><span class="hljs-title function_">getSelected</span>()</code>.</li>
 </ul>
 </li>
 <li><p>Choice</p>

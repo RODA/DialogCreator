@@ -189,6 +189,10 @@ Helpers such as `listColumns()` (or its backward-compatible alias `listVariables
 
 This element has another useful property called **Item Order**. When activated, the order in which the items are clicked is duly remembered, and `getSelected()` returns selections in that order. For instance in statistics, when creating a cross-tabulation from two categorical variables, it does matter which variable is selected first (on the rows) and which second (on the columns).
 
+Another Container property is **Pin on top**. When enabled, the currently selected items are visually moved to the top of the list in Preview, while all unselected items remain below in their original order. This is useful when working with long lists because the active selection stays visible even after scrolling or filtering the container.
+
+When **Pin on top** is combined with **Item Order**, the pinned rows keep the same click order returned by `getSelected()`. Without **Item Order**, selected rows are still pinned above the others, but ties between selected rows fall back to their original list order.
+
 
 ### Choice
 The Choice element is a list control built for (ordered) choices. Each item acts like a selectable option, and the list itself can optionally be reordered by drag-and-drop. Because it combines sorting and ordering, it can be used in a wide variety of ways:

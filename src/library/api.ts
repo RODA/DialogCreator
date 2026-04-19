@@ -238,6 +238,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             const div = document.createElement('div');
             div.className = 'container-item';
             div.dataset.value = value;
+            div.dataset.baseOrder = String(target!.children.length);
             const itemType = renderutils.normalizeContainerItemType(item?.type ?? (item as any)?.itemType ?? (item as any)?.kind ?? '');
             if (itemType && itemType !== 'any') {
                 div.dataset.itemType = itemType;
@@ -1669,6 +1670,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             const item = document.createElement('div');
             item.className = 'container-item';
             item.dataset.value = textValue;
+            item.dataset.baseOrder = String(items.length);
             if (normalizedType && normalizedType !== 'any') {
                 item.dataset.itemType = normalizedType;
             } else {

@@ -192,6 +192,7 @@ export const elements: ElementsWithPersist = {
         selection: 'single',
         itemType: 'any',
         itemOrder: false,
+        pinontop: false,
         backgroundColor: '#ffffff',
         fontColor: '#000000',
         activeBackgroundColor: '#589658',
@@ -202,7 +203,7 @@ export const elements: ElementsWithPersist = {
         isVisible: true,
         elementIds: [],
         $persist: [
-            'nameid','left','top','width','height','selection','itemType','itemOrder','backgroundColor','fontColor','activeBackgroundColor','activeFontColor','disabledColor','borderColor','isEnabled','isVisible'
+            'nameid','left','top','width','height','selection','itemType','itemOrder','pinontop','backgroundColor','fontColor','activeBackgroundColor','activeFontColor','disabledColor','borderColor','isEnabled','isVisible'
         ] as const
     },
     choiceElement: {        id: '',

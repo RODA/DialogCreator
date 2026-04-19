@@ -1943,6 +1943,9 @@ export const editor: Editor = {
                 if (desiredType === 'Container' && !('itemOrder' in wrapper.dataset)) {
                     wrapper.dataset.itemOrder = 'false';
                 }
+                if (desiredType === 'Container' && !('pinontop' in wrapper.dataset)) {
+                    wrapper.dataset.pinontop = 'false';
+                }
                 hydrateElementDatasetDefaults(wrapper);
 
                 // Inner element positioned relative to wrapper

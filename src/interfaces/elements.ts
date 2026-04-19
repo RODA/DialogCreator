@@ -165,6 +165,7 @@ export type containerElementType = {
     selection: string;
     itemType: string;
     itemOrder: boolean;
+    pinontop: boolean;
     isEnabled: boolean;
     isVisible: boolean;
     elementIds: string[];
