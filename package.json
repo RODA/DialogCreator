@@ -101,7 +101,7 @@
     "@codemirror/language": "^6.12.3",
     "@codemirror/lint": "^6.9.5",
     "@codemirror/state": "^6.6.0",
-    "@codemirror/view": "^6.41.0",
+    "@codemirror/view": "^6.41.1",
     "@types/emscripten": "^1.41.5",
     "@types/sqlite3": "^3.1.11",
     "@types/uuid": "^10.0.0",
