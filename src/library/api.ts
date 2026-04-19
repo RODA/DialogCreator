@@ -698,7 +698,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
 
             switch (eltype) {
                 case 'Input': {
-                    const input = (el instanceof HTMLInputElement ? el : (inn as HTMLInputElement | null));
+                    const input = (el instanceof HTMLTextAreaElement ? el : (inn as HTMLTextAreaElement | null));
                     return input?.value ?? '';
                 }
                 case 'Label': return inn?.textContent ?? '';
@@ -732,7 +732,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
 
             switch (eltype) {
                 case 'Input':
-                    if (prop === 'value' && inn instanceof HTMLInputElement) {
+                    if (prop === 'value' && inn instanceof HTMLTextAreaElement) {
                         inn.value = String(v); el.dataset.value = String(v);
                     } else {
                         warn(`${name}:${prop}`, `Unsupported set(${eltype}, ${prop})`);
@@ -833,7 +833,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             const inn = inner(el);
 
             if (eltype === 'Input') {
-                const input = (el instanceof HTMLInputElement ? el : (inn as HTMLInputElement | null));
+                const input = (el instanceof HTMLTextAreaElement ? el : (inn as HTMLTextAreaElement | null));
                 return input?.value ?? '';
             }
 
@@ -917,7 +917,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
 
             // Scalar
             if (eltype === 'Input') {
-                const input = (el instanceof HTMLInputElement ? el : (inn as HTMLInputElement | null));
+                const input = (el instanceof HTMLTextAreaElement ? el : (inn as HTMLTextAreaElement | null));
 
                 if (input) {
                     input.value = String(value);
@@ -1325,7 +1325,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 }
 
                 if (eltype === 'Input') {
-                    return (el instanceof HTMLInputElement ? el : (el.querySelector('input') as HTMLElement | null));
+                    return (el instanceof HTMLTextAreaElement ? el : (el.querySelector('textarea') as HTMLElement | null));
                 }
 
                 return null;
@@ -1760,7 +1760,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             }
 
             const inn = inner(el);
-            const input = (el instanceof HTMLInputElement ? el : (inn as HTMLInputElement | null));
+            const input = (el instanceof HTMLTextAreaElement ? el : (inn as HTMLTextAreaElement | null));
 
             if (input) {
                 input.value = '';
@@ -1788,7 +1788,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
 
                 if (eltype === 'Input') {
                     const inn = inner(el);
-                    const input = (el instanceof HTMLInputElement ? el : (inn as HTMLInputElement | null));
+                    const input = (el instanceof HTMLTextAreaElement ? el : (inn as HTMLTextAreaElement | null));
                     if (input) {
                         input.value = '';
                         el.dataset.value = '';

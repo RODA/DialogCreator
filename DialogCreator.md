@@ -145,7 +145,7 @@ Example:
 The Button element represents a clickable button. It can be styled and configured with different actions to perform when clicked.
 
 ### Input
-The Input element allows users to enter text or data. It can be configured with various properties such as placeholder text, default value, and validation rules.
+The Input element allows users to enter text or data. Internally it behaves like a single-row wrapping text area: long text wraps visually inside the element height, but pressing `Enter` commits the value and removes focus instead of inserting a new line. The `height` property controls how tall the element is, and a vertical scrollbar appears only when the wrapped content exceeds that visible height.
 
 ### Select (Dropdown)
 The Select element provides a dropdown menu for users to choose from a list of options. It can be configured with default selections and multiple selection capabilities.

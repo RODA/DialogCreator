@@ -454,6 +454,12 @@ function renderPreview(dialog: PreviewDialog) {
         core.style.left = '0px';
         core.style.top = '0px';
         if (desiredType === 'Button') core.style.position = 'relative';
+        if (desiredType === 'Input' && core instanceof HTMLTextAreaElement) {
+            core.style.width = '100%';
+            core.style.height = '100%';
+            core.style.minHeight = '100%';
+            core.style.maxHeight = '100%';
+        }
 
         // Ensure child control ids track the restored wrapper id (so helpers that query by id work)
         try {
@@ -493,6 +499,9 @@ function renderPreview(dialog: PreviewDialog) {
 
         wrapper.appendChild(core);
         canvas.appendChild(wrapper);
+        if (core instanceof HTMLTextAreaElement && desiredType === 'Input') {
+            requestAnimationFrame(() => renderutils.syncInputOverflow(core));
+        }
         created.push(wrapper);
 
         const element = wrapper;
@@ -800,20 +809,32 @@ function renderPreview(dialog: PreviewDialog) {
                 });
             }
         } else if (type === 'input') {
-            const input = el.querySelector('input') as HTMLInputElement | null;
+            const input = el.querySelector('textarea') as HTMLTextAreaElement | null;
             if (input) {
+                const normalizeValue = () => input.value.replace(/\r?\n+/g, ' ');
                 let focusValue = input.value;
-                let pendingSyntheticChange = false;
 
                 input.addEventListener('focus', () => {
-                    focusValue = input.value;
-                    pendingSyntheticChange = false;
+                    focusValue = normalizeValue();
+                });
+
+                input.addEventListener('input', () => {
+                    const normalized = normalizeValue();
+                    if (normalized !== input.value) {
+                        input.value = normalized;
+                    }
+                    el.dataset.value = normalized;
+                    renderutils.syncInputOverflow(input);
                 });
 
                 input.addEventListener('change', () => {
-                    el.dataset.value = String(input.value || '');
-                    focusValue = input.value;
-                    pendingSyntheticChange = false;
+                    const normalized = normalizeValue();
+                    if (normalized !== input.value) {
+                        input.value = normalized;
+                    }
+                    el.dataset.value = normalized;
+                    focusValue = normalized;
+                    renderutils.syncInputOverflow(input);
                 });
 
                 input.addEventListener('keydown', (ev: KeyboardEvent) => {
@@ -824,21 +845,14 @@ function renderPreview(dialog: PreviewDialog) {
                     ev.preventDefault();
                     ev.stopPropagation();
 
-                    const currentValue = input.value;
-                    const valueChanged = currentValue !== focusValue;
-
-                    pendingSyntheticChange = valueChanged;
-                    input.blur();
-
-                    if (valueChanged) {
-                        queueMicrotask(() => {
-                            if (!pendingSyntheticChange) {
-                                return;
-                            }
-                            pendingSyntheticChange = false;
-                            input.dispatchEvent(new Event('change', { bubbles: true }));
-                        });
+                    const normalized = normalizeValue();
+                    if (normalized !== input.value) {
+                        input.value = normalized;
                     }
+                    el.dataset.value = normalized;
+                    focusValue = normalized;
+                    renderutils.syncInputOverflow(input);
+                    input.blur();
                 });
             }
         } else if (type === 'counter') {

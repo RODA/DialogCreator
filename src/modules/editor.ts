@@ -1161,6 +1161,9 @@ export const editor: Editor = {
             // Assemble
             wrapper.appendChild(core);
             dialog.canvas.appendChild(wrapper);
+            if (core instanceof HTMLTextAreaElement && wrapper.dataset.type === 'Input') {
+                requestAnimationFrame(() => renderutils.syncInputOverflow(core));
+            }
 
             // Remove any inner cover created by factory (checkbox/radio)
             const innerCover = core.querySelector('.elementcover');

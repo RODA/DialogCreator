@@ -145,6 +145,29 @@ async function loadDialogFromPath(filePath: string) {
     }
 }
 
+async function reloadCurrentDialogFromDisk(): Promise<void> {
+    try {
+        if (!currentFilePath || currentFilePath.trim().length === 0) return;
+        if (!editorWindow || editorWindow.isDestroyed()) return;
+
+        if (dialogModified) {
+            const res = await dialog.showMessageBox(editorWindow, {
+                type: 'question',
+                buttons: ['Reload', 'Cancel'],
+                defaultId: 0,
+                cancelId: 1,
+                message: 'Reload this dialog from disk and discard unsaved changes?'
+            });
+
+            if (res.response !== 0) return;
+        }
+
+        await loadDialogFromPath(currentFilePath);
+    } catch (e: any) {
+        dialog.showErrorBox('Reload failed', String((e && e.message) ? e.message : e));
+    }
+}
+
 function loadEditorWindowState(): Electron.Rectangle | null {
     try {
         const statePath = getEditorWindowStatePath();
@@ -894,6 +917,7 @@ function updateWindowTitle() {
 function setCurrentDialogPath(filePath: string | null) {
     currentFilePath = filePath;
     updateWindowTitle();
+    rebuildApplicationMenu();
 }
 
 // Create menu template
@@ -1097,6 +1121,14 @@ function buildMainMenuTemplate(): MenuItemConstructorOptions[] {
                 });
                 if (canceled || !filePaths || filePaths.length === 0) return;
                 await loadDialogFromPath(filePaths[0]);
+            }
+        },
+        {
+            label: 'Reload from disk',
+            accelerator: 'CommandOrControl+R',
+            enabled: !!currentFilePath,
+            click: async () => {
+                await reloadCurrentDialogFromDisk();
             }
         },
         {

@@ -174,12 +174,11 @@ input:focus, select:focus, textarea:focus {
 
 
 /* Normalize control sizing so enabled/disabled are identical */
-.preview-canvas input[type="text"],
+.preview-canvas textarea,
 .preview-canvas select {
     --input-disabled-background-color: #dedede;
     box-sizing: border-box;
     padding: 3px 5px;                  /* consistent box */
-    height: 22px;                      /* fixed height to avoid jump */
     line-height: 1.2;
     border: var(--control-border-width) solid #777777; /* flat border */
     appearance: none;
@@ -192,8 +191,12 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* Rounded corners for Input controls in Preview */
-.preview-canvas input[type="text"] {
+.preview-canvas textarea {
     border-radius: 4px;
+    resize: none;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    white-space: pre-wrap;
 }
 
 /* Keep selects squared (optional: match platform look) */

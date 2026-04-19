@@ -66,6 +66,7 @@ export interface RenderUtils {
     exposeEventNameGlobals: () => void;
     normalizeEventName: (ev: unknown) => EventName | null;
     normalizeContainerItemType: (value: unknown) => string;
+    syncInputOverflow: (input: HTMLTextAreaElement | null) => void;
     applyContainerItemFilter: (host: HTMLElement | null) => void;
 }
 

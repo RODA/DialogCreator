@@ -70,6 +70,14 @@ const resolveContainerItemType = (value: unknown): string => {
     return normalized;
 };
 
+const syncInputOverflow = (input: HTMLTextAreaElement | null): void => {
+    if (!input) return;
+
+    input.style.overflowX = 'hidden';
+    const needsVerticalScrollbar = (input.scrollHeight - input.clientHeight) > 1;
+    input.style.overflowY = needsVerticalScrollbar ? 'auto' : 'hidden';
+};
+
 const splitList = (raw: unknown): string[] => {
     return String(raw ?? '')
         .split(',')
@@ -311,7 +319,7 @@ const applyEditorContainerSampleState = (
 
 const applyControlDisabledAppearance = (
     opts: {
-        input?: HTMLInputElement | HTMLSelectElement | null;
+        input?: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null;
         checkbox?: HTMLElement | null;
         radio?: HTMLElement | null;
         enabled: boolean;
@@ -1174,11 +1182,13 @@ export const renderutils: RenderUtils = {
         }
 
         let eltype = 'div';
-        if (utils.isElementOf(data.type, ["Input", "Select"])) {
-            eltype = data.type.toLowerCase();
+        if (data.type === 'Input') {
+            eltype = 'textarea';
+        } else if (data.type === 'Select') {
+            eltype = 'select';
         }
 
-        const element = document.createElement(eltype) as HTMLDivElement | HTMLInputElement | HTMLSelectElement;
+        const element = document.createElement(eltype) as HTMLDivElement | HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
 
         data.id = uuid;
         // Assign unique nameid BEFORE copying properties into dataset so dataset.nameid isn't the template default
@@ -1254,13 +1264,16 @@ export const renderutils: RenderUtils = {
                 data.iconSize
             )
 
-        } else if (data.type == "Input" && element instanceof HTMLInputElement) {
-
-            element.type = 'text';
+        } else if (data.type == "Input" && element instanceof HTMLTextAreaElement) {
             element.value = data.value || '';
+            element.rows = 1;
+            element.wrap = 'soft';
+            element.style.resize = 'none';
             element.style.width = data.width + 'px';
+            element.style.height = data.height + 'px';
             element.style.borderColor = data.borderColor || '#8c8c8c';
             element.style.setProperty('--input-disabled-background-color', getDisabledColor(data as Record<string, unknown>));
+            requestAnimationFrame(() => syncInputOverflow(element));
             // element.style.maxHeight = data.height + 'px';
             // element.style.maxWidth = data.maxWidth + 'px';
 
@@ -1671,7 +1684,7 @@ export const renderutils: RenderUtils = {
             if (!utils.isElementOf(data.type, ["Input", "Select", "Checkbox", "Radio", "Counter"])) {
                 element.classList.add('disabled-div');
             }
-            if (data.type === 'Input' && element instanceof HTMLInputElement) {
+            if (data.type === 'Input' && element instanceof HTMLTextAreaElement) {
                 element.disabled = true;
                 applyControlDisabledAppearance({ input: element, enabled: false, source: data as Record<string, unknown> });
             } else if (data.type === 'Select' && element instanceof HTMLSelectElement) {
@@ -1817,6 +1830,9 @@ export const renderutils: RenderUtils = {
                         // Also resize the custom control node if present
                         if (checkbox && customCheckbox) customCheckbox.style.height = value + 'px';
                         if (radio && customRadio) customRadio.style.height = value + 'px';
+                        if (input && inner instanceof HTMLTextAreaElement) {
+                            requestAnimationFrame(() => syncInputOverflow(inner));
+                        }
                     }
 
                     if (eltop && Number(eltop.value) + Number(value) + 10 > dialogH) {
@@ -2192,7 +2208,7 @@ export const renderutils: RenderUtils = {
                 case 'disabledColor':
                     if (input) {
                         if (utils.isValidColor(value)) {
-                            const inputEl = (element instanceof HTMLInputElement ? element : inner) as HTMLInputElement | null;
+                            const inputEl = (element instanceof HTMLTextAreaElement ? element : inner) as HTMLTextAreaElement | null;
                             applyControlDisabledAppearance({
                                 input: inputEl,
                                 enabled: !inputEl?.disabled,
@@ -2509,8 +2525,9 @@ export const renderutils: RenderUtils = {
 
                 case 'value':
                     // Update only the appropriate UI elements
-                    if (inner instanceof HTMLInputElement && input) {
+                    if (inner instanceof HTMLTextAreaElement && input) {
                         inner.value = value;
+                        requestAnimationFrame(() => syncInputOverflow(inner));
                     } else if (inner instanceof HTMLSelectElement && select) {
                         // Populate select options from comma/semicolon separated tokens
                         const text = String(value || '');
@@ -2580,8 +2597,8 @@ export const renderutils: RenderUtils = {
                     }
 
                     if (input) {
-                        const inputEl = (inner instanceof HTMLInputElement ? inner : element.querySelector('input'));
-                        const actualInput = (element instanceof HTMLInputElement ? element : inputEl) as HTMLInputElement | null;
+                        const inputEl = (inner instanceof HTMLTextAreaElement ? inner : element.querySelector('textarea'));
+                        const actualInput = (element instanceof HTMLTextAreaElement ? element : inputEl) as HTMLTextAreaElement | null;
                         if (actualInput) {
                             actualInput.disabled = !enabled;
                         }
@@ -2648,7 +2665,7 @@ export const renderutils: RenderUtils = {
                         sorterNeedsRender = true;
                     }
 
-                    const inputEl = (element instanceof HTMLInputElement ? element : (inner as HTMLInputElement | null));
+                    const inputEl = (element instanceof HTMLTextAreaElement ? element : (inner as HTMLTextAreaElement | null));
                     if (inputEl && input) {
                         inputEl.disabled = !enabled;
                         applyControlDisabledAppearance({ input: inputEl, enabled, source: dataset });
@@ -4292,6 +4309,10 @@ export const renderutils: RenderUtils = {
 
     normalizeContainerItemType: function(value) {
         return normalizeContainerItemType(value);
+    },
+
+    syncInputOverflow: function(input) {
+        syncInputOverflow(input);
     },
 
     applyContainerItemFilter: function(host) {

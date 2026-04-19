@@ -40,6 +40,7 @@ export const elements: ElementsWithPersist = {
         left: 15,
         top: 15,
         width: 60,
+        height: 22,
         value: '',
         valueType: 'String',
         borderColor: '#8c8c8c',
@@ -48,7 +49,7 @@ export const elements: ElementsWithPersist = {
         isVisible: true,
         elementIds: [],
         $persist: [
-            'nameid','left','top','width','value','valueType','borderColor','disabledColor','isEnabled','isVisible'
+            'nameid','left','top','width','height','value','valueType','borderColor','disabledColor','isEnabled','isVisible'
         ] as const
     },
     selectElement: {

@@ -526,16 +526,16 @@ input[type="text"] {
     box-sizing: border-box;
 }
 /* Normalize Input controls inside the canvas to match Preview */
-#dialog input[type="text"] {
+#dialog textarea {
     --input-disabled-background-color: #dedede;
     box-sizing: border-box;
     padding: 3px 5px;
-    height: 22px;            /* match Preview */
     line-height: 1.2;
     border: var(--control-border-width) solid #777777;
     background-color: #ffffff;
     color: #000;
     border-radius: 4px;      /* rounded corners same as Preview */
+    resize: none;
 }
 
 /* Disabled native controls on the canvas should look subtly greyed */
@@ -553,6 +553,12 @@ input {
     text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;
+}
+
+#dialog textarea {
+    overflow-x: hidden;
+    overflow-y: hidden;
+    white-space: pre-wrap;
 }
 
 .input-as-text {

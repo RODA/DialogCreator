@@ -37,6 +37,7 @@ INSERT INTO elements (element, property, value) VALUES
 ('inputElement', 'left', '15'),
 ('inputElement', 'top', '15'),
 ('inputElement', 'width', '60'),
+('inputElement', 'height', '22'),
 ('inputElement', 'value', ''),
 ('inputElement', 'valueType', 'String'),
 ('inputElement', 'borderColor', '#8c8c8c'),

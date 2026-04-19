@@ -25,6 +25,7 @@ export type inputElementType = {
     left: number;
     top: number;
     width: number;
+    height: number;
     value: string;
     valueType: string; // 'Numeric' | 'String'
     borderColor: string;
