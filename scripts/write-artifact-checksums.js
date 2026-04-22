@@ -16,7 +16,7 @@ function isArtifactFile(name) {
   if (lower === outputNames.sha256.toLowerCase() || lower === outputNames.sha512.toLowerCase()) {
     return false;
   }
-  return ['.exe', '.dmg', '.zip', '.appimage', '.deb', '.rpm'].includes(path.extname(lower));
+  return ['.exe', '.dmg', '.zip', '.appimage'].includes(path.extname(lower));
 }
 
 function hashFile(filePath, algorithm) {

@@ -14,12 +14,6 @@ NEW_LINUX_ARM="${NAME_FILE}_${VERSION}_silicon.AppImage"
 ORIGINAL_LINUX_INTEL="build/output/${NAME}-${VERSION}.AppImage"
 NEW_LINUX_INTEL="${NAME_FILE}_${VERSION}_intel.AppImage"
 
-ORIGINAL_DEB_ARM="build/output/${PACKAGE_NAME}_${VERSION}_arm64.deb"
-NEW_DEB_ARM="${NAME_FILE}_${VERSION}_silicon.deb"
-
-ORIGINAL_DEB_INTEL="build/output/${PACKAGE_NAME}_${VERSION}_amd64.deb"
-NEW_DEB_INTEL="${NAME_FILE}_${VERSION}_intel.deb"
-
 renamed_any=0
 
 if [ -f "$ORIGINAL_LINUX_ARM" ]; then
@@ -31,18 +25,6 @@ fi
 if [ -f "$ORIGINAL_LINUX_INTEL" ]; then
     echo "Renaming $(basename "$ORIGINAL_LINUX_INTEL") -> $NEW_LINUX_INTEL"
     mv "$ORIGINAL_LINUX_INTEL" "build/output/$NEW_LINUX_INTEL"
-    renamed_any=1
-fi
-
-if [ -f "$ORIGINAL_DEB_ARM" ]; then
-    echo "Renaming $(basename "$ORIGINAL_DEB_ARM") -> $NEW_DEB_ARM"
-    mv "$ORIGINAL_DEB_ARM" "build/output/$NEW_DEB_ARM"
-    renamed_any=1
-fi
-
-if [ -f "$ORIGINAL_DEB_INTEL" ]; then
-    echo "Renaming $(basename "$ORIGINAL_DEB_INTEL") -> $NEW_DEB_INTEL"
-    mv "$ORIGINAL_DEB_INTEL" "build/output/$NEW_DEB_INTEL"
     renamed_any=1
 fi
 

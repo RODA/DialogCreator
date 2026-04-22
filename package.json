@@ -89,7 +89,7 @@
       }
     },
     "linux": {
-      "target": "deb",
+      "target": "AppImage",
       "maintainer": "RODA",
       "icon": "icons/DialogCreator.png",
       "category": "Development / Science"

@@ -43,7 +43,6 @@ jobs:
           name: linux-intel-build
           path: |
             build/output/*_intel.AppImage
-            build/output/*_intel.deb
           if-no-files-found: error
 
   windows-intel:

@@ -45,7 +45,7 @@ function getRequestedTargets() {
     .filter(Boolean)
     .filter((value) => value === 'AppImage' || value === 'deb');
 
-  return fromEnv.length > 0 ? fromEnv : ['AppImage', 'deb'];
+  return fromEnv.length > 0 ? fromEnv : ['AppImage'];
 }
 
 function run(cmd, args, opts = {}) {
