@@ -65,7 +65,7 @@
       }
     ],
     "win": {
-      "icon": "icons/icon.ico",
+      "icon": "icons/DialogCreator.ico",
       "legalTrademarks": "Academic Non-Commercial License (see LICENSE file for details).",
       "target": {
         "target": "nsis",
@@ -75,7 +75,7 @@
       }
     },
     "mac": {
-      "icon": "icons/icon.icns",
+      "icon": "icons/DialogCreator.icns",
       "category": "public.app-category.productivity",
       "extendInfo": {
         "NSHumanReadableCopyright": "© 2025 Adrian Dusa — Academic Non-Commercial License (see LICENSE file for details)."
@@ -87,6 +87,12 @@
           "arm64"
         ]
       }
+    },
+    "linux": {
+      "target": "deb",
+      "maintainer": "RODA",
+      "icon": "icons/DialogCreator.png",
+      "category": "Development / Science"
     },
     "publish": {
       "provider": "github",
@@ -103,10 +109,10 @@
     "@codemirror/state": "^6.6.0",
     "@codemirror/view": "^6.41.1",
     "@types/emscripten": "^1.41.5",
-    "@types/sqlite3": "^5.1.0",
-    "@types/uuid": "^11.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.58.2",
-    "@typescript-eslint/parser": "^8.58.2",
+    "@types/sqlite3": "^3.1.11",
+    "@types/uuid": "^10.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.59.0",
+    "@typescript-eslint/parser": "^8.59.0",
     "cross-env": "^10.1.0",
     "electron": "^39.8.8",
     "electron-builder": "^26.9.0",
@@ -122,6 +128,6 @@
     "sortablejs": "^1.15.7",
     "sqlite3": "^6.0.1",
     "tippy.js": "^6.3.7",
-    "uuid": "^13.0.0"
+    "uuid": "^14.0.0"
   }
 }
