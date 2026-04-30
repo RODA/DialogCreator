@@ -5,6 +5,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   linux-intel:
@@ -33,6 +34,25 @@ jobs:
 
       - name: Rename Linux artifacts
         run: npm run rename:linux
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_APPLICATION_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Sign Windows artifacts
+        uses: azure/artifact-signing-action@v1
+        with:
+          endpoint: https://neu.codesigning.azure.net/
+          signing-account-name: dusadrian
+          certificate-profile-name: electron-profile
+          files-folder: ${{ github.workspace }}\build\output
+          files-folder-filter: exe
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
 
       - name: Write artifact checksums
         run: node scripts/write-artifact-checksums.js
