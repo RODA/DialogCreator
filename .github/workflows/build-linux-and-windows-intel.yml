@@ -83,7 +83,7 @@ jobs:
       - name: Sign Windows artifacts
         uses: azure/artifact-signing-action@v1
         with:
-          endpoint: https://neu.codesigning.azure.net/
+          endpoint: https://plc.codesigning.azure.net/
           signing-account-name: dusadrian
           certificate-profile-name: electron-profile
           files-folder: ${{ github.workspace }}\build\output
