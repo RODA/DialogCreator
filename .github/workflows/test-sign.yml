@@ -14,12 +14,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Create dummy exe
-        shell: cmd
-        run: |
-          echo test > test.txt
-          copy /b test.txt test.exe
-
       - name: Check Azure secrets are present
         shell: pwsh
         run: |
