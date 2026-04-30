@@ -1775,6 +1775,7 @@ export const editor: Editor = {
                     if (m.classList.contains('lasso-rect')) continue;
                     const obj: Record<string, unknown> = { id: m.id };
                     for (const [key, raw] of Object.entries(m.dataset)) {
+                        if (key === 'id') continue;
                         let value: unknown = raw;
                         if (raw === 'true' || raw === 'false') {
                             value = raw === 'true';
@@ -1795,6 +1796,7 @@ export const editor: Editor = {
             } else {
                 const obj: Record<string, unknown> = { id: child.id };
                 for (const [key, raw] of Object.entries(child.dataset)) {
+                    if (key === 'id') continue;
                     let value: unknown = raw;
                     if (raw === 'true' || raw === 'false') {
                         value = raw === 'true';

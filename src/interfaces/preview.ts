@@ -211,6 +211,7 @@ export interface PreviewDialog {
     properties: {
         name?: string | number;
         title?: string | number;
+        language?: string | number;
         width: string | number;
         height: string | number;
         background?: string;

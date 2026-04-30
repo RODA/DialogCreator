@@ -11,10 +11,12 @@ import { utils } from "../library/utils";
 import { renderutils } from "../library/renderutils";
 import { AnyElement, StringNumber } from "../interfaces/elements";
 import { PreviewDialog, PreviewScriptExports, PreviewUI, PreviewUIEnv } from "../interfaces/preview";
+import type { DialogLocaleDictionary } from "../interfaces/dialog";
 
 import { API_NAMES, createPreviewUI } from '../library/api';
 
 let initialPreviewDialog: PreviewDialog | null = null;
+let activePreviewLocale = '';
 const previewLastSelectedContainerItem = new WeakMap<HTMLElement, HTMLElement | null>();
 let previewHoveredContainer: HTMLElement | null = null;
 let previewSearchContainer: HTMLElement | null = null;
@@ -325,12 +327,200 @@ const clonePreviewDialog = (input: PreviewDialog): PreviewDialog => {
     }
 };
 
+const uniqueLocales = (dialog: PreviewDialog): string[] => {
+    const out: string[] = [];
+    const add = (value: unknown) => {
+        const locale = String(value ?? '').trim();
+        if (locale && !out.includes(locale)) {
+            out.push(locale);
+        }
+    };
+
+    add(dialog.properties.language);
+    add(dialog.i18n?.baseLocale);
+    Object.keys(dialog.i18n?.locales || {}).forEach(add);
+    return out;
+};
+
+const formatLocaleName = (locale: string): string => {
+    const normalized = String(locale || '').trim().replace(/_/g, '-');
+    if (!normalized) {
+        return locale;
+    }
+
+    const language = normalized.split('-')[0];
+    try {
+        if (typeof Intl !== 'undefined' && typeof Intl.DisplayNames === 'function') {
+            const names = new Intl.DisplayNames([normalized], { type: 'language' });
+            const label = names.of(language);
+            if (label) {
+                return label.charAt(0).toLocaleUpperCase(normalized) + label.slice(1);
+            }
+        }
+    } catch { /* fall back to locale code */ }
+
+    return locale;
+};
+
+const resolveTranslation = (
+    baseDict: DialogLocaleDictionary,
+    localeDict: DialogLocaleDictionary,
+    element: Record<string, any>,
+    prop: string
+): string | undefined => {
+    const ids = [
+        String(element.id ?? '').trim()
+    ].filter(Boolean);
+
+    for (const id of ids) {
+        const key = `elements.${id}.${prop}`;
+        if (localeDict[key] !== undefined) return localeDict[key];
+        if (baseDict[key] !== undefined) return baseDict[key];
+    }
+
+    return undefined;
+};
+
+const translateDelimitedItems = (
+    baseDict: DialogLocaleDictionary,
+    localeDict: DialogLocaleDictionary,
+    element: Record<string, any>,
+    raw: unknown
+): string | undefined => {
+    const ids = [
+        String(element.id ?? '').trim()
+    ].filter(Boolean);
+    const values = String(raw ?? '')
+        .split(/[;,]/)
+        .map(item => item.trim());
+
+    if (!ids.length || !values.some(Boolean)) {
+        return undefined;
+    }
+
+    let changed = false;
+    const translated = values.map((value, index) => {
+        for (const id of ids) {
+            const key = `elements.${id}.items.${index}`;
+            if (localeDict[key] !== undefined) {
+                changed = true;
+                return localeDict[key];
+            }
+            if (baseDict[key] !== undefined) {
+                changed = true;
+                return baseDict[key];
+            }
+        }
+        return value;
+    });
+
+    return changed ? translated.join(', ') : undefined;
+};
+
+const localizePreviewDialog = (input: PreviewDialog, locale: string): PreviewDialog => {
+    const copy = clonePreviewDialog(input);
+    const i18n = copy.i18n;
+    if (!i18n?.locales) {
+        return copy;
+    }
+
+    const baseLocale = String(i18n.baseLocale || copy.properties.language || '').trim();
+    const baseDict = (baseLocale && i18n.locales[baseLocale]) || {};
+    const localeDict = i18n.locales[locale] || baseDict;
+
+    copy.properties.language = locale;
+    const title = localeDict['dialog.title'] ?? baseDict['dialog.title'];
+    if (title !== undefined) {
+        copy.properties.title = title;
+    }
+
+    copy.elements = copy.elements.map((element) => {
+        const next = { ...element };
+        const type = String(next.type || '').trim();
+
+        const label = resolveTranslation(baseDict, localeDict, next, 'label');
+        if (label !== undefined) {
+            next.label = label;
+        }
+
+        const value = resolveTranslation(baseDict, localeDict, next, 'value');
+        if (value !== undefined) {
+            if (type === 'Select') {
+                next.__localizedValue = value;
+            } else {
+                if (type === 'Label') {
+                    next.__baseValue = next.value;
+                }
+                next.value = value;
+            }
+        }
+
+        const itemText = translateDelimitedItems(baseDict, localeDict, next, next.items);
+        if (itemText !== undefined) {
+            next.items = itemText;
+        }
+
+        if (type === 'Choice' && itemText === undefined) {
+            const choiceValue = resolveTranslation(baseDict, localeDict, next, 'items');
+            if (choiceValue !== undefined) {
+                next.items = choiceValue;
+            }
+        }
+
+        return next;
+    });
+
+    return copy;
+};
+
+const renderLanguageSwitcher = (root: HTMLElement, dialog: PreviewDialog) => {
+    const locales = uniqueLocales(dialog);
+    if (locales.length <= 1) {
+        return;
+    }
+
+    const hoverArea = document.createElement('div');
+    hoverArea.className = 'preview-language-hover-area';
+
+    const panel = document.createElement('div');
+    panel.className = 'preview-language-panel';
+
+    const select = document.createElement('select');
+    select.className = 'preview-language-select';
+    select.setAttribute('aria-label', 'Preview language');
+
+    locales.forEach((locale) => {
+        const option = document.createElement('option');
+        option.value = locale;
+        option.textContent = formatLocaleName(locale);
+        select.appendChild(option);
+    });
+
+    select.value = locales.includes(activePreviewLocale) ? activePreviewLocale : locales[0];
+    const applySelectedLocale = () => {
+        if (!initialPreviewDialog) {
+            return;
+        }
+        if (activePreviewLocale === select.value) {
+            return;
+        }
+        activePreviewLocale = select.value;
+        renderPreview(localizePreviewDialog(initialPreviewDialog, activePreviewLocale));
+    };
+    select.addEventListener('input', applySelectedLocale);
+    select.addEventListener('change', applySelectedLocale);
+
+    panel.appendChild(select);
+    hoverArea.appendChild(panel);
+    root.appendChild(hoverArea);
+};
+
 
 function resetPreview() {
     if (!initialPreviewDialog) {
         return;
     }
-    renderPreview(clonePreviewDialog(initialPreviewDialog));
+    renderPreview(localizePreviewDialog(initialPreviewDialog, activePreviewLocale));
 }
 
 function buildUI(canvas: HTMLElement): PreviewUI {
@@ -370,6 +560,10 @@ function renderPreview(dialog: PreviewDialog) {
         }
         child.remove();
     });
+
+    if (initialPreviewDialog) {
+        renderLanguageSwitcher(root, initialPreviewDialog);
+    }
 
     const width = Number(dialog.properties.width) || 640;
     const height = Number(dialog.properties.height) || 480;
@@ -517,6 +711,10 @@ function renderPreview(dialog: PreviewDialog) {
                 const raw = core.dataset.value ?? '';
                 const text = String(raw);
                 const tokens = text.split(/[;,]/).map(s => s.trim()).filter(s => s.length > 0);
+                const localizedRaw = String((data as any).__localizedValue ?? '');
+                const localizedTokens = localizedRaw
+                    ? localizedRaw.split(/[;,]/).map(s => s.trim()).filter(s => s.length > 0)
+                    : [];
                 select.innerHTML = '';
                 if (tokens.length === 0) {
                     const opt = document.createElement('option');
@@ -524,12 +722,12 @@ function renderPreview(dialog: PreviewDialog) {
                     opt.textContent = '';
                     select.appendChild(opt);
                 } else {
-                    for (const t of tokens) {
+                    tokens.forEach((t, index) => {
                         const opt = document.createElement('option');
                         opt.value = t;
-                        opt.textContent = t;
+                        opt.textContent = localizedTokens[index] || t;
                         select.appendChild(opt);
-                    }
+                    });
                 }
             }
         }
@@ -537,11 +735,36 @@ function renderPreview(dialog: PreviewDialog) {
         // Label: normalize sizing/ellipsis by reflowing with updateLabel once in Preview
         if (desiredType === 'Label') {
             try {
+                const baseValue = (data as any).__baseValue;
+                const align = String((data as any).align || core.dataset.align || '').toLowerCase();
+                let anchoredFromBaseValue = false;
+                if (
+                    (align === 'right' || align === 'center') &&
+                    baseValue !== undefined &&
+                    String(baseValue) !== String(core.dataset.value ?? '')
+                ) {
+                    const translatedValue = core.dataset.value ?? '';
+                    core.dataset.value = String(baseValue ?? '');
+                    wrapper.dataset.value = String(baseValue ?? '');
+                    renderutils.updateLabel(wrapper);
+                    core.dataset.value = translatedValue;
+                    wrapper.dataset.value = translatedValue;
+                    anchoredFromBaseValue = true;
+                }
                 renderutils.updateLabel(wrapper);
-                wrapper.style.left = `${left}px`;
-                wrapper.style.top = `${top}px`;
-                wrapper.dataset.left = String(left);
-                wrapper.dataset.top = String(top);
+                const textNode = core.querySelector('.smart-label-text') as HTMLElement | null;
+                if (textNode) {
+                    const fontSize = Number(wrapper.dataset.fontSize || (data as any).fontSize || dialog.properties.fontSize || coms.fontSize);
+                    const singleLineHeight = Number.isFinite(fontSize) && fontSize > 0 ? fontSize * 1.2 : 0;
+                    const wrapped = singleLineHeight > 0 && textNode.scrollHeight > Math.ceil(singleLineHeight + 1);
+                    wrapper.dataset.previewWrapped = String(wrapped);
+                }
+                if (!anchoredFromBaseValue) {
+                    wrapper.style.left = `${left}px`;
+                    wrapper.style.top = `${top}px`;
+                    wrapper.dataset.left = String(left);
+                    wrapper.dataset.top = String(top);
+                }
             } catch {}
         }
 
@@ -1036,7 +1259,11 @@ window.addEventListener("DOMContentLoaded", () => {
         try {
             const payload = typeof data === "string" ? JSON.parse(data as string) : data;
             initialPreviewDialog = clonePreviewDialog(payload as PreviewDialog);
-            renderPreview(payload);
+            const locales = uniqueLocales(initialPreviewDialog);
+            activePreviewLocale = locales.includes(String(initialPreviewDialog.properties.language ?? ''))
+                ? String(initialPreviewDialog.properties.language ?? '')
+                : (locales[0] || '');
+            renderPreview(localizePreviewDialog(initialPreviewDialog, activePreviewLocale));
         } catch (e) {
             coms.sendTo(
                 'editorWindow',
