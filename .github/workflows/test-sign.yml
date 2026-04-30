@@ -20,10 +20,18 @@ jobs:
           echo test > test.txt
           copy /b test.txt test.exe
 
+      - name: Check Azure secrets are present
+        shell: pwsh
+        run: |
+          if ("${{ secrets.AZURE_APPLICATION_ID }}" -eq "") { throw "AZURE_APPLICATION_ID is empty" }
+          if ("${{ secrets.AZURE_TENANT_ID }}" -eq "") { throw "AZURE_TENANT_ID is empty" }
+          if ("${{ secrets.AZURE_SUBSCRIPTION_ID }}" -eq "") { throw "AZURE_SUBSCRIPTION_ID is empty" }
+          Write-Host "All Azure secrets are present"
+
       - name: Azure login
         uses: azure/login@v1
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          client-id: ${{ secrets.AZURE_APPLICATION_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
