@@ -1,0 +1,36 @@
+name: test-sign
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  sign:
+    runs-on: windows-2022
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create dummy exe
+        run: |
+          echo test > test.txt
+          copy /b test.txt test.exe
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Sign
+        uses: azure/artifact-signing-action@v1
+        with:
+          endpoint: https://neu.codesigning.azure.net/
+          signing-account-name: dusadrian
+          certificate-profile-name: electron-profile
+          files-folder: ${{ github.workspace }}
+          files-folder-filter: exe
