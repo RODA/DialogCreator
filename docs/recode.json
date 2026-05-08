@@ -5,7 +5,7 @@
         "width": "540",
         "title": "Recode variables",
         "height": "370",
-        "language": "en",
+        "language": "en_US",
         "fontSize": "12"
     },
     "syntax": {
@@ -13,9 +13,9 @@
         "defaultElements": []
     },
     "i18n": {
-        "baseLocale": "en",
+        "baseLocale": "en_US",
         "locales": {
-            "en": {
+            "en_US": {
                 "dialog.title": "Recode variables",
                 "elements.abc85ac9-5e5b-4f84-9173-9cbdf6e503f6.label": "Remove",
                 "elements.e8ae43b3-2ee7-4b59-b348-3355d1f5ba8a.label": "Run",

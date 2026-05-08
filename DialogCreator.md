@@ -89,7 +89,7 @@ The whole dialog has properties of its own, for instance width and height to est
 
 It also has a global font size that affects all elements uniformly, all of which are saved with the dialog and reflected in the live Preview window.
 
-The dialog-level **Language** property sets the source language of the dialog text (for example `en`, `fr`, `zh-CN`). This language is exported with the dialog JSON and used as the base locale for translations in target applications.
+The dialog-level **Language** property sets the source locale of the dialog text (for example `en_US`, `ro_RO`, `de_DE`). This locale is exported with the dialog JSON and used as the base locale for translations in target applications.
 
 There is also an Actions button to open the code window for adding custom JavaScript logic for dialog behavior. It can be used to define how the elements interact with each other based on user input: showing/hiding/enabling controls, and updating values programmatically.
 
@@ -119,18 +119,18 @@ Example:
   "properties": {
     "name": "NewDialog",
     "title": "Settings",
-    "language": "zh-CN"
+    "language": "en_US"
   },
   "i18n": {
-    "baseLocale": "zh-CN",
+    "baseLocale": "en_US",
     "locales": {
-      "zh-CN": {
-        "dialog.title": "设置",
-        "elements.button1.label": "确认"
-      },
-      "en": {
+      "en_US": {
         "dialog.title": "Settings",
-        "elements.button1.label": "Confirm"
+        "elements.button1.label": "OK"
+      },
+      "ro_RO": {
+        "dialog.title": "Setari",
+        "elements.button1.label": "Confirma"
       }
     }
   }
@@ -173,19 +173,19 @@ The Separator element is a visual divider used to separate different sections or
 The Container element is a versatile component that can hold multiple items. It supports single or multi-selection modes and can be populated dynamically via the API.
 The items in a Container can be selected and deselected by clicking, and multi-selection is supported via Shift+click for range selection. In single-selection mode, clicking the active item clears the selection. Their type can be restricted (e.g., numeric, character, date) so that only items of that type are enabled and selectable.
 
-Its properties panel exposes an **Item type** dropdown alongside the selection mode. It defaults to **Any**, which allows all items to remain interactive. Choose a specific type (Numeric, Calibrated, Binary, Character, Categorical, or Date) to enforce that only items whose metadata matches the selected type stay selectable. Items with a different type are visually muted, ignore clicks, and are removed from the active selection.
+Its properties panel exposes an **Item type** dropdown alongside the selection mode. It defaults to **Any**, which allows all items to remain interactive. Choose a specific type (Numeric, Factor, Calibrated, Binary, Character, Categorical, or Date) to enforce that only items whose metadata matches the selected type stay selectable. Items with a different type are visually muted, ignore clicks, and are removed from the active selection.
 
 Containers can be populated by code, using `setValue(container, array)`. The array can be either:
 - an array of labels, such as: `setValue(container, ["age", "gender"])` to add two plain items, or
-- a metadata object containing not just the labels but also the items' type and whether they should be displayed as selected, e.g.:
+- a metadata object containing the item name, type flags, and whether it should be displayed as selected, e.g.:
 
 ```javascript
 setValue(container, [
-  { label: "age", type: "numeric", selected: true },
-  { label: "gender", type: "categorical" }
+  { name: "age", numeric: true, active: true },
+  { name: "gender", factor: true, categorical: true }
 ]);
 ```
-Helpers such as `listColumns()` (or its backward-compatible alias `listVariables()`) return precisely such metadata objects; when that output is paired with a Container whose Item type is set, mismatching items will automatically render as disabled.
+Helpers such as `listColumns()` return precisely such metadata objects; when that output is paired with a Container whose Item type is set, mismatching items will automatically render as disabled.
 
 This element has another useful property called **Item Order**. When activated, the order in which the items are clicked is duly remembered, and `getSelected()` returns selections in that order. For instance in statistics, when creating a cross-tabulation from two categorical variables, it does matter which variable is selected first (on the rows) and which second (on the columns).
 

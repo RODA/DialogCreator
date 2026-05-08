@@ -10,7 +10,7 @@ export const editorSettings: EditorSettings = {
     dialog: {
         name: 'NewDialog',
         title: 'New dialog',
-        language: 'en',
+        language: 'en_US',
         width: '600',
         height: '430',
         fontSize: '12',

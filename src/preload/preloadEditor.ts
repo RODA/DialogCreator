@@ -723,7 +723,7 @@ window.addEventListener("DOMContentLoaded", async () => {
                 dtitle.dispatchEvent(new Event('blur', { bubbles: true }));
             }
             if (dlang) {
-                dlang.value = String(data.language ?? 'en');
+                dlang.value = String(data.language ?? 'en_US');
                 dlang.dispatchEvent(new Event('change', { bubbles: true }));
                 dlang.dispatchEvent(new Event('blur', { bubbles: true }));
             }

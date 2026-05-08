@@ -77,7 +77,7 @@
 <h3 id="dialog-properties-and-actions-bottom">Dialog properties and Actions (bottom)</h3>
 <p>The whole dialog has properties of its own, for instance width and height to establish how large it should be, or a name (to be referred to from other dialogs) or a title (shown in the dialog's title bar).</p>
 <p>It also has a global font size that affects all elements uniformly, all of which are saved with the dialog and reflected in the live Preview window.</p>
-<p>The dialog-level <strong>Language</strong> property sets the source language of the dialog text (for example <code class="hljs"><span class="api-param">en</span></code>, <code class="hljs"><span class="api-param">fr</span></code>, <code class="hljs">zh-CN</code>). This language is exported with the dialog JSON and used as the base locale for translations in target applications.</p>
+<p>The dialog-level <strong>Language</strong> property sets the source locale of the dialog text (for example <code class="hljs"><span class="api-param">en_US</span></code>, <code class="hljs"><span class="api-param">ro_RO</span></code>, <code class="hljs"><span class="api-param">de_DE</span></code>). This locale is exported with the dialog JSON and used as the base locale for translations in target applications.</p>
 <p>There is also an Actions button to open the code window for adding custom JavaScript logic for dialog behavior. It can be used to define how the elements interact with each other based on user input: showing/hiding/enabling controls, and updating values programmatically.</p>
 <img src="./images/dialog_actions.png" alt="The dialog properties and actions" style="width: 793px;">
 
@@ -101,18 +101,18 @@
   <span class="hljs-attr">"properties"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
     <span class="hljs-attr">"name"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"NewDialog"</span><span class="hljs-punctuation">,</span>
     <span class="hljs-attr">"title"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"Settings"</span><span class="hljs-punctuation">,</span>
-    <span class="hljs-attr">"language"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"zh-CN"</span>
+    <span class="hljs-attr">"language"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"en_US"</span>
   <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
   <span class="hljs-attr">"i18n"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
-    <span class="hljs-attr">"baseLocale"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"zh-CN"</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"baseLocale"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"en_US"</span><span class="hljs-punctuation">,</span>
     <span class="hljs-attr">"locales"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
-      <span class="hljs-attr">"zh-CN"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
-        <span class="hljs-attr">"dialog.title"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"设置"</span><span class="hljs-punctuation">,</span>
-        <span class="hljs-attr">"elements.button1.label"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"确认"</span>
-      <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
-      <span class="hljs-attr">"en"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">"en_US"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
         <span class="hljs-attr">"dialog.title"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"Settings"</span><span class="hljs-punctuation">,</span>
-        <span class="hljs-attr">"elements.button1.label"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"Confirm"</span>
+        <span class="hljs-attr">"elements.button1.label"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"OK"</span>
+      <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"ro_RO"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+        <span class="hljs-attr">"dialog.title"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"Setari"</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"elements.button1.label"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"Confirma"</span>
       <span class="hljs-punctuation">}</span>
     <span class="hljs-punctuation">}</span>
   <span class="hljs-punctuation">}</span>
@@ -122,7 +122,7 @@
 <h3 id="button">Button</h3>
 <p>The Button element represents a clickable button. It can be styled and configured with different actions to perform when clicked.</p>
 <h3 id="input">Input</h3>
-<p>The Input element allows users to enter text or data. Internally it behaves like a single-row wrapping text area: long text wraps visually inside the element height, but pressing <code>Enter</code> commits the value and removes focus instead of inserting a new line. The <code>height</code> property controls how tall the element is, and a vertical scrollbar appears only when the wrapped content exceeds that visible height.</p>
+<p>The Input element allows users to enter text or data. Internally it behaves like a single-row wrapping text area: long text wraps visually inside the element height, but pressing <code class="hljs"><span class="api-param">Enter</span></code> commits the value and removes focus instead of inserting a new line. The <code class="hljs"><span class="api-param">height</span></code> property controls how tall the element is, and a vertical scrollbar appears only when the wrapped content exceeds that visible height.</p>
 <h3 id="select-dropdown">Select (Dropdown)</h3>
 <p>The Select element provides a dropdown menu for users to choose from a list of options. It can be configured with default selections and multiple selection capabilities.</p>
 <h3 id="checkbox">Checkbox</h3>
@@ -141,18 +141,18 @@ If the text exceeds the maximum width, it will be truncated with an ellipsis (<c
 <h3 id="container">Container</h3>
 <p>The Container element is a versatile component that can hold multiple items. It supports single or multi-selection modes and can be populated dynamically via the API.
 The items in a Container can be selected and deselected by clicking, and multi-selection is supported via Shift+click for range selection. In single-selection mode, clicking the active item clears the selection. Their type can be restricted (e.g., numeric, character, date) so that only items of that type are enabled and selectable.</p>
-<p>Its properties panel exposes an <strong>Item type</strong> dropdown alongside the selection mode. It defaults to <strong>Any</strong>, which allows all items to remain interactive. Choose a specific type (Numeric, Calibrated, Binary, Character, Categorical, or Date) to enforce that only items whose metadata matches the selected type stay selectable. Items with a different type are visually muted, ignore clicks, and are removed from the active selection.</p>
+<p>Its properties panel exposes an <strong>Item type</strong> dropdown alongside the selection mode. It defaults to <strong>Any</strong>, which allows all items to remain interactive. Choose a specific type (Numeric, Factor, Calibrated, Binary, Character, Categorical, or Date) to enforce that only items whose metadata matches the selected type stay selectable. Items with a different type are visually muted, ignore clicks, and are removed from the active selection.</p>
 <p>Containers can be populated by code, using <code class="hljs"><span class="hljs-title function_">setValue</span>(<span class="api-param">container</span>, <span class="api-param">array</span>)</code>. The array can be either:</p>
 <ul>
 <li>an array of labels, such as: <code class="hljs"><span class="hljs-title function_">setValue</span>(<span class="api-param">container</span>, <span class="api-param">[</span><span class="hljs-string">"age"</span>, <span class="hljs-string">"gender"</span><span class="api-param">]</span>)</code> to add two plain items, or</li>
-<li>a metadata object containing not just the labels but also the items' type and whether they should be displayed as selected, e.g.:</li>
+<li>a metadata object containing the item name, type flags, and whether it should be displayed as selected, e.g.:</li>
 </ul>
 <pre><code class="language-javascript hljs"><span class="hljs-title function_">setValue</span>(<span class="api-param">container</span>, [
-&nbsp;&nbsp;{ <span class="api-param">label</span>: <span class="hljs-string">"age"</span>, <span class="api-param">type</span>: <span class="hljs-string">"numeric"</span>, <span class="api-param">selected</span>: <span class="hljs-keyword">true</span> },
-&nbsp;&nbsp;{ <span class="api-param">label</span>: <span class="hljs-string">"gender"</span>, <span class="api-param">type</span>: <span class="hljs-string">"categorical"</span> }
+&nbsp;&nbsp;{ <span class="api-param">name</span>: <span class="hljs-string">"age"</span>, <span class="api-param">numeric</span>: <span class="hljs-keyword">true</span>, <span class="api-param">active</span>: <span class="hljs-keyword">true</span> },
+&nbsp;&nbsp;{ <span class="api-param">name</span>: <span class="hljs-string">"gender"</span>, <span class="api-param">factor</span>: <span class="hljs-keyword">true</span>, <span class="api-param">categorical</span>: <span class="hljs-keyword">true</span> }
 ]);
 </code></pre>
-<p>Helpers such as <code class="hljs"><span class="hljs-title function_">listColumns</span>()</code> (or its backward-compatible alias <code class="hljs"><span class="hljs-title function_">listVariables</span>()</code>) return precisely such metadata objects; when that output is paired with a Container whose Item type is set, mismatching items will automatically render as disabled.</p>
+<p>Helpers such as <code class="hljs"><span class="hljs-title function_">listColumns</span>()</code> return precisely such metadata objects; when that output is paired with a Container whose Item type is set, mismatching items will automatically render as disabled.</p>
 <p>This element has another useful property called <strong>Item Order</strong>. When activated, the order in which the items are clicked is duly remembered, and <code class="hljs"><span class="hljs-title function_">getSelected</span>()</code> returns selections in that order. For instance in statistics, when creating a cross-tabulation from two categorical variables, it does matter which variable is selected first (on the rows) and which second (on the columns).</p>
 <p>Another Container property is <strong>Pin on top</strong>. When enabled, the currently selected items are visually moved to the top of the list in Preview, while all unselected items remain below in their original order. This is useful when working with long lists because the active selection stays visible even after scrolling or filtering the container.</p>
 <p>When <strong>Pin on top</strong> is combined with <strong>Item Order</strong>, the pinned rows keep the same click order returned by <code class="hljs"><span class="hljs-title function_">getSelected</span>()</code>. Without <strong>Item Order</strong>, selected rows are still pinned above the others, but ties between selected rows fall back to their original list order.</p>

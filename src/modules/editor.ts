@@ -175,10 +175,13 @@ function getDragTargetSize(target: HTMLElement) {
 function sanitizeDialogI18n(input: unknown): DialogI18n | undefined {
     if (!input || typeof input !== 'object') return undefined;
     const raw = input as Record<string, unknown>;
-    const maybeBase = String(raw.baseLocale ?? 'en').trim();
-    const baseLocale = maybeBase.length ? maybeBase : 'en';
     const localesRaw = raw.locales;
     const locales: Record<string, DialogLocaleDictionary> = {};
+    const availableLocales = localesRaw && typeof localesRaw === 'object'
+        ? Object.keys(localesRaw as Record<string, unknown>).map(normalizeLocaleId)
+        : [];
+    const maybeBase = String(raw.baseLocale ?? 'en_US').trim();
+    const baseLocale = canonicalDialogLocale(maybeBase, availableLocales);
 
     if (localesRaw && typeof localesRaw === 'object') {
         for (const [locale, dictRaw] of Object.entries(localesRaw as Record<string, unknown>)) {
@@ -189,11 +192,35 @@ function sanitizeDialogI18n(input: unknown): DialogI18n | undefined {
                     dictionary[key] = value;
                 }
             }
-            locales[locale] = dictionary;
+            const normalizedLocale = normalizeLocaleId(locale);
+            const canonicalLocale = canonicalDialogLocale(locale, availableLocales);
+            locales[canonicalLocale] = normalizedLocale === canonicalLocale
+                ? { ...(locales[canonicalLocale] || {}), ...dictionary }
+                : { ...dictionary, ...(locales[canonicalLocale] || {}) };
         }
     }
 
     return { baseLocale, locales };
+}
+
+function normalizeLocaleId(locale: string): string {
+    return String(locale || '').trim().replace(/-/g, '_');
+}
+
+function canonicalDialogLocale(locale: string, availableLocales: string[] = []): string {
+    const normalized = normalizeLocaleId(locale);
+    if (!normalized.length) return 'en_US';
+    if (normalized === 'en') return 'en_US';
+    if (/^[a-z]{2}$/i.test(normalized)) {
+        const prefix = `${normalized}_`.toLowerCase();
+        const matchingRegional = availableLocales
+            .filter(candidate => candidate.toLowerCase().startsWith(prefix))
+            .sort((a, b) => a.localeCompare(b));
+        if (matchingRegional.length === 1) {
+            return matchingRegional[0];
+        }
+    }
+    return normalized;
 }
 
 function buildGeneratedDialogDictionary(
@@ -239,12 +266,20 @@ function mergeGeneratedDialogI18n(
     generated: DialogLocaleDictionary,
     preferredBaseLocale?: string
 ): DialogI18n {
-    const baseLocale = String(preferredBaseLocale ?? existing?.baseLocale ?? 'en').trim() || 'en';
     const locales: Record<string, DialogLocaleDictionary> = {};
+    const existingLocaleKeys = Object.keys(existing?.locales || {}).map(normalizeLocaleId);
+    const baseLocale = canonicalDialogLocale(
+        String(preferredBaseLocale ?? existing?.baseLocale ?? 'en_US'),
+        existingLocaleKeys
+    );
 
     if (existing?.locales) {
         for (const [locale, dict] of Object.entries(existing.locales)) {
-            locales[locale] = { ...dict };
+            const normalizedLocale = normalizeLocaleId(locale);
+            const canonicalLocale = canonicalDialogLocale(locale, existingLocaleKeys);
+            locales[canonicalLocale] = normalizedLocale === canonicalLocale
+                ? { ...(locales[canonicalLocale] || {}), ...dict }
+                : { ...dict, ...(locales[canonicalLocale] || {}) };
         }
     }
 
@@ -1869,7 +1904,10 @@ export const editor: Editor = {
             // Update dialog properties and UI
             const props = obj.properties as any;
             const loadedI18n = sanitizeDialogI18n((obj as any).i18n);
-            const loadedLanguage = String(props.language ?? loadedI18n?.baseLocale ?? 'en').trim() || 'en';
+            const loadedLanguage = canonicalDialogLocale(
+                String(props.language ?? loadedI18n?.baseLocale ?? 'en_US'),
+                Object.keys(loadedI18n?.locales || {})
+            );
             dialog.properties = { ...props, language: loadedLanguage };
             // Load custom JS if present
             dialog.customJS = String((obj as any).customJS || '');

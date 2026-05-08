@@ -1081,7 +1081,7 @@ function buildMainMenuTemplate(): MenuItemConstructorOptions[] {
                         // Clear dialog: select all + remove
                         editorWindow.webContents.send('newDialogClear');
                         // Reset dialog basic properties for a fresh new dialog (Name, Title, Language)
-                        editorWindow.webContents.send('reset-dialog-properties', { name: 'NewDialog', title: 'New dialog', language: 'en' });
+                        editorWindow.webContents.send('reset-dialog-properties', { name: 'NewDialog', title: 'New dialog', language: 'en_US' });
                         // Reset state for the new unsaved dialog
                         setCurrentDialogPath(null);
                         // Next renderer JSON becomes the clean baseline
