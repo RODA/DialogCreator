@@ -18,6 +18,7 @@ import { API_NAMES, createPreviewUI } from '../library/api';
 let initialPreviewDialog: PreviewDialog | null = null;
 let activePreviewLocale = '';
 const previewLastSelectedContainerItem = new WeakMap<HTMLElement, HTMLElement | null>();
+const previewShiftWheelContainerTargets = new WeakSet<HTMLElement>();
 let previewHoveredContainer: HTMLElement | null = null;
 let previewSearchContainer: HTMLElement | null = null;
 let previewSearchInput: HTMLInputElement | null = null;
@@ -246,6 +247,26 @@ const attachPreviewContainerHandlers = (host: HTMLElement, core: HTMLElement) =>
         }
     });
 
+    if (!previewShiftWheelContainerTargets.has(target)) {
+        previewShiftWheelContainerTargets.add(target);
+        target.addEventListener('wheel', (ev) => {
+            if (
+                String(host.dataset.selection || 'single').toLowerCase() !== 'multiple' ||
+                !utils.isTrue(host.dataset.pinontop) ||
+                !ev.shiftKey ||
+                !utils.isTrue(host.dataset.isEnabled)
+            ) {
+                return;
+            }
+            const verticalDelta = ev.deltaY !== 0 ? ev.deltaY : ev.deltaX;
+            if (verticalDelta === 0) {
+                return;
+            }
+            target.scrollTop += verticalDelta;
+            ev.preventDefault();
+        }, { passive: false });
+    }
+
     const items = Array.from(target.querySelectorAll<HTMLElement>('.container-item'));
     items.forEach((item) => {
         applyPreviewContainerItemStyle(host, item, item.classList.contains('active'));
@@ -263,10 +284,12 @@ const attachPreviewContainerHandlers = (host: HTMLElement, core: HTMLElement) =>
             const selectionMode = String(host.dataset.selection || 'single').toLowerCase();
             const forcedSingle = selectionMode === 'single-radio';
             const multiple = selectionMode === 'multiple';
+            let deferPinOnTop = false;
 
             if (multiple && ev instanceof MouseEvent && ev.shiftKey) {
                 const all = Array.from(target.querySelectorAll<HTMLElement>('.container-item'));
-                const last = previewLastSelectedContainerItem.get(host);
+                const previous = previewLastSelectedContainerItem.get(host);
+                const last = previous && previous.classList.contains('active') ? previous : null;
                 const lastIndex = last ? all.indexOf(last) : -1;
                 const currentIndex = all.indexOf(item);
 
@@ -282,18 +305,16 @@ const attachPreviewContainerHandlers = (host: HTMLElement, core: HTMLElement) =>
                         candidate.classList.toggle('active', shouldActivate);
                         applyPreviewContainerItemStyle(host, candidate, shouldActivate);
                     });
-                    previewLastSelectedContainerItem.set(host, item);
                 } else {
+                    deferPinOnTop = true;
                     const shouldActivate = !item.classList.contains('active');
                     item.classList.toggle('active', shouldActivate);
                     applyPreviewContainerItemStyle(host, item, shouldActivate);
-                    previewLastSelectedContainerItem.set(host, item);
                 }
             } else if (multiple) {
                 const shouldActivate = !item.classList.contains('active');
                 item.classList.toggle('active', shouldActivate);
                 applyPreviewContainerItemStyle(host, item, shouldActivate);
-                previewLastSelectedContainerItem.set(host, item);
             } else {
                 const wasActive = item.classList.contains('active');
                 target.querySelectorAll<HTMLElement>('.container-item.active').forEach((other) => {
@@ -306,7 +327,14 @@ const attachPreviewContainerHandlers = (host: HTMLElement, core: HTMLElement) =>
                     item.classList.add('active');
                     applyPreviewContainerItemStyle(host, item, true);
                 }
-                previewLastSelectedContainerItem.set(host, item);
+            }
+
+            previewLastSelectedContainerItem.set(host, item.classList.contains('active') ? item : null);
+
+            if (deferPinOnTop) {
+                host.dataset.deferPinOnTop = 'true';
+            } else if ('deferPinOnTop' in host.dataset) {
+                delete host.dataset.deferPinOnTop;
             }
 
             syncPreviewContainerSelection(host, target, core);
