@@ -30,6 +30,7 @@ const highlight_targets = new Map<string, Set<HTMLElement>>();
 const enhancedButtons = new WeakSet<HTMLButtonElement>();
 const KNOWN_CONTAINER_ITEM_TYPES = new Set<string>([
     'numeric',
+    'factor',
     'calibrated',
     'binary',
     'character',
@@ -201,6 +202,10 @@ const mergeSelectionOrder = (host: HTMLElement, activeItems: string[]): string[]
 };
 
 const reorderContainerItemsForPinOnTop = (host: HTMLElement): void => {
+    if (host.dataset.deferPinOnTop === 'true') {
+        return;
+    }
+
     const content = host.querySelector('.container-content') as HTMLElement | null;
     if (!content) {
         return;
@@ -250,6 +255,10 @@ const reorderContainerItemsForPinOnTop = (host: HTMLElement): void => {
     decorated.forEach(({ item }) => {
         content.appendChild(item);
     });
+
+    if (pinOnTop) {
+        content.scrollTop = 0;
+    }
 };
 
 const getDisabledColor = (source: Record<string, unknown> | DOMStringMap): string => {
@@ -395,8 +404,12 @@ const applyContainerItemFilter = (host: HTMLElement | null) => {
     items.forEach((item) => {
         const rawItemType = item.dataset.itemType || item.dataset.valueType || '';
         const itemType = normalizeContainerItemType(rawItemType);
-        const hasExplicitType = Boolean(rawItemType);
-        const blocked = !allowAll && hasExplicitType && itemType !== allowed;
+        const itemFlags = String(item.dataset.itemFlags || '')
+            .split(',')
+            .map(flag => normalizeContainerItemType(flag))
+            .filter(Boolean);
+        const hasExplicitType = Boolean(rawItemType) || itemFlags.length > 0;
+        const blocked = !allowAll && hasExplicitType && itemType !== allowed && !itemFlags.includes(allowed);
         const label = item.querySelector('.container-text') as HTMLElement | null;
         const text = String(label?.textContent || item.dataset.value || '').trim().toLowerCase();
         const matchesQuery = !query || text.includes(query);
@@ -3219,6 +3232,12 @@ export const renderutils: RenderUtils = {
         const rotate = new Set([0, 90, 180, 270]).has(Number(dataset.rotate)) ? Number(dataset.rotate) : 0;
         const align = dataset.align || 'left';
 
+        // Give labels a small internal horizontal padding (symmetrical) so that:
+        // - left-aligned labels don't look glued to the left edge
+        // - right-aligned labels preserve the same inset from the right edge
+        // - we avoid 1–2px glyph clipping at the right edge on some platforms
+        const horizontalInset = 2; // px
+
 
     // Apply text and font styles
     syncElementPresentation(host, text, iconName, 'smart-label-text', 'smart-label-icon', 'elementIcon');
@@ -3231,6 +3250,7 @@ export const renderutils: RenderUtils = {
     host.style.color = dataset.fontColor || '#000000';
     // textOverflow is finalized after measuring; set a safe default now
     host.style.textOverflow = 'ellipsis';
+    host.style.boxSizing = 'border-box';
 
         if (textNode) {
             textNode.style.fontSize = fontSize + 'px';
@@ -3247,6 +3267,16 @@ export const renderutils: RenderUtils = {
 
         // Apply text alignment
         host.style.textAlign = align;
+
+        // Apply symmetric internal padding for text labels (not icon-only labels).
+        // Use explicit left/right to avoid relying on logical properties in older Electron builds.
+        if (!iconMode) {
+            host.style.paddingLeft = `${horizontalInset}px`;
+            host.style.paddingRight = `${horizontalInset}px`;
+        } else {
+            host.style.paddingLeft = '0px';
+            host.style.paddingRight = '0px';
+        }
 
         // Configure clamp/ellipsis behavior and vertical centering
         if (iconMode) {
@@ -3324,13 +3354,12 @@ export const renderutils: RenderUtils = {
         const measuredBox = Math.ceil(host.getBoundingClientRect().width || 0);
         let natural = Math.max(measuredScroll, measuredBox);
         if (!Number.isFinite(natural) || natural <= 0) {
-            natural = iconMode ? Math.ceil(iconSize * 1.1) : utils.textWidth(text, fontSize, coms.fontFamily);
+            natural = iconMode
+                ? Math.ceil(iconSize * 1.1)
+                : (utils.textWidth(text, fontSize, coms.fontFamily) + (horizontalInset * 2));
         }
 
-    // Add a small cross-platform safety buffer to avoid right-edge clipping on Windows
-    // where glyph rasterization can exceed measured widths by ~1px.
-    const fudge = 2; // px
-        const finalW = Math.max(0, maxW > 0 ? Math.min(natural + fudge, maxW) : (natural + fudge));
+        const finalW = Math.max(0, maxW > 0 ? Math.min(natural, maxW) : natural);
         const naturalH = Math.max(
             0,
             Math.ceil(host.scrollHeight || 0),
@@ -3844,7 +3873,7 @@ export const renderutils: RenderUtils = {
             }
         });
         if (!obj.language || !String(obj.language).trim()) {
-            obj.language = 'en';
+            obj.language = 'en_US';
         }
         return obj;
     },

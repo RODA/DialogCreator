@@ -1,6 +1,6 @@
 // Shared API surface bits used by both Preview runtime and Editor (linter/helpers)
 
-import type { PreviewUI, PreviewUIEnv } from '../interfaces/preview';
+import type { ContainerItemDescriptor, PreviewUI, PreviewUIEnv } from '../interfaces/preview';
 import { renderutils, errorhelpers } from './renderutils';
 import { utils } from './utils';
 import { datasets } from './datasets';
@@ -36,7 +36,7 @@ export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
     'addError', 'clearError',
 
     // datasets/workspace
-    'listObjects', 'listColumns', 'listVariables'
+    'listObjects', 'listColumns'
 ]);
 
 // Methods that take (elementName, ...) as first argument; used by the linter.
@@ -46,7 +46,6 @@ const NEUTRAL_NAMES = new Set<keyof PreviewUI>([
     'showMessage',
     'listObjects',
     'listColumns',
-    'listVariables',
     'callExternal',
     'run',
     'resetDialog',
@@ -56,6 +55,14 @@ const NEUTRAL_NAMES = new Set<keyof PreviewUI>([
 export const ELEMENT_FIRST_ARG_CALLS: ReadonlyArray<keyof PreviewUI> = Object.freeze(
     API_NAMES.filter(n => !NEUTRAL_NAMES.has(n))
 );
+
+const DATASET_ITEM_FLAGS = ['numeric', 'factor', 'calibrated', 'binary', 'character', 'categorical', 'date'] as const;
+type DatasetItemFlag = typeof DATASET_ITEM_FLAGS[number];
+type ContainerItem = {
+    name: string;
+    active?: boolean;
+    flags: Partial<Record<DatasetItemFlag, boolean>>;
+};
 
 // Factory: build the Preview UI API bound to a specific canvas and adapters.
 export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
@@ -93,6 +100,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
     };
 
     const lastSelectedItem = new WeakMap<HTMLElement, HTMLElement | null>();
+    const shiftWheelContainerTargets = new WeakSet<HTMLElement>();
     const splitList = (raw: unknown): string[] => {
         return String(raw ?? '')
             .split(',')
@@ -133,10 +141,12 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             const selectionMode = String(host.dataset.selection || 'single').toLowerCase();
             const forcedSingle = selectionMode === 'single-radio';
             const multiple = selectionMode === 'multiple';
+            let deferPinOnTop = false;
 
             if (multiple && ev instanceof MouseEvent && ev.shiftKey) {
                 const all = Array.from(target.querySelectorAll<HTMLElement>('.container-item'));
-                const last = lastSelectedItem.get(host);
+                const previous = lastSelectedItem.get(host);
+                const last = previous && previous.classList.contains('active') ? previous : null;
                 const lastIndex = last ? all.indexOf(last) : -1;
                 const currentIndex = all.indexOf(item);
 
@@ -152,18 +162,16 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                         it.classList.toggle('active', shouldActivate);
                         applyItemStyle(host, it, shouldActivate);
                     });
-                    lastSelectedItem.set(host, item);
                 } else {
+                    deferPinOnTop = true;
                     const shouldActivate = !item.classList.contains('active');
                     item.classList.toggle('active', shouldActivate);
                     applyItemStyle(host, item, shouldActivate);
-                    lastSelectedItem.set(host, item);
                 }
             } else if (multiple) {
                 const shouldSelect = !item.classList.contains('active');
                 item.classList.toggle('active', shouldSelect);
                 applyItemStyle(host, item, shouldSelect);
-                lastSelectedItem.set(host, item);
             } else {
                 const wasActive = item.classList.contains('active');
                 if (wasActive) {
@@ -183,7 +191,14 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                     item.classList.add('active');
                     applyItemStyle(host, item, true);
                 }
-                lastSelectedItem.set(host, item);
+            }
+
+            lastSelectedItem.set(host, item.classList.contains('active') ? item : null);
+
+            if (deferPinOnTop) {
+                host.dataset.deferPinOnTop = 'true';
+            } else if ('deferPinOnTop' in host.dataset) {
+                delete host.dataset.deferPinOnTop;
             }
 
             const activeValues = Array.from(target.querySelectorAll<HTMLElement>('.container-item.active'))
@@ -203,7 +218,34 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         });
     };
 
-    const populateContainer = (host: HTMLElement, items: Array<{ text: string; active?: boolean; type?: string }>) => {
+    const containerItemFromValue = (value: unknown): ContainerItem | null => {
+        if (typeof value === 'object' && value !== null) {
+            const source = value as Record<string, unknown>;
+            const name = String(source.name ?? '').trim();
+            if (!name) {
+                return null;
+            }
+            const flags: Partial<Record<DatasetItemFlag, boolean>> = {};
+            DATASET_ITEM_FLAGS.forEach((flag) => {
+                if (typeof source[flag] === 'boolean') {
+                    flags[flag] = source[flag] === true;
+                }
+            });
+            return {
+                name,
+                active: source.active === true,
+                flags
+            };
+        }
+
+        const name = String(value ?? '').trim();
+        if (!name) {
+            return null;
+        }
+        return { name, flags: {} };
+    };
+
+    const populateContainer = (host: HTMLElement, items: ContainerItem[]) => {
         let target: HTMLElement | null = null;
 
         // identify container target
@@ -231,19 +273,39 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             return;
         }
 
+        if (!shiftWheelContainerTargets.has(target)) {
+            shiftWheelContainerTargets.add(target);
+            target.addEventListener('wheel', (ev) => {
+                if (
+                    String(host.dataset.selection || 'single').toLowerCase() !== 'multiple' ||
+                    !utils.isTrue(host.dataset.pinontop) ||
+                    !ev.shiftKey ||
+                    utils.isFalse(host.dataset.isEnabled ?? 'true')
+                ) {
+                    return;
+                }
+                const verticalDelta = ev.deltaY !== 0 ? ev.deltaY : ev.deltaX;
+                if (verticalDelta === 0) {
+                    return;
+                }
+                target!.scrollTop += verticalDelta;
+                ev.preventDefault();
+            }, { passive: false });
+        }
+
         target.replaceChildren();
 
         items.forEach((item) => {
-            const value = String((item as any)?.text ?? (item as any)?.label ?? '');
+            const value = item.name;
             const div = document.createElement('div');
             div.className = 'container-item';
             div.dataset.value = value;
             div.dataset.baseOrder = String(target!.children.length);
-            const itemType = renderutils.normalizeContainerItemType(item?.type ?? (item as any)?.itemType ?? (item as any)?.kind ?? '');
-            if (itemType && itemType !== 'any') {
-                div.dataset.itemType = itemType;
+            const activeFlags = DATASET_ITEM_FLAGS.filter((flag) => item.flags[flag] === true);
+            if (activeFlags.length > 0) {
+                div.dataset.itemFlags = activeFlags.join(',');
             } else {
-                delete div.dataset.itemType;
+                delete div.dataset.itemFlags;
             }
 
             const active = item.active || initialActive.has(value);
@@ -284,33 +346,16 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         }
     };
 
-    const parseContainerValue = (value: unknown): Array<{ text: string; active?: boolean; type?: string }> => {
+    const parseContainerValue = (value: unknown): ContainerItem[] => {
         if (Array.isArray(value)) {
-            return value.map(val => {
-                if (typeof val === 'object' && val !== null) {
-                    const text = 'text' in val
-                        ? String((val as any).text ?? '')
-                        : ('label' in val ? String((val as any).label ?? '') : '');
-                    if (text) {
-                        const active = ('active' in val)
-                            ? Boolean((val as any).active)
-                            : Boolean((val as any).selected);
-                        return {
-                            text,
-                            active,
-                            type: 'type' in val ? String((val as any).type ?? '') : ('itemType' in val ? String((val as any).itemType ?? '') : undefined)
-                        };
-                    }
-                }
-                return { text: String(val ?? '') };
-            });
+            return value.map(containerItemFromValue).filter((item): item is ContainerItem => item !== null);
         }
 
         const tokens = String(value ?? '')
             .split(/\r?\n/)
             .map(t => t.trim())
             .filter(Boolean);
-        return tokens.map(text => ({ text }));
+        return tokens.map(name => ({ name, flags: {} }));
     };
 
     type SorterState = 'off' | 'asc' | 'desc';
@@ -483,7 +528,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         }
     };
 
-    const listColumnsFromDataset = (input: string | string[]): Array<string | { text: string; type: string }> => {
+    const listColumnsFromDataset = (input: string | string[]): ContainerItemDescriptor[] => {
         const items = Array.isArray(input) ? input : [input];
         const [datasetName] = items.map(v => String(v ?? '').trim()).filter(Boolean);
         if (!datasetName) {
@@ -493,10 +538,23 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         if (!Array.isArray(source)) {
             return [];
         }
-        return source.map(entry => ({
-            text: String(entry?.text ?? ''),
-            type: String(entry?.type ?? '')
-        }));
+        return source.map(entry => {
+            const descriptor: ContainerItemDescriptor = {
+                name: String(entry?.name ?? '')
+            };
+            DATASET_ITEM_FLAGS.forEach((flag) => {
+                if (typeof entry?.[flag] === 'boolean') {
+                    descriptor[flag] = entry[flag] === true;
+                }
+            });
+            try {
+                Object.defineProperty(descriptor, 'toString', {
+                    value() { return String((this as ContainerItemDescriptor).name || ''); },
+                    enumerable: false
+                });
+            } catch {}
+            return descriptor;
+        }).filter(entry => entry.name.trim().length > 0);
     };
 
     const listObjectsByType = (type: string): string[] => {
@@ -1216,9 +1274,6 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         // Simulated workspace columns listing
         listColumns: (input) => listColumnsFromDataset(input),
 
-        // Backward-compatible alias for listColumns()
-        listVariables: (input) => listColumnsFromDataset(input),
-
         on: (name, event, handler: (ev: Event, el: HTMLElement) => void) => {
             const el = findWrapper(name);
             if (!el) {
@@ -1638,27 +1693,13 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 return;
             }
 
-            const descriptor = (() => {
-                if (typeof value === 'object' && value !== null) {
-                    const src = value as {
-                        text?: unknown;
-                        label?: unknown;
-                        type?: unknown;
-                        itemType?: unknown;
-                    };
-                    const text = src.text ?? src.label ?? '';
-                    const type = src.type ?? src.itemType ?? '';
-                    return { text: String(text ?? ''), type: String(type ?? '') };
-                }
-                return { text: String(value ?? ''), type: '' };
-            })();
+            const descriptor = containerItemFromValue(value);
 
-            const textValue = descriptor.text.trim();
-            const normalizedType = renderutils.normalizeContainerItemType(descriptor.type);
-
-            if (!textValue) {
+            if (!descriptor) {
                 return;
             }
+            const textValue = descriptor.name;
+            const activeFlags = DATASET_ITEM_FLAGS.filter((flag) => descriptor.flags[flag] === true);
 
             const items = Array.from(target.querySelectorAll('.container-item')) as HTMLElement[];
 
@@ -1671,10 +1712,10 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             item.className = 'container-item';
             item.dataset.value = textValue;
             item.dataset.baseOrder = String(items.length);
-            if (normalizedType && normalizedType !== 'any') {
-                item.dataset.itemType = normalizedType;
+            if (activeFlags.length > 0) {
+                item.dataset.itemFlags = activeFlags.join(',');
             } else {
-                delete item.dataset.itemType;
+                delete item.dataset.itemFlags;
             }
             const label = document.createElement('span');
             label.className = 'container-text';

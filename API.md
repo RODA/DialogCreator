@@ -26,7 +26,7 @@ Use this reference when writing custom JavaScript for Dialog Creator. It contain
 
 - Set the value/text.
 - Input/Label: set string; Counter: set number within its min/max; Select: set selected option by value; Checkbox/Radio: set boolean state.
-- For Container, pass an array of strings or objects shaped like `{ label, type, selected }`.
+- For Container, pass an array of strings or objects shaped like `{ name, numeric, active }`, where type flags are boolean fields.
 - For Container with **Pin on top** enabled, selected rows are re-rendered above unselected rows in Preview after the value update. If **Item Order** is also enabled, pinned rows follow the stored selection order.
 - For Choice, pass either an array of strings like `['var1:asc', 'var2:desc']`, plain strings like `['var1', 'var2']`, or objects shaped like `{ text, state }`.
 - For Choice with Ordering set to `no`, any active state is normalized to a simple selected state. For Ordering set to `increasing` or `decreasing`, both `asc` and `desc` are preserved.
@@ -218,9 +218,9 @@ Backend helpers (in the developer's responsibility)
   - Use `listObjects('datasets')` to retrieve dataset names.
   - Other strings can be used for backend-specific object groups such as arrays, lists, or custom classes.
 
-`listColumns(dataset)` (alias: `listVariables(dataset)`)
+`listColumns(dataset)`
 
-  - Returns an array of column names available in the specified dataset, as well as their types (often as `{ label, type, selected }` components).
+  - Returns an array of column metadata objects available in the specified dataset. Each object has a `name` field and boolean type flags such as `numeric`, `factor`, `calibrated`, `binary`, `character`, `categorical`, and `date`.
 
 
 ## Element-specific details
@@ -425,7 +425,7 @@ setValue(c_datasets, listObjects('datasets'));
 ```
 (note also that the container name `c_datasets` is used here, as manually changed in the design window).
 
-The custom code then continues with an event handler for the datasets container, which triggers whenever the user selects a dataset. Inside this handler, the selected dataset is retrieved via `getSelected()`, and stored in the global variable `selected_dataset`. Then, the variables container is populated with the list of variables from the selected dataset, using another built-in API function `listColumns()` (with `listVariables()` as a compatible alias), which returns an array of variable names from the specified dataset, as well as their types. Finally, the syntax panel is updated by calling a custom function `buildCommand()`, which constructs the R command string based on the current selections:
+The custom code then continues with an event handler for the datasets container, which triggers whenever the user selects a dataset. Inside this handler, the selected dataset is retrieved via `getSelected()`, and stored in the global variable `selected_dataset`. Then, the variables container is populated with the list of variables from the selected dataset, using another built-in API function `listColumns()`, which returns an array of variable metadata objects. Finally, the syntax panel is updated by calling a custom function `buildCommand()`, which constructs the R command string based on the current selections:
 
 ```javascript
 onChange(c_datasets, () => {

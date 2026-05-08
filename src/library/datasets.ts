@@ -2,39 +2,39 @@ import { Datasets } from "../interfaces/datasets";
 
 // export const datasets: Datasets = {
 //     LR: [
-//         { text: "DEV", type: "numeric" },
-//         { text: "URB", type: "numeric" },
-//         { text: "LIT", type: "numeric" },
-//         { text: "IND", type: "numeric" },
-//         { text: "STB", type: "numeric" },
-//         { text: "SURV", type: "numeric" }
+//         { name: "DEV", numeric: true },
+//         { name: "URB", numeric: true },
+//         { name: "LIT", numeric: true },
+//         { name: "IND", numeric: true },
+//         { name: "STB", numeric: true },
+//         { name: "SURV", numeric: true }
 //     ],
 //     LR2: [
-//         { text: "DEV2", type: "numeric" },
-//         { text: "URB2", type: "numeric" },
-//         { text: "LIT2", type: "numeric" },
-//         { text: "IND2", type: "numeric" },
-//         { text: "STB2", type: "numeric" },
-//         { text: "SURV2", type: "numeric" }
+//         { name: "DEV2", numeric: true },
+//         { name: "URB2", numeric: true },
+//         { name: "LIT2", numeric: true },
+//         { name: "IND2", numeric: true },
+//         { name: "STB2", numeric: true },
+//         { name: "SURV2", numeric: true }
 //     ]
 // };
 
 export const datasets: Datasets = {
     PlantGrowth: [
-        { text: "weight", type: "numeric" },
-        { text: "group", type: "categorical" }
+        { name: "weight", numeric: true },
+        { name: "group", factor: true, categorical: true }
     ],
     ToothGrowth: [
-        { text: "len", type: "numeric" },
-        { text: "supp", type: "categorical" },
-        { text: "dose", type: "numeric" }
+        { name: "len", numeric: true },
+        { name: "supp", factor: true, categorical: true },
+        { name: "dose", numeric: true }
     ],
     Survey: [
-        { text: "age", type: "numeric" },
-        { text: "gender", type: "categorical" },
-        { text: "education", type: "categorical" },
-        { text: "income", type: "numeric" },
-        { text: "satisfaction", type: "numeric" },
-        { text: "residence", type: "categorical" }
+        { name: "age", numeric: true },
+        { name: "gender", factor: true, categorical: true },
+        { name: "education", factor: true, categorical: true },
+        { name: "income", numeric: true },
+        { name: "satisfaction", numeric: true },
+        { name: "residence", factor: true, categorical: true }
     ]
 };

@@ -2,8 +2,14 @@ import type { Dialog, DialogI18n } from './dialog';
 import { StringNumber } from './elements';
 
 export interface ContainerItemDescriptor {
-    text: string;
-    type?: string;
+    name: string;
+    numeric?: boolean;
+    factor?: boolean;
+    calibrated?: boolean;
+    binary?: boolean;
+    character?: boolean;
+    categorical?: boolean;
+    date?: boolean;
     active?: boolean;
 }
 
@@ -106,8 +112,6 @@ export interface PreviewUI {
     listObjects(type: string): string[];
     /** Return list of columns specific to a dataset */
     listColumns(dataset: string | string[]): Array<string | ContainerItemDescriptor>;
-    /** Legacy alias for listColumns() */
-    listVariables(dataset: string | string[]): Array<string | ContainerItemDescriptor>;
 
     /** Register an event handler on the wrapper */
     on(element: string, event: string, handler: (ev: Event, el: HTMLElement) => void): void;
