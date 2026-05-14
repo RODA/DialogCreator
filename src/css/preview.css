@@ -122,11 +122,6 @@ html, body {
     height: 1em;
 }
 
-.preview-canvas .element-wrapper[data-type="Label"][data-preview-wrapped="true"] .smart-label-text {
-    padding-top: 6px;
-    transform: none;
-}
-
 .preview-input, .preview-select {
     padding: 2px 4px;
 }

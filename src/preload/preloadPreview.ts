@@ -501,6 +501,25 @@ const localizePreviewDialog = (input: PreviewDialog, locale: string): PreviewDia
     return copy;
 };
 
+const createDialogTranslator = (dialog: PreviewDialog, locale: string) => {
+    const i18n = dialog.i18n;
+    const baseLocale = String(i18n?.baseLocale || dialog.properties.language || '').trim();
+    const baseDict = (baseLocale && i18n?.locales?.[baseLocale]) || {};
+    const localeDict = (locale && i18n?.locales?.[locale]) || baseDict;
+
+    return (key: string, fallback?: string): string => {
+        const translationKey = String(key ?? '').trim();
+        if (!translationKey) {
+            return String(fallback ?? '');
+        }
+        const translated = localeDict[translationKey] ?? baseDict[translationKey];
+        if (translated !== undefined) {
+            return translated;
+        }
+        return fallback !== undefined ? String(fallback) : translationKey;
+    };
+};
+
 const renderLanguageSwitcher = (root: HTMLElement, dialog: PreviewDialog) => {
     const locales = uniqueLocales(dialog);
     if (locales.length <= 1) {
@@ -551,7 +570,7 @@ function resetPreview() {
     renderPreview(localizePreviewDialog(initialPreviewDialog, activePreviewLocale));
 }
 
-function buildUI(canvas: HTMLElement): PreviewUI {
+function buildUI(canvas: HTMLElement, dialog: PreviewDialog): PreviewUI {
     const env: PreviewUIEnv = {
         findWrapper: (name: string) => renderutils.findWrapper(name, canvas),
         findRadioGroupMembers: (group: string) => renderutils.findRadioGroupMembers(group, canvas),
@@ -566,6 +585,7 @@ function buildUI(canvas: HTMLElement): PreviewUI {
             detail
         ),
         callExternal: async (_name: string, _parameters?: unknown) => undefined,
+        translate: createDialogTranslator(dialog, activePreviewLocale),
         openSyntaxPanel: (command: string) => coms.sendTo('main', 'openSyntaxPanel', command),
         resetDialog: resetPreview,
         closeDialog: () => coms.sendTo('main', 'close-previewWindow')
@@ -766,28 +786,30 @@ function renderPreview(dialog: PreviewDialog) {
                 const baseValue = (data as any).__baseValue;
                 const align = String((data as any).align || core.dataset.align || '').toLowerCase();
                 let anchoredFromBaseValue = false;
-                if (
-                    (align === 'right' || align === 'center') &&
-                    baseValue !== undefined &&
-                    String(baseValue) !== String(core.dataset.value ?? '')
-                ) {
-                    const translatedValue = core.dataset.value ?? '';
+                let baseCenterY: number | null = null;
+                const translatedValue = core.dataset.value ?? '';
+                if (baseValue !== undefined && String(baseValue) !== String(translatedValue)) {
                     core.dataset.value = String(baseValue ?? '');
                     wrapper.dataset.value = String(baseValue ?? '');
                     renderutils.updateLabel(wrapper);
+                    const baseTop = Number(wrapper.dataset.top ?? (parseInt(wrapper.style.top || '0', 10) || 0));
+                    const baseHeight = Math.ceil(wrapper.getBoundingClientRect().height || 0);
+                    if (baseHeight > 0) {
+                        baseCenterY = baseTop + (baseHeight / 2);
+                    }
                     core.dataset.value = translatedValue;
                     wrapper.dataset.value = translatedValue;
-                    anchoredFromBaseValue = true;
+                    anchoredFromBaseValue = align === 'right' || align === 'center' || baseCenterY !== null;
                 }
                 renderutils.updateLabel(wrapper);
-                const textNode = core.querySelector('.smart-label-text') as HTMLElement | null;
-                if (textNode) {
-                    const fontSize = Number(wrapper.dataset.fontSize || (data as any).fontSize || dialog.properties.fontSize || coms.fontSize);
-                    const singleLineHeight = Number.isFinite(fontSize) && fontSize > 0 ? fontSize * 1.2 : 0;
-                    const wrapped = singleLineHeight > 0 && textNode.scrollHeight > Math.ceil(singleLineHeight + 1);
-                    wrapper.dataset.previewWrapped = String(wrapped);
-                }
-                if (!anchoredFromBaseValue) {
+                if (baseCenterY !== null) {
+                    const translatedHeight = Math.ceil(wrapper.getBoundingClientRect().height || 0);
+                    if (translatedHeight > 0) {
+                        const centeredTop = Math.round(baseCenterY - (translatedHeight / 2));
+                        wrapper.style.top = `${centeredTop}px`;
+                        wrapper.dataset.top = String(centeredTop);
+                    }
+                } else if (!anchoredFromBaseValue) {
                     wrapper.style.left = `${left}px`;
                     wrapper.style.top = `${top}px`;
                     wrapper.dataset.left = String(left);
@@ -1178,13 +1200,52 @@ function renderPreview(dialog: PreviewDialog) {
         root.appendChild(canvas);
     }
 
+    canvas.querySelectorAll<HTMLElement>('.element-wrapper[data-type="Label"]').forEach((wrapper) => {
+        const baseValue = wrapper.dataset.__baseValue;
+        const translatedValue = wrapper.dataset.value ?? '';
+        if (baseValue === undefined || String(baseValue) === String(translatedValue)) {
+            return;
+        }
+
+        const core = wrapper.firstElementChild as HTMLElement | null;
+        if (!core) {
+            return;
+        }
+
+        const originalLeft = Number(wrapper.dataset.left ?? (parseInt(wrapper.style.left || '0', 10) || 0));
+        const originalTop = Number(wrapper.dataset.top ?? (parseInt(wrapper.style.top || '0', 10) || 0));
+
+        core.dataset.value = String(baseValue ?? '');
+        wrapper.dataset.value = String(baseValue ?? '');
+        renderutils.updateLabel(wrapper);
+        const baseTop = Number(wrapper.dataset.top ?? (parseInt(wrapper.style.top || '0', 10) || 0));
+        const baseHeight = Math.ceil(wrapper.getBoundingClientRect().height || 0);
+
+        core.dataset.value = translatedValue;
+        wrapper.dataset.value = translatedValue;
+        renderutils.updateLabel(wrapper);
+
+        const translatedHeight = Math.ceil(wrapper.getBoundingClientRect().height || 0);
+        if (baseHeight > 0 && translatedHeight > 0) {
+            const centeredTop = Math.round(baseTop + (baseHeight / 2) - (translatedHeight / 2));
+            wrapper.style.top = `${centeredTop}px`;
+            wrapper.dataset.top = String(centeredTop);
+            return;
+        }
+
+        wrapper.style.left = `${originalLeft}px`;
+        wrapper.style.top = `${originalTop}px`;
+        wrapper.dataset.left = String(originalLeft);
+        wrapper.dataset.top = String(originalTop);
+    });
+
     // Execute custom code after elements (and groups) are in the DOM
     try {
         const rawTop = (dialog as any)?.customJS;
         const code = String(typeof rawTop === 'string' && rawTop.length ? rawTop : '');
         // coms.sendTo('editorWindow', 'consolog', `Preview: customJS detected (${code.trim().length} chars, post-render)`);
         if (code && code.trim().length) {
-            const ui = buildUI(canvas);
+            const ui = buildUI(canvas, dialog);
             renderutils.exposeNameGlobals(canvas);
             renderutils.exposeEventNameGlobals();
 

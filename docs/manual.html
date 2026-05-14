@@ -95,6 +95,15 @@
 <li><code class="hljs">elements.&lt;id&gt;.value</code></li>
 <li><code class="hljs">elements.&lt;id&gt;.items.&lt;index&gt;</code></li>
 </ul>
+<p>Custom JavaScript can also use dialog-local translation keys for messages that
+are not visible elements, such as validation errors or warning dialogs. Use the
+<code class="hljs"><span class="hljs-title function_">translate</span>(<span class="api-param">key</span>, <span class="api-param">fallback</span>)</code> API helper for these strings:</p>
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">addError</span>(<span class="api-param">c_datasets</span>, <span class="hljs-title function_">translate</span>(<span class="hljs-string">'messages.noDatasetSelected'</span>, <span class="hljs-string">'No dataset selected'</span>));
+<span class="hljs-title function_">showMessage</span>(<span class="hljs-title function_">translate</span>(<span class="hljs-string">'messages.noDatasetSelected'</span>, <span class="hljs-string">'No dataset selected'</span>), <span class="hljs-string">''</span>, <span class="hljs-string">'warning'</span>);
+</code></pre>
+
+<p>The helper looks up the active dialog language first, then the base locale, and
+finally returns the fallback text. If no fallback is provided, it returns the key.</p>
 <p>This data is meant for the target app that imports the dialog. Dialog Creator does not auto-translate the editor UI.</p>
 <p>Example:</p>
 <pre><code class="hljs json"><span class="hljs-punctuation">{</span>

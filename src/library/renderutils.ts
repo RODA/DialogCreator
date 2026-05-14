@@ -3350,20 +3350,60 @@ export const renderutils: RenderUtils = {
         host.style.width = 'auto';
         host.style.removeProperty('max-width');
 
-        const measuredScroll = Math.ceil(host.scrollWidth || 0);
-        const measuredBox = Math.ceil(host.getBoundingClientRect().width || 0);
-        let natural = Math.max(measuredScroll, measuredBox);
+        const measureNoWrapLabelWidth = () => {
+            const probe = document.createElement('span');
+            const computed = window.getComputedStyle(host);
+            probe.textContent = text;
+            probe.style.position = 'absolute';
+            probe.style.visibility = 'hidden';
+            probe.style.pointerEvents = 'none';
+            probe.style.whiteSpace = 'nowrap';
+            probe.style.fontFamily = computed.fontFamily || coms.fontFamily;
+            probe.style.fontSize = `${fontSize}px`;
+            probe.style.fontWeight = computed.fontWeight;
+            probe.style.fontStyle = computed.fontStyle;
+            probe.style.letterSpacing = computed.letterSpacing;
+            probe.style.lineHeight = '1.2';
+            probe.style.padding = '0';
+            probe.style.border = '0';
+            probe.style.boxSizing = 'content-box';
+            document.body.appendChild(probe);
+            const width = Math.ceil(Math.max(
+                probe.scrollWidth || 0,
+                probe.getBoundingClientRect().width || 0
+            ));
+            probe.remove();
+            return width + (horizontalInset * 2) + 2;
+        };
+
+        // Measure the unclamped one-line DOM width. Canvas text metrics are too tight for
+        // Electron's rendered Inter stack in some labels; layout metrics on `host` are also
+        // unsafe here because multi-line clamping can already have wrapped the element.
+        let natural = iconMode
+            ? Math.ceil(iconSize * 1.1)
+            : measureNoWrapLabelWidth();
         if (!Number.isFinite(natural) || natural <= 0) {
-            natural = iconMode
-                ? Math.ceil(iconSize * 1.1)
-                : (utils.textWidth(text, fontSize, coms.fontFamily) + (horizontalInset * 2));
+            const measuredScroll = Math.ceil(host.scrollWidth || 0);
+            const measuredBox = Math.ceil(host.getBoundingClientRect().width || 0);
+            natural = Math.max(measuredScroll, measuredBox, singleLineHeight);
         }
 
         const finalW = Math.max(0, maxW > 0 ? Math.min(natural, maxW) : natural);
+        host.style.maxWidth = maxW > 0 ? `${maxW}px` : '';
+        host.style.width = `${finalW}px`;
+
+        const wrappedTextLabel = !iconMode && lines > 1 && natural > finalW;
+        host.style.paddingTop = '0px';
+        host.style.paddingBottom = '0px';
+
+        const wrappedTextHeight = wrappedTextLabel
+            ? Math.ceil(fontSize * 1.2 * Math.max(1, lines))
+            : 0;
         const naturalH = Math.max(
             0,
             Math.ceil(host.scrollHeight || 0),
             Math.ceil(host.getBoundingClientRect().height || 0),
+            wrappedTextHeight,
             iconMode ? Math.ceil(iconSize * 1.1) : singleLineHeight
         );
         const finalBoxW = (rotate === 90 || rotate === 270) ? naturalH : finalW;
@@ -3394,11 +3434,6 @@ export const renderutils: RenderUtils = {
         element.style.top = `${anchoredTop}px`;
         element.dataset.left = String(anchoredLeft);
         element.dataset.top = String(anchoredTop);
-
-        // Restore any width settings that were temporarily cleared. Preview hosts (no wrapper)
-        // should mirror the final width instead of stretching to 100%.
-        host.style.maxWidth = maxW > 0 ? `${maxW}px` : '';
-        host.style.width = `${finalW}px`;
 
         // Toggle ellipsis only when needed (single-line labels)
         if (lines <= 1) {

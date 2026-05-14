@@ -429,8 +429,8 @@ function createSecondWindow(args: { [key: string]: any }) {
         }
     });
 
-    if (development && args.html !== 'preview.html') {
-    // if (development) {
+    // In development, allow inspecting Preview too (needed for diagnosing renderer/layout issues).
+    if (development) {
         // Open DevTools detached and without activating them so focus stays on the new window
         try {
             secondWindow.webContents.openDevTools({ mode: 'detach', activate: false } as any);

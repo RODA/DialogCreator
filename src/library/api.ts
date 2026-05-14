@@ -13,7 +13,7 @@ export const EVENT_NAMES = new Set<string>(EVENT_LIST);
 // Curated helper names exposed as shorthand in user customJS (prelude)
 export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
     // core
-    'showMessage', 'getValue', 'setValue', 'run', 'callExternal', 'updateSyntax', 'resetDialog', 'closeDialog',
+    'showMessage', 'getValue', 'setValue', 'run', 'callExternal', 'translate', 'updateSyntax', 'resetDialog', 'closeDialog',
 
     // checkbox/radio
     'check', 'isChecked', 'uncheck', 'isUnchecked',
@@ -41,12 +41,13 @@ export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
 
 // Methods that take (elementName, ...) as first argument; used by the linter.
 // Derive from API_NAMES to keep a single source of truth for the public surface,
-// then exclude the non-element-first helpers explicitly (currently just 'showMessage').
+// then exclude the non-element-first helpers explicitly.
 const NEUTRAL_NAMES = new Set<keyof PreviewUI>([
     'showMessage',
     'listObjects',
     'listColumns',
     'callExternal',
+    'translate',
     'run',
     'resetDialog',
     'closeDialog'
@@ -81,10 +82,32 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
 
     const disposers: Array<() => void> = [];
     const warnOnce = new Set<string>();
+    const activeElementEvents = new WeakMap<HTMLElement, Set<string>>();
     const warn = (k: string, msg: string) => {
         if (!warnOnce.has(k)) {
             logToEditor(`Warning: ${msg}`);
             warnOnce.add(k);
+        }
+    };
+
+    const eventKey = (event: string) => renderutils.normalizeEventName(event) || String(event);
+    const isHandlingEvent = (el: HTMLElement, event: string) => activeElementEvents.get(el)?.has(eventKey(event)) === true;
+    const withActiveEvent = (el: HTMLElement, event: string, fn: () => void) => {
+        const key = eventKey(event);
+        let active = activeElementEvents.get(el);
+        if (!active) {
+            active = new Set<string>();
+            activeElementEvents.set(el, active);
+        }
+
+        active.add(key);
+        try {
+            fn();
+        } finally {
+            active.delete(key);
+            if (active.size === 0) {
+                activeElementEvents.delete(el);
+            }
         }
     };
 
@@ -677,6 +700,17 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 return undefined;
             }
             return env.callExternal(callName, parameters);
+        },
+
+        translate: (key: string, fallback?: string) => {
+            const translationKey = String(key ?? '').trim();
+            if (!translationKey) {
+                return String(fallback ?? '');
+            }
+            if (typeof env.translate === 'function') {
+                return env.translate(translationKey, fallback);
+            }
+            return fallback !== undefined ? String(fallback) : translationKey;
         },
 
         updateSyntax: (command: string) => {
@@ -1286,12 +1320,14 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             }
 
             const h = (ev: Event) => {
-                try {
-                    handler(ev, el);
-                } catch (e: any) {
-                    const msg = `Custom handler error on ${event} for "${name}": ${String(e && e.message ? e.message : e)}`;
-                    showRuntimeError(msg);
-                }
+                withActiveEvent(el, evt, () => {
+                    try {
+                        handler(ev, el);
+                    } catch (e: any) {
+                        const msg = `Custom handler error on ${event} for "${name}": ${String(e && e.message ? e.message : e)}`;
+                        showRuntimeError(msg);
+                    }
+                });
             };
 
             el.addEventListener(evt, h);
@@ -1343,8 +1379,10 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                         return;
                     }
 
-                    member.addEventListener('change', handlerWrapper);
-                    disposers.push(() => member.removeEventListener('change', handlerWrapper));
+                    const guardedHandlerWrapper = (ev: Event) => withActiveEvent(member, 'change', () => handlerWrapper(ev));
+
+                    member.addEventListener('change', guardedHandlerWrapper);
+                    disposers.push(() => member.removeEventListener('change', guardedHandlerWrapper));
                 });
 
                 return;
@@ -1387,6 +1425,10 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             })();
 
             const target = (innerEl || el) as HTMLElement;
+            if (isHandlingEvent(el, evt)) {
+                return;
+            }
+
             if (evt === 'click') {
                 target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
                 return;

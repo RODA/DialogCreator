@@ -15,6 +15,16 @@ Use this reference when writing custom JavaScript for Dialog Creator. It contain
 - `showMessage('Low disk space', 'Please free up 1GB', 'warning')`
 - `showMessage('Save failed', 'The dialog failed to save your changes.', 'error')`
 
+`translate(key, fallback?)`
+
+- Returns the active dialog-language translation for `key`.
+- If the active locale does not define the key, the base-locale value is used.
+- If neither locale defines the key, `fallback` is returned. When no fallback is provided, the key itself is returned.
+- Use dialog-local keys for messages that are created in custom JavaScript, for example validation text passed to `addError()` or `showMessage()`.
+- Examples:
+- `addError(c_datasets, translate('messages.noDatasetSelected', 'No dataset selected'))`
+- `showMessage(translate('messages.noDatasetSelected', 'No dataset selected'), '', 'warning')`
+
 `getValue(element)`
 
 - Get the element's value/text.

@@ -110,6 +110,18 @@ The base-locale dictionary is generated from visible dialog text such as:
 - `elements.<id>.value`
 - `elements.<id>.items.<index>`
 
+Custom JavaScript can also use dialog-local translation keys for messages that
+are not visible elements, such as validation errors or warning dialogs. Use the
+`translate(key, fallback)` API helper for these strings:
+
+```javascript
+addError(c_datasets, translate('messages.noDatasetSelected', 'No dataset selected'));
+showMessage(translate('messages.noDatasetSelected', 'No dataset selected'), '', 'warning');
+```
+
+The helper looks up the active dialog language first, then the base locale, and
+finally returns the fallback text. If no fallback is provided, it returns the key.
+
 This data is meant for the target app that imports the dialog. Dialog Creator does not auto-translate the editor UI.
 
 Example:
