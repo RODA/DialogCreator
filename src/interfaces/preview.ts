@@ -33,12 +33,6 @@ export interface PreviewUI {
      */
     callExternal(name: string, parameters?: unknown): Promise<unknown>;
 
-    /**
-     * Translate a dialog-local string by key, using fallback when the active locale
-     * does not define it.
-     */
-    translate(key: string, fallback?: string): string;
-
     /** Update the syntax panel with the provided command. */
     updateSyntax(command: string): void;
 
@@ -195,8 +189,8 @@ export interface PreviewUIEnv {
     showDialogMessage: (type: 'info' | 'warning' | 'error' | 'question', message: string, detail: string) => void;
     // Optional app-specific external function bridge
     callExternal?: (name: string, parameters?: unknown) => Promise<unknown>;
-    // Optional dialog-local translation lookup
-    translate?: (key: string, fallback?: string) => string;
+    // Optional dialog-local message translation lookup
+    translateMessage?: (text: string) => string;
     // Open an external floating run panel near the Preview window
     openSyntaxPanel?: (command: string) => void;
     // Reset the Preview dialog to its initial state

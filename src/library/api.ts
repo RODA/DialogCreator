@@ -13,7 +13,7 @@ export const EVENT_NAMES = new Set<string>(EVENT_LIST);
 // Curated helper names exposed as shorthand in user customJS (prelude)
 export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
     // core
-    'showMessage', 'getValue', 'setValue', 'run', 'callExternal', 'translate', 'updateSyntax', 'resetDialog', 'closeDialog',
+    'showMessage', 'getValue', 'setValue', 'run', 'callExternal', 'updateSyntax', 'resetDialog', 'closeDialog',
 
     // checkbox/radio
     'check', 'isChecked', 'uncheck', 'isUnchecked',
@@ -47,7 +47,6 @@ const NEUTRAL_NAMES = new Set<keyof PreviewUI>([
     'listObjects',
     'listColumns',
     'callExternal',
-    'translate',
     'run',
     'resetDialog',
     'closeDialog'
@@ -113,6 +112,13 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
 
     const inner = (el: HTMLElement | null) => el?.firstElementChild as HTMLElement | null;
     const typeOf = (el: HTMLElement | null) => String(el?.dataset?.type || '');
+    const translateMessage = (message: unknown): string => {
+        const text = String(message ?? '');
+        if (!text || typeof env.translateMessage !== 'function') {
+            return text;
+        }
+        return env.translateMessage(text);
+    };
 
     const coerceName = (value: unknown): string => {
         const name = String(value ?? '').trim();
@@ -684,7 +690,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             const detail = String(argsIn[1] ?? '');
             const typearg = String(argsIn[2] ?? '').toLowerCase();
             const type = (allowed.has(typearg) ? typearg : 'info') as 'info' | 'warning' | 'error' | 'question';
-            showDialogMessage(type, message, detail);
+            showDialogMessage(type, translateMessage(message), translateMessage(detail));
         },
 
         run: (_command: string) => {
@@ -700,17 +706,6 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 return undefined;
             }
             return env.callExternal(callName, parameters);
-        },
-
-        translate: (key: string, fallback?: string) => {
-            const translationKey = String(key ?? '').trim();
-            if (!translationKey) {
-                return String(fallback ?? '');
-            }
-            if (typeof env.translate === 'function') {
-                return env.translate(translationKey, fallback);
-            }
-            return fallback !== undefined ? String(fallback) : translationKey;
         },
 
         updateSyntax: (command: string) => {
@@ -1257,7 +1252,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
 
         addError: (name, message) => {
             const key = coerceName(name);
-            const text = String(message ?? '');
+            const text = translateMessage(message);
             if (!text) {
                 return;
             }
@@ -1276,14 +1271,14 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             if (Array.isArray(args[0])) {
                 names = args[0];
                 if (args.length > 1 && args[1] != null) {
-                    const msg = String(args[1] ?? '');
+                    const msg = translateMessage(args[1]);
                     if (msg) message = msg;
                 }
             } else if (args.length === 2) {
                 const maybeMsg = args[1];
                 if (typeof maybeMsg === 'string' && !findWrapper(maybeMsg)) {
                     names = [args[0]];
-                    const msg = String(maybeMsg ?? '');
+                    const msg = translateMessage(maybeMsg);
                     if (msg) message = msg;
                 } else {
                     names = args;

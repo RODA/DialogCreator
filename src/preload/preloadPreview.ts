@@ -501,22 +501,25 @@ const localizePreviewDialog = (input: PreviewDialog, locale: string): PreviewDia
     return copy;
 };
 
-const createDialogTranslator = (dialog: PreviewDialog, locale: string) => {
+const createDialogMessageTranslator = (dialog: PreviewDialog, locale: string) => {
     const i18n = dialog.i18n;
     const baseLocale = String(i18n?.baseLocale || dialog.properties.language || '').trim();
     const baseDict = (baseLocale && i18n?.locales?.[baseLocale]) || {};
     const localeDict = (locale && i18n?.locales?.[locale]) || baseDict;
 
-    return (key: string, fallback?: string): string => {
-        const translationKey = String(key ?? '').trim();
-        if (!translationKey) {
-            return String(fallback ?? '');
-        }
+    return (text: string): string => {
+        const translationKey = String(text ?? '');
         const translated = localeDict[translationKey] ?? baseDict[translationKey];
         if (translated !== undefined) {
             return translated;
         }
-        return fallback !== undefined ? String(fallback) : translationKey;
+
+        const sourceKey = Object.keys(baseDict).find(key => baseDict[key] === translationKey);
+        if (sourceKey) {
+            return localeDict[sourceKey] ?? baseDict[sourceKey] ?? translationKey;
+        }
+
+        return translationKey;
     };
 };
 
@@ -585,7 +588,7 @@ function buildUI(canvas: HTMLElement, dialog: PreviewDialog): PreviewUI {
             detail
         ),
         callExternal: async (_name: string, _parameters?: unknown) => undefined,
-        translate: createDialogTranslator(dialog, activePreviewLocale),
+        translateMessage: createDialogMessageTranslator(dialog, activePreviewLocale),
         openSyntaxPanel: (command: string) => coms.sendTo('main', 'openSyntaxPanel', command),
         resetDialog: resetPreview,
         closeDialog: () => coms.sendTo('main', 'close-previewWindow')

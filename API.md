@@ -10,20 +10,11 @@ Use this reference when writing custom JavaScript for Dialog Creator. It contain
 
 - Shows an application message dialog via the host app.
 - message is the visible header; detail is the body text; type (optional) controls icon: 'info' | 'warning' | 'error' | 'question'.
+- The message and detail strings are translated automatically when the active dialog locale has matching entries.
 - Examples:
 - `showMessage('Hello')`
 - `showMessage('Low disk space', 'Please free up 1GB', 'warning')`
 - `showMessage('Save failed', 'The dialog failed to save your changes.', 'error')`
-
-`translate(key, fallback?)`
-
-- Returns the active dialog-language translation for `key`.
-- If the active locale does not define the key, the base-locale value is used.
-- If neither locale defines the key, `fallback` is returned. When no fallback is provided, the key itself is returned.
-- Use dialog-local keys for messages that are created in custom JavaScript, for example validation text passed to `addError()` or `showMessage()`.
-- Examples:
-- `addError(c_datasets, translate('messages.noDatasetSelected', 'No dataset selected'))`
-- `showMessage(translate('messages.noDatasetSelected', 'No dataset selected'), '', 'warning')`
 
 `getValue(element)`
 
@@ -215,10 +206,12 @@ Validation and highlight helpers
 `addError(element, message)`
 
   - Show a tooltip-like validation message attached to the element and apply a visual highlight (glow). Multiple distinct messages on the same element are de-duplicated and the first one is shown. The highlight is removed automatically when all messages are cleared.
+  - The message is translated automatically when the active dialog locale has a matching entry.
 
 `clearError(element, message?)` / `clearError(...elements)`
 
 - Clear a previously added validation message. If `message` is provided, only that message is removed; otherwise, all messages for the element are cleared.
+- When `message` is provided, it is translated with the same lookup as `addError()` so callers can pass the same source text to add and clear an error.
 
 Backend helpers (in the developer's responsibility)
 
