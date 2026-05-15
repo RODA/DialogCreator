@@ -1,0 +1,237 @@
+name: build binaries
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing release tag to upload build outputs to. Leave empty to skip release upload.
+        required: false
+        default: DialogCreator
+        type: string
+      release_repository:
+        description: Target repository in owner/repo form. Leave empty to use this repository.
+        required: false
+        default: dusadrian/binaries
+        type: string
+      overwrite_release_assets:
+        description: Replace existing release assets with the same filenames.
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  actions: read
+  contents: write
+  id-token: write
+
+jobs:
+  linux-intel:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build TypeScript output
+        run: npm run build
+
+      - name: Build Electron app (Linux intel)
+        run: node scripts/build-linux.js --x64
+
+      - name: Rename Linux artifacts
+        run: npm run rename:linux
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-intel-build
+          path: build/output/*.AppImage
+          if-no-files-found: error
+
+  windows-intel:
+    runs-on: windows-latest
+    environment: signing
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build TypeScript output
+        run: npm run build
+
+      - name: Build Electron app (Windows intel)
+        run: npx electron-builder --win nsis portable --x64 --publish never
+
+      - name: Rename Windows artifacts
+        run: npm run rename:win
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_APPLICATION_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Sign Windows artifacts
+        uses: azure/artifact-signing-action@v1
+        with:
+          endpoint: https://plc.codesigning.azure.net/
+          signing-account-name: dusadrian
+          certificate-profile-name: electron-profile
+          files-folder: ${{ github.workspace }}\build\output
+          files-folder-filter: exe
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-intel-build
+          path: build/output/*.exe
+          if-no-files-found: error
+
+  macos-intel:
+    runs-on: macos-15-intel
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+      CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+
+      - name: Verify macOS signing secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${CSC_LINK:-}" ] || [ -z "${CSC_KEY_PASSWORD:-}" ]; then
+            echo "::error::MAC_CSC_LINK and MAC_CSC_KEY_PASSWORD secrets are required for signed macOS builds."
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build TypeScript output
+        run: npm run build
+
+      - name: Build Electron app (macOS intel, signed)
+        run: npx electron-builder --mac dmg --x64 --publish never -c.mac.forceCodeSigning=true
+
+      - name: Verify macOS code signature
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_path="$(find build/output -path '*/DialogCreator.app' -type d -print -quit)"
+          if [ -z "$app_path" ]; then
+            echo "::error::Could not find built DialogCreator.app under build/output."
+            exit 1
+          fi
+          codesign --verify --deep --strict --verbose=2 "$app_path"
+          codesign --display --verbose=2 "$app_path"
+
+      - name: Rename macOS artifacts
+        run: npm run rename:mac
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-intel-build
+          path: build/output/*.dmg
+          if-no-files-found: error
+
+  publish-release-assets:
+    runs-on: ubuntu-latest
+    needs:
+      - linux-intel
+      - windows-intel
+      - macos-intel
+    if: ${{ inputs.release_tag != '' }}
+    env:
+      RELEASE_TAG: ${{ inputs.release_tag }}
+      TARGET_REPO: ${{ inputs.release_repository != '' && inputs.release_repository || github.repository }}
+      OVERWRITE_RELEASE_ASSETS: ${{ inputs.overwrite_release_assets }}
+      GH_TOKEN: ${{ secrets.RELEASE_UPLOAD_TOKEN != '' && secrets.RELEASE_UPLOAD_TOKEN || github.token }}
+
+    steps:
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v5
+        with:
+          name: linux-intel-build
+          path: release-assets/linux
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v5
+        with:
+          name: windows-intel-build
+          path: release-assets/windows
+
+      - name: Download macOS artifacts
+        uses: actions/download-artifact@v5
+        with:
+          name: macos-intel-build
+          path: release-assets/macos
+
+      - name: Confirm target release exists
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" --repo "$TARGET_REPO" >/dev/null 2>&1; then
+            gh release edit "$RELEASE_TAG" --repo "$TARGET_REPO" --prerelease --latest=false
+          else
+            gh release create "$RELEASE_TAG" --repo "$TARGET_REPO" --prerelease --latest=false --title "$RELEASE_TAG" --notes ""
+          fi
+
+      - name: Upload artifacts to GitHub release
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          files=()
+          while IFS= read -r -d '' file; do
+            files+=("$file")
+          done < <(
+            find release-assets -type f \
+              \( -name '*.AppImage' -o -name '*.exe' -o -name '*.dmg' \) \
+              -print0
+          )
+
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No release files found to upload."
+            exit 1
+          fi
+
+          cmd=(gh release upload "$RELEASE_TAG" --repo "$TARGET_REPO")
+          if [ "$OVERWRITE_RELEASE_ASSETS" = "true" ]; then
+            cmd+=(--clobber)
+          fi
+          cmd+=("${files[@]}")
+
+          "${cmd[@]}"
