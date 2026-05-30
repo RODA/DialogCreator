@@ -434,8 +434,9 @@ onClick(button1, () => {
 ## File menu actions
 
 - New: Optionally saves current work, then clears the canvas.
-- Load dialog: Load a dialog JSON file into the editor.
-- Save dialog: Export the current dialog to JSON.
+- Load dialog: Load a `.dczip` package or legacy `.json` dialog file into the editor.
+- Save dialog: Save the current dialog as a `.dczip` DialogCreator package by default, including dialogs loaded from legacy `.json` files. The package is a zip file containing `dialog.json` and, when custom code is present, `custom.js`.
+- Save as: Save as `.dczip` or legacy `.json`.
 - Preview: Open the live preview window.
 
 ## Multi-selection and grouping

@@ -367,8 +367,9 @@ The items in a Container can be selected and deselected by clicking, and multi-s
 <h2 id="file-menu-actions">File menu actions</h2>
 <ul>
 <li>New: Optionally saves current work, then clears the canvas.</li>
-<li>Load dialog: Load a dialog JSON file into the editor.</li>
-<li>Save dialog: Export the current dialog to JSON.</li>
+<li>Load dialog: Load a <code class="hljs">.dczip</code> package or legacy <code class="hljs">.json</code> dialog file into the editor.</li>
+<li>Save dialog: Save the current dialog as a <code class="hljs">.dczip</code> DialogCreator package by default, including dialogs loaded from legacy <code class="hljs">.json</code> files. The package is a zip file containing <code class="hljs">dialog.json</code> and, when custom code is present, <code class="hljs">custom.js</code>.</li>
+<li>Save as: Save as <code class="hljs">.dczip</code> or legacy <code class="hljs">.json</code>.</li>
 <li>Preview: Open the live preview window.</li>
 </ul>
 <h2 id="multi-selection-and-grouping">Multi-selection and grouping</h2>

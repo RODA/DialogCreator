@@ -14,6 +14,7 @@ const OS_Mac = process.platform == 'darwin';
 
 import { app, BrowserWindow, dialog, ipcMain, Menu, screen } from "electron";
 import { utils } from "./library/utils";
+import { createDialogPackage, isDialogPackagePath, readDialogPackage } from "./library/dialogPackage";
 import * as path from "path";
 import * as fs from "fs";
 import { database } from "./database/database";
@@ -67,6 +68,14 @@ type InfoPage = 'manual' | 'api' | 'about';
 const EDITOR_WINDOW_STATE_FILE = 'editor-window-state.json';
 const RECENT_DIALOGS_FILE = 'recent-dialogs.json';
 const MAX_RECENT_DIALOGS = 10;
+const DIALOG_SAVE_FILTERS: Electron.FileFilter[] = [
+    { name: 'DialogCreator package', extensions: ['dczip'] },
+    { name: 'Dialog JSON', extensions: ['json'] }
+];
+const DIALOG_OPEN_FILTERS: Electron.FileFilter[] = [
+    { name: 'Dialog files', extensions: ['dczip', 'json'] },
+    ...DIALOG_SAVE_FILTERS
+];
 
 
 const gotTheLock = app.requestSingleInstanceLock();
@@ -133,7 +142,9 @@ function clearRecentDialogPaths() {
 
 async function loadDialogFromPath(filePath: string) {
     try {
-        const content = fs.readFileSync(filePath, 'utf-8');
+        const content = isDialogPackagePath(filePath)
+            ? readDialogPackage(fs.readFileSync(filePath))
+            : fs.readFileSync(filePath, 'utf-8');
         editorWindow.webContents.send('load-dialog-json', content);
         pendingCanonicalUpdate = true;
         dialogModified = false;
@@ -143,6 +154,26 @@ async function loadDialogFromPath(filePath: string) {
     } catch (e: any) {
         dialog.showErrorBox('Load failed', String((e && e.message) ? e.message : e));
     }
+}
+
+function writeDialogToPath(filePath: string, json: string) {
+    if (isDialogPackagePath(filePath)) {
+        fs.writeFileSync(filePath, createDialogPackage(json));
+    } else {
+        fs.writeFileSync(filePath, json, 'utf-8');
+    }
+}
+
+function defaultDialogSavePath() {
+    if (currentFilePath && currentFilePath.trim().length > 0) {
+        const parsed = path.parse(currentFilePath);
+        return path.join(parsed.dir, `${parsed.name}.dczip`);
+    }
+    return 'dialog.dczip';
+}
+
+function canSaveDirectlyToCurrentPath() {
+    return !!currentFilePath && isDialogPackagePath(currentFilePath);
 }
 
 async function reloadCurrentDialogFromDisk(): Promise<void> {
@@ -982,12 +1013,11 @@ async function confirmQuitIfDirty(): Promise<boolean> {
             const onJson = async (_ev: any, json: string) => {
                 ipcMain.removeListener('send-to', onSendTo);
                 try {
-                    const fs = require('fs');
                     const data = json || '';
-                    if (currentFilePath && currentFilePath.length > 0) {
-                        fs.writeFileSync(currentFilePath, data, 'utf-8');
+                    if (canSaveDirectlyToCurrentPath()) {
+                        writeDialogToPath(currentFilePath!, data);
                         lastSavedJson = data;
-                        addRecentDialogPath(currentFilePath);
+                        addRecentDialogPath(currentFilePath!);
                         dialogModified = false;
                         updateWindowTitle();
                         resolve(true);
@@ -995,14 +1025,14 @@ async function confirmQuitIfDirty(): Promise<boolean> {
                     }
                     const { canceled, filePath } = await dialog.showSaveDialog(editorWindow, {
                         title: 'Save dialog',
-                        filters: [{ name: 'Dialog JSON', extensions: ['json'] }],
-                        defaultPath: 'dialog.json'
+                        filters: DIALOG_SAVE_FILTERS,
+                        defaultPath: defaultDialogSavePath()
                     });
                     if (canceled || !filePath) {
                         resolve(false);
                         return;
                     }
-                    fs.writeFileSync(filePath, data, 'utf-8');
+                    writeDialogToPath(filePath, data);
                     lastSavedJson = data;
                     setCurrentDialogPath(filePath);
                     addRecentDialogPath(filePath);
@@ -1057,13 +1087,12 @@ function buildMainMenuTemplate(): MenuItemConstructorOptions[] {
                                 try {
                                     const { canceled, filePath } = await dialog.showSaveDialog(editorWindow, {
                                         title: 'Save dialog',
-                                        filters: [{ name: 'Dialog JSON', extensions: ['json'] }],
-                                        defaultPath: 'dialog.json'
+                                        filters: DIALOG_SAVE_FILTERS,
+                                        defaultPath: defaultDialogSavePath()
                                     });
 
                                     if (!canceled && filePath) {
-                                        const fs = require('fs');
-                                        fs.writeFileSync(filePath, current, 'utf-8');
+                                        writeDialogToPath(filePath, current);
                                         lastSavedJson = current;
                                         // Remember path used for saving the previous file
                                         setCurrentDialogPath(filePath);
@@ -1116,7 +1145,7 @@ function buildMainMenuTemplate(): MenuItemConstructorOptions[] {
             click: async () => {
                 const { canceled, filePaths } = await dialog.showOpenDialog(editorWindow, {
                     title: 'Load dialog',
-                    filters: [{ name: 'Dialog JSON', extensions: ['json'] }],
+                    filters: DIALOG_OPEN_FILTERS,
                     properties: ['openFile']
                 });
                 if (canceled || !filePaths || filePaths.length === 0) return;
@@ -1143,23 +1172,22 @@ function buildMainMenuTemplate(): MenuItemConstructorOptions[] {
                 const onJson = async (_ev: any, json: string) => {
                     ipcMain.removeListener('send-to', onSendTo);
                     try {
-                        const fs = require('fs');
                         const data = json || '';
-                        if (currentFilePath && currentFilePath.length > 0) {
-                            fs.writeFileSync(currentFilePath, data, 'utf-8');
+                        if (canSaveDirectlyToCurrentPath()) {
+                            writeDialogToPath(currentFilePath!, data);
                             lastSavedJson = data;
-                            addRecentDialogPath(currentFilePath);
+                            addRecentDialogPath(currentFilePath!);
                             dialogModified = false;
                             updateWindowTitle();
                             return;
                         }
                         const { canceled, filePath } = await dialog.showSaveDialog(editorWindow, {
                             title: 'Save dialog',
-                            filters: [{ name: 'Dialog JSON', extensions: ['json'] }],
-                            defaultPath: 'dialog.json'
+                            filters: DIALOG_SAVE_FILTERS,
+                            defaultPath: defaultDialogSavePath()
                         });
                         if (canceled || !filePath) return;
-                        fs.writeFileSync(filePath, data, 'utf-8');
+                        writeDialogToPath(filePath, data);
                         lastSavedJson = data;
                         setCurrentDialogPath(filePath);
                         addRecentDialogPath(filePath);
@@ -1185,15 +1213,14 @@ function buildMainMenuTemplate(): MenuItemConstructorOptions[] {
                 const onJson = async (_ev: any, json: string) => {
                     ipcMain.removeListener('send-to', onSendTo);
                     try {
-                        const fs = require('fs');
                         const data = json || '';
                         const { canceled, filePath } = await dialog.showSaveDialog(editorWindow, {
                             title: 'Save dialog As...',
-                            filters: [{ name: 'Dialog JSON', extensions: ['json'] }],
-                            defaultPath: currentFilePath || 'dialog.json'
+                            filters: DIALOG_SAVE_FILTERS,
+                            defaultPath: defaultDialogSavePath()
                         });
                         if (canceled || !filePath) return;
-                        fs.writeFileSync(filePath, data, 'utf-8');
+                        writeDialogToPath(filePath, data);
                         lastSavedJson = data;
                         setCurrentDialogPath(filePath);
                         addRecentDialogPath(filePath);
