@@ -283,18 +283,40 @@ function mergeGeneratedDialogI18n(
         }
     }
 
-    const baseCurrent = locales[baseLocale] || {};
-    const preservedCustomEntries = Object.fromEntries(
-        Object.entries(baseCurrent).filter(([key]) => {
-            if (key === 'dialog.title') return false;
-            return !key.startsWith('elements.');
-        })
-    ) as DialogLocaleDictionary;
-
-    locales[baseLocale] = {
-        ...preservedCustomEntries,
-        ...generated
+    const generatedKeys = new Set(Object.keys(generated));
+    const isGeneratedDialogKey = (key: string) => key === 'dialog.title' || key.startsWith('elements.');
+    const preserveCustomEntries = (dict: DialogLocaleDictionary | undefined): DialogLocaleDictionary => {
+        return Object.fromEntries(
+            Object.entries(dict || {}).filter(([key]) => {
+                return !isGeneratedDialogKey(key);
+            })
+        ) as DialogLocaleDictionary;
     };
+
+    const mergeLocaleDictionary = (
+        current: DialogLocaleDictionary | undefined,
+        useGeneratedValues: boolean
+    ): DialogLocaleDictionary => {
+        const currentDict = current || {};
+        const next: DialogLocaleDictionary = {
+            ...preserveCustomEntries(currentDict)
+        };
+
+        for (const key of generatedKeys) {
+            const translated = currentDict[key];
+            next[key] = !useGeneratedValues && typeof translated === 'string'
+                ? translated
+                : generated[key];
+        }
+
+        return next;
+    };
+
+    for (const locale of Object.keys(locales)) {
+        locales[locale] = mergeLocaleDictionary(locales[locale], locale === baseLocale);
+    }
+
+    locales[baseLocale] = mergeLocaleDictionary(locales[baseLocale], true);
 
     return {
         baseLocale,
