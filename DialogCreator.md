@@ -324,6 +324,11 @@ This section includes quick-start recipes, container population examples, valida
 
 Some dialogs have complex behaviors that require custom JavaScript code. Open the code window with the Actions button at the bottom of the Editor. This code runs at the top level automatically, with a dedicated, provided API.
 
+The stored dialog format is now split on purpose:
+
+- `dialog.json` carries the dialog structure and properties.
+- `actions.js` carries the dialog behavior and is the canonical script file for saved dialogs.
+
 Elements can be referred to by their Name (ID) either quoted or not. For example, `getValue(input1)` is the same as `getValue('input1')`.
 
 Notes on missing elements and strict operations:
@@ -434,9 +439,9 @@ onClick(button1, () => {
 ## File menu actions
 
 - New: Optionally saves current work, then clears the canvas.
-- Load dialog: Load a `.dczip` package or legacy `.json` dialog file into the editor.
-- Save dialog: Save the current dialog as a `.dczip` DialogCreator package by default, including dialogs loaded from legacy `.json` files. The package is a zip file containing `dialog.json` and, when custom code is present, `custom.js`.
-- Save as: Save as `.dczip` or legacy `.json`.
+- Load dialog: Load a `.dc.zip` package, a dialog directory, or a legacy `.json` dialog file into the editor.
+- Save dialog: Save the current dialog as a `.dc.zip` DialogCreator package. The package is a zip file containing `dialog.json` and `actions.js`; unzipping `xyz.dc.zip` produces an editable `xyz/` dialog directory.
+- Save as: Save as `.dc.zip`.
 - Preview: Open the live preview window.
 
 ## Multi-selection and grouping

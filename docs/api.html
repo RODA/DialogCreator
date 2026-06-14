@@ -184,6 +184,7 @@
 <li>Calls an app-specific external function.</li>
 <li>Use this when a dialog needs behavior that is intentionally outside Dialog Creator's documented UI API.</li>
 <li>App-specific helpers such as remembering dependent selections should live here rather than in the shared scripting API.</li>
+<li>In a consuming app, <code class="hljs"><span class="api-param">name</span></code> should map to a host-owned implementation registry rather than to a dialog-local helper file.</li>
 <li><code class="hljs"><span class="api-param">name</span></code> is the external function identifier; <code class="hljs"><span class="api-param">parameters</span></code> is any serializable object or value the target app expects.</li>
 <li>Returns a Promise.</li>
 <li>In Dialog Creator Preview, this is a no-op and resolves silently so dialogs that use app-specific extensions remain valid here.</li>

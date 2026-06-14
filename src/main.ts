@@ -14,7 +14,14 @@ const OS_Mac = process.platform == 'darwin';
 
 import { app, BrowserWindow, dialog, ipcMain, Menu, screen } from "electron";
 import { utils } from "./library/utils";
-import { createDialogPackage, isDialogPackagePath, readDialogPackage } from "./library/dialogPackage";
+import {
+    createDialogPackage,
+    isDialogDirectoryPath,
+    isDialogPackagePath,
+    readDialogDirectory,
+    readDialogPackage,
+    writeDialogDirectory
+} from "./library/dialogPackage";
 import * as path from "path";
 import * as fs from "fs";
 import { database } from "./database/database";
@@ -69,11 +76,11 @@ const EDITOR_WINDOW_STATE_FILE = 'editor-window-state.json';
 const RECENT_DIALOGS_FILE = 'recent-dialogs.json';
 const MAX_RECENT_DIALOGS = 10;
 const DIALOG_SAVE_FILTERS: Electron.FileFilter[] = [
-    { name: 'DialogCreator package', extensions: ['dczip'] },
+    { name: 'DialogCreator package', extensions: ['dc.zip'] },
     { name: 'Dialog JSON', extensions: ['json'] }
 ];
 const DIALOG_OPEN_FILTERS: Electron.FileFilter[] = [
-    { name: 'Dialog files', extensions: ['dczip', 'json'] },
+    { name: 'Dialog files', extensions: ['dc.zip', 'json'] },
     ...DIALOG_SAVE_FILTERS
 ];
 
@@ -142,9 +149,7 @@ function clearRecentDialogPaths() {
 
 async function loadDialogFromPath(filePath: string) {
     try {
-        const content = isDialogPackagePath(filePath)
-            ? readDialogPackage(fs.readFileSync(filePath))
-            : fs.readFileSync(filePath, 'utf-8');
+        const content = readDialogFromPath(filePath);
         editorWindow.webContents.send('load-dialog-json', content);
         pendingCanonicalUpdate = true;
         dialogModified = false;
@@ -156,8 +161,20 @@ async function loadDialogFromPath(filePath: string) {
     }
 }
 
-function writeDialogToPath(filePath: string, json: string) {
+function readDialogFromPath(filePath: string) {
+    if (isDialogDirectoryPath(filePath)) {
+        return readDialogDirectory(filePath);
+    }
     if (isDialogPackagePath(filePath)) {
+        return readDialogPackage(fs.readFileSync(filePath));
+    }
+    return fs.readFileSync(filePath, 'utf-8');
+}
+
+function writeDialogToPath(filePath: string, json: string) {
+    if (isDialogDirectoryPath(filePath)) {
+        writeDialogDirectory(filePath, json);
+    } else if (isDialogPackagePath(filePath)) {
         fs.writeFileSync(filePath, createDialogPackage(json));
     } else {
         fs.writeFileSync(filePath, json, 'utf-8');
@@ -166,14 +183,21 @@ function writeDialogToPath(filePath: string, json: string) {
 
 function defaultDialogSavePath() {
     if (currentFilePath && currentFilePath.trim().length > 0) {
-        const parsed = path.parse(currentFilePath);
-        return path.join(parsed.dir, `${parsed.name}.dczip`);
+        if (isDialogDirectoryPath(currentFilePath)) {
+            const parent = path.dirname(currentFilePath);
+            const name = path.basename(currentFilePath);
+            return path.join(parent, `${name}.dc.zip`);
+        }
+
+        const dir = path.dirname(currentFilePath);
+        const base = path.basename(currentFilePath).replace(/(?:\.dc\.zip|\.[^./\\]+)$/i, '');
+        return path.join(dir, `${base}.dc.zip`);
     }
-    return 'dialog.dczip';
+    return 'dialog.dc.zip';
 }
 
 function canSaveDirectlyToCurrentPath() {
-    return !!currentFilePath && isDialogPackagePath(currentFilePath);
+    return !!currentFilePath && (isDialogPackagePath(currentFilePath) || isDialogDirectoryPath(currentFilePath));
 }
 
 async function reloadCurrentDialogFromDisk(): Promise<void> {
@@ -1146,7 +1170,7 @@ function buildMainMenuTemplate(): MenuItemConstructorOptions[] {
                 const { canceled, filePaths } = await dialog.showOpenDialog(editorWindow, {
                     title: 'Load dialog',
                     filters: DIALOG_OPEN_FILTERS,
-                    properties: ['openFile']
+                    properties: ['openFile', 'openDirectory']
                 });
                 if (canceled || !filePaths || filePaths.length === 0) return;
                 await loadDialogFromPath(filePaths[0]);

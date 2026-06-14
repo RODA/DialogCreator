@@ -173,6 +173,7 @@ updateSyntax(cmd);
   - Calls an app-specific external function.
   - Use this when a dialog needs behavior that is intentionally outside Dialog Creator's documented UI API.
   - App-specific helpers such as remembering dependent selections should live here rather than in the shared scripting API.
+  - In a consuming app, `name` should map to a host-owned implementation registry rather than to a dialog-local helper file.
   - `name` is the external function identifier; `parameters` is any serializable object or value the target app expects.
   - Returns a Promise.
   - In Dialog Creator Preview, this is a no-op and resolves silently so dialogs that use app-specific extensions remain valid here.

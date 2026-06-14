@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import * as zlib from 'zlib';
 
 type PackageFile = {
@@ -6,9 +8,11 @@ type PackageFile = {
 };
 
 const DIALOG_JSON = 'dialog.json';
-const CUSTOM_JS = 'custom.js';
+const ACTIONS_JS = 'actions.js';
+const LEGACY_CUSTOM_JS = 'custom.js';
+const PACKAGE_SUFFIX = '.dc.zip';
 const SCRIPT_SPEC = Object.freeze({
-    entry: CUSTOM_JS,
+    entry: ACTIONS_JS,
     language: 'javascript'
 });
 
@@ -174,25 +178,43 @@ function parseDialogJson(json: string): Record<string, unknown> {
     return parsed as Record<string, unknown>;
 }
 
-export function createDialogPackage(json: string): Buffer {
+export function createDialogPackageFiles(json: string): { dialogJson: string; customJS: string } {
     const dialog = parseDialogJson(json);
     const customJS = String(dialog.customJS || '');
     delete dialog.customJS;
 
-    if (customJS.trim().length > 0) {
-        dialog.script = { ...SCRIPT_SPEC };
-    } else {
-        delete dialog.script;
-    }
+    dialog.script = { ...SCRIPT_SPEC };
 
-    const dialogJson = Buffer.from(JSON.stringify(dialog, null, 4) + '\n', 'utf8');
-    const files: PackageFile[] = [{ name: DIALOG_JSON, data: dialogJson }];
+    return {
+        dialogJson: JSON.stringify(dialog, null, 4) + '\n',
+        customJS
+    };
+}
 
-    if (customJS.trim().length > 0) {
-        files.push({ name: CUSTOM_JS, data: Buffer.from(customJS, 'utf8') });
-    }
+export function createDialogPackage(json: string): Buffer {
+    const dialogFiles = createDialogPackageFiles(json);
+    const files: PackageFile[] = [
+        { name: DIALOG_JSON, data: Buffer.from(dialogFiles.dialogJson, 'utf8') }
+    ];
+
+    files.push({ name: ACTIONS_JS, data: Buffer.from(dialogFiles.customJS, 'utf8') });
 
     return makeZip(files);
+}
+
+export function readDialogFiles(dialogJson: string, customJS?: string): string {
+    const dialog = parseDialogJson(dialogJson);
+    const script = dialog.script as { entry?: unknown } | undefined;
+
+    if (customJS !== undefined) {
+        dialog.customJS = customJS;
+    } else if (script?.entry) {
+        throw new Error(`Invalid DialogCreator package: missing script entry ${normalizeZipPath(String(script.entry))}.`);
+    } else {
+        dialog.customJS = String(dialog.customJS || '');
+    }
+
+    return JSON.stringify(dialog, null, 4);
 }
 
 export function readDialogPackage(buffer: Buffer): string {
@@ -204,26 +226,48 @@ export function readDialogPackage(buffer: Buffer): string {
 
     const dialog = parseDialogJson(dialogFile.toString('utf8'));
     const script = dialog.script as { entry?: unknown } | undefined;
-    const entry = normalizeZipPath(String(script?.entry || CUSTOM_JS));
-    const customFile = files.get(entry);
+    const entry = normalizeZipPath(String(script?.entry || ACTIONS_JS));
+    const customFile = files.get(entry) ?? (entry === ACTIONS_JS ? files.get(LEGACY_CUSTOM_JS) : undefined);
 
-    if (customFile) {
-        dialog.customJS = customFile.toString('utf8');
-    } else if (script?.entry) {
-        throw new Error(`Invalid DialogCreator package: missing script entry ${entry}.`);
-    } else {
-        dialog.customJS = String(dialog.customJS || '');
+    return readDialogFiles(dialogFile.toString('utf8'), customFile?.toString('utf8'));
+}
+
+export function readDialogDirectory(dirPath: string): string {
+    const dialogPath = path.join(dirPath, DIALOG_JSON);
+    if (!fs.existsSync(dialogPath)) {
+        throw new Error(`Invalid DialogCreator directory: missing ${DIALOG_JSON}.`);
     }
 
-    return JSON.stringify(dialog, null, 4);
+    const dialogJson = fs.readFileSync(dialogPath, 'utf8');
+    const dialog = parseDialogJson(dialogJson);
+    const script = dialog.script as { entry?: unknown } | undefined;
+    const entry = normalizeZipPath(String(script?.entry || ACTIONS_JS));
+    const scriptPath = path.join(dirPath, entry);
+    const legacyScriptPath = path.join(dirPath, LEGACY_CUSTOM_JS);
+    const customJS = fs.existsSync(scriptPath)
+        ? fs.readFileSync(scriptPath, 'utf8')
+        : (entry === ACTIONS_JS && fs.existsSync(legacyScriptPath) ? fs.readFileSync(legacyScriptPath, 'utf8') : undefined);
+
+    return readDialogFiles(dialogJson, customJS);
+}
+
+export function writeDialogDirectory(dirPath: string, json: string) {
+    const dialogFiles = createDialogPackageFiles(json);
+    fs.mkdirSync(dirPath, { recursive: true });
+    fs.writeFileSync(path.join(dirPath, DIALOG_JSON), dialogFiles.dialogJson, 'utf8');
+
+    const scriptPath = path.join(dirPath, ACTIONS_JS);
+    fs.writeFileSync(scriptPath, dialogFiles.customJS, 'utf8');
 }
 
 export function isDialogPackagePath(filePath: string): boolean {
-    const ext = pathExtension(filePath);
-    return ext === '.dczip';
+    return String(filePath || '').toLowerCase().endsWith(PACKAGE_SUFFIX);
 }
 
-function pathExtension(filePath: string): string {
-    const match = String(filePath || '').toLowerCase().match(/\.[^./\\]+$/);
-    return match ? match[0] : '';
+export function isDialogDirectoryPath(filePath: string): boolean {
+    try {
+        return fs.statSync(filePath).isDirectory() && fs.existsSync(path.join(filePath, DIALOG_JSON));
+    } catch {
+        return false;
+    }
 }
