@@ -707,11 +707,12 @@ window.addEventListener("DOMContentLoaded", async () => {
     });
 
     // Reset dialog basic properties to defaults (Name, Title) on New
-    ipcRenderer.on('reset-dialog-properties', (_ev, data: { name?: string; title?: string; language?: string } = {}) => {
+    ipcRenderer.on('reset-dialog-properties', (_ev, data: { name?: string; title?: string; language?: string; runtimeProvider?: string } = {}) => {
         try {
             const dname = document.getElementById('dialogName') as HTMLInputElement | null;
             const dtitle = document.getElementById('dialogTitle') as HTMLInputElement | null;
             const dlang = document.getElementById('dialogLanguage') as HTMLInputElement | null;
+            const druntime = document.getElementById('dialogRuntimeProvider') as HTMLInputElement | null;
             if (dname) {
                 dname.value = String(data.name ?? 'NewDialog');
                 dname.dispatchEvent(new Event('change', { bubbles: true }));
@@ -726,6 +727,11 @@ window.addEventListener("DOMContentLoaded", async () => {
                 dlang.value = String(data.language ?? 'en_US');
                 dlang.dispatchEvent(new Event('change', { bubbles: true }));
                 dlang.dispatchEvent(new Event('blur', { bubbles: true }));
+            }
+            if (druntime) {
+                druntime.value = String(data.runtimeProvider ?? 'R');
+                druntime.dispatchEvent(new Event('change', { bubbles: true }));
+                druntime.dispatchEvent(new Event('blur', { bubbles: true }));
             }
         } catch { /* noop */ }
     });

@@ -78,6 +78,7 @@
 <p>The whole dialog has properties of its own, for instance width and height to establish how large it should be, or a name (to be referred to from other dialogs) or a title (shown in the dialog's title bar).</p>
 <p>It also has a global font size that affects all elements uniformly, all of which are saved with the dialog and reflected in the live Preview window.</p>
 <p>The dialog-level <strong>Language</strong> property sets the source locale of the dialog text (for example <code class="hljs"><span class="api-param">en_US</span></code>, <code class="hljs"><span class="api-param">ro_RO</span></code>, <code class="hljs"><span class="api-param">de_DE</span></code>). This locale is exported with the dialog JSON and used as the base locale for translations in target applications.</p>
+<p>The dialog-level <strong>Runtime provider</strong> property carries the target execution provider that the dialog scripts are meant to build commands for, such as <code class="hljs"><span class="api-param">R</span></code>, <code class="hljs"><span class="api-param">Python</span></code>, or <code class="hljs"><span class="api-param">Julia</span></code>. Preview exposes this value to custom JavaScript as <code class="hljs"><span class="api-param">runtimeProvider</span></code> so dialogs can branch on provider-specific command syntax when needed.</p>
 <p>There is also an Actions button to open the code window for adding custom JavaScript logic for dialog behavior. It can be used to define how the elements interact with each other based on user input: showing/hiding/enabling controls, and updating values programmatically.</p>
 <img src="./images/dialog_actions.png" alt="The dialog properties and actions" style="width: 793px;">
 
@@ -114,7 +115,8 @@ while another locale stores the same key with the translated message. Calling
   <span class="hljs-attr">"properties"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
     <span class="hljs-attr">"name"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"NewDialog"</span><span class="hljs-punctuation">,</span>
     <span class="hljs-attr">"title"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"Settings"</span><span class="hljs-punctuation">,</span>
-    <span class="hljs-attr">"language"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"en_US"</span>
+    <span class="hljs-attr">"language"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"en_US"</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"runtimeProvider"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"R"</span>
   <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
   <span class="hljs-attr">"i18n"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
     <span class="hljs-attr">"baseLocale"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"en_US"</span><span class="hljs-punctuation">,</span>

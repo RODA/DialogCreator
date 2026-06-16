@@ -1723,7 +1723,7 @@ export const editor: Editor = {
                         const dialogprops = renderutils.collectDialogProperties();
                         editor.updateDialogArea(dialogprops);
                     }
-                } else if (idLower === 'dialogname' || idLower === 'dialogtitle' || idLower === 'dialoglanguage') {
+                } else if (idLower === 'dialogname' || idLower === 'dialogtitle' || idLower === 'dialoglanguage' || idLower === 'dialogruntimeprovider') {
                     // Update text metadata into dialog properties as well
                     const dialogprops = renderutils.collectDialogProperties();
                     editor.updateDialogArea(dialogprops);
@@ -1796,6 +1796,28 @@ export const editor: Editor = {
             if (!v) return fallback;
             return utils.possibleNumeric(v) ? utils.asNumeric(v) : fallback;
         };
+        const serializeElement = (node: HTMLElement): Record<string, unknown> => {
+            const obj: Record<string, unknown> = { id: node.id };
+            const typeName = String(node.dataset.type || node.tagName || '');
+            const template = resolveTemplateForType(typeName);
+
+            for (const [key, raw] of Object.entries(node.dataset)) {
+                if (key === 'id') continue;
+                let value: unknown = raw;
+                if (raw === 'true' || raw === 'false') {
+                    value = raw === 'true';
+                } else if (typeof raw === 'string' && utils.possibleNumeric(raw)) {
+                    value = utils.asNumeric(raw);
+                }
+                obj[key] = value as unknown;
+            }
+
+            if (String(typeName).toLowerCase() === 'label' && obj.valign === undefined) {
+                obj.valign = String(template.valign ?? 'top');
+            }
+
+            return obj;
+        };
 
         const topLevel = Array.from(dialog.canvas.children) as HTMLElement[];
         for (const child of topLevel) {
@@ -1830,18 +1852,7 @@ export const editor: Editor = {
                 // Save children with absolute coordinates and carry groupConditions for runtime
                 for (const m of members) {
                     if (m.classList.contains('lasso-rect')) continue;
-                    const obj: Record<string, unknown> = { id: m.id };
-                    for (const [key, raw] of Object.entries(m.dataset)) {
-                        if (key === 'id') continue;
-                        let value: unknown = raw;
-                        if (raw === 'true' || raw === 'false') {
-                            value = raw === 'true';
-                        } else if (typeof raw === 'string' && utils.possibleNumeric(raw)) {
-                            value = utils.asNumeric(raw);
-                        }
-                        obj[key] = value as unknown;
-                    }
-
+                    const obj = serializeElement(m);
                     const mLeftAbs = toNumber(m.getAttribute('data-left') as string, 0) + gLeft;
                     const mTopAbs = toNumber(m.getAttribute('data-top') as string, 0) + gTop;
                     obj.left = mLeftAbs;
@@ -1851,17 +1862,7 @@ export const editor: Editor = {
             } else if (child.classList.contains('lasso-rect')) {
                 continue;
             } else {
-                const obj: Record<string, unknown> = { id: child.id };
-                for (const [key, raw] of Object.entries(child.dataset)) {
-                    if (key === 'id') continue;
-                    let value: unknown = raw;
-                    if (raw === 'true' || raw === 'false') {
-                        value = raw === 'true';
-                    } else if (typeof raw === 'string' && utils.possibleNumeric(raw)) {
-                        value = utils.asNumeric(raw);
-                    }
-                    obj[key] = value as unknown;
-                }
+                const obj = serializeElement(child);
                 flattened.push(obj);
             }
         }
@@ -1930,7 +1931,8 @@ export const editor: Editor = {
                 String(props.language ?? loadedI18n?.baseLocale ?? 'en_US'),
                 Object.keys(loadedI18n?.locales || {})
             );
-            dialog.properties = { ...props, language: loadedLanguage };
+            const loadedRuntimeProvider = String(props.runtimeProvider ?? 'R').trim() || 'R';
+            dialog.properties = { ...props, language: loadedLanguage, runtimeProvider: loadedRuntimeProvider };
             // Load custom JS if present
             dialog.customJS = String((obj as any).customJS || '');
             dialog.i18n = loadedI18n ? { ...loadedI18n, baseLocale: loadedLanguage } : undefined;
@@ -1954,6 +1956,9 @@ export const editor: Editor = {
 
             const dlang = document.getElementById('dialogLanguage') as HTMLInputElement | null;
             if (dlang) dlang.value = loadedLanguage;
+
+            const druntime = document.getElementById('dialogRuntimeProvider') as HTMLInputElement | null;
+            if (druntime) druntime.value = loadedRuntimeProvider;
 
             const dfont = document.getElementById('dialogFontSize') as HTMLInputElement | null;
             if (dfont) dfont.value = String(props.fontSize || '');

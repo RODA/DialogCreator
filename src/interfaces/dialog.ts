@@ -10,6 +10,7 @@ export interface DialogProperties {
     name: string;
     title: string;
     language: string;
+    runtimeProvider?: string;
     width: string;
     height: string;
     fontSize: string;

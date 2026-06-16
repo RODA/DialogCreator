@@ -91,6 +91,8 @@ It also has a global font size that affects all elements uniformly, all of which
 
 The dialog-level **Language** property sets the source locale of the dialog text (for example `en_US`, `ro_RO`, `de_DE`). This locale is exported with the dialog JSON and used as the base locale for translations in target applications.
 
+The dialog-level **Runtime provider** property carries the target execution provider that the dialog scripts are meant to build commands for, such as `R`, `Python`, or `Julia`. Preview exposes this value to custom JavaScript as `runtimeProvider` so dialogs can branch on provider-specific command syntax when needed.
+
 There is also an Actions button to open the code window for adding custom JavaScript logic for dialog behavior. It can be used to define how the elements interact with each other based on user input: showing/hiding/enabling controls, and updating values programmatically.
 
 <img src="docs/images/dialog_actions.png" alt="The dialog properties and actions" style="width: 793px;">
@@ -136,7 +138,8 @@ Example:
   "properties": {
     "name": "NewDialog",
     "title": "Settings",
-    "language": "en_US"
+    "language": "en_US",
+    "runtimeProvider": "R"
   },
   "i18n": {
     "baseLocale": "en_US",

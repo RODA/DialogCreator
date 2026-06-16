@@ -130,6 +130,7 @@ export type labelElementType = {
     icon: string;
     iconSize: number;
     align: string;
+    valign: string;
     rotate: number;
     isEnabled?: boolean;
     isVisible: boolean;

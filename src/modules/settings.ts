@@ -11,6 +11,7 @@ export const editorSettings: EditorSettings = {
         name: 'NewDialog',
         title: 'New dialog',
         language: 'en_US',
+        runtimeProvider: 'R',
         width: '600',
         height: '430',
         fontSize: '12',

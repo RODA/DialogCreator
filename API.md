@@ -386,6 +386,8 @@ Notes
 
 The following section exemplifies, using a step by step approach, how to build a dialog that allows users to recode a variable in the R language. It shows how to construct the dialog in the editor area, and what actions are needed in the scripting area to make it functional and responsive.
 
+The dialog metadata also includes a **Runtime provider** field. It defaults to `R`, but the same dialog structure can target `Python`, `Julia`, or any other provider if the custom JavaScript builds the corresponding command syntax from `runtimeProvider`.
+
 Similar to any other recoding dialog, the user needs to first select a dataset from a list, then choose a variable from that dataset to recode, and finally specify the recoding rules.
 
 <img src="docs/images/recode_design.png" alt="Recode design part" style="width: 540px;">

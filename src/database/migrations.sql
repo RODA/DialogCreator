@@ -121,6 +121,7 @@ INSERT INTO elements (element, property, value) VALUES
 ('labelElement', 'icon', 'none'),
 ('labelElement', 'iconSize', '0'),
 ('labelElement', 'align', 'left'),
+('labelElement', 'valign', 'top'),
 ('labelElement', 'isEnabled', 'true'),
 ('labelElement', 'isVisible', 'true'),
 

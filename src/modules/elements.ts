@@ -159,12 +159,13 @@ export const elements: ElementsWithPersist = {
         icon: 'none',
         iconSize: 0,
         align: 'left',
+        valign: 'top',
         rotate: 0,
         isEnabled: true,
         isVisible: true,
         elementIds: [],
         $persist: [
-            'left','top','maxWidth','lineClamp','fontColor','value','icon','iconSize','align','rotate','isEnabled','isVisible'
+            'left','top','maxWidth','lineClamp','fontColor','value','icon','iconSize','align','valign','rotate','isEnabled','isVisible'
         ] as const
     },
     separatorElement: {        id: '',

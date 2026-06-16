@@ -91,6 +91,10 @@
                             <input name="language" id="dialogLanguage" placeholder="en_US, ro_RO, de_DE" />
                         </div>
                         <div class="dialog-properties_property">
+                            <label for="dialogRuntimeProvider">Runtime provider</label>
+                            <input name="runtimeProvider" id="dialogRuntimeProvider" placeholder="R, Python, Julia" />
+                        </div>
+                        <div class="dialog-properties_property">
                             <label for="dialogFontSize" class="text-center">Font size</label>
                             <input name="fontSize" id="dialogFontSize" />
                         </div>
@@ -181,11 +185,20 @@
                         </div>
 
                         <div class="element-property hidden-element">
-                            <label for="elalign">Align</label>
+                            <label for="elalign">H align</label>
                             <select name="align" id="elalign">
                                 <option value="left">Left</option>
                                 <option value="center">Center</option>
                                 <option value="right">Right</option>
+                            </select>
+                        </div>
+
+                        <div class="element-property hidden-element">
+                            <label for="elvalign">V align</label>
+                            <select name="valign" id="elvalign">
+                                <option value="top">Top</option>
+                                <option value="middle">Middle</option>
+                                <option value="bottom">Bottom</option>
                             </select>
                         </div>
 

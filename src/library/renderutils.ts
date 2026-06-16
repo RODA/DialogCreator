@@ -121,6 +121,14 @@ const resolveElementIconSize = (iconSize: unknown, fallback: number): number => 
     return fallback;
 };
 
+const normalizeLabelVAlign = (value: unknown): 'top' | 'middle' | 'bottom' => {
+    const raw = String(value ?? '').trim().toLowerCase();
+    if (raw === 'top' || raw === 'bottom') {
+        return raw;
+    }
+    return 'top';
+};
+
 const resolveElementTemplate = (typeName: unknown): Record<string, unknown> => {
     const rawType = String(typeName ?? '').trim();
     if (!rawType) {
@@ -2798,6 +2806,8 @@ export const renderutils: RenderUtils = {
                 case 'align':
                     if (label) {
                         element.dataset[key] = value;
+                        const alignInput = document.getElementById('elalign') as HTMLSelectElement | null;
+                        if (alignInput) alignInput.value = String(value || 'left');
                         renderutils.updateLabel(element);
                     } else if (sorter) {
                         const normalized = String(value || '').toLowerCase();
@@ -2807,6 +2817,16 @@ export const renderutils: RenderUtils = {
                         const alignInput = document.getElementById('elalign') as HTMLSelectElement | null;
                         if (alignInput) alignInput.value = next;
                         sorterNeedsRender = true;
+                    }
+                    break;
+
+                case 'valign':
+                    if (label) {
+                        const next = normalizeLabelVAlign(value);
+                        element.dataset.valign = next;
+                        const valignInput = document.getElementById('elvalign') as HTMLSelectElement | null;
+                        if (valignInput) valignInput.value = next;
+                        renderutils.updateLabel(element);
                     }
                     break;
 
@@ -3231,6 +3251,8 @@ export const renderutils: RenderUtils = {
         let maxW = dataset.maxWidth ? Number(dataset.maxWidth) : 100;
         const rotate = new Set([0, 90, 180, 270]).has(Number(dataset.rotate)) ? Number(dataset.rotate) : 0;
         const align = dataset.align || 'left';
+        const valign = normalizeLabelVAlign(dataset.valign || 'top');
+        const verticalAlign = valign === 'top' ? 'flex-start' : valign === 'bottom' ? 'flex-end' : 'center';
 
         // Give labels a small internal horizontal padding (symmetrical) so that:
         // - left-aligned labels don't look glued to the left edge
@@ -3278,12 +3300,13 @@ export const renderutils: RenderUtils = {
             host.style.paddingRight = '0px';
         }
 
-        // Configure clamp/ellipsis behavior and vertical centering
+        // Configure clamp/ellipsis behavior and vertical alignment
         if (iconMode) {
             host.style.display = 'flex';
             host.style.whiteSpace = 'nowrap';
             host.style.overflow = 'visible';
             host.style.textOverflow = 'clip';
+            host.style.alignItems = verticalAlign;
             host.style.removeProperty('-webkit-line-clamp');
             host.style.removeProperty('-webkit-box-orient');
             host.style.removeProperty('word-break');
@@ -3295,11 +3318,11 @@ export const renderutils: RenderUtils = {
             host.style.removeProperty('vertical-align');
 
             element.style.display = 'flex';
-            element.style.alignItems = 'center';
+            element.style.alignItems = verticalAlign;
             element.style.justifyContent = align === 'right' ? 'flex-end' : (align === 'center' ? 'center' : 'flex-start');
             element.style.removeProperty('max-height');
         } else if (lines > 1) {
-            // Multi-line: use flexbox for vertical centering
+            // Multi-line: use flexbox for vertical alignment
             host.style.display = '-webkit-box';
             host.style.whiteSpace = 'normal';
             host.style.overflow = 'hidden';
@@ -3307,6 +3330,7 @@ export const renderutils: RenderUtils = {
             host.style.wordBreak = 'break-word';
             host.style.setProperty('-webkit-line-clamp', String(lines));
             host.style.setProperty('-webkit-box-orient', 'vertical');
+            host.style.alignItems = verticalAlign;
             host.style.removeProperty('max-height');
             host.style.removeProperty('height');
             host.style.removeProperty('position');
@@ -3314,14 +3338,14 @@ export const renderutils: RenderUtils = {
             host.style.removeProperty('transform');
             host.style.removeProperty('vertical-align');
 
-            // Set up wrapper for vertical centering
+            // Set up wrapper for vertical alignment
             element.style.display = 'flex';
-            element.style.alignItems = 'center';
+            element.style.alignItems = verticalAlign;
             element.style.justifyContent = 'flex-start';
             element.style.removeProperty('height');
             element.style.removeProperty('max-height');
         } else {
-            // Single line: use flexbox for vertical centering
+            // Single line: use flexbox for vertical alignment
             host.style.display = 'block';
             host.style.whiteSpace = 'nowrap';
             host.style.removeProperty('-webkit-line-clamp');
@@ -3333,10 +3357,11 @@ export const renderutils: RenderUtils = {
             host.style.removeProperty('top');
             host.style.removeProperty('transform');
             host.style.removeProperty('vertical-align');
+            host.style.alignItems = verticalAlign;
 
-            // Set up wrapper for vertical centering
+            // Set up wrapper for vertical alignment
             element.style.display = 'flex';
-            element.style.alignItems = 'center';
+            element.style.alignItems = verticalAlign;
             element.style.justifyContent = 'flex-start';
             element.style.removeProperty('max-height');
         }
@@ -3909,6 +3934,9 @@ export const renderutils: RenderUtils = {
         });
         if (!obj.language || !String(obj.language).trim()) {
             obj.language = 'en_US';
+        }
+        if (!obj.runtimeProvider || !String(obj.runtimeProvider).trim()) {
+            obj.runtimeProvider = 'R';
         }
         return obj;
     },

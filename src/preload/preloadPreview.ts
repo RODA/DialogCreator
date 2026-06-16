@@ -788,8 +788,10 @@ function renderPreview(dialog: PreviewDialog) {
             try {
                 const baseValue = (data as any).__baseValue;
                 const align = String((data as any).align || core.dataset.align || '').toLowerCase();
+                const valignRaw = String((data as any).valign || core.dataset.valign || 'top').toLowerCase();
+                const valign = valignRaw === 'top' || valignRaw === 'middle' || valignRaw === 'bottom' ? valignRaw : 'top';
                 let anchoredFromBaseValue = false;
-                let baseCenterY: number | null = null;
+                let baseAnchorY: number | null = null;
                 const translatedValue = core.dataset.value ?? '';
                 if (baseValue !== undefined && String(baseValue) !== String(translatedValue)) {
                     core.dataset.value = String(baseValue ?? '');
@@ -798,19 +800,29 @@ function renderPreview(dialog: PreviewDialog) {
                     const baseTop = Number(wrapper.dataset.top ?? (parseInt(wrapper.style.top || '0', 10) || 0));
                     const baseHeight = Math.ceil(wrapper.getBoundingClientRect().height || 0);
                     if (baseHeight > 0) {
-                        baseCenterY = baseTop + (baseHeight / 2);
+                        if (valign === 'top') {
+                            baseAnchorY = baseTop;
+                        } else if (valign === 'bottom') {
+                            baseAnchorY = baseTop + baseHeight;
+                        } else {
+                            baseAnchorY = baseTop + (baseHeight / 2);
+                        }
                     }
                     core.dataset.value = translatedValue;
                     wrapper.dataset.value = translatedValue;
-                    anchoredFromBaseValue = align === 'right' || align === 'center' || baseCenterY !== null;
+                    anchoredFromBaseValue = align === 'right' || align === 'center' || baseAnchorY !== null;
                 }
                 renderutils.updateLabel(wrapper);
-                if (baseCenterY !== null) {
+                if (baseAnchorY !== null) {
                     const translatedHeight = Math.ceil(wrapper.getBoundingClientRect().height || 0);
                     if (translatedHeight > 0) {
-                        const centeredTop = Math.round(baseCenterY - (translatedHeight / 2));
-                        wrapper.style.top = `${centeredTop}px`;
-                        wrapper.dataset.top = String(centeredTop);
+                        const nextTop = valign === 'bottom'
+                            ? Math.round(baseAnchorY - translatedHeight)
+                            : valign === 'middle'
+                                ? Math.round(baseAnchorY - (translatedHeight / 2))
+                                : Math.round(baseAnchorY);
+                        wrapper.style.top = `${nextTop}px`;
+                        wrapper.dataset.top = String(nextTop);
                     }
                 } else if (!anchoredFromBaseValue) {
                     wrapper.style.left = `${left}px`;
@@ -1295,7 +1307,8 @@ function renderPreview(dialog: PreviewDialog) {
                 .map(n => `const ${n} = ${JSON.stringify(n)};`)
                 .join('\n');
 
-            const bindings = `const { ${preludeList} } = ui;\nconst log = ui.log.bind(ui);\n${namePrelude}`;
+            const runtimeProvider = String(dialog?.properties?.runtimeProvider ?? 'R').trim() || 'R';
+            const bindings = `const { ${preludeList} } = ui;\nconst log = ui.log.bind(ui);\nconst runtimeProvider = ${JSON.stringify(runtimeProvider)};\n${namePrelude}`;
             let fn: Function | null = null;
             try {
                 fn = new Function('ui', 'exports', bindings + '\n' + code);

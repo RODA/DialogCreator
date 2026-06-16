@@ -404,6 +404,7 @@
 </ul>
 <h2 id="case-study-recode-variables-dialog">Case study: recode variables dialog</h2>
 <p>The following section exemplifies, using a step by step approach, how to build a dialog that allows users to recode a variable in the R language. It shows how to construct the dialog in the editor area, and what actions are needed in the scripting area to make it functional and responsive.</p>
+<p>The dialog metadata also includes a <strong>Runtime provider</strong> field. It defaults to <code class="hljs"><span class="api-param">R</span></code>, but the same dialog structure can target <code class="hljs"><span class="api-param">Python</span></code>, <code class="hljs"><span class="api-param">Julia</span></code>, or any other provider if the custom JavaScript builds the corresponding command syntax from <code class="hljs"><span class="api-param">runtimeProvider</span></code>.</p>
 <p>Similar to any other recoding dialog, the user needs to first select a dataset from a list, then choose a variable from that dataset to recode, and finally specify the recoding rules.</p>
 <img src="./images/recode_design.png" alt="Recode design part" style="width: 540px;">
 

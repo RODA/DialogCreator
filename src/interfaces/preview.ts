@@ -218,6 +218,7 @@ export interface PreviewDialog {
         name?: string | number;
         title?: string | number;
         language?: string | number;
+        runtimeProvider?: string | number;
         width: string | number;
         height: string | number;
         background?: string;
