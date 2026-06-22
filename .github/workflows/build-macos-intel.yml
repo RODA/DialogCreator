@@ -20,7 +20,6 @@ on:
         type: boolean
 
 permissions:
-  actions: read
   contents: write
 
 jobs:
@@ -73,13 +72,6 @@ jobs:
       - name: Rename macOS artifacts
         run: npm run rename:mac
 
-      - name: Upload macOS artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-intel-build
-          path: build/output/*.dmg
-          if-no-files-found: error
-
       - name: Confirm target release exists
         if: ${{ inputs.release_tag != '' }}
         shell: bash
@@ -95,7 +87,7 @@ jobs:
             gh release create "$RELEASE_TAG" --repo "$TARGET_REPO" --prerelease --latest=false --title "$RELEASE_TAG" --notes ""
           fi
 
-      - name: Upload artifacts to GitHub release
+      - name: Upload macOS assets to GitHub release
         if: ${{ inputs.release_tag != '' }}
         shell: bash
         env:

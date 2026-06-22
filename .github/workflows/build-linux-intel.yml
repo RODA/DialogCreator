@@ -20,7 +20,6 @@ on:
         type: boolean
 
 permissions:
-  actions: read
   contents: write
 
 jobs:
@@ -50,13 +49,6 @@ jobs:
       - name: Rename Linux artifacts
         run: npm run rename:linux
 
-      - name: Upload Linux artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-intel-build
-          path: build/output/*.AppImage
-          if-no-files-found: error
-
       - name: Confirm target release exists
         if: ${{ inputs.release_tag != '' }}
         shell: bash
@@ -72,7 +64,7 @@ jobs:
             gh release create "$RELEASE_TAG" --repo "$TARGET_REPO" --prerelease --latest=false --title "$RELEASE_TAG" --notes ""
           fi
 
-      - name: Upload artifacts to GitHub release
+      - name: Upload Linux assets to GitHub release
         if: ${{ inputs.release_tag != '' }}
         shell: bash
         env:
