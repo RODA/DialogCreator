@@ -14,6 +14,9 @@
     "predist": "node scripts/check-env.js && node scripts/sync-docs-fonts.js && node scripts/sync-codicons.js",
     "dist": "node scripts/dist-dispatch.js",
     "dist:publish": "npm run build && electron-builder --publish onTagOrDraft",
+    "submit": "node scripts/macos-notarization.js submit",
+    "history": "node scripts/macos-notarization.js history",
+    "staple": "node scripts/macos-notarization.js staple",
     "rename:linux": "bash scripts/rename-binaries-linux.sh",
     "rename:mac": "bash scripts/rename-binaries-mac.sh",
     "rename:win": "powershell -ExecutionPolicy Bypass -File scripts/rename-binaries-windows.ps1"
@@ -80,10 +83,9 @@
       "extendInfo": {
         "NSHumanReadableCopyright": "© 2025 Adrian Dusa — Academic Non-Commercial License (see LICENSE file for details)."
       },
-      "target": {
+        "target": {
         "target": "dmg",
         "arch": [
-          "x64",
           "arm64"
         ]
       }
