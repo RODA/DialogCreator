@@ -13,6 +13,7 @@
     "bundle:cm6": "node scripts/bundle-cm6-if-needed.js",
     "predist": "node scripts/check-env.js && node scripts/sync-docs-fonts.js && node scripts/sync-codicons.js",
     "dist": "node scripts/dist-dispatch.js",
+    "dist:nosign": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false npm run dist",
     "dist:publish": "npm run build && electron-builder --publish onTagOrDraft",
     "submit": "node scripts/macos-notarization.js submit",
     "history": "node scripts/macos-notarization.js history",

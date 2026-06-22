@@ -859,12 +859,6 @@ function setupIPC() {
                 case 'secondWindow':
                     createSecondWindow(args[0]);
                     break;
-                case 'resize-editorWindow':
-                    editorWindow.setSize(
-                        Math.max(args[0] + 560, 1200), // width
-                        Math.max(args[1] + 320, 800) // height
-                    );
-                    break;
                 case 'getProperties':
                     {
                         const properties = await database.getProperties(args[0] as keyof DBElements);

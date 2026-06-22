@@ -2,7 +2,6 @@ import { AnyElement } from './elements';
 import { DialogProperties } from './dialog';
 
 export interface Editor {
-    requestEditorResizeToFitDialog: (width: unknown, height: unknown) => void;
     makeDialog: () => void;
     updateDialogArea: (props: DialogProperties) => void;
     addAvailableElementsTo: (window: string) => void;

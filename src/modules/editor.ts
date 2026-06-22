@@ -503,15 +503,6 @@ function makeGroupFromSelection(persistent = false) {
 }
 
 export const editor: Editor = {
-    requestEditorResizeToFitDialog: function(width: unknown, height: unknown) {
-        const dialogWidth = Number(width);
-        const dialogHeight = Number(height);
-        if (!Number.isFinite(dialogWidth) || !Number.isFinite(dialogHeight)) {
-            return;
-        }
-        coms.sendTo('main', 'resize-editorWindow', dialogWidth, dialogHeight);
-    },
-
     alignSelection: function(mode: 'left' | 'top' | 'middle' | 'right' | 'bottom' | 'center') {
         const orderedIds = selectionOrder.length >= 2
             ? selectionOrder.slice()
@@ -1715,7 +1706,6 @@ export const editor: Editor = {
                     if (value) {
                         const dialogprops = renderutils.collectDialogProperties();
                         editor.updateDialogArea(dialogprops);
-                        editor.requestEditorResizeToFitDialog(dialog.properties.width, dialog.properties.height);
                     }
                 } else if (idLower === 'dialogfontsize') {
                     const value = element.value;
@@ -1946,7 +1936,6 @@ export const editor: Editor = {
             const h = Number(props.height) || 480;
             dialog.canvas.style.width = w + 'px';
             dialog.canvas.style.height = h + 'px';
-            editor.requestEditorResizeToFitDialog(w, h);
 
             const dwidth = document.getElementById('dialogWidth') as HTMLInputElement | null;
             if (dwidth) dwidth.value = String(props.width || '');
