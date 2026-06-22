@@ -442,7 +442,7 @@ onClick(button1, () => {
 ## File menu actions
 
 - New: Optionally saves current work, then clears the canvas.
-- Load dialog: Load a `.dc.zip` package, a dialog directory, or a legacy `.json` dialog file into the editor.
+- Load dialog: Load a `.dc.zip` package or an unzipped dialog directory into the editor.
 - Save dialog: Save the current dialog as a `.dc.zip` DialogCreator package. The package is a zip file containing `dialog.json` and `actions.js`; unzipping `xyz.dc.zip` produces an editable `xyz/` dialog directory.
 - Save as: Save as `.dc.zip`.
 - Preview: Open the live preview window.

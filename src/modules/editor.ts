@@ -1924,6 +1924,12 @@ export const editor: Editor = {
             }
             dialog.canvas.innerHTML = '';
 
+            const loadedDialogId = String((obj as any).id || '').trim();
+            if (loadedDialogId) {
+                dialog.id = loadedDialogId;
+                dialog.canvas.id = loadedDialogId;
+            }
+
             // Update dialog properties and UI
             const props = obj.properties as any;
             const loadedI18n = sanitizeDialogI18n((obj as any).i18n);

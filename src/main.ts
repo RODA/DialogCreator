@@ -76,12 +76,10 @@ const EDITOR_WINDOW_STATE_FILE = 'editor-window-state.json';
 const RECENT_DIALOGS_FILE = 'recent-dialogs.json';
 const MAX_RECENT_DIALOGS = 10;
 const DIALOG_SAVE_FILTERS: Electron.FileFilter[] = [
-    { name: 'DialogCreator package', extensions: ['dc.zip'] },
-    { name: 'Dialog JSON', extensions: ['json'] }
+    { name: 'DialogCreator package', extensions: ['dc.zip'] }
 ];
 const DIALOG_OPEN_FILTERS: Electron.FileFilter[] = [
-    { name: 'Dialog files', extensions: ['dc.zip', 'json'] },
-    ...DIALOG_SAVE_FILTERS
+    { name: 'DialogCreator packages', extensions: ['dc.zip'] }
 ];
 
 
@@ -168,7 +166,7 @@ function readDialogFromPath(filePath: string) {
     if (isDialogPackagePath(filePath)) {
         return readDialogPackage(fs.readFileSync(filePath));
     }
-    return fs.readFileSync(filePath, 'utf-8');
+    throw new Error('Unsupported dialog path. Open a .dc.zip package or a dialog directory containing dialog.json and actions.js.');
 }
 
 function writeDialogToPath(filePath: string, json: string) {
@@ -177,7 +175,7 @@ function writeDialogToPath(filePath: string, json: string) {
     } else if (isDialogPackagePath(filePath)) {
         fs.writeFileSync(filePath, createDialogPackage(json));
     } else {
-        fs.writeFileSync(filePath, json, 'utf-8');
+        throw new Error('Unsupported save path. Save as a .dc.zip package or into a dialog directory.');
     }
 }
 
