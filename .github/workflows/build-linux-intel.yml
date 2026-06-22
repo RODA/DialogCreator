@@ -11,7 +11,7 @@ on:
       release_repository:
         description: Target repository in owner/repo form. Leave empty to use this repository.
         required: false
-        default: dusadrian/binaries
+        default: ""
         type: string
       overwrite_release_assets:
         description: Replace existing release assets with the same filenames.
