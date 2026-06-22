@@ -6,12 +6,7 @@ on:
       release_tag:
         description: Existing release tag to upload build outputs to. Leave empty to skip release upload.
         required: false
-        default: DialogCreator
-        type: string
-      release_repository:
-        description: Target repository in owner/repo form. Leave empty to use this repository.
-        required: false
-        default: ""
+        default: latest
         type: string
       overwrite_release_assets:
         description: Replace existing release assets with the same filenames.
@@ -54,14 +49,15 @@ jobs:
         shell: bash
         env:
           RELEASE_TAG: ${{ inputs.release_tag }}
-          TARGET_REPO: ${{ inputs.release_repository != '' && inputs.release_repository || github.repository }}
-          GH_TOKEN: ${{ secrets.RELEASE_UPLOAD_TOKEN != '' && secrets.RELEASE_UPLOAD_TOKEN || github.token }}
+          RELEASE_NAME: Latest build
+          TARGET_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           if gh release view "$RELEASE_TAG" --repo "$TARGET_REPO" >/dev/null 2>&1; then
-            gh release edit "$RELEASE_TAG" --repo "$TARGET_REPO" --prerelease --latest=false
+            gh release edit "$RELEASE_TAG" --repo "$TARGET_REPO" --prerelease --latest=false --title "$RELEASE_NAME"
           else
-            gh release create "$RELEASE_TAG" --repo "$TARGET_REPO" --prerelease --latest=false --title "$RELEASE_TAG" --notes ""
+            gh release create "$RELEASE_TAG" --repo "$TARGET_REPO" --prerelease --latest=false --title "$RELEASE_NAME" --notes ""
           fi
 
       - name: Upload Linux assets to GitHub release
@@ -69,9 +65,9 @@ jobs:
         shell: bash
         env:
           RELEASE_TAG: ${{ inputs.release_tag }}
-          TARGET_REPO: ${{ inputs.release_repository != '' && inputs.release_repository || github.repository }}
+          TARGET_REPO: ${{ github.repository }}
           OVERWRITE_RELEASE_ASSETS: ${{ inputs.overwrite_release_assets }}
-          GH_TOKEN: ${{ secrets.RELEASE_UPLOAD_TOKEN != '' && secrets.RELEASE_UPLOAD_TOKEN || github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           files=(build/output/*.AppImage)
