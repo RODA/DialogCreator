@@ -79,8 +79,6 @@ export const coms = {
 
     fontSize: 12,
     fontFamily: "'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, 'Noto Sans', 'Liberation Sans', sans-serif",
-    maxWidth: 615,
-    maxHeight: 455,
 } satisfies Communications;
 
 // automatically dispatch all events to their respective handlers

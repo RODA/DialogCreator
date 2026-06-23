@@ -49,6 +49,23 @@ body {
     border-bottom: 1px solid #FFF;
 }
 
+/* Match the main editor element-list typography. */
+#elementsList,
+#paperAvailableElements {
+    font-size: 0.8rem;
+    line-height: 1.25;
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, 'Noto Sans', 'Liberation Sans', sans-serif;
+}
+
+#paperAvailableElements li,
+#paperAvailableElements li > *,
+#paperAvailableElements button,
+#paperAvailableElements .smart-button,
+#paperAvailableElements .custombutton {
+    font-size: inherit !important;
+    line-height: inherit;
+}
+
 #middle-space {
     width: 30px;
     min-width: 30px;
@@ -172,4 +189,3 @@ body {
 #propertiesList::-webkit-scrollbar-track {
     background: #f0f0f0;
 }
-

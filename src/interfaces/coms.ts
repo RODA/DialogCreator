@@ -11,6 +11,4 @@ export interface Communications {
     handlers: { [key: string]: string };
     fontSize: number;
     fontFamily: string;
-    maxWidth: number;
-    maxHeight: number;
 }

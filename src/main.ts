@@ -75,6 +75,8 @@ type InfoPage = 'manual' | 'api' | 'about';
 const EDITOR_WINDOW_STATE_FILE = 'editor-window-state.json';
 const RECENT_DIALOGS_FILE = 'recent-dialogs.json';
 const MAX_RECENT_DIALOGS = 10;
+const EDITOR_WINDOW_DEFAULT_WIDTH = 1050;
+const EDITOR_WINDOW_DEFAULT_HEIGHT = 680;
 const DIALOG_SAVE_FILTERS: Electron.FileFilter[] = [
     { name: 'DialogCreator package', extensions: ['dc.zip'] }
 ];
@@ -226,8 +228,8 @@ function loadEditorWindowState(): Electron.Rectangle | null {
         const statePath = getEditorWindowStatePath();
         if (!fs.existsSync(statePath)) return null;
         const raw = JSON.parse(fs.readFileSync(statePath, 'utf8')) as Partial<Electron.Rectangle>;
-        const width = Math.max(1200, Math.round(Number(raw.width) || 0));
-        const height = Math.max(680, Math.round(Number(raw.height) || 0));
+        const width = Math.max(EDITOR_WINDOW_DEFAULT_WIDTH, Math.round(Number(raw.width) || 0));
+        const height = Math.max(EDITOR_WINDOW_DEFAULT_HEIGHT, Math.round(Number(raw.height) || 0));
         const x = Math.round(Number(raw.x));
         const y = Math.round(Number(raw.y));
         if (!Number.isFinite(width) || !Number.isFinite(height) || !Number.isFinite(x) || !Number.isFinite(y)) {
@@ -274,10 +276,10 @@ function createMainWindow() {
             sandbox: false,
             additionalArguments: ['--dc-window=editorWindow']
         },
-        width: restoredBounds?.width ?? 1200,
-        height: restoredBounds?.height ?? 680,
-        minWidth: 1200,
-        minHeight: 680,
+        width: restoredBounds?.width ?? EDITOR_WINDOW_DEFAULT_WIDTH,
+        height: restoredBounds?.height ?? EDITOR_WINDOW_DEFAULT_HEIGHT,
+        minWidth: EDITOR_WINDOW_DEFAULT_WIDTH,
+        minHeight: EDITOR_WINDOW_DEFAULT_HEIGHT,
         x: restoredBounds?.x,
         y: restoredBounds?.y,
         center: restoredBounds ? false : true,
