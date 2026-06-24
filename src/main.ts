@@ -83,6 +83,7 @@ const DIALOG_SAVE_FILTERS: Electron.FileFilter[] = [
 const DIALOG_OPEN_FILTERS: Electron.FileFilter[] = [
     { name: 'DialogCreator packages', extensions: ['dc.zip'] }
 ];
+const DIALOG_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
 
 const gotTheLock = app.requestSingleInstanceLock();
@@ -172,6 +173,8 @@ function readDialogFromPath(filePath: string) {
 }
 
 function writeDialogToPath(filePath: string, json: string) {
+    validateDialogJsonForSave(json);
+
     if (isDialogDirectoryPath(filePath)) {
         writeDialogDirectory(filePath, json);
     } else if (isDialogPackagePath(filePath)) {
@@ -181,19 +184,57 @@ function writeDialogToPath(filePath: string, json: string) {
     }
 }
 
-function defaultDialogSavePath() {
+function parseDialogJsonForSave(json: string): Record<string, unknown> {
+    try {
+        const parsed = JSON.parse(json);
+        if (!parsed || typeof parsed !== 'object') {
+            throw new Error('Dialog JSON must contain an object.');
+        }
+        return parsed as Record<string, unknown>;
+    } catch (error: any) {
+        const message = error && error.message ? String(error.message) : String(error);
+        throw new Error(`Dialog JSON is invalid: ${message}`);
+    }
+}
+
+function dialogNameFromJson(json: string): string {
+    const parsed = parseDialogJsonForSave(json);
+    const properties = parsed.properties;
+    if (!properties || typeof properties !== 'object') {
+        throw new Error('Dialog properties are missing.');
+    }
+
+    const name = String((properties as Record<string, unknown>).name || '').trim();
+    if (!DIALOG_NAME_PATTERN.test(name)) {
+        throw new Error(
+            'Dialog name must be one word using only letters, numbers, and underscores, and it cannot start with a number.'
+        );
+    }
+
+    return name;
+}
+
+function validateDialogJsonForSave(json: string): void {
+    dialogNameFromJson(json);
+}
+
+function defaultDialogSavePath(json?: string) {
+    const dialogName = json ? dialogNameFromJson(json) : '';
+
     if (currentFilePath && currentFilePath.trim().length > 0) {
         if (isDialogDirectoryPath(currentFilePath)) {
             const parent = path.dirname(currentFilePath);
-            const name = path.basename(currentFilePath);
+            const name = dialogName || path.basename(currentFilePath);
             return path.join(parent, `${name}.dc.zip`);
         }
 
         const dir = path.dirname(currentFilePath);
-        const base = path.basename(currentFilePath).replace(/(?:\.dc\.zip|\.[^./\\]+)$/i, '');
+        const base = dialogName
+            || path.basename(currentFilePath).replace(/(?:\.dc\.zip|\.[^./\\]+)$/i, '');
         return path.join(dir, `${base}.dc.zip`);
     }
-    return 'dialog.dc.zip';
+
+    return `${dialogName || 'dialog'}.dc.zip`;
 }
 
 function canSaveDirectlyToCurrentPath() {
@@ -1044,7 +1085,7 @@ async function confirmQuitIfDirty(): Promise<boolean> {
                     const { canceled, filePath } = await dialog.showSaveDialog(editorWindow, {
                         title: 'Save dialog',
                         filters: DIALOG_SAVE_FILTERS,
-                        defaultPath: defaultDialogSavePath()
+                        defaultPath: defaultDialogSavePath(data)
                     });
                     if (canceled || !filePath) {
                         resolve(false);
@@ -1106,7 +1147,7 @@ function buildMainMenuTemplate(): MenuItemConstructorOptions[] {
                                     const { canceled, filePath } = await dialog.showSaveDialog(editorWindow, {
                                         title: 'Save dialog',
                                         filters: DIALOG_SAVE_FILTERS,
-                                        defaultPath: defaultDialogSavePath()
+                                        defaultPath: defaultDialogSavePath(current)
                                     });
 
                                     if (!canceled && filePath) {
@@ -1207,7 +1248,7 @@ function buildMainMenuTemplate(): MenuItemConstructorOptions[] {
                         const { canceled, filePath } = await dialog.showSaveDialog(editorWindow, {
                             title: 'Save dialog',
                             filters: DIALOG_SAVE_FILTERS,
-                            defaultPath: defaultDialogSavePath()
+                            defaultPath: defaultDialogSavePath(data)
                         });
                         if (canceled || !filePath) return;
                         writeDialogToPath(filePath, data);
@@ -1240,7 +1281,7 @@ function buildMainMenuTemplate(): MenuItemConstructorOptions[] {
                         const { canceled, filePath } = await dialog.showSaveDialog(editorWindow, {
                             title: 'Save dialog As...',
                             filters: DIALOG_SAVE_FILTERS,
-                            defaultPath: defaultDialogSavePath()
+                            defaultPath: defaultDialogSavePath(data)
                         });
                         if (canceled || !filePath) return;
                         writeDialogToPath(filePath, data);
