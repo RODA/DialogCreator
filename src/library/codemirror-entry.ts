@@ -317,6 +317,49 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
         // Track identifiers we already warned to avoid duplicate "is not defined" on the same token
         const unknownFunctionAt = new Set<number>();
         const skipUndefinedAt = new Set<number>();
+        const objectBindingCalls: any[] = [];
+        const manualDatasetPopulationCalls: any[] = [];
+
+        const callNameOf = (node: any): string => {
+            const callee = node?.callee;
+            if (callee?.type === 'MemberExpression' && callee.object?.type === 'Identifier' && callee.object.name === 'ui') {
+                if (callee.property?.type === 'Identifier') return String(callee.property.name);
+                if (callee.property?.type === 'Literal') return String(callee.property.value);
+            }
+            if (callee?.type === 'Identifier') {
+                return String(callee.name);
+            }
+            return '';
+        };
+
+        const stringArg = (node: any): string => {
+            if (node?.type === 'Literal') return String(node.value ?? '');
+            if (node?.type === 'Identifier') return String(node.name ?? '');
+            return '';
+        };
+
+        const isListObjectsDatasetsCall = (node: any): boolean => {
+            return node?.type === 'CallExpression'
+                && callNameOf(node) === 'listObjects'
+                && String(node.arguments?.[0]?.value || '').toLowerCase() === 'datasets';
+        };
+
+        const isObjectBindingCall = (node: any): boolean => {
+            if (node?.type !== 'CallExpression') return false;
+            const name = callNameOf(node);
+            return name === 'bindObjects';
+        };
+
+        const isManualDatasetPopulationCall = (node: any): boolean => {
+            if (node?.type !== 'CallExpression' || callNameOf(node) !== 'setValue') {
+                return false;
+            }
+            const targetName = stringArg(node.arguments?.[0]);
+
+            return targetName.length > 0
+                && /datasets?/i.test(targetName)
+                && isListObjectsDatasetsCall(node.arguments?.[1]);
+        };
 
         walk(ast, (n, parent) => {
             if (n.type !== 'CallExpression') return;
@@ -337,6 +380,14 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
             }
 
             const args = n.arguments || [];
+
+            if (isObjectBindingCall(n)) {
+                objectBindingCalls.push(n);
+            }
+            if (isManualDatasetPopulationCall(n)) {
+                manualDatasetPopulationCalls.push(n);
+            }
+
             // Calls that use element name as first arg
         const elementFirstArgCalls = new Set(Array.from(ELEMENT_FIRST_ARG_CALLS as readonly string[]));
 
@@ -532,6 +583,15 @@ function createCodeEditor(mount: HTMLElement, options?: CMOptions) : CMInstance 
                 addDiagnostic(n, `'${name}' is not defined.`);
             }
         });
+
+        if (objectBindingCalls.length && manualDatasetPopulationCalls.length) {
+            manualDatasetPopulationCalls.forEach((node) => {
+                addDiagnostic(
+                    node,
+                    'This dataset control is manually populated while bindObjects() is also used. Prefer bindObjects() as the owner; use listObjects("datasets") only for standalone/manual lists.'
+                );
+            });
+        }
 
         return diagnostics;
     }, { delay: 250 });

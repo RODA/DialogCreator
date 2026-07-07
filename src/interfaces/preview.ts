@@ -13,6 +13,17 @@ export interface ContainerItemDescriptor {
     active?: boolean;
 }
 
+export type ObjectBindingVariables =
+    | string
+    | string[]
+    | Record<string, string | string[]>;
+
+export interface ObjectBindingRequest {
+    dialog?: string;
+    datasets: string;
+    variables?: ObjectBindingVariables;
+}
+
 export interface PreviewUI {
     /** Log helper (forwards to editor console) */
     log(...args: unknown[]): void;
@@ -112,6 +123,8 @@ export interface PreviewUI {
     listObjects(type: string): string[];
     /** Return list of columns specific to a dataset */
     listColumns(dataset: string | string[]): Array<string | ContainerItemDescriptor>;
+    /** Bind object and field controls to the host data environment. */
+    bindObjects(request: ObjectBindingRequest): Promise<unknown>;
 
     /** Register an event handler on the wrapper */
     on(element: string, event: string, handler: (ev: Event, el: HTMLElement) => void): void;
@@ -189,6 +202,8 @@ export interface PreviewUIEnv {
     showDialogMessage: (type: 'info' | 'warning' | 'error' | 'question', message: string, detail: string) => void;
     // Optional app-specific external function bridge
     callExternal?: (name: string, parameters?: unknown) => Promise<unknown>;
+    // Optional standard host binding for object selectors and dependent fields
+    bindObjects?: (request: ObjectBindingRequest) => Promise<unknown>;
     // Optional dialog-local message translation lookup
     translateMessage?: (text: string) => string;
     // Open an external floating run panel near the Preview window

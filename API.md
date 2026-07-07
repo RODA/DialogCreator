@@ -214,12 +214,40 @@ Validation and highlight helpers
 - Clear a previously added validation message. If `message` is provided, only that message is removed; otherwise, all messages for the element are cleared.
 - When `message` is provided, it is translated with the same lookup as `addError()` so callers can pass the same source text to add and clear an error.
 
-Backend helpers (in the developer's responsibility)
+Object and data helpers
+
+`bindObjects(request)`
+
+  - Connects a dialog's object selector to the host application's current data environment.
+  - Use this when a dialog lets the user choose a dataset, table, or other runtime object and should stay in step with the host application.
+  - The host owns the object list, refresh behavior, selection memory, and dependent variable or field lists. The dialog should react to selections with `onChange()`, but it should not also fill the same selector manually with `setValue(..., listObjects(...))`.
+  - `request.datasets` is the container that lists the available datasets or table-like objects.
+  - `request.variables` is optional. It names one or more containers that should list fields from the selected dataset. It can be a single container, an array of containers, or a role map such as `{ rows: c_rows, columns: c_columns }`.
+  - `request.dialog` is optional. It identifies the dialog so a host application can apply dialog-specific defaults or policies without exposing product-specific function names in the dialog script.
+  - In Dialog Creator Preview, `bindObjects()` uses the built-in example datasets so the dialog can be tested without a target application.
+  - In a consuming application, `bindObjects()` is a standard API method that the host must implement. Do not write `callExternal('bindObjects', ...)` as a substitute; `callExternal()` is for app-specific extensions outside the shared API.
+  - Example:
+
+```javascript
+bindObjects({
+  dialog: 'recode',
+  datasets: c_datasets,
+  variables: c_variables
+});
+
+onChange(c_datasets, () => {
+  clearError(c_datasets);
+  selected_dataset = getSelected(c_datasets)[0] || '<dataset>';
+  selected_variable = '<variable>';
+  updateSyntax(buildCommand());
+});
+```
 
 `listObjects(type)`
 
   - Returns an array of object names available in the backend environment for the requested `type`.
-  - Use `listObjects('datasets')` to retrieve dataset names.
+  - Use `listObjects('datasets')` only when the dialog deliberately manages a manual dataset list itself.
+  - For normal hosted dataset selectors, prefer `bindObjects()` so the host application owns refreshes, selection state, and dependent variable lists.
   - Other strings can be used for backend-specific object groups such as arrays, lists, or custom classes.
 
 `listColumns(dataset)`
@@ -424,29 +452,38 @@ This looks like a lot of work, but in reality it only requires a few lines of co
 
 The syntax construction is left entirely to the user's imagination, and a dedicated custom function `buildCommand()` will be introduced later. In the above image, the code starts by defining a few global variables to hold the selected dataset and variable names, as well as the recoded variable name (which is updated via a checkbox handler, also shown later).
 
-Once the Preview window is started, the first action is to populate the datasets container with the list of available datasets. This is done via the API function `setValue()`, which accepts an array of strings to render as container items. Here, the built-in API function `listObjects('datasets')` is used to retrieve the list of datasets from R (it is the developer's responsibility to provide this function in the host application). This is done only once, at the start of the Preview:
+Once the Preview window is started, the first action is to bind the datasets container to the host application's available data objects. For ordinary dialogs this should be done with `bindObjects()`. The host application then owns the dataset list and any refresh behavior, while the dialog code remains responsible for reacting to the user's selection:
 
 ```javascript
-setValue(c_datasets, listObjects('datasets'));
+bindObjects({
+  dialog: 'recode',
+  datasets: c_datasets,
+  variables: c_variables
+});
 ```
 (note also that the container name `c_datasets` is used here, as manually changed in the design window).
 
-The custom code then continues with an event handler for the datasets container, which triggers whenever the user selects a dataset. Inside this handler, the selected dataset is retrieved via `getSelected()`, and stored in the global variable `selected_dataset`. Then, the variables container is populated with the list of variables from the selected dataset, using another built-in API function `listColumns()`, which returns an array of variable metadata objects. Finally, the syntax panel is updated by calling a custom function `buildCommand()`, which constructs the R command string based on the current selections:
+The custom code then continues with an event handler for the datasets container, which triggers whenever the user selects a dataset. Inside this handler, the selected dataset is retrieved via `getSelected()`, and stored in the global variable `selected_dataset`. When `variables` is supplied to `bindObjects()`, the host or Preview runtime updates that variable container for the selected dataset. Finally, the syntax panel is updated by calling a custom function `buildCommand()`, which constructs the command string based on the current selections:
 
 ```javascript
 onChange(c_datasets, () => {
   clearError(c_datasets);
-  selected_dataset = getSelected(c_datasets);
-  if (selected_dataset.length == 0) {
-    selected_dataset = '<dataset>';
+  selected_dataset = getSelected(c_datasets)[0] || '<dataset>';
+  if (selected_dataset === '<dataset>') {
     clearContent(c_variables);
-  } else {
-    setValue(c_variables, listColumns(selected_dataset));
   }
   selected_variable = '<variable>';
   updateSyntax(buildCommand());
 });
 ```
+
+For preview-only scripts or special dialogs that intentionally own their object list, the lower-level manual pattern is still available:
+
+```javascript
+setValue(c_datasets, listObjects('datasets'));
+```
+
+Do not combine that manual population with `bindObjects()` for the same dataset selector. Pick one owner for the list.
 
 The next set of commands are just convenience handlers for the radio buttons. For instance, when the user clicks on the first top input in the old values (`i_value_old`), the corresponding radion button is checked programmatically via the `check()` API function. Similar handlers are defined for all other radio buttons, both for old and new values:
 

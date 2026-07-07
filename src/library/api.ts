@@ -1,6 +1,12 @@
 // Shared API surface bits used by both Preview runtime and Editor (linter/helpers)
 
-import type { ContainerItemDescriptor, PreviewUI, PreviewUIEnv } from '../interfaces/preview';
+import type {
+    ContainerItemDescriptor,
+    ObjectBindingRequest,
+    ObjectBindingVariables,
+    PreviewUI,
+    PreviewUIEnv
+} from '../interfaces/preview';
 import { renderutils, errorhelpers } from './renderutils';
 import { utils } from './utils';
 import { datasets } from './datasets';
@@ -35,8 +41,8 @@ export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
     // errors
     'addError', 'clearError',
 
-    // datasets/workspace
-    'listObjects', 'listColumns'
+    // object/data helpers
+    'listObjects', 'listColumns', 'bindObjects'
 ]);
 
 // Methods that take (elementName, ...) as first argument; used by the linter.
@@ -46,6 +52,7 @@ const NEUTRAL_NAMES = new Set<keyof PreviewUI>([
     'showMessage',
     'listObjects',
     'listColumns',
+    'bindObjects',
     'callExternal',
     'run',
     'resetDialog',
@@ -602,6 +609,68 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             default:
                 return [];
         }
+    };
+
+    const collectObjectBindingVariableContainers = (variables: ObjectBindingVariables | undefined): string[] => {
+        const out: string[] = [];
+        const addName = (value: unknown) => {
+            const name = String(value ?? '').trim();
+            if (name) {
+                out.push(name);
+            }
+        };
+
+        if (typeof variables === 'string') {
+            addName(variables);
+        } else if (Array.isArray(variables)) {
+            variables.forEach(addName);
+        } else if (variables && typeof variables === 'object') {
+            Object.values(variables).forEach((value) => {
+                if (Array.isArray(value)) {
+                    value.forEach(addName);
+                } else {
+                    addName(value);
+                }
+            });
+        }
+
+        return Array.from(new Set(out));
+    };
+
+    const normalizeObjectBindingRequest = (request: ObjectBindingRequest): ObjectBindingRequest => {
+        if (!request || typeof request !== 'object') {
+            throw new SyntaxError('bindObjects() expects a binding object');
+        }
+
+        const datasetsName = coerceName((request as ObjectBindingRequest).datasets);
+
+        return {
+            ...request,
+            dialog: String(request.dialog || '').trim(),
+            datasets: datasetsName
+        };
+    };
+
+    const bindObjectsInPreview = (request: ObjectBindingRequest): void => {
+        const variableContainers = collectObjectBindingVariableContainers(request.variables);
+
+        api.setValue(request.datasets, listObjectsByType('datasets'));
+
+        if (!variableContainers.length) {
+            return;
+        }
+
+        const refreshVariables = () => {
+            const selectedDataset = api.getSelected(request.datasets)[0] || '';
+            const variables = selectedDataset ? listColumnsFromDataset(selectedDataset) : [];
+
+            variableContainers.forEach((container) => {
+                api.setValue(container, variables);
+            });
+        };
+
+        api.onChange(request.datasets, refreshVariables);
+        refreshVariables();
     };
 
     const api: PreviewUI = {
@@ -1302,6 +1371,17 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
 
         // Simulated workspace columns listing
         listColumns: (input) => listColumnsFromDataset(input),
+
+        bindObjects: async (request) => {
+            const normalized = normalizeObjectBindingRequest(request);
+
+            if (typeof env.bindObjects === 'function') {
+                return env.bindObjects(normalized);
+            }
+
+            bindObjectsInPreview(normalized);
+            return normalized;
+        },
 
         on: (name, event, handler: (ev: Event, el: HTMLElement) => void) => {
             const el = findWrapper(name);
