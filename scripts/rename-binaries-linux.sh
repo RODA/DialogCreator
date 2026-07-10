@@ -7,7 +7,8 @@ NAME=$(node -p "(p=> (p.build && p.build.productName) ? p.build.productName : p.
 # Use a filename-safe variant (replace spaces with underscores)
 NAME_FILE=$(printf '%s' "$NAME" | sed 's/[[:space:]]\+/_/g')
 
-ORIGINAL_LINUX_INTEL="build/output/${NAME}-${VERSION}.AppImage"
+ORIGINAL_LINUX_INTEL="build/output/${NAME_FILE}_${VERSION}_x64.AppImage"
+LEGACY_LINUX_INTEL="build/output/${NAME}-${VERSION}.AppImage"
 NEW_LINUX_INTEL="${NAME_FILE}_intel.AppImage"
 
 copied_any=0
@@ -15,6 +16,10 @@ copied_any=0
 if [ -f "$ORIGINAL_LINUX_INTEL" ]; then
     echo "Copying $(basename "$ORIGINAL_LINUX_INTEL") -> $NEW_LINUX_INTEL"
     cp -f "$ORIGINAL_LINUX_INTEL" "build/output/$NEW_LINUX_INTEL"
+    copied_any=1
+elif [ -f "$LEGACY_LINUX_INTEL" ]; then
+    echo "Copying $(basename "$LEGACY_LINUX_INTEL") -> $NEW_LINUX_INTEL"
+    cp -f "$LEGACY_LINUX_INTEL" "build/output/$NEW_LINUX_INTEL"
     copied_any=1
 fi
 

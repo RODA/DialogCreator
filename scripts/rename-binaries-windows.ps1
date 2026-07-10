@@ -7,11 +7,13 @@ $name = if ($packageJson.build -and $packageJson.build.productName) { $packageJs
 $nameForFile = ($name -replace "\s+", "_")
 
 $artifactDir = "build/output"
+$escapedVersion = [regex]::Escape($version)
+$setupPattern = "Setup[-_ ]$escapedVersion"
 
 # Copy NSIS installer to a stable manual-download name.
 $installerCandidates = @(
     Get-ChildItem -Path $artifactDir -Filter "*.exe" -File -ErrorAction SilentlyContinue |
-        Where-Object { $_.Name -match [regex]::Escape("Setup $version") }
+        Where-Object { $_.Name -match $setupPattern }
 )
 
 if ($installerCandidates.Count -eq 0) {
@@ -28,7 +30,7 @@ $portableCandidates = @(
     Get-ChildItem -Path $artifactDir -Filter "*.exe" -File -ErrorAction SilentlyContinue |
         Where-Object {
             $_.Name -ne $installerTargetName -and
-            $_.Name -notmatch [regex]::Escape("Setup $version")
+            $_.Name -notmatch $setupPattern
         }
 )
 

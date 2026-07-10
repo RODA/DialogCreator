@@ -6,7 +6,7 @@ NAME=$(node -p "(p=> (p.build && p.build.productName) ? p.build.productName : p.
 # Use a filename-safe variant (replace spaces with underscores)
 NAME_FILE=$(printf '%s' "$NAME" | sed 's/[[:space:]]\+/_/g')
 
-ORIGINAL_UNIVERSAL_DMG="build/output/${NAME}-${VERSION}-universal.dmg"
+ORIGINAL_UNIVERSAL_DMG="build/output/${NAME_FILE}_${VERSION}_universal.dmg"
 STABLE_UNIVERSAL_DMG="${NAME_FILE}_universal.dmg"
 LATEST_MAC="build/output/latest-mac.yml"
 
@@ -41,9 +41,18 @@ fs.writeFileSync(latestPath, yaml.dump(latest, {
 NODE
 fi
 
+LEGACY_UNIVERSAL_DMG="build/output/${NAME}-${VERSION}-universal.dmg"
+DMG_SOURCE=""
+
 if [ -f "$ORIGINAL_UNIVERSAL_DMG" ]; then
-    echo "Renaming $(basename "$ORIGINAL_UNIVERSAL_DMG") -> $STABLE_UNIVERSAL_DMG"
-    mv "$ORIGINAL_UNIVERSAL_DMG" "build/output/$STABLE_UNIVERSAL_DMG"
+    DMG_SOURCE="$ORIGINAL_UNIVERSAL_DMG"
+elif [ -f "$LEGACY_UNIVERSAL_DMG" ]; then
+    DMG_SOURCE="$LEGACY_UNIVERSAL_DMG"
+fi
+
+if [ -n "$DMG_SOURCE" ]; then
+    echo "Renaming $(basename "$DMG_SOURCE") -> $STABLE_UNIVERSAL_DMG"
+    mv "$DMG_SOURCE" "build/output/$STABLE_UNIVERSAL_DMG"
 else
     echo "No universal DMG found at $ORIGINAL_UNIVERSAL_DMG." >&2
 fi

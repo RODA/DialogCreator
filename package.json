@@ -95,9 +95,16 @@
         ]
       }
     },
+    "nsis": {
+      "artifactName": "${productName}_Setup_${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "${productName}_Portable_${version}.${ext}"
+    },
     "mac": {
       "icon": "icons/DialogCreator.icns",
       "category": "public.app-category.productivity",
+      "artifactName": "${productName}_${version}_${arch}.${ext}",
       "extendInfo": {
         "NSHumanReadableCopyright": "© 2025-2026 Adrian Dusa — Academic Non-Commercial License (see LICENSE file for details)."
       },
@@ -118,6 +125,7 @@
     },
     "linux": {
       "target": "AppImage",
+      "artifactName": "${productName}_${version}_${arch}.${ext}",
       "maintainer": "RODA",
       "icon": "icons/DialogCreator.png",
       "category": "Development / Science"

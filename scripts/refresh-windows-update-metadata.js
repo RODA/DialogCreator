@@ -54,11 +54,42 @@ function findInstallerPath(latestInfo) {
     }
 
     const installerPath = path.join(outputDir, latestInfo.path);
-    if (!fs.existsSync(installerPath)) {
-        fail(`Windows updater installer not found: ${installerPath}`);
+    if (fs.existsSync(installerPath)) {
+        return installerPath;
     }
 
-    return installerPath;
+    const packagePath = path.join(rootDir, "package.json");
+    const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+    const productName = String(pkg.build?.productName || pkg.name || "DialogCreator").trim();
+    const version = String(pkg.version || "").trim();
+    const escapedVersion = version.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const setupPattern = new RegExp(`setup[-_ ]${escapedVersion}`, "i");
+
+    const candidates = fs.readdirSync(outputDir)
+        .filter((fileName) => fileName.toLowerCase().endsWith(".exe"))
+        .filter((fileName) => {
+            const lowerName = fileName.toLowerCase();
+
+            if (
+                lowerName.endsWith("_setup_intel.exe") ||
+                lowerName.endsWith("_portable_intel.exe")
+            ) {
+                return false;
+            }
+
+            if (!lowerName.includes(productName.toLowerCase())) {
+                return false;
+            }
+
+            return setupPattern.test(fileName);
+        })
+        .map((fileName) => path.join(outputDir, fileName));
+
+    if (candidates.length === 1) {
+        return candidates[0];
+    }
+
+    fail(`Windows updater installer not found: ${installerPath}`);
 }
 
 function refreshBlockmap(installerPath) {
@@ -87,10 +118,21 @@ function updateLatestInfo(latestInfo, installerPath) {
 
     if (Array.isArray(latestInfo.files)) {
         for (const fileInfo of latestInfo.files) {
+            if (!fileInfo) {
+                continue;
+            }
+
+            const entryPath = String(fileInfo.path || fileInfo.url || "");
             if (
-                fileInfo &&
-                (fileInfo.path === installerName || fileInfo.url === installerName)
+                entryPath === installerName ||
+                /\.exe$/i.test(entryPath)
             ) {
+                if (typeof fileInfo.path === "string") {
+                    fileInfo.path = installerName;
+                }
+                if (typeof fileInfo.url === "string") {
+                    fileInfo.url = installerName;
+                }
                 fileInfo.sha512 = installerSha512;
                 fileInfo.size = installerSize;
             }

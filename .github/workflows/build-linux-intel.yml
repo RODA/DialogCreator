@@ -72,7 +72,6 @@ jobs:
           set -euo pipefail
           files=(
             build/output/*.AppImage
-            build/output/*.AppImage.blockmap
             build/output/latest-linux.yml
           )
           cmd=(gh release upload "$RELEASE_TAG" --repo "$TARGET_REPO")
