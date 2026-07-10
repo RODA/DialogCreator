@@ -15,6 +15,7 @@ if (process.env.NODE_ENV == 'development') {
     dbFile = path.join(path.resolve('./src/database/DialogCreator.sqlite'));
 } else {
     const candidatePaths = [
+        ...(process.resourcesPath ? [path.join(process.resourcesPath, 'DialogCreator.sqlite')] : []),
         path.join(path.resolve(__dirname, '../../', 'DialogCreator.sqlite')),
         path.join(path.resolve(__dirname, '../../../', 'DialogCreator.sqlite')),
         path.join(path.resolve('./src/database/DialogCreator.sqlite')),
