@@ -1,15 +1,52 @@
 // encapsulation
 
-import { ipcRenderer } from 'electron';
 import { Communications } from '../interfaces/coms';
-import { EventEmitter } from 'events';
 import { utils } from '../library/utils';
 import { renderutils } from '../library/renderutils';
+import {
+    createMissingRendererTransport,
+    RendererTransport
+} from '../core/ipc/rendererTransport';
 
 
-const messenger = new EventEmitter();
+type Listener = (...args: unknown[]) => void;
 
-// Track which channels have been hooked into ipcRenderer
+const messenger = (() => {
+    const listeners = new Map<string, Listener[]>();
+
+    const on = function(channel: string, listener: Listener): void {
+        const channelListeners = listeners.get(channel) || [];
+        channelListeners.push(listener);
+        listeners.set(channel, channelListeners);
+    };
+
+    return {
+        emit(channel: string, ...args: unknown[]): void {
+            for (const listener of listeners.get(channel) || []) {
+                listener(...args);
+            }
+        },
+        on,
+        once(channel: string, listener: Listener): void {
+            const onceListener = function(...args: unknown[]): void {
+                const channelListeners = listeners.get(channel) || [];
+                listeners.set(
+                    channel,
+                    channelListeners.filter((candidate) => candidate !== onceListener)
+                );
+                listener(...args);
+            };
+
+            on(channel, onceListener);
+        }
+    };
+})();
+let transport: RendererTransport = createMissingRendererTransport();
+let rendererTransportConfigured = false;
+let handlerChannelsRegistered = false;
+const pendingTransportChannels = new Set<string>();
+
+// Track which channels have been hooked into the active renderer transport
 const registeredChannels = new Set<string>();
 
 const handlers: Record<string, string> = {
@@ -19,6 +56,56 @@ const handlers: Record<string, string> = {
     previewDialog: '../modules/editor',
 };
 
+export function setRendererTransport(nextTransport: RendererTransport): void {
+    transport = nextTransport;
+    rendererTransportConfigured = true;
+    for (const channel of pendingTransportChannels) {
+        registerTransportListener(channel);
+    }
+    pendingTransportChannels.clear();
+    registerHandlerChannels();
+}
+
+function ensureRendererTransport(channel: string): void {
+    if (!rendererTransportConfigured) {
+        throw new Error(`Renderer transport is not configured for channel "${channel}".`);
+    }
+}
+
+function registerTransportListener(channel: string): void {
+    const responseChannel = `message-from-main-${channel}`;
+
+    if (registeredChannels.has(channel)) {
+        return;
+    }
+
+    // Support both the legacy prefixed channel and a clean channel name
+    transport.on(responseChannel, (...args) => {
+        messenger.emit(channel, ...args);
+    });
+    transport.on(channel, (...args) => {
+        messenger.emit(channel, ...args);
+    });
+    registeredChannels.add(channel);
+}
+
+function registerHandlerChannels(): void {
+    if (handlerChannelsRegistered) {
+        return;
+    }
+
+    for (const eventName in coms.handlers) {
+        transport.on(eventName, async (...args) => {
+            // assume the event returns something
+            const result = await renderutils.handleEvent(eventName, ...args);
+            if (utils.exists(result)) {
+                messenger.emit(eventName + '-result', result);
+            }
+        });
+    }
+
+    handlerChannelsRegistered = true;
+}
 
 export const coms = {
     emit(channel, ...args) {
@@ -28,11 +115,11 @@ export const coms = {
     // send to all listeners from all processes, via ipcMain
     send(channel, ...args) {
         coms.sendTo('all', channel, ...args);
-        // ipcRenderer.send("send-to", "all", channel, ...args);
     },
 
     sendTo(window, channel, ...args) {
-        ipcRenderer.send("send-to", window, channel, ...args);
+        ensureRendererTransport(channel);
+        transport.send("send-to", window, channel, ...args);
     },
 
     async runLocal(channel, ...args) {
@@ -41,34 +128,20 @@ export const coms = {
     },
 
     on(channel, listener) {
-        // Ensure ipcRenderer is listening only once per logical channel
-        const responseChannel = `message-from-main-${channel}`;
-
-        if (!registeredChannels.has(channel)) {
-            // Support both the legacy prefixed channel and a clean channel name
-            ipcRenderer.on(responseChannel, (_event, ...args) => {
-                messenger.emit(channel, ...args);
-            });
-            ipcRenderer.on(channel, (_event, ...args) => {
-                messenger.emit(channel, ...args);
-            });
-            registeredChannels.add(channel);
+        if (rendererTransportConfigured) {
+            registerTransportListener(channel);
+        } else {
+            pendingTransportChannels.add(channel);
         }
 
         messenger.on(channel, listener);
     },
 
     once(channel, listener) {
-        const responseChannel = `message-from-main-${channel}`;
-
-        if (!registeredChannels.has(channel)) {
-            ipcRenderer.on(responseChannel, (_event, ...args) => {
-                messenger.emit(channel, ...args);
-            });
-            ipcRenderer.on(channel, (_event, ...args) => {
-                messenger.emit(channel, ...args);
-            });
-            registeredChannels.add(channel);
+        if (rendererTransportConfigured) {
+            registerTransportListener(channel);
+        } else {
+            pendingTransportChannels.add(channel);
         }
 
         messenger.once(channel, listener);
@@ -80,17 +153,6 @@ export const coms = {
     fontSize: 12,
     fontFamily: "'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, 'Noto Sans', 'Liberation Sans', sans-serif",
 } satisfies Communications;
-
-// automatically dispatch all events to their respective handlers
-for (const eventName in coms.handlers) {
-    ipcRenderer.on(eventName, async (_event, ...args) => {
-        // assume the event returns something
-        const result = await renderutils.handleEvent(eventName, ...args);
-        if (utils.exists(result)) {
-            messenger.emit(eventName + '-result', result);
-        }
-    });
-}
 
 coms.on('consolog', (...args: unknown[]) => {
     console.log(args[0]);

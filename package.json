@@ -5,8 +5,19 @@
   "main": "dist/main.js",
   "scripts": {
     "build": "node scripts/sync-docs-fonts.js && node scripts/sync-codicons.js && tsc && npm run bundle:cm6",
+    "build:web": "node scripts/build-web.js",
+    "dev:web": "node scripts/serve-web.js --replace-port",
+    "serve:web": "node scripts/serve-web.js --no-build --replace-port",
     "watch": "tsc -w",
-    "lint": "eslint -c .eslintrc --ext .ts ./src",
+    "lint": "eslint ./src",
+    "check:host-boundaries": "node scripts/check-host-boundaries.js",
+    "test:rendered": "node scripts/rendered-editor-contract.js",
+    "test:rendered:code": "npm run build:web && node scripts/rendered-code-contract.js",
+    "test:rendered:defaults": "npm run build:web && node scripts/rendered-defaults-contract.js",
+    "test:rendered:electron": "npm run build && node scripts/rendered-electron-contract.js",
+    "test:rendered:package": "npm run build:web && node scripts/rendered-browser-package-contract.js",
+    "test:rendered:preview": "npm run build:web && node scripts/rendered-preview-contract.js",
+    "test:rendered:web": "npm run build:web && node scripts/rendered-web-contract.js",
     "start": "npm run build && node scripts/start.js",
     "docs:pdf": "node scripts/manual/build-pdf.js",
     "docs:html": "node scripts/sync-docs-fonts.js && node scripts/sync-codicons.js && node scripts/manual/build-html.js",
@@ -84,7 +95,7 @@
       "extendInfo": {
         "NSHumanReadableCopyright": "© 2025 Adrian Dusa — Academic Non-Commercial License (see LICENSE file for details)."
       },
-        "target": {
+      "target": {
         "target": "dmg",
         "arch": [
           "arm64"
@@ -112,6 +123,7 @@
     "@codemirror/search": "^6.7.1",
     "@codemirror/state": "^6.6.0",
     "@codemirror/view": "^6.43.1",
+    "@eslint/js": "^9.39.4",
     "@types/emscripten": "^1.41.5",
     "@types/sqlite3": "^3.1.11",
     "@types/uuid": "^10.0.0",
@@ -123,6 +135,7 @@
     "esbuild": "^0.28.1",
     "eslint": "^10.5.0",
     "md-to-pdf": "^5.2.5",
+    "playwright": "^1.61.1",
     "typescript": "^6.0.3"
   },
   "dependencies": {

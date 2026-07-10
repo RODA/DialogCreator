@@ -18,6 +18,8 @@ dist
 *.Rhistory
 *.RData
 
+AGENTS.md
+
 build/
 package-lock.json
 src/bundles/codemirror.bundle.js

@@ -1,0 +1,150 @@
+/* Basic PDF styling for DialogCreator.md */
+@page {
+    size: A4;
+    margin: 15mm 15mm 20mm 15mm;
+}
+
+@font-face {
+    font-family: 'DialogCreator Mono';
+    src: url('../assets/fonts/liberation-mono/LiberationMono-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: block;
+}
+@font-face {
+    font-family: 'DialogCreator Mono';
+    src: url('../assets/fonts/liberation-mono/LiberationMono-Bold.ttf') format('truetype');
+    font-weight: 600;
+    font-style: normal;
+    font-display: block;
+}
+@font-face {
+    font-family: 'DialogCreator Mono';
+    src: url('../assets/fonts/liberation-mono/LiberationMono-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: block;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    color: #222;
+    /* Smaller overall text */
+    font-size: 13px;
+}
+
+h1, h2, h3 {
+    page-break-after: avoid;
+}
+
+/* Keep headings proportional to base size */
+h1 { font-size: 1.6em; }
+h2 { font-size: 1.3em; }
+h3 { font-size: 1.15em; }
+
+pre, code {
+    font-family: 'DialogCreator Mono', monospace;
+}
+
+pre {
+    /* background: #f8f8f8; */
+    border: 1px solid #eee;
+    /* padding: 8px 10px; */
+    border-radius: 4px;
+    overflow-x: auto;
+    font-size: 0.9em;
+    line-height: 1.5;
+}
+
+/* Slightly smaller inline code too */
+code {
+    font-size: 0.9em;
+    color: #4547ae;
+    font-weight: normal !important;
+}
+
+/* Highlight Dialog Creator API helpers rendered by highlight.js */
+/* Apply to both block and inline code */
+pre code.hljs span.hljs-title.function_,
+code.hljs span.hljs-title.function_ {
+    color: #ae4545 !important;
+    font-weight: normal !important;
+}
+
+/* Built-in/global functions keep the cooler tone */
+pre code.hljs span.hljs-title.function_.hljs-built_in,
+code.hljs span.hljs-title.function_.hljs-built_in {
+    color: #6f42c1 !important;
+    font-weight: normal !important;
+}
+
+/* Highlight arguments / element names within function calls */
+pre code.hljs span.hljs-params,
+code.hljs span.hljs-params {
+    color: #22863a !important;
+    font-weight: normal !important;
+}
+
+/* Keep string literals inside params green */
+pre code.hljs span.hljs-params span.hljs-string,
+code.hljs span.hljs-params span.hljs-string {
+    color: #22863a !important;
+    font-weight: normal !important;
+}
+
+pre code.hljs .hljs-keyword,
+code.hljs .hljs-keyword {
+    color: #000000; /* example */
+    font-weight: normal;
+}
+
+pre code.hljs .hljs-keyword,
+code.hljs .hljs-keyword {
+    color: #000000;
+    font-weight: normal;
+}
+
+pre code.hljs .hljs-string,
+code.hljs .hljs-string {
+    color: #22863a;
+    font-weight: normal;
+}
+
+.hljs-keyword { color: #000000; }
+.hljs-string  { color: #22863a; }
+.hljs-number  { color: #e36209; }
+.hljs-comment { color: #296294; font-style: italic; }
+
+pre code.hljs span.api-param,
+code.hljs span.api-param {
+    color: #477D9B !important;
+    font-weight: normal !important;
+}
+
+img {
+    max-width: 100%;
+}
+
+.page-break {
+    page-break-before: always;
+    break-before: page;
+}
+
+/* Add a simple header/footer */
+header, footer {
+    position: running(header-footer);
+}
+
+@page {
+    /* @top-left {
+        content: 'Dialog Creator — User Manual';
+        font-size: 10px;
+        color: #666;
+    } */
+    @bottom-right {
+        content: 'Page ' counter(page) ' of ' counter(pages);
+        font-size: 10px;
+        color: #666;
+    }
+}

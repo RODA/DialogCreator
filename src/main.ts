@@ -12,80 +12,35 @@ const OS_Windows = process.platform == 'win32';
 const OS_Linux = process.platform == 'linux';
 const OS_Mac = process.platform == 'darwin';
 
-import { app, BrowserWindow, dialog, ipcMain, Menu, screen } from "electron";
-import { utils } from "./library/utils";
+import { app, BrowserWindow, Menu, screen } from "electron";
+import { ElectronDialogDocumentSession } from "./shell-electron/document/electronDialogDocumentSession";
+import { installElectronIpcRouter } from "./shell-electron/ipc/electronIpcRouter";
 import {
-    createDialogPackage,
-    isDialogDirectoryPath,
-    isDialogPackagePath,
-    readDialogDirectory,
-    readDialogPackage,
-    writeDialogDirectory
-} from "./library/dialogPackage";
+    EDITOR_WINDOW_DEFAULT_HEIGHT,
+    EDITOR_WINDOW_DEFAULT_WIDTH,
+    loadEditorWindowState,
+    saveEditorWindowState
+} from "./shell-electron/windows/editorWindowState";
+import {
+    openDialogChildWindow
+} from "./shell-electron/windows/dialogChildWindow";
+import type { DialogChildWindowArgs } from "./core/host/dialogChildWindow";
+import {
+    InfoPage,
+    openInfoWindow as openElectronInfoWindow
+} from "./shell-electron/windows/infoWindow";
+import { maybeShowWaylandNotice } from "./shell-electron/platform/waylandNotice";
+import { SyntaxPanelWindowHost } from "./shell-electron/windows/syntaxPanelWindow";
 import * as path from "path";
-import * as fs from "fs";
-import { database } from "./database/database";
-import { DBElements } from "./interfaces/database";
-// One-time Wayland notice for packaged Linux users (no auto-relaunch)
-function maybeShowWaylandNotice() {
-    if (!app.isPackaged || process.platform !== 'linux') return;
-    const sessionType = (process.env.XDG_SESSION_TYPE || '').toLowerCase();
-    const onWayland = sessionType === 'wayland' || !!process.env.WAYLAND_DISPLAY;
-    if (!onWayland) return;
-
-    const noticeFile = path.join(app.getPath('userData'), 'wayland_notice_seen');
-    if (fs.existsSync(noticeFile)) return;
-
-    const detail = [
-        'Window positioning works best under X11.',
-        'On Wayland, preview/syntax windows may not stay aligned.',
-        'For best results, launch with X11 compatibility:',
-        'ELECTRON_OZONE_PLATFORM_HINT=x11 OZONE_PLATFORM=x11 XDG_SESSION_TYPE=x11 ./DialogCreator_1.0.0.AppImage'
-    ].join('\n');
-
-    const res = dialog.showMessageBoxSync({
-        type: 'info',
-        buttons: ['OK', "Don't show again"],
-        defaultId: 0,
-        cancelId: 0,
-        title: 'Wayland positioning notice',
-        message: 'Window positioning is limited on Wayland.',
-        detail,
-        normalizeAccessKeys: true
-    });
-
-    if (res === 1) {
-        try { fs.writeFileSync(noticeFile, 'seen'); } catch { /* ignore */ }
-    }
-}
 
 // Note: For packaged Linux builds, avoid forcing platform/env vars here. Users on Wayland can launch
 // with X11 overrides if needed (e.g., ELECTRON_OZONE_PLATFORM_HINT=x11 OZONE_PLATFORM=x11 XDG_SESSION_TYPE=x11).
 
 let editorWindow: BrowserWindow;
 let secondWindow: BrowserWindow;
-let syntaxPanelWindow: BrowserWindow | null;
-let syntaxPanelAnchor: BrowserWindow | null;
-let syntaxPanelHeight = 160; // content height; updated by renderer
-let syntaxPanelFollowTimer: NodeJS.Timeout | null = null;
-const SYNTAX_GAP = 8; // pixels below the preview content/frame
+let syntaxPanelHost: SyntaxPanelWindowHost;
+let documentSession: ElectronDialogDocumentSession;
 let lastEditorBounds: Electron.Rectangle | null = null;
-let infoWindow: BrowserWindow | null = null;
-type InfoPage = 'manual' | 'api' | 'about';
-const EDITOR_WINDOW_STATE_FILE = 'editor-window-state.json';
-const RECENT_DIALOGS_FILE = 'recent-dialogs.json';
-const MAX_RECENT_DIALOGS = 10;
-const EDITOR_WINDOW_DEFAULT_WIDTH = 1050;
-const EDITOR_WINDOW_DEFAULT_HEIGHT = 680;
-const DIALOG_SAVE_FILTERS: Electron.FileFilter[] = [
-    { name: 'DialogCreator package', extensions: ['dc.zip'] }
-];
-const DIALOG_OPEN_FILTERS: Electron.FileFilter[] = [
-    { name: 'DialogCreator packages', extensions: ['dc.zip'] }
-];
-const DIALOG_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
-
-
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
     app.quit();
@@ -96,216 +51,24 @@ const windowid: { [key: string]: number } = {
     secondWindow: 2
 }
 
-function getEditorWindowStatePath() {
-    return path.join(app.getPath('userData'), EDITOR_WINDOW_STATE_FILE);
-}
-
-function getRecentDialogsPath() {
-    return path.join(app.getPath('userData'), RECENT_DIALOGS_FILE);
-}
-
-function loadRecentDialogPaths(): string[] {
-    try {
-        const recentPath = getRecentDialogsPath();
-        if (!fs.existsSync(recentPath)) return [];
-        const raw = JSON.parse(fs.readFileSync(recentPath, 'utf8'));
-        if (!Array.isArray(raw)) return [];
-        return raw
-            .map((entry) => String(entry || '').trim())
-            .filter((entry) => entry.length > 0);
-    } catch {
-        return [];
-    }
-}
-
-function saveRecentDialogPaths(paths: string[]) {
-    try {
-        fs.writeFileSync(getRecentDialogsPath(), JSON.stringify(paths, null, 2));
-    } catch {
-        // ignore persistence failures
-    }
-}
-
 function rebuildApplicationMenu() {
     if (!app.isReady()) return;
-    const mainMenu = Menu.buildFromTemplate(buildMainMenuTemplate());
+    if (!documentSession) return;
+    const mainMenu = Menu.buildFromTemplate(documentSession.buildMainMenuTemplate());
     Menu.setApplicationMenu(mainMenu);
 }
 
-function addRecentDialogPath(filePath: string) {
-    const normalized = String(filePath || '').trim();
-    if (!normalized) return;
-    const next = [
-        normalized,
-        ...loadRecentDialogPaths().filter((entry) => entry !== normalized && fs.existsSync(entry))
-    ].slice(0, MAX_RECENT_DIALOGS);
-    saveRecentDialogPaths(next);
-    rebuildApplicationMenu();
-}
-
-function clearRecentDialogPaths() {
-    saveRecentDialogPaths([]);
-    rebuildApplicationMenu();
-}
-
-async function loadDialogFromPath(filePath: string) {
-    try {
-        const content = readDialogFromPath(filePath);
-        editorWindow.webContents.send('load-dialog-json', content);
-        pendingCanonicalUpdate = true;
-        dialogModified = false;
-        setCurrentDialogPath(filePath);
-        addRecentDialogPath(filePath);
-        updateWindowTitle();
-    } catch (e: any) {
-        dialog.showErrorBox('Load failed', String((e && e.message) ? e.message : e));
-    }
-}
-
-function readDialogFromPath(filePath: string) {
-    if (isDialogDirectoryPath(filePath)) {
-        return readDialogDirectory(filePath);
-    }
-    if (isDialogPackagePath(filePath)) {
-        return readDialogPackage(fs.readFileSync(filePath));
-    }
-    throw new Error('Unsupported dialog path. Open a .dc.zip package or a dialog directory containing dialog.json and actions.js.');
-}
-
-function writeDialogToPath(filePath: string, json: string) {
-    validateDialogJsonForSave(json);
-
-    if (isDialogDirectoryPath(filePath)) {
-        writeDialogDirectory(filePath, json);
-    } else if (isDialogPackagePath(filePath)) {
-        fs.writeFileSync(filePath, createDialogPackage(json));
-    } else {
-        throw new Error('Unsupported save path. Save as a .dc.zip package or into a dialog directory.');
-    }
-}
-
-function parseDialogJsonForSave(json: string): Record<string, unknown> {
-    try {
-        const parsed = JSON.parse(json);
-        if (!parsed || typeof parsed !== 'object') {
-            throw new Error('Dialog JSON must contain an object.');
+function getPreviewWindow() {
+    const previewWindow = BrowserWindow.getAllWindows().find((win) => {
+        try {
+            return win.webContents.getURL().includes('preview.html');
+        } catch {
+            return false;
         }
-        return parsed as Record<string, unknown>;
-    } catch (error: any) {
-        const message = error && error.message ? String(error.message) : String(error);
-        throw new Error(`Dialog JSON is invalid: ${message}`);
-    }
+    });
+
+    return previewWindow || secondWindow || null;
 }
-
-function dialogNameFromJson(json: string): string {
-    const parsed = parseDialogJsonForSave(json);
-    const properties = parsed.properties;
-    if (!properties || typeof properties !== 'object') {
-        throw new Error('Dialog properties are missing.');
-    }
-
-    const name = String((properties as Record<string, unknown>).name || '').trim();
-    if (!DIALOG_NAME_PATTERN.test(name)) {
-        throw new Error(
-            'Dialog name must be one word using only letters, numbers, and underscores, and it cannot start with a number.'
-        );
-    }
-
-    return name;
-}
-
-function validateDialogJsonForSave(json: string): void {
-    dialogNameFromJson(json);
-}
-
-function defaultDialogSavePath(json?: string) {
-    const dialogName = json ? dialogNameFromJson(json) : '';
-
-    if (currentFilePath && currentFilePath.trim().length > 0) {
-        if (isDialogDirectoryPath(currentFilePath)) {
-            const parent = path.dirname(currentFilePath);
-            const name = dialogName || path.basename(currentFilePath);
-            return path.join(parent, `${name}.dc.zip`);
-        }
-
-        const dir = path.dirname(currentFilePath);
-        const base = dialogName
-            || path.basename(currentFilePath).replace(/(?:\.dc\.zip|\.[^./\\]+)$/i, '');
-        return path.join(dir, `${base}.dc.zip`);
-    }
-
-    return `${dialogName || 'dialog'}.dc.zip`;
-}
-
-function canSaveDirectlyToCurrentPath() {
-    return !!currentFilePath && (isDialogPackagePath(currentFilePath) || isDialogDirectoryPath(currentFilePath));
-}
-
-async function reloadCurrentDialogFromDisk(): Promise<void> {
-    try {
-        if (!currentFilePath || currentFilePath.trim().length === 0) return;
-        if (!editorWindow || editorWindow.isDestroyed()) return;
-
-        if (dialogModified) {
-            const res = await dialog.showMessageBox(editorWindow, {
-                type: 'question',
-                buttons: ['Reload', 'Cancel'],
-                defaultId: 0,
-                cancelId: 1,
-                message: 'Reload this dialog from disk and discard unsaved changes?'
-            });
-
-            if (res.response !== 0) return;
-        }
-
-        await loadDialogFromPath(currentFilePath);
-    } catch (e: any) {
-        dialog.showErrorBox('Reload failed', String((e && e.message) ? e.message : e));
-    }
-}
-
-function loadEditorWindowState(): Electron.Rectangle | null {
-    try {
-        const statePath = getEditorWindowStatePath();
-        if (!fs.existsSync(statePath)) return null;
-        const raw = JSON.parse(fs.readFileSync(statePath, 'utf8')) as Partial<Electron.Rectangle>;
-        const width = Math.max(EDITOR_WINDOW_DEFAULT_WIDTH, Math.round(Number(raw.width) || 0));
-        const height = Math.max(EDITOR_WINDOW_DEFAULT_HEIGHT, Math.round(Number(raw.height) || 0));
-        const x = Math.round(Number(raw.x));
-        const y = Math.round(Number(raw.y));
-        if (!Number.isFinite(width) || !Number.isFinite(height) || !Number.isFinite(x) || !Number.isFinite(y)) {
-            return null;
-        }
-
-        const displays = screen.getAllDisplays();
-        const fitsSomeDisplay = displays.some((display) => {
-            const area = display.workArea;
-            return (
-                x >= area.x &&
-                y >= area.y &&
-                x + 120 <= area.x + area.width &&
-                y + 120 <= area.y + area.height
-            );
-        });
-        if (!fitsSomeDisplay) return null;
-
-        return { x, y, width, height };
-    } catch {
-        return null;
-    }
-}
-
-function saveEditorWindowState(win: BrowserWindow | null) {
-    if (!win || win.isDestroyed()) return;
-    try {
-        const bounds = win.getBounds();
-        const statePath = getEditorWindowStatePath();
-        fs.writeFileSync(statePath, JSON.stringify(bounds, null, 2));
-    } catch {
-        // ignore persistence failures
-    }
-}
-
 
 function createMainWindow() {
     const restoredBounds = loadEditorWindowState();
@@ -327,26 +90,35 @@ function createMainWindow() {
         icon: path.join(__dirname, 'icons', 'icon.png')
     });
 
-    // Ensure initial title formatting on all platforms
-    updateWindowTitle();
+    documentSession = new ElectronDialogDocumentSession({
+        getEditorWindow: () => editorWindow,
+        isMac: OS_Mac,
+        onMenuNeedsRebuild: rebuildApplicationMenu,
+        openInfoWindow
+    });
+    documentSession.updateWindowTitle();
     lastEditorBounds = editorWindow.getBounds();
+    syntaxPanelHost = new SyntaxPanelWindowHost({
+        compiledRootDir: __dirname,
+        getEditorWindow: () => editorWindow,
+        getPreviewWindow
+    });
 
     // and load the index.html of the app.
     editorWindow.loadFile(path.join(__dirname, "../src/pages/editor.html"));
 
     // Build and set the application menu dynamically per platform (macOS vs Windows/Linux)
-    const mainMenu = Menu.buildFromTemplate(buildMainMenuTemplate());
-    Menu.setApplicationMenu(mainMenu);
+    rebuildApplicationMenu();
 
     // Handle window close button (red X)
     editorWindow.on('close', async (e) => {
-        if (quittingInProgress) return; // allow close to proceed during app quit
+        if (documentSession.isQuitting()) return; // allow close to proceed during app quit
 
         e.preventDefault(); // Prevent default close
 
-        const ok = await confirmQuitIfDirty();
+        const ok = await documentSession.confirmQuitIfDirty();
         if (ok) {
-            quittingInProgress = true;
+            documentSession.markQuitting();
             app.quit(); // This will close all windows and quit the app
         }
         // If not ok, window stays open (close was cancelled)
@@ -404,7 +176,7 @@ function createMainWindow() {
                 } catch { /* noop */ }
             }
 
-            nudge(syntaxPanelWindow);
+            syntaxPanelHost?.nudge(dx, dy);
 
             lastEditorBounds = curr;
         } catch { /* noop */ }
@@ -420,24 +192,31 @@ function createMainWindow() {
 app.whenReady().then(() => {
     maybeShowWaylandNotice();
     createMainWindow();
-    setupIPC();
+    installElectronIpcRouter({
+        windowIds: windowid,
+        getEditorWindow: () => editorWindow,
+        getSecondWindow: () => secondWindow,
+        createSecondWindow,
+        syntaxPanelHost: () => syntaxPanelHost,
+        documentSession: () => documentSession
+    });
     // Intercept OS-level quits (e.g., Cmd+Q) to prompt for save when dirty
     app.on('before-quit', (e) => {
-        if (quittingInProgress) return; // allow actual quit to proceed
+        if (documentSession.isQuitting()) return; // allow actual quit to proceed
 
         e.preventDefault(); // Always prevent default first
 
-        confirmQuitIfDirty()
+        documentSession.confirmQuitIfDirty()
             .then((ok) => {
                 if (ok) {
-                    quittingInProgress = true;
+                    documentSession.markQuitting();
                     app.quit(); // Trigger quit again, this time it will proceed
                 }
                 // If not ok, stay in app (quit was cancelled)
             })
             .catch(() => {
                 // On error, allow quit
-                quittingInProgress = true;
+                documentSession.markQuitting();
                 app.quit();
             });
     });
@@ -447,919 +226,38 @@ app.on("window-all-closed", () => {
     quitApp()
 });
 
-function createSecondWindow(args: { [key: string]: any }) {
-
-    // let iconPath = path.join(__dirname, "../src/assets/icon.png");
-    // if (process.env.NODE_ENV !== "development") {
-    //     iconPath = path.join(path.resolve(__dirname), "../../assets/icon.png");
-    // }
-
-    const isCodeWindow = args.html === 'code.html';
-    const isPreviewWindow = args.html === 'preview.html';
-
-    const windowName = isCodeWindow
-        ? 'codeWindow'
-        : (isPreviewWindow ? 'previewWindow' : 'secondWindow');
-
-    secondWindow = new BrowserWindow({
-        width: args.width,
-        height: args.height,
-        useContentSize: !!args.useContentSize,
-        // icon: iconPath,
-        backgroundColor: args.backgroundColor,
+function createSecondWindow(args: DialogChildWindowArgs) {
+    secondWindow = openDialogChildWindow({
+        args,
         parent: editorWindow,
-        title: args.title,
-        webPreferences: {
-            // allows using import { ipcRenderer } from "electron"; directly in renderer
-            nodeIntegration: true,
-
-            // protects the context of the window, so that preload is needed
-            // (if false, preload is not needed)
-            contextIsolation: true,
-
-            preload: path.join(__dirname, 'preload', args.preload),
-            sandbox: false,
-            additionalArguments: [`--dc-window=${windowName}`],
-        },
-        autoHideMenuBar: typeof args.autoHideMenuBar === 'boolean' ? args.autoHideMenuBar : (development ? false : true),
-        resizable: isCodeWindow ? true : false,
-        alwaysOnTop: false,
-    });
-
-    // Ensure consistent sizing/zoom (Linux was rendering preview smaller and adding scrollbars)
-    try {
-        secondWindow.setContentSize(args.width, args.height);
-        secondWindow.webContents.setZoomFactor(1);
-    } catch { /* no-op */ }
-
-    // and load the index.html of the app.
-    secondWindow.loadFile(path.join(__dirname, "../src/pages", args.html));
-
-    // Intercept Cmd/Ctrl+S in the Code window to save code without closing
-    if (isCodeWindow) {
-        secondWindow.webContents.on('before-input-event', (event: any, input: any) => {
-            const key = String(input?.key || '').toLowerCase();
-            if ((input?.meta || input?.control) && key === 's') {
-                event.preventDefault();
-                // Tell the code window to perform a save-only (no close)
-                if (
-                    secondWindow &&
-                    !secondWindow.isDestroyed() &&
-                    !secondWindow.webContents.isDestroyed()
-                ) {
-                    secondWindow.webContents.send('code-save-only');
-                }
+        compiledRootDir: __dirname,
+        development,
+        onClosed: () => {
+            if (
+                editorWindow &&
+                !editorWindow.isDestroyed() &&
+                editorWindow.webContents &&
+                !editorWindow.webContents.isDestroyed()
+            ) {
+                editorWindow.webContents.send('removeCover');
             }
-        });
-    }
-
-    // Garbage collection handle
-    secondWindow.on('closed', function() {
-        if (
-            editorWindow &&
-            !editorWindow.isDestroyed() &&
-            editorWindow.webContents &&
-            !editorWindow.webContents.isDestroyed()
-        ) {
-            editorWindow.webContents.send('removeCover');
+        },
+        onDidFinishLoad: () => {
+            editorWindow.webContents.send('addCover');
         }
-    });
-
-    // In development, allow inspecting Preview too (needed for diagnosing renderer/layout issues).
-    if (development) {
-        // Open DevTools detached and without activating them so focus stays on the new window
-        try {
-            secondWindow.webContents.openDevTools({ mode: 'detach', activate: false } as any);
-            // As an extra safeguard, refocus shortly after opening DevTools
-            setTimeout(() => {
-                secondWindow.focus();
-            }, 250);
-        } catch {
-            // Fallback if options unsupported: open and refocus
-            secondWindow.webContents.openDevTools();
-            setTimeout(() => {
-                secondWindow.focus();
-            }, 250);
-        }
-    }
-
-
-    secondWindow.webContents.on("did-finish-load", () => {
-        switch (args.html) {
-            case 'defaults.html':
-                secondWindow.webContents.send("addAvailableElementsTo", "defaults");
-                break;
-            case 'preview.html':
-                secondWindow.webContents.send("renderPreview", args.data);
-                break;
-            case 'code.html':
-                secondWindow.webContents.send("renderCode", args.data);
-                break;
-            default:
-                break;
-        }
-        editorWindow.webContents.send('addCover');
     });
 
     windowid.secondWindow = secondWindow.id;
 }
 
-function getInfoConfig(page: InfoPage) {
-    const resolveDocPath = (fileName: string) => {
-        const packagedCandidates = [
-            process.resourcesPath ? path.join(process.resourcesPath, "docs", fileName) : '',
-            path.join(app.getAppPath(), "docs", fileName),
-            path.join(__dirname, "../docs", fileName)
-        ].filter(Boolean) as string[];
-
-        const devCandidates = [
-            path.join(__dirname, "../docs", fileName),
-            path.join(app.getAppPath(), "docs", fileName)
-        ].filter(Boolean) as string[];
-
-        const candidates = app.isPackaged ? packagedCandidates : devCandidates;
-
-        for (const candidate of candidates) {
-            try {
-                if (fs.existsSync(candidate)) {
-                    return candidate;
-                }
-            } catch { /* ignore */ }
-        }
-
-        return candidates[0] || path.join(__dirname, "../docs", fileName);
-    };
-
-    switch (page) {
-        case 'manual':
-            return {
-                title: 'Dialog Creator — User Manual',
-                width: 1200,
-                height: 780,
-                minWidth: 900,
-                minHeight: 640,
-                resizable: true,
-                maximizable: true,
-                file: resolveDocPath("manual.html")
-            };
-        case 'api':
-            return {
-                title: 'Dialog Creator — API Reference',
-                width: 1200,
-                height: 780,
-                minWidth: 900,
-                minHeight: 640,
-                resizable: true,
-                maximizable: true,
-                file: resolveDocPath("api.html")
-            };
-        case 'about':
-        default:
-            return {
-                title: 'About Dialog Creator',
-                width: 420,
-                height: 325,
-                minWidth: 420,
-                minHeight: 325,
-                resizable: false,
-                maximizable: false,
-                file: path.join(__dirname, "../src/pages", "about.html")
-            };
-    }
-}
-
 function openInfoWindow(page: InfoPage) {
-    const config = getInfoConfig(page);
-
-    const ensureWindow = () => {
-        if (infoWindow && !infoWindow.isDestroyed()) {
-            return infoWindow;
-        }
-        const win = new BrowserWindow({
-            width: config.width,
-            height: config.height,
-            useContentSize: true,
-            resizable: config.resizable,
-            minimizable: false,
-            maximizable: config.maximizable,
-            autoHideMenuBar: true,
-            parent: editorWindow,
-            title: config.title,
-            center: true,
-            webPreferences: {
-                contextIsolation: true,
-                sandbox: false,
-                additionalArguments: ['--dc-window=infoWindow']
-            }
-        });
-
-        win.on('closed', () => {
-            infoWindow = null;
-        });
-        infoWindow = win;
-        if (typeof config.minWidth === 'number' && typeof config.minHeight === 'number') {
-            try {
-                win.setMinimumSize(config.minWidth, config.minHeight);
-            } catch {
-                // ignore if platform rejects the constraint
-            }
-        }
-        return win;
-    };
-
-    const win = ensureWindow();
-
-    if (win.isDestroyed()) {
-        infoWindow = null;
-        return openInfoWindow(page);
-    }
-
-    // Update window characteristics when switching pages
-    try {
-        win.setResizable(config.resizable);
-        win.setMaximizable(config.maximizable);
-        if (typeof config.minWidth === 'number' && typeof config.minHeight === 'number') {
-            win.setMinimumSize(config.minWidth, config.minHeight);
-        }
-        const [curW, curH] = win.getSize();
-        if (curW !== config.width || curH !== config.height) {
-            win.setSize(config.width, config.height);
-            try {
-                win.center();
-            } catch {
-                // ignore if centering is not possible
-            }
-        }
-        win.setTitle(config.title);
-    } catch {
-        // ignore adjustments if they fail (e.g., during window teardown)
-    }
-
-    // Load requested content
-    win.loadFile(config.file).catch(() => {
-        // noop when file missing; window stays open
-    });
-
-    try {
-        win.focus();
-    } catch {
-        // ignore focus errors
-    }
-}
-
-function setupIPC() {
-
-    // "_event" means that I know the event exists but I don't need it
-    // using "event" might trigger linter warnings, for instance"
-    // "'event' is declared but its value is never read"
-
-    ipcMain.on("send-to", async (_event, window, channel, ...args) => {
-        if (window == "main") {
-            switch (channel) {
-                case 'showError':
-                    dialog.showMessageBox(editorWindow, {
-                        type: "error",
-                        title: "Error",
-                        message: args[0]
-                    });
-                    break;
-                case 'showDialogMessage':
-                    dialog.showMessageBox(editorWindow, {
-                        type: args[0],
-                        // title: args[1],
-                        // message: args[2]
-                        // On macOS, 'title' isn't shown for sheet dialogs; use 'message' for the visible header
-                        message: String(args[1] ?? ''),
-                        detail: String(args[2] ?? ''),
-                        // Keep 'title' as a fallback for platforms that display it
-                        title: String(args[1] ?? '')
-                    });
-                    break;
-                case 'openSyntaxPanel': {
-                    try {
-                        const command = String(args[0] ?? '');
-                        const clearFollowTimer = () => {
-                            if (syntaxPanelFollowTimer) {
-                                clearInterval(syntaxPanelFollowTimer);
-                                syntaxPanelFollowTimer = null;
-                            }
-                        };
-
-                        // Try to find the active Preview window (by URL containing preview.html)
-                        const wins = BrowserWindow.getAllWindows();
-                        let anchor = wins.find(w => {
-                            try {
-                                return w.webContents.getURL().includes('preview.html');
-                            } catch {
-                                return false;
-                            }
-                        }) || secondWindow || editorWindow;
-
-                        const getAnchorPos = () => {
-                            const winBounds = anchor.getBounds(); // outer frame
-                            const contentBounds = (anchor as any).getContentBounds
-                                ? (anchor as any).getContentBounds()
-                                : winBounds;
-                            const dx = contentBounds.x - winBounds.x;
-                            const dy = contentBounds.y - winBounds.y;
-                            const desiredWidth = Math.max(200, contentBounds.width);
-                            return {
-                                winBounds,
-                                contentBounds,
-                                desiredWidth,
-                                desiredHeight: syntaxPanelHeight,
-                                desiredX: Math.max(0, winBounds.x + dx),
-                                desiredY: winBounds.y + dy + contentBounds.height + SYNTAX_GAP
-                            };
-                        };
-                        const pos = getAnchorPos();
-
-                        if (!syntaxPanelWindow || syntaxPanelWindow.isDestroyed()) {
-                            syntaxPanelWindow = new BrowserWindow({
-                                parent: anchor,
-                                width: pos.desiredWidth,
-                                height: pos.desiredHeight,
-                                x: pos.desiredX,
-                                y: pos.desiredY,
-                                useContentSize: true,
-                                resizable: false,
-                                minimizable: false,
-                                maximizable: false,
-                                fullscreenable: false,
-                                frame: false,
-                                skipTaskbar: true,
-                                title: 'Syntax Panel',
-                                webPreferences: {
-                                    contextIsolation: true,
-                                    preload: path.join(__dirname, 'preload', 'preloadSyntaxPanel.js'),
-                                    sandbox: false,
-                                    additionalArguments: ['--dc-window=syntaxPanelWindow']
-                                },
-                                autoHideMenuBar: true,
-                            });
-
-                            syntaxPanelWindow.loadFile(path.join(__dirname, "../src/pages", 'syntaxpanel.html'));
-
-                            syntaxPanelWindow.on('closed', () => {
-                                const anchorToClose = syntaxPanelAnchor;
-                                syntaxPanelWindow = null;
-                                try {
-                                    if (anchorToClose && !anchorToClose.isDestroyed()) {
-                                        anchorToClose.close();
-                                    }
-                                } catch { /* noop */ }
-                            });
-                        }
-
-                        // Position and size each time in case preview moved
-                        try {
-                            syntaxPanelWindow!.setPosition(pos.desiredX, pos.desiredY);
-                            syntaxPanelWindow!.setContentSize(pos.desiredWidth, pos.desiredHeight);
-                        } catch {}
-
-                        // Reposition with the anchor on move/resize
-                        if (anchor !== syntaxPanelAnchor) {
-                            // detach old listeners
-                            syntaxPanelAnchor?.removeAllListeners('move');
-                            syntaxPanelAnchor?.removeAllListeners('resize');
-                            syntaxPanelAnchor?.removeAllListeners('closed');
-                            clearFollowTimer();
-                            syntaxPanelAnchor = anchor;
-                            const reposition = () => {
-                                try {
-                                    const p = getAnchorPos();
-                                    syntaxPanelWindow?.setPosition(p.desiredX, p.desiredY);
-                                    syntaxPanelWindow?.setContentSize(p.desiredWidth, p.desiredHeight);
-                                } catch {}
-                            };
-                            anchor.on('move', reposition);
-                            // Some Linux WMs emit 'moved' instead of 'move'
-                            anchor.on('moved', reposition);
-                            anchor.on('resize', reposition);
-                            anchor.on('closed', () => {
-                                clearFollowTimer();
-                                try { syntaxPanelWindow?.close(); } catch {}
-                            });
-
-                            // Poll as a fallback for WMs that don't emit move while dragging
-                            syntaxPanelFollowTimer = setInterval(() => {
-                                try {
-                                    const p = getAnchorPos();
-                                    syntaxPanelWindow?.setPosition(p.desiredX, p.desiredY);
-                                    syntaxPanelWindow?.setContentSize(p.desiredWidth, p.desiredHeight);
-                                } catch { /* noop */ }
-                            }, 150);
-                        }
-
-                        // Once content is ready, send payload; also send immediately for updates
-                        if (syntaxPanelWindow && !syntaxPanelWindow.webContents.isLoadingMainFrame()) {
-                            syntaxPanelWindow.webContents.send('renderSyntaxCommand', command);
-                        } else {
-                            syntaxPanelWindow?.webContents.once('did-finish-load', () => {
-                                syntaxPanelWindow?.webContents.send('renderSyntaxCommand', command);
-                            });
-                        }
-
-                    } catch (e: any) {
-                        dialog.showErrorBox('Syntax panel error', String(e && e.message ? e.message : e));
-                    }
-                    break;
-                }
-                case 'syntaxpanel-resize': {
-                    try {
-                        const payload = args[0];
-                        const requestedHeight = Number((payload && payload.height) ?? payload ?? 0);
-                        if (!Number.isFinite(requestedHeight) || requestedHeight <= 0) break;
-                        syntaxPanelHeight = Math.max(40, Math.min(1000, Math.round(requestedHeight)));
-
-                        if (syntaxPanelWindow && !syntaxPanelWindow.isDestroyed()) {
-                            // Align width with anchor when possible
-                            let w = 320;
-                            try {
-                                const anchorWin = syntaxPanelAnchor || secondWindow || editorWindow;
-                                const getPosFor = () => {
-                                    const wb = anchorWin.getBounds();
-                                    const cb = (anchorWin as any).getContentBounds
-                                        ? anchorWin.getContentBounds()
-                                        : wb;
-                                    const dx = cb.x - wb.x;
-                                    const dy = cb.y - wb.y;
-                                    return {
-                                        width: Math.max(200, cb.width),
-                                        x: Math.max(0, wb.x + dx),
-                                        y: wb.y + dy + cb.height + SYNTAX_GAP,
-                                    };
-                                };
-                                const pos = getPosFor();
-                                w = pos.width;
-                                syntaxPanelWindow.setPosition(pos.x, pos.y);
-                            } catch { /* keep current position */ }
-                            syntaxPanelWindow.setContentSize(w, syntaxPanelHeight);
-                        }
-                    } catch { /* noop */ }
-                    break;
-                }
-                case 'secondWindow':
-                    createSecondWindow(args[0]);
-                    break;
-                case 'getProperties':
-                    {
-                        const properties = await database.getProperties(args[0] as keyof DBElements);
-                        BrowserWindow.getAllWindows().forEach((win) => {
-                            win.webContents.send("message-from-main-propertiesFromDB", args[0], properties);
-                        });
-                    }
-                    break;
-                case 'resetProperties':
-                    {
-                        const properties = await database.resetProperties(args[0]);
-                        if (utils.isFalse(properties)) {
-                            dialog.showErrorBox("Error", `Failed to reset properties of ${args[0]}`);
-                        } else {
-                            secondWindow.webContents.send(
-                                "message-from-main-resetOK",
-                                properties
-                            );
-                            editorWindow.webContents.send(
-                                "message-from-main-propertiesFromDB",
-                                args[0],
-                                properties
-                            );
-                        }
-                    }
-                    break;
-                case 'updateProperty':
-                    {
-                        const ok = await database.updateProperty(args[0] as keyof DBElements, args[1], args[2]);
-                        if (ok) {
-                            const properties = await database.getProperties(args[0] as keyof DBElements);
-                            editorWindow.webContents.send(
-                                "message-from-main-propertiesFromDB",
-                                args[0],
-                                properties);
-                        }
-                        else {
-                            dialog.showErrorBox("Error", `Failed to update property ${args[1]} of ${args[0]}`);
-                        }
-                    }
-                    break;
-                case 'close-secondWindow':
-                case 'close-codeWindow':
-                case 'close-previewWindow':
-                    secondWindow.close();
-                    break;
-                case 'document-json-updated':
-                    try {
-                        const json = String(args[0] ?? '');
-                        if (pendingCanonicalUpdate) {
-                            lastSavedJson = json;
-                            dialogModified = false;
-                            pendingCanonicalUpdate = false;
-                            updateWindowTitle();
-                        } else {
-                            const same = json === (lastSavedJson || '');
-                            dialogModified = !same;
-                            updateWindowTitle();
-                        }
-                    } catch {
-                        // ignore errors computing dirty state
-                    }
-                    break;
-                default:
-                    break;
-            }
-
-        } else if (window == "all") { // forward to all windows
-            BrowserWindow.getAllWindows().forEach((win) => {
-                win.webContents.send(`message-from-main-${channel}`, ...args);
-            });
-        } else {
-            const win = BrowserWindow.fromId(windowid[window]);
-            if (win && !win.isDestroyed() && !win.webContents.isDestroyed()) {
-                win.webContents.send(`message-from-main-${channel}`, ...args);
-            }
-        }
+    openElectronInfoWindow({
+        page,
+        parent: editorWindow,
+        compiledRootDir: __dirname
     });
 }
-
 
 function quitApp() {
     app.quit();
-}
-
-// Title helpers
-function updateWindowTitle() {
-    try {
-        if (editorWindow && !editorWindow.isDestroyed()) {
-            const base = 'Dialog creator';
-            const name = currentFilePath ? ` — ${path.basename(currentFilePath)}` : '';
-            const dot = dialogModified ? '~ ' : '';
-            editorWindow.setTitle(`${dot}${base}${name}`);
-            try {
-                if (process.platform === 'darwin') {
-                    editorWindow.setDocumentEdited(!!dialogModified);
-                }
-            } catch { /* noop */ }
-        }
-    } catch { /* noop */ }
-}
-
-function setCurrentDialogPath(filePath: string | null) {
-    currentFilePath = filePath;
-    updateWindowTitle();
-    rebuildApplicationMenu();
-}
-
-// Create menu template
-import type { MenuItemConstructorOptions } from "electron";
-
-let lastSavedJson = '';
-let currentFilePath: string | null = null;
-let dialogModified = false;
-let pendingCanonicalUpdate = false; // next JSON update should reset baseline
-let quittingInProgress = false; // guard to avoid re-entrant quit prompts
-
-function buildRecentDialogsSubmenu(): MenuItemConstructorOptions[] {
-    const recents = loadRecentDialogPaths().filter((filePath) => fs.existsSync(filePath));
-    if (recents.length === 0) {
-        return [
-            { label: 'No recent dialogs', enabled: false }
-        ];
-    }
-
-    const items: MenuItemConstructorOptions[] = recents.map((filePath) => ({
-        label: path.basename(filePath),
-        sublabel: filePath,
-        click: () => {
-            loadDialogFromPath(filePath);
-        }
-    }));
-
-    items.push({ type: 'separator' });
-    items.push({
-        label: 'Clear menu',
-        click: () => {
-            clearRecentDialogPaths();
-        }
-    });
-
-    return items;
-}
-
-// Prompt to save changes if dialog is dirty. Returns true if app should quit.
-async function confirmQuitIfDirty(): Promise<boolean> {
-    try {
-        if (!dialogModified) return true;
-        if (!editorWindow || editorWindow.isDestroyed()) return true;
-
-        const res = await dialog.showMessageBox(editorWindow, {
-            type: 'question',
-            buttons: ['Save', "Don't Save", 'Cancel'],
-            defaultId: 0,
-            cancelId: 2,
-            message: 'Do you want to save changes to this dialog before quitting?'
-        });
-
-        if (res.response === 2) return false; // Cancel
-
-        if (res.response === 1) {
-            // Don't Save
-            return true;
-        }
-
-        // Save path
-        return await new Promise<boolean>((resolve) => {
-            const onJson = async (_ev: any, json: string) => {
-                ipcMain.removeListener('send-to', onSendTo);
-                try {
-                    const data = json || '';
-                    if (canSaveDirectlyToCurrentPath()) {
-                        writeDialogToPath(currentFilePath!, data);
-                        lastSavedJson = data;
-                        addRecentDialogPath(currentFilePath!);
-                        dialogModified = false;
-                        updateWindowTitle();
-                        resolve(true);
-                        return;
-                    }
-                    const { canceled, filePath } = await dialog.showSaveDialog(editorWindow, {
-                        title: 'Save dialog',
-                        filters: DIALOG_SAVE_FILTERS,
-                        defaultPath: defaultDialogSavePath(data)
-                    });
-                    if (canceled || !filePath) {
-                        resolve(false);
-                        return;
-                    }
-                    writeDialogToPath(filePath, data);
-                    lastSavedJson = data;
-                    setCurrentDialogPath(filePath);
-                    addRecentDialogPath(filePath);
-                    dialogModified = false;
-                    updateWindowTitle();
-                    resolve(true);
-                } catch (e: any) {
-                    dialog.showErrorBox('Save failed', String((e && e.message) ? e.message : e));
-                    resolve(false);
-                }
-            };
-            const onSendTo = (_event: any, window: string, channel: string, ...args: any[]) => {
-                if (window === 'main' && channel === 'dialog-json') {
-                    onJson(null, args[0] as string);
-                }
-            };
-            ipcMain.on('send-to', onSendTo);
-            editorWindow.webContents.send('request-dialog-json');
-        });
-    } catch {
-        return true;
-    }
-}
-
-function buildMainMenuTemplate(): MenuItemConstructorOptions[] {
-    const fileSubmenu: MenuItemConstructorOptions[] = [
-        { // New
-            label: 'New',
-            accelerator: 'CommandOrControl+N',
-            click: async () => {
-                    // Request current JSON from renderer
-                    editorWindow.webContents.send('request-dialog-json');
-
-                    const onJson = async (_ev: any, json: string) => {
-                        ipcMain.removeListener('send-to', onSendTo);
-                        const current = json || '';
-                        const isSame = current && lastSavedJson && current === lastSavedJson;
-                        if (!current || !isSame) {
-                            // Ask to save changes
-                            const res = await dialog.showMessageBox(editorWindow, {
-                                type: 'question',
-                                buttons: ['Save', "Don't Save", 'Cancel'],
-                                defaultId: 0,
-                                cancelId: 2,
-                                message: 'Do you want to save changes to this dialog before creating a new one?'
-                            });
-
-                            if (res.response === 2) return; // Cancel
-
-                            if (res.response === 0) {
-                                // Save then proceed
-                                try {
-                                    const { canceled, filePath } = await dialog.showSaveDialog(editorWindow, {
-                                        title: 'Save dialog',
-                                        filters: DIALOG_SAVE_FILTERS,
-                                        defaultPath: defaultDialogSavePath(current)
-                                    });
-
-                                    if (!canceled && filePath) {
-                                        writeDialogToPath(filePath, current);
-                                        lastSavedJson = current;
-                                        // Remember path used for saving the previous file
-                                        setCurrentDialogPath(filePath);
-                                        addRecentDialogPath(filePath);
-                                    } else {
-                                        // user canceled save dialog => abort New
-                                        return;
-                                    }
-                                } catch (e: any) {
-                                    dialog.showErrorBox('Save failed', String((e && e.message) ? e.message : e));
-                                    return;
-                                }
-                            }
-                        }
-                        // Clear dialog: select all + remove
-                        editorWindow.webContents.send('newDialogClear');
-                        // Reset dialog basic properties for a fresh new dialog (Name, Title, Language, Runtime provider)
-                        editorWindow.webContents.send('reset-dialog-properties', {
-                            name: 'NewDialog',
-                            title: 'New dialog',
-                            language: 'en_US',
-                            runtimeProvider: 'R'
-                        });
-                        // Reset state for the new unsaved dialog
-                        setCurrentDialogPath(null);
-                        // Next renderer JSON becomes the clean baseline
-                        pendingCanonicalUpdate = true;
-                        dialogModified = false;
-                        updateWindowTitle();
-                    };
-                    const onSendTo = (_event: any, window: string, channel: string, ...args: any[]) => {
-                        if (window === 'main' && channel === 'dialog-json') {
-                            onJson(null, args[0] as string);
-                        }
-                    };
-                    ipcMain.on('send-to', onSendTo);
-            }
-        },
-        { // Preview
-            label: 'Preview',
-            accelerator: 'CommandOrControl+P',
-            click: () => {
-                editorWindow.webContents.send('previewDialog');
-                ipcMain.once('containerData', (event, arg) => {
-                    if (utils.isTrue(arg)) {
-                        // createObjectsWindow(arg);
-                    }
-                });
-            }
-        },
-        { type: 'separator' },
-        { // Load
-            label: 'Load',
-            accelerator: 'CommandOrControl+L',
-            click: async () => {
-                const { canceled, filePaths } = await dialog.showOpenDialog(editorWindow, {
-                    title: 'Load dialog',
-                    filters: DIALOG_OPEN_FILTERS,
-                    properties: ['openFile', 'openDirectory']
-                });
-                if (canceled || !filePaths || filePaths.length === 0) return;
-                await loadDialogFromPath(filePaths[0]);
-            }
-        },
-        {
-            label: 'Reload from disk',
-            accelerator: 'CommandOrControl+R',
-            enabled: !!currentFilePath,
-            click: async () => {
-                await reloadCurrentDialogFromDisk();
-            }
-        },
-        {
-            label: 'Recently used',
-            submenu: buildRecentDialogsSubmenu()
-        },
-        { // Save
-            label: 'Save',
-            accelerator: 'CommandOrControl+S',
-            click: async () => {
-                editorWindow.webContents.send('request-dialog-json');
-                const onJson = async (_ev: any, json: string) => {
-                    ipcMain.removeListener('send-to', onSendTo);
-                    try {
-                        const data = json || '';
-                        if (canSaveDirectlyToCurrentPath()) {
-                            writeDialogToPath(currentFilePath!, data);
-                            lastSavedJson = data;
-                            addRecentDialogPath(currentFilePath!);
-                            dialogModified = false;
-                            updateWindowTitle();
-                            return;
-                        }
-                        const { canceled, filePath } = await dialog.showSaveDialog(editorWindow, {
-                            title: 'Save dialog',
-                            filters: DIALOG_SAVE_FILTERS,
-                            defaultPath: defaultDialogSavePath(data)
-                        });
-                        if (canceled || !filePath) return;
-                        writeDialogToPath(filePath, data);
-                        lastSavedJson = data;
-                        setCurrentDialogPath(filePath);
-                        addRecentDialogPath(filePath);
-                        dialogModified = false;
-                        updateWindowTitle();
-                    } catch (e: any) {
-                        dialog.showErrorBox('Save failed', String((e && e.message) ? e.message : e));
-                    }
-                };
-                const onSendTo = (_event: any, window: string, channel: string, ...args: any[]) => {
-                    if (window === 'main' && channel === 'dialog-json') {
-                        onJson(null, args[0] as string);
-                    }
-                };
-                ipcMain.on('send-to', onSendTo);
-            }
-        },
-        { // Save as
-            label: 'Save as ...',
-            accelerator: 'Shift+CommandOrControl+S',
-            click: async () => {
-                editorWindow.webContents.send('request-dialog-json');
-                const onJson = async (_ev: any, json: string) => {
-                    ipcMain.removeListener('send-to', onSendTo);
-                    try {
-                        const data = json || '';
-                        const { canceled, filePath } = await dialog.showSaveDialog(editorWindow, {
-                            title: 'Save dialog As...',
-                            filters: DIALOG_SAVE_FILTERS,
-                            defaultPath: defaultDialogSavePath(data)
-                        });
-                        if (canceled || !filePath) return;
-                        writeDialogToPath(filePath, data);
-                        lastSavedJson = data;
-                        setCurrentDialogPath(filePath);
-                        addRecentDialogPath(filePath);
-                    } catch (e: any) {
-                        dialog.showErrorBox('Save failed', String((e && e.message) ? e.message : e));
-                    }
-                };
-                const onSendTo = (_event: any, window: string, channel: string, ...args: any[]) => {
-                    if (window === 'main' && channel === 'dialog-json') {
-                        onJson(null, args[0] as string);
-                    }
-                };
-                ipcMain.on('send-to', onSendTo);
-            }
-        }
-    ];
-
-    // Add Exit on non-mac platforms
-    if (!OS_Mac) {
-        fileSubmenu.push({ type: 'separator' });
-        fileSubmenu.push({ role: 'quit', label: 'Exit' });
-    }
-
-    const editMenu: MenuItemConstructorOptions = {
-        label: 'Edit',
-        submenu: [
-            { role: 'undo' },
-            { role: 'redo' },
-            { type: 'separator' },
-            { role: 'cut' },
-            { role: 'copy' },
-            { role: 'paste' },
-            { role: 'selectAll' }
-        ]
-    };
-
-    const infoMenu: MenuItemConstructorOptions = {
-        label: 'Info',
-        submenu: [
-            {
-                label: 'User manual',
-                click: () => openInfoWindow('manual')
-            },
-            {
-                label: 'API reference',
-                click: () => openInfoWindow('api')
-            },
-            // Put About here on non-mac platforms
-            ...(!OS_Mac ? [{ label: 'About', click: () => openInfoWindow('about') }] : [])
-        ]
-    };
-
-    const template: MenuItemConstructorOptions[] = [];
-
-    if (OS_Mac) {
-        // macOS app menu (first menu)
-        template.push({
-            label: app.name,
-            submenu: [
-                { label: 'About', click: () => openInfoWindow('about') },
-                { type: 'separator' },
-                { role: 'services' },
-                { type: 'separator' },
-                { role: 'hide' },
-                { role: 'hideOthers' },
-                { role: 'unhide' },
-                { type: 'separator' },
-                { role: 'quit' }
-            ]
-        });
-    }
-
-    template.push({ label: 'File', submenu: fileSubmenu });
-    template.push(editMenu);
-    template.push(infoMenu);
-
-    return template;
 }

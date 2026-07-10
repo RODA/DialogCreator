@@ -1,0 +1,567 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden; /* keep preview viewport exact to dialog size */
+    background: #ffffff;
+}
+
+:root {
+    --control-border-width: 1px;
+    --control-disabled-background-color: #dedede;
+}
+
+#preview-root {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.preview-language-hover-area {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    width: min(220px, 42vw);
+    height: 34px;
+    transform: translateX(-50%);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+}
+
+.preview-language-panel {
+    display: flex;
+    align-items: center;
+    padding: 2px;
+    background: rgba(245, 245, 245, 0.92);
+    border: 1px solid #b8b8b8;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 120ms ease, transform 120ms ease;
+    pointer-events: none;
+}
+
+.preview-language-hover-area:hover .preview-language-panel,
+.preview-language-hover-area:focus-within .preview-language-panel {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.preview-language-select {
+    height: 24px;
+    min-width: 112px;
+    max-width: 180px;
+    padding: 2px 22px 2px 6px;
+    border: 1px solid #9a9a9a;
+    border-radius: 0;
+    background-color: #ffffff;
+    color: #222222;
+    font: 12px/1.2 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.preview-canvas {
+    position: relative;
+    background: #fff;
+    border: none;
+}
+
+/* Force Inter within preview canvas */
+.preview-canvas,
+.preview-canvas * {
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, 'Noto Sans', 'Liberation Sans', sans-serif !important;
+}
+
+.preview-canvas .codicon[class*='codicon-'],
+.preview-canvas .codicon[class*='codicon-']::before {
+    font-family: 'codicon' !important;
+}
+
+.preview-canvas * {
+    box-sizing: border-box;
+}
+
+.preview-button {
+    padding: 4px 8px;
+    border: var(--control-border-width) solid #888;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.smart-button-icon {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 1em;
+}
+
+.smart-button-icon svg {
+    display: block;
+    width: 1em;
+    height: 1em;
+}
+
+.smart-label-icon {
+    display: none;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    min-height: 1em;
+}
+
+.smart-label-icon svg {
+    display: block;
+    width: 1em;
+    height: 1em;
+}
+
+.preview-input, .preview-select {
+    padding: 2px 4px;
+}
+
+.preview-separator {
+    background: #000;
+}
+
+.no-select {
+    user-select: none;
+}
+
+/* In Preview, elements are not draggable; neutralize editor grab cursors */
+.preview-canvas .element-div,
+.preview-canvas .element-wrapper {
+    cursor: default !important;
+}
+
+/* Preview keeps disabled elements fully visible; grey them out without fading */
+.preview-canvas .element-wrapper.disabled-div,
+.preview-canvas .disabled-div {
+    opacity: 1;
+}
+
+.preview-canvas .element-wrapper[data-type="Container"] {
+    position: absolute;
+}
+
+.preview-canvas .element-wrapper.disabled-div .smart-button,
+.preview-canvas .element-wrapper.disabled-div .container,
+.preview-canvas .element-wrapper.disabled-div .sorter,
+.preview-canvas .element-wrapper.disabled-div .separator {
+    background-color: var(--control-disabled-background-color) !important;
+}
+
+.preview-canvas .element-wrapper.disabled-div .smart-button,
+.preview-canvas .element-wrapper.disabled-div .container,
+.preview-canvas .element-wrapper.disabled-div .sorter,
+.preview-canvas .element-wrapper.disabled-div .container-text,
+.preview-canvas .element-wrapper.disabled-div .sorter-label,
+.preview-canvas .element-wrapper.disabled-div .counter-value,
+.preview-canvas .element-wrapper.disabled-div label,
+.preview-canvas .element-wrapper.disabled-div span,
+.preview-canvas .element-wrapper.disabled-div {
+    color: #666 !important;
+}
+
+.preview-canvas .element-wrapper.disabled-div .container-item.active,
+.preview-canvas .element-wrapper.disabled-div .sorter-item.is-asc,
+.preview-canvas .element-wrapper.disabled-div .sorter-item.is-desc,
+.preview-canvas .element-wrapper.disabled-div .sorter-item.no-order {
+    box-shadow: inset 0 0 0 9999px rgba(216, 216, 216, 0.42) !important;
+}
+
+.preview-canvas .element-wrapper.disabled-div .container-item.active .container-text {
+    color: var(--container-active-fg, #f2f2f2) !important;
+}
+
+.preview-canvas .element-wrapper.disabled-div .sorter-item.is-asc,
+.preview-canvas .element-wrapper.disabled-div .sorter-item.is-desc,
+.preview-canvas .element-wrapper.disabled-div .sorter-item.no-order {
+    color: var(--sorter-active-fg, #f2f2f2) !important;
+}
+
+.preview-canvas .element-wrapper.disabled-div .sorter-item.is-asc .sorter-label,
+.preview-canvas .element-wrapper.disabled-div .sorter-item.is-desc .sorter-label,
+.preview-canvas .element-wrapper.disabled-div .sorter-item.no-order .sorter-label,
+.preview-canvas .element-wrapper.disabled-div .sorter-item.is-asc .sorter-indicator,
+.preview-canvas .element-wrapper.disabled-div .sorter-item.is-desc .sorter-indicator,
+.preview-canvas .element-wrapper.disabled-div .sorter-item.no-order .sorter-indicator {
+    color: inherit !important;
+}
+
+.preview-canvas .element-wrapper.disabled-div .custom-radio {
+    background-color: var(--radio-disabled-background-color, #dedede) !important;
+}
+
+.preview-canvas .element-wrapper.disabled-div .custom-radio::after {
+    background-color: #7a7a7a !important;
+}
+
+.preview-canvas .element-wrapper.disabled-div .counter-arrow-glyph {
+    --counter-arrow-fill-color: #8a8a8a !important;
+}
+
+/* Force blue focus ring in Preview (thinner + fuzzy) */
+input:focus, select:focus, textarea:focus {
+    outline: none !important;
+
+    /* subtle green border */
+    border-color: rgba(51, 125, 51, 0.5) !important;
+
+    /* thin ring + soft glow */
+    box-shadow: 0 0 4px 1px rgba(52, 125, 51, 0.25) !important; /* fuzzy glow */
+}
+
+
+/* Normalize control sizing so enabled/disabled are identical */
+.preview-canvas textarea,
+.preview-canvas select {
+    --input-disabled-background-color: #dedede;
+    box-sizing: border-box;
+    padding: 3px 5px;                  /* consistent box */
+    line-height: 1.2;
+    border: var(--control-border-width) solid #777777; /* flat border */
+    appearance: none;
+    -webkit-appearance: none;
+    box-shadow: none;
+    outline: none;
+    background-color: #ffffff;         /* enabled bg */
+    color: #000;
+    background-clip: padding-box;
+}
+
+/* Rounded corners for Input controls in Preview */
+.preview-canvas textarea {
+    border-radius: 4px;
+    resize: none;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    white-space: pre-wrap;
+}
+
+/* Keep selects squared (optional: match platform look) */
+.preview-canvas select {
+    border-radius: 0;
+}
+
+.preview-canvas .container {
+    overflow: hidden;
+}
+
+.preview-canvas .preview-container-search {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    transform: translateY(calc(-100% - 6px));
+    z-index: 20;
+    pointer-events: none;
+}
+
+.preview-canvas .preview-container-search-input {
+    width: 100%;
+    height: 26px;
+    padding: 3px 8px;
+    border: 1px solid rgba(45, 78, 45, 0.72);
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.98);
+    color: #111111;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
+    pointer-events: auto;
+}
+
+.preview-canvas .container .container-content {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.preview-canvas .container .container-item {
+    padding: 4px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.preview-canvas .container .container-item .container-text {
+    user-select: none;
+    font-size: inherit;
+}
+
+.preview-canvas .container .container-item.active {
+    user-select: none;
+}
+
+.preview-canvas .container .container-item.container-item-disabled {
+    /* opacity: 0.5; */
+    background-color: #d8d8d8;
+    pointer-events: none;
+    cursor: not-allowed;
+}
+
+.preview-canvas .container .container-item.container-item-disabled .container-text {
+    color: inherit;
+}
+
+/* Sorter */
+.preview-canvas .sorter {
+    border: var(--control-border-width) solid #777777;
+    border-radius: 2px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.preview-canvas .sorter-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0;
+}
+
+.preview-canvas .sorter[data-orientation="horizontal"] .sorter-list {
+    flex-direction: row;
+    align-items: stretch;
+    height: 100%;
+}
+
+.preview-canvas .sorter-item {
+    --ml: 0px;     /* label margin-left  */
+    --mr: 0px;     /* label margin-right */
+    --ind: 0px;    /* reserved indicator width */
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 24px;
+    border-radius: 0;
+    margin-bottom: 1px;
+    width: 100%;
+    box-sizing: border-box;
+    cursor: pointer;
+    background: transparent;
+    user-select: none;
+    text-align: left;
+}
+
+.preview-canvas .sorter[data-orientation="horizontal"] .sorter-item {
+    flex: 1 1 0;
+    width: auto;
+    height: 100%;
+    margin-bottom: 0;
+    margin-right: 1px;
+}
+
+.preview-canvas .sorter[data-orientation="horizontal"] .sorter-item:last-child {
+    margin-right: 0;
+}
+
+.preview-canvas .sorter-item[data-align="left"]{
+    justify-content: flex-start;
+    --ml: 4px;
+    --mr: 0px;
+}
+
+.preview-canvas .sorter-item[data-align="center"]{
+    justify-content: center;
+    --ml: 0px;
+    --mr: 0px;
+}
+
+.preview-canvas .sorter-item[data-align="right"]{
+    justify-content: flex-end;
+    --ml: 0px;
+    --mr: 4px;
+}
+
+.preview-canvas .sorter-item .sorter-label {
+    margin-left:  var(--ml);
+    margin-right: var(--mr);
+    padding-right: var(--ind);
+    font-size: inherit;
+    color: inherit;
+    display: block;
+    width: 100%;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.preview-canvas .sorter-item:has(.sorter-indicator.hidden){
+    --ind: 0px;
+}
+
+.preview-canvas .sorter-item:not(:has(.sorter-indicator.hidden)){
+    --ind: 12px;
+}
+
+.preview-canvas .sorter-item .sorter-indicator {
+    position: absolute;
+    right: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    text-align: right;
+    font-size: 0.85em; /* scales with global font size while remaining smaller */
+    width: 10px;
+    display: block;
+    color: inherit;
+    opacity: 1;
+}
+
+.preview-canvas .sorter-item.is-off .sorter-indicator {
+    color: #454545;
+}
+
+.preview-canvas .sorter-item.is-asc {
+    background: var(--sorter-active-bg, #e6f1e6);
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+.preview-canvas .sorter-item.is-desc {
+    background: var(--sorter-active-bg, #e6f1e6);
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+/* SortableJS drag feedback */
+.preview-canvas .sorter-ghost {
+    opacity: 0.35;
+}
+.preview-canvas .sorter-chosen {
+    opacity: 0.85;
+}
+.preview-canvas .sorter-drag {
+    opacity: 0.85;
+}
+
+.preview-canvas .sorter-indicator.hidden {
+    visibility: hidden;
+}
+
+/* No-ordering variant: remove reserved space and hide indicator */
+.preview-canvas .sorter-item.no-order {
+    justify-content: center;
+}
+.preview-canvas .sorter-item.no-order .sorter-label {
+    padding-right: 2px;
+    overflow: visible;
+    text-overflow: clip;
+}
+.preview-canvas .sorter-item.no-order[data-align="right"] .sorter-label {
+    padding-right: 0;
+}
+.preview-canvas .sorter-item.no-order .sorter-indicator {
+    display: none;
+}
+
+/* Ensure native disabled controls match the disabled-div styling */
+.preview-canvas input:disabled,
+.preview-canvas select:disabled,
+.preview-canvas textarea:disabled {
+    color: #444 !important;
+    -webkit-text-fill-color: #444 !important;     /* Safari/WebKit */
+    background-color: var(--input-disabled-background-color, #dedede) !important;
+    box-shadow: none !important;                  /* match editor */
+    appearance: none !important;                  /* keep platform-neutral look */
+    -webkit-appearance: none !important;
+    background-clip: padding-box !important;      /* prevent background under border */
+    padding: 3px 5px !important;                  /* keep same vertical box */
+    height: 22px !important;                      /* exact same height */
+}
+
+/* Ensure radios/checkboxes in Preview don't show the grab cursor from editor.css */
+.preview-canvas input[type="checkbox"]:not(:disabled),
+.preview-canvas input[type="radio"]:not(:disabled) {
+    cursor: pointer !important;
+}
+
+/* Pointer cursor for custom checkbox/radio skins when interactive */
+.preview-canvas .custom-checkbox:not([aria-disabled="true"]),
+.preview-canvas .custom-radio:not([aria-disabled="true"]) {
+    cursor: pointer !important;
+}
+
+/* Friendly overlay for custom JS errors in Preview */
+.preview-canvas .customjs-error {
+    position: absolute;
+    inset: 8px;
+    overflow: auto;
+    border: 1px solid #d33;
+    background: #fff4f4;
+    color: #900;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    white-space: pre-wrap;
+}
+
+
+.preview-canvas .error-in-field {
+    box-shadow: 0 0 4px 1px rgba(255, 0, 0, 0.85) !important;
+}
+
+.preview-canvas .error-in-field:focus {
+    box-shadow: 0 0 6px 2px rgba(255, 0, 0, 0.85) !important;
+}
+
+.preview-canvas .error-in-field:disabled{
+    box-shadow: 0 0 4px 1px rgba(255, 0, 0, 0.85) !important;
+}
+
+.preview-canvas .error-in-radio {
+    background-color: rgba(255, 0, 0, 0.85) !important;
+    border-radius: 3px !important;
+    padding: 5px !important;
+}
+
+.preview-canvas .error-in-radio .form-check-inline {
+    margin-bottom: 0px !important;
+}
+
+/* Error tooltip theme: solid white background so it doesn't blend with canvas */
+.tippy-box[data-theme~='light-red'] {
+    background-color: #ffffff !important;
+    color: #900 !important;
+    border: 1px solid #d33 !important;
+    border-radius: 6px !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+    z-index: 9999 !important;
+    pointer-events: none !important; /* do not block clicks on the canvas */
+}
+.tippy-box[data-theme~='light-red'] .tippy-content {
+    padding: 2px 8px !important;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji" !important;
+    font-size: 12px !important;
+    line-height: 1.25 !important;             /* fixed line height for precise clamp */
+    max-height: calc(2 * 1.25em) !important;     /* exact 2 lines height */
+    max-width: 200px !important;              /* clamp width */
+    white-space: normal !important;           /* allow wrapping */
+    overflow: hidden !important;              /* hide overflow */
+    text-overflow: ellipsis !important;       /* add ellipsis */
+    display: -webkit-box !important;          /* multiline clamp */
+    -webkit-line-clamp: 2 !important;         /* max 2 lines */
+    -webkit-box-orient: vertical !important;  /* vertical flow */
+    word-break: break-word !important;        /* break long tokens */
+}
+
+/* Output panel for ui.updateSyntax(command) */
+.preview-syntax-panel {
+    margin-top: 8px;
+    border: 1px solid #c9c9c9;
+    background: #f8f9fb;
+    color: #111;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+}
+.preview-syntax-panel pre {
+    margin: 0;
+    white-space: pre-wrap;
+}

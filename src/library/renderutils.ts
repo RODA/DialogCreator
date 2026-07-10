@@ -16,8 +16,6 @@ import {
 import { showError, coms } from '../modules/coms';
 import { EVENT_NAMES, EventName } from '../library/api';
 import { v4 as uuidv4 } from 'uuid';
-import * as path from "path";
-import * as fs from "fs";
 import tippy from "tippy.js";
 import Sortable = require("sortablejs");
 
@@ -28,6 +26,10 @@ const error_tippy: ErrorTippy = {};
 const auto_highlight = new Set<string>();
 const highlight_targets = new Map<string, Set<HTMLElement>>();
 const enhancedButtons = new WeakSet<HTMLButtonElement>();
+const handlerModules: Record<string, () => Promise<Record<string, unknown>>> = {
+    '../modules/cover': () => import('../modules/cover'),
+    '../modules/editor': () => import('../modules/editor')
+};
 const KNOWN_CONTAINER_ITEM_TYPES = new Set<string>([
     'numeric',
     'factor',
@@ -3898,17 +3900,18 @@ export const renderutils: RenderUtils = {
             return;
         }
         try {
-            const modulePath = path.join(__dirname, handler);
-            const moduleLabel = path.basename(String(handler || '')) || String(handler || '');
+            const moduleLabel = String(handler || '').split('/').pop() || String(handler || '');
+            const loadHandler = handlerModules[handler];
 
-            if (fs.existsSync(modulePath + '.js')) {
-                const imported = await import(modulePath);
+            if (loadHandler) {
+                const imported = await loadHandler();
                 // the object of interest is the first exported one from that module
                 const key = Object.keys(imported)[0];
                 // (there really should be only one export per module)
 
                 // then extract the function from that object
-                const func = imported[key][eventName];
+                const exported = imported[key] as Record<string, unknown>;
+                const func = exported[eventName];
 
                 if (typeof func === 'function') {
                     return await func(...args);

@@ -1,0 +1,515 @@
+<!DOCTYPE html><html><head><title></title><meta charset="utf-8">  <title>Dialog Creator — User Manual</title>
+  <link rel="stylesheet" href="css/manual.css">
+</head>
+	<body class="">
+<div class="page-with-toc">
+
+<nav class="toc-sidebar" aria-label="Table of contents">
+  <div class="toc-heading">Contents</div>
+  <ul class="toc-list"><li><a href="#description">Description</a></li><li class="has-children"><div class="toc-section-row"><button class="toc-toggle" aria-label="Collapse Overview of the interface" title="Collapse section" aria-expanded="true"><span class="toc-toggle-icon" aria-hidden="true"></span></button><a class="toc-section-link" href="#overview-of-the-interface">Overview of the interface</a></div><ul class="toc-sub"><li><a href="#elements-panel-left">Elements panel (left)</a></li><li><a href="#editor-toolbar-top-of-center">Editor toolbar (top of center)</a></li><li><a href="#dialog-canvas-center">Dialog canvas (center)</a></li><li><a href="#properties-panel-right">Properties panel (right)</a></li><li><a href="#dialog-properties-and-actions-bottom">Dialog properties and Actions (bottom)</a></li><li><a href="#localization-in-exported-json">Localization in exported JSON</a></li></ul></li><li class="has-children"><div class="toc-section-row"><button class="toc-toggle" aria-label="Collapse Description of Elements" title="Collapse section" aria-expanded="true"><span class="toc-toggle-icon" aria-hidden="true"></span></button><a class="toc-section-link" href="#description-of-elements">Description of Elements</a></div><ul class="toc-sub"><li><a href="#button">Button</a></li><li><a href="#input">Input</a></li><li><a href="#select-dropdown">Select (Dropdown)</a></li><li><a href="#checkbox">Checkbox</a></li><li><a href="#radio-button">Radio Button</a></li><li><a href="#counter">Counter</a></li><li><a href="#slider">Slider</a></li><li><a href="#label">Label</a></li><li><a href="#separator">Separator</a></li><li><a href="#container">Container</a></li><li><a href="#choice">Choice</a></li></ul></li><li><a href="#keyboard-shortcuts">Keyboard shortcuts</a></li><li><a href="#shortcuts-cheatsheet">Shortcuts cheatsheet</a></li><li class="has-children"><div class="toc-section-row"><button class="toc-toggle" aria-label="Collapse Working with elements" title="Collapse section" aria-expanded="true"><span class="toc-toggle-icon" aria-hidden="true"></span></button><a class="toc-section-link" href="#working-with-elements">Working with elements</a></div><ul class="toc-sub"><li><a href="#add-a-new-element">Add a new element</a></li><li><a href="#select-an-element">Select an element</a></li><li><a href="#deselect-elements">Deselect elements</a></li><li><a href="#move-an-element">Move an element</a></li><li><a href="#remove-an-element">Remove an element</a></li></ul></li><li><a href="#preview-window">Preview window</a></li><li><a href="#custom-js-code--quick-start">Custom JS code — quick start</a></li><li><a href="#file-menu-actions">File menu actions</a></li><li class="has-children"><div class="toc-section-row"><button class="toc-toggle" aria-label="Collapse Multi-selection and grouping" title="Collapse section" aria-expanded="true"><span class="toc-toggle-icon" aria-hidden="true"></span></button><a class="toc-section-link" href="#multi-selection-and-grouping">Multi-selection and grouping</a></div><ul class="toc-sub"><li><a href="#select-multiple-elements">Select multiple elements</a></li><li><a href="#move-multiple-elements-together-ephemeral-selection">Move multiple elements together (ephemeral selection)</a></li><li><a href="#group-selection-persistent-group">Group selection (persistent group)</a></li><li><a href="#ungroup">Ungroup</a></li></ul></li><li><a href="#tips-and-tricks">Tips and tricks</a></li><li><a href="#troubleshooting">Troubleshooting</a></li></ul>
+</nav>
+<main id="main">
+
+<details class="toc-mobile">
+  <summary>Contents</summary>
+  <ul class="toc-list"><li><a href="#description">Description</a></li><li class="has-children"><div class="toc-section-row"><button class="toc-toggle" aria-label="Collapse Overview of the interface" title="Collapse section" aria-expanded="true"><span class="toc-toggle-icon" aria-hidden="true"></span></button><a class="toc-section-link" href="#overview-of-the-interface">Overview of the interface</a></div><ul class="toc-sub"><li><a href="#elements-panel-left">Elements panel (left)</a></li><li><a href="#editor-toolbar-top-of-center">Editor toolbar (top of center)</a></li><li><a href="#dialog-canvas-center">Dialog canvas (center)</a></li><li><a href="#properties-panel-right">Properties panel (right)</a></li><li><a href="#dialog-properties-and-actions-bottom">Dialog properties and Actions (bottom)</a></li><li><a href="#localization-in-exported-json">Localization in exported JSON</a></li></ul></li><li class="has-children"><div class="toc-section-row"><button class="toc-toggle" aria-label="Collapse Description of Elements" title="Collapse section" aria-expanded="true"><span class="toc-toggle-icon" aria-hidden="true"></span></button><a class="toc-section-link" href="#description-of-elements">Description of Elements</a></div><ul class="toc-sub"><li><a href="#button">Button</a></li><li><a href="#input">Input</a></li><li><a href="#select-dropdown">Select (Dropdown)</a></li><li><a href="#checkbox">Checkbox</a></li><li><a href="#radio-button">Radio Button</a></li><li><a href="#counter">Counter</a></li><li><a href="#slider">Slider</a></li><li><a href="#label">Label</a></li><li><a href="#separator">Separator</a></li><li><a href="#container">Container</a></li><li><a href="#choice">Choice</a></li></ul></li><li><a href="#keyboard-shortcuts">Keyboard shortcuts</a></li><li><a href="#shortcuts-cheatsheet">Shortcuts cheatsheet</a></li><li class="has-children"><div class="toc-section-row"><button class="toc-toggle" aria-label="Collapse Working with elements" title="Collapse section" aria-expanded="true"><span class="toc-toggle-icon" aria-hidden="true"></span></button><a class="toc-section-link" href="#working-with-elements">Working with elements</a></div><ul class="toc-sub"><li><a href="#add-a-new-element">Add a new element</a></li><li><a href="#select-an-element">Select an element</a></li><li><a href="#deselect-elements">Deselect elements</a></li><li><a href="#move-an-element">Move an element</a></li><li><a href="#remove-an-element">Remove an element</a></li></ul></li><li><a href="#preview-window">Preview window</a></li><li><a href="#custom-js-code--quick-start">Custom JS code — quick start</a></li><li><a href="#file-menu-actions">File menu actions</a></li><li class="has-children"><div class="toc-section-row"><button class="toc-toggle" aria-label="Collapse Multi-selection and grouping" title="Collapse section" aria-expanded="true"><span class="toc-toggle-icon" aria-hidden="true"></span></button><a class="toc-section-link" href="#multi-selection-and-grouping">Multi-selection and grouping</a></div><ul class="toc-sub"><li><a href="#select-multiple-elements">Select multiple elements</a></li><li><a href="#move-multiple-elements-together-ephemeral-selection">Move multiple elements together (ephemeral selection)</a></li><li><a href="#group-selection-persistent-group">Group selection (persistent group)</a></li><li><a href="#ungroup">Ungroup</a></li></ul></li><li><a href="#tips-and-tricks">Tips and tricks</a></li><li><a href="#troubleshooting">Troubleshooting</a></li></ul>
+</details>
+
+		<h1 id="dialog-creator---user-manual">Dialog Creator - User Manual</h1>
+<p>This document describes how to use the Dialog Creator editor window to design dialogs by adding and arranging UI elements on a canvas.</p>
+<h2 id="description">Description</h2>
+<p>The Dialog Creator is a cross-platform, graphical interface for building dialog layouts by placing various UI elements onto a canvas. It allows users to visually design dialogs by adding, positioning, and configuring elements such as buttons, inputs, labels, checkboxes, and more.</p>
+<p>It also allows connecting UI elements, then test custom logic instantly in a live preview.</p>
+<p>Upon installing and opening the application, the following main window can be seen.</p>
+<h2 id="overview-of-the-interface">Overview of the interface</h2>
+<img src="./images/main_window_empty.png" alt="Dialog Creator main window" style="width: 1200px; max-width: 100%;">
+
+<p>This is a fresh instance of the editor window, which can be divided into five main areas.</p>
+<h3 id="elements-panel-left">Elements panel (left)</h3>
+<img src="./images/elements.png" alt="Elements panel with available UI controls" style="width: 38%;">
+
+<p>The image above shows the Elements panel with available UI controls, in both MacOS and Windows styles.</p>
+<p>This panel is the catalog of building blocks. It lists all available element types that can be added to a dialog: buttons, labels, inputs, checkboxes, radios, selects, containers, separators, counters, sliders, and more. Items can be clicked to insert a new instance onto the canvas with sensible default properties. Those defaults can be changed for future inserts (for example, a preferred border or font color for a certain element), using the "Default values" button to open a small window where the per‑type defaults are located.</p>
+<p>Those new defaults are saved with the application and persist across sessions.</p>
+<h3 id="editor-toolbar-top-of-center">Editor toolbar (top of center)</h3>
+<img src="./images/editor_toolbar.png" alt="Editor toolbar with actions" style="width: 60%;">
+
+<p>Z-order (stacking) actions for the current selection:</p>
+<ul>
+<li>Send to back</li>
+<li>Send backward</li>
+<li>Bring forward</li>
+<li>Bring to front</li>
+</ul>
+<p>Grouping actions:</p>
+<ul>
+<li>Group selected (enabled when 2+ elements are selected)</li>
+<li>Ungroup (enabled when a persistent group is selected)</li>
+</ul>
+<p>Alignment (arranging) actions — align elements relative to the first selected (anchor):</p>
+<ul>
+<li>Align left, right, top, bottom</li>
+<li>Align horizontal center (center), align vertical center (middle)</li>
+<li>When aligning multiple targets at once, their relative spacing is preserved (treated as a block) and the block is aligned to the anchor.</li>
+<li>Requires at least two selected elements. Use Shift+click or a lasso selection to select multiple.</li>
+</ul>
+<p>Delete:</p>
+<ul>
+<li>Remove the current selection (single element, multiple elements, or an entire group)</li>
+<li>Also available via Delete/Backspace</li>
+</ul>
+<p>All toolbar buttons enable or disable automatically based on what's selected. Selecting elements (to decide for grouping, alignment, or deletion) can be done in two ways: either shift-clicking on each element or using a lasso selection, as per the image above.</p>
+<h3 id="dialog-canvas-center">Dialog canvas (center)</h3>
+<p>This is the main stage where the dialog is laid out. Newly added elements appear here as movable blocks and show a dotted outline when selected. Clicking an element once will select it and reveal its properties on the right, while clicking on empty space will clear the selection.</p>
+<img src="./images/selection.png" alt="Selecting elements" style="width: 60%;">
+
+<p>Elements can be dragged to reposition them, and their movement is constrained within the canvas with a small padding so items don't slip outside the visible area. Multiple elements can be selected with Shift‑click or by drawing a lasso on empty canvas, as per the image above.</p>
+<p>These elements can then be moved together or aligned from the toolbar. Right‑clicking an element / group reveals quick actions like Duplicate, Group, or Ungroup.</p>
+<h3 id="properties-panel-right">Properties panel (right)</h3>
+<img src="./images/button_properties.png" alt="Properties for the button element" style="width: 50%;">
+
+<p>This panel displays properties for the selected element, in the image above showing a button's properties. Different elements have different sets of properties, so only properties relevant to the selected element type are shown and enabled.</p>
+<p>All elements have Left and Top properties to control their position on the canvas. Other properties depend on the element type, such as Label and Color for buttons, Value for inputs and labels, Options for selects, Checked for checkboxes, and so on.</p>
+<img src="./images/color_property.png" alt="The color property setting" style="width: 30%;">
+
+<p>Colors can either be typed as hex codes (e.g., <code class="hljs">#FF<span class="hljs-number">0000</span></code> for red) or selected via a color picker that opens when clicking the color swatch, as in the image above. The color picker dissapears when clicking elsewhere on the dialog, or pressing the ESC key.</p>
+<p>Some properties can be overwritten with custom JavaScript code in the Actions window, for example Enable or Visible, using a pre-defined set of API commands, see the details in the <a href="API.md">API reference</a>.</p>
+<h3 id="dialog-properties-and-actions-bottom">Dialog properties and Actions (bottom)</h3>
+<p>The whole dialog has properties of its own, for instance width and height to establish how large it should be, or a name (to be referred to from other dialogs) or a title (shown in the dialog's title bar).</p>
+<p>It also has a global font size that affects all elements uniformly, all of which are saved with the dialog and reflected in the live Preview window.</p>
+<p>The dialog-level <strong>Language</strong> property sets the source locale of the dialog text (for example <code class="hljs"><span class="api-param">en_US</span></code>, <code class="hljs"><span class="api-param">ro_RO</span></code>, <code class="hljs"><span class="api-param">de_DE</span></code>). This locale is exported with the dialog JSON and used as the base locale for translations in target applications.</p>
+<p>The dialog-level <strong>Runtime provider</strong> property carries the target execution provider that the dialog scripts are meant to build commands for, such as <code class="hljs"><span class="api-param">R</span></code>, <code class="hljs"><span class="api-param">Python</span></code>, or <code class="hljs"><span class="api-param">Julia</span></code>. Preview exposes this value to custom JavaScript as <code class="hljs"><span class="api-param">runtimeProvider</span></code> so dialogs can branch on provider-specific command syntax when needed.</p>
+<p>There is also an Actions button to open the code window for adding custom JavaScript logic for dialog behavior. It can be used to define how the elements interact with each other based on user input: showing/hiding/enabling controls, and updating values programmatically.</p>
+<img src="./images/dialog_actions.png" alt="The dialog properties and actions" style="width: 793px;">
+
+<h3 id="localization-in-exported-json">Localization in exported JSON</h3>
+<p>When a dialog is saved, the JSON includes:</p>
+<ul>
+<li><code class="hljs">properties.language</code>: the source language selected in Dialog properties.</li>
+<li><code class="hljs">i<span class="hljs-number">18</span>n.baseLocale</code>: set from <code class="hljs">properties.language</code>.</li>
+<li><code class="hljs">i<span class="hljs-number">18</span>n.locales</code>: locale dictionaries with translatable strings.</li>
+</ul>
+<p>The base-locale dictionary is generated from visible dialog text such as:</p>
+<ul>
+<li><code class="hljs">dialog.title</code></li>
+<li><code class="hljs">elements.&lt;id&gt;.label</code></li>
+<li><code class="hljs">elements.&lt;id&gt;.value</code></li>
+<li><code class="hljs">elements.&lt;id&gt;.items.&lt;index&gt;</code></li>
+</ul>
+<p>Custom JavaScript messages that are not visible elements, such as validation
+errors or warning dialogs, are translated automatically by the API functions
+that display them:</p>
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">addError</span>(<span class="api-param">c_datasets</span>, <span class="hljs-string">'No dataset selected'</span>);
+<span class="hljs-title function_">showMessage</span>(<span class="hljs-string">'No dataset selected'</span>, <span class="hljs-string">''</span>, <span class="hljs-string">'warning'</span>);
+</code></pre>
+
+<p>Message lookup checks the active dialog language first, then the base locale,
+and finally returns the original text.</p>
+<p>Stable message keys can still be preserved in the locale dictionaries. For
+example, the base locale can store <code class="hljs"><span class="hljs-string">"messages.noDatasetSelected": "No dataset selected"</span></code>,
+while another locale stores the same key with the translated message. Calling
+<code class="hljs"><span class="hljs-title function_">addError</span>(<span class="api-param">c_datasets</span>, <span class="hljs-string">'No dataset selected'</span>)</code> will resolve through that stable key.</p>
+<p>This data is meant for the target app that imports the dialog. Dialog Creator does not auto-translate the editor UI.</p>
+<p>Example:</p>
+<pre><code class="hljs json"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"properties"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">"name"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"NewDialog"</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"title"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"Settings"</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"language"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"en_US"</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"runtimeProvider"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"R"</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"i18n"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">"baseLocale"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"en_US"</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"locales"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">"en_US"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+        <span class="hljs-attr">"dialog.title"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"Settings"</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"elements.button1.label"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"OK"</span>
+      <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"ro_RO"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+        <span class="hljs-attr">"dialog.title"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"Setari"</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"elements.button1.label"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"Confirma"</span>
+      <span class="hljs-punctuation">}</span>
+    <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<h2 id="description-of-elements">Description of Elements</h2>
+<h3 id="button">Button</h3>
+<p>The Button element represents a clickable button. It can be styled and configured with different actions to perform when clicked.</p>
+<h3 id="input">Input</h3>
+<p>The Input element allows users to enter text or data. Internally it behaves like a single-row wrapping text area: long text wraps visually inside the element height, but pressing <code class="hljs"><span class="api-param">Enter</span></code> commits the value and removes focus instead of inserting a new line. The <code class="hljs"><span class="api-param">height</span></code> property controls how tall the element is, and a vertical scrollbar appears only when the wrapped content exceeds that visible height.</p>
+<h3 id="select-dropdown">Select (Dropdown)</h3>
+<p>The Select element provides a dropdown menu for users to choose from a list of options. It can be configured with default selections and multiple selection capabilities.</p>
+<h3 id="checkbox">Checkbox</h3>
+<p>The Checkbox element allows users to make binary choices (checked or unchecked), generally as a true / false switch when writing the options in the command syntax.</p>
+<h3 id="radio-button">Radio Button</h3>
+<p>The Radio Button element allows users to select one option from a set of mutually exclusive choices. Radio buttons can be grouped together to form a selection group.</p>
+<h3 id="counter">Counter</h3>
+<p>The Counter element allows users to increment or decrement a numeric value within a specified range. It can be configured with minimum and maximum limits, plus a start value.</p>
+<h3 id="slider">Slider</h3>
+<p>The Slider element provides a graphical interface for selecting a value from a continuous range. It can be customized with different step sizes and value ranges.</p>
+<h3 id="label">Label</h3>
+<p>The Label element displays static text or information. It can be customized with different font colors, and its size depends on the text content, up to a certain maximum width.
+If the text exceeds the maximum width, it will be truncated with an ellipsis (<code class="hljs">...</code>). There is a control for how many lines of text are shown before truncation using the Line Clamp property.</p>
+<h3 id="separator">Separator</h3>
+<p>The Separator element is a visual divider used to separate different sections or groups of elements within the dialog.</p>
+<h3 id="container">Container</h3>
+<p>The Container element is a versatile component that can hold multiple items. It supports single or multi-selection modes and can be populated dynamically via the API.
+The items in a Container can be selected and deselected by clicking, and multi-selection is supported via Shift+click for range selection. In single-selection mode, clicking the active item clears the selection. Their type can be restricted (e.g., numeric, character, date) so that only items of that type are enabled and selectable.</p>
+<p>Its properties panel exposes an <strong>Item type</strong> dropdown alongside the selection mode. It defaults to <strong>Any</strong>, which allows all items to remain interactive. Choose a specific type (Numeric, Factor, Calibrated, Binary, Character, Categorical, or Date) to enforce that only items whose metadata matches the selected type stay selectable. Items with a different type are visually muted, ignore clicks, and are removed from the active selection.</p>
+<p>Containers can be populated by code, using <code class="hljs"><span class="hljs-title function_">setValue</span>(<span class="api-param">container</span>, <span class="api-param">array</span>)</code>. The array can be either:</p>
+<ul>
+<li>an array of labels, such as: <code class="hljs"><span class="hljs-title function_">setValue</span>(<span class="api-param">container</span>, <span class="api-param">[</span><span class="hljs-string">"age"</span>, <span class="hljs-string">"gender"</span><span class="api-param">]</span>)</code> to add two plain items, or</li>
+<li>a metadata object containing the item name, type flags, and whether it should be displayed as selected, e.g.:</li>
+</ul>
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">setValue</span>(<span class="api-param">container</span>, [
+&nbsp;&nbsp;{ <span class="api-param">name</span>: <span class="hljs-string">"age"</span>, <span class="api-param">numeric</span>: <span class="hljs-keyword">true</span>, <span class="api-param">active</span>: <span class="hljs-keyword">true</span> },
+&nbsp;&nbsp;{ <span class="api-param">name</span>: <span class="hljs-string">"gender"</span>, <span class="api-param">factor</span>: <span class="hljs-keyword">true</span>, <span class="api-param">categorical</span>: <span class="hljs-keyword">true</span> }
+]);
+</code></pre>
+<p>Helpers such as <code class="hljs"><span class="hljs-title function_">listColumns</span>()</code> return precisely such metadata objects; when that output is paired with a Container whose Item type is set, mismatching items will automatically render as disabled.</p>
+<p>This element has another useful property called <strong>Item Order</strong>. When activated, the order in which the items are clicked is duly remembered, and <code class="hljs"><span class="hljs-title function_">getSelected</span>()</code> returns selections in that order. For instance in statistics, when creating a cross-tabulation from two categorical variables, it does matter which variable is selected first (on the rows) and which second (on the columns).</p>
+<p>Another Container property is <strong>Pin on top</strong>. When enabled, the currently selected items are visually moved to the top of the list in Preview, while all unselected items remain below in their original order. This is useful when working with long lists because the active selection stays visible even after scrolling or filtering the container.</p>
+<p>When <strong>Pin on top</strong> is combined with <strong>Item Order</strong>, the pinned rows keep the same click order returned by <code class="hljs"><span class="hljs-title function_">getSelected</span>()</code>. Without <strong>Item Order</strong>, selected rows are still pinned above the others, but ties between selected rows fall back to their original list order.</p>
+<h3 id="choice">Choice</h3>
+<p>The Choice element is a list control built for (ordered) choices. Each item acts like a selectable option, and the list itself can optionally be reordered by drag-and-drop. Because it combines sorting and ordering, it can be used in a wide variety of ways:</p>
+<ul>
+<li><strong>Multi-select</strong>: when Ordering is disabled, items behave like simple on/off selections from a predefined list.</li>
+<li><strong>Sorting selector</strong>: choose which fields are active, and (optionally) their direction (ascending/descending).</li>
+<li><strong>Ranking list</strong>: drag items up and down to establish a priority order (the order of items is the ranking).</li>
+</ul>
+<p>Its properties include:</p>
+<ul>
+<li><strong>Items</strong>: the list of item labels (comma/semicolon separated).</li>
+<li><strong>Sortable</strong>: if Yes, items can be reordered by dragging.</li>
+<li><strong>Ordering</strong>: stored values are <code class="hljs"><span class="api-param">increasing</span></code>, <code class="hljs"><span class="api-param">decreasing</span></code>, or <code class="hljs"><span class="api-param">no</span></code>. <code class="hljs">Yes, increasing</code> cycles through <code class="hljs">not selected → ascending → descending → not selected</code>; <code class="hljs">Yes, decreasing</code> cycles through <code class="hljs">not selected → descending → ascending → not selected</code>; <code class="hljs"><span class="api-param">No</span></code> cycles through <code class="hljs">not selected → selected → not selected</code> and no arrow is shown.</li>
+<li><strong>Align</strong>: text alignment for item labels (left/center/right).</li>
+<li><strong>Colors</strong>: Background/Font/Active background/Active font/Border colors affect the list and the active item styling, just like the Container element.</li>
+</ul>
+<p>In custom JS, <code class="hljs"><span class="hljs-title function_">getValue</span>(<span class="api-param">element</span>)</code> returns the ordered items along with their state (<code class="hljs"><span class="api-param">off</span></code>, <code class="hljs"><span class="api-param">asc</span></code>, <code class="hljs"><span class="api-param">desc</span></code>). <code class="hljs"><span class="hljs-title function_">getSelected</span>(<span class="api-param">element</span>)</code> returns the active selections; for Ordering-enabled lists, this includes the direction suffix, while for <code class="hljs"><span class="api-param">No</span></code> it returns labels only. Programmatic updates via <code class="hljs"><span class="hljs-title function_">setValue</span>()</code> or <code class="hljs"><span class="hljs-title function_">setSelected</span>()</code> may also include direction suffixes such as <code class="hljs">income:desc</code>.</p>
+<h2 id="keyboard-shortcuts">Keyboard shortcuts</h2>
+<p>Arrange (Z-order) actions:</p>
+<ul>
+<li>Cmd/Ctrl + ↑: Bring forward, moves the element one step forward in stacking order.</li>
+<li>Cmd/Ctrl + Shift + ↑: Bring to front, places the element above all others in the canvas.</li>
+<li>Cmd/Ctrl + ↓: Send backward, moves the element one step backward in stacking order.</li>
+<li>Cmd/Ctrl + Shift + ↓: Send to back, places the element behind all others in the canvas.</li>
+</ul>
+<p>These actions are disabled when no element is selected.</p>
+<p>Grouping:</p>
+<ul>
+<li>Cmd/Ctrl + G: Group selected</li>
+<li>Cmd/Ctrl + Shift + G: Ungroup selected group</li>
+</ul>
+<p>Movement (nudge):</p>
+<ul>
+<li>Arrow keys: Move selected element(s) by 1px</li>
+<li>Shift + Arrow keys: Move selected element(s) by 10px</li>
+</ul>
+<p>Global:</p>
+<ul>
+<li>Cmd/Ctrl + A: Select all elements on the canvas (Editor window)</li>
+</ul>
+<p>Notes:</p>
+<ul>
+<li>Shortcuts only apply when at least one element is selected and focus is not inside a text field (unless stated otherwise).</li>
+<li>Cmd/Ctrl modifiers are reserved for arrange and grouping actions; nudging uses arrows without Cmd/Ctrl.</li>
+<li>When multiple elements are selected, nudging moves all selected elements together.</li>
+</ul>
+<h2 id="shortcuts-cheatsheet">Shortcuts cheatsheet</h2>
+<p><img src="./images/shortcuts-cheatsheet.svg" alt="Shortcuts cheatsheet"></p>
+<h2 id="working-with-elements">Working with elements</h2>
+<h3 id="add-a-new-element">Add a new element</h3>
+<p>In the Elements panel (left), click the element to be added. It will be inserted on the dialog canvas with default properties.</p>
+<h3 id="select-an-element">Select an element</h3>
+<ul>
+<li>Click an element on the canvas to select it.</li>
+<li>A selected element is highlighted with a dotted outline.</li>
+<li>The buttons on the top toolbar are enabled when an element is selected.</li>
+</ul>
+<h3 id="deselect-elements">Deselect elements</h3>
+<ul>
+<li>Click on an empty area of the dialog canvas to clear the selection.</li>
+<li>The buttons on the top toolbar become disabled.</li>
+</ul>
+<h3 id="move-an-element">Move an element</h3>
+<ul>
+<li>Drag an element to reposition it.</li>
+<li>Movement is constrained within the dialog canvas with a small margin.</li>
+<li>Use Arrow keys to nudge by 1px; hold Shift for 10px steps (when an element is selected and focus is not in an input).</li>
+</ul>
+<h3 id="remove-an-element">Remove an element</h3>
+<ul>
+<li>Press Delete/Backspace (when the focus is not inside a text field) to remove the selected element, or</li>
+<li>Click the Remove button (Trashcan icon) in the top toolbar.</li>
+</ul>
+<h2 id="preview-window">Preview window</h2>
+<ul>
+<li>Opens from the File menu (Preview) or using the keyboard shortcut (Cmd/Ctrl + P)</li>
+<li>It renders the dialog with live interactions.</li>
+<li>Disabled elements remain fully visible, only greyed out (no opacity fade). Native inputs/selects retain the exact same size when disabled.</li>
+<li>Pressing ESC closes the Preview window.</li>
+</ul>
+<p>Item selections in Preview</p>
+<ul>
+<li>Containers support multi-selection. Clicking an item toggles its selection (active state); in single-selection mode, clicking the active item clears it. A <code class="hljs"><span class="hljs-string">'change'</span></code> event is dispatched on the Container so that handlers can react.</li>
+<li>Select elements are single-choice. Changing the selection dispatches <code class="hljs"><span class="hljs-string">'change'</span></code> like native selects.</li>
+</ul>
+<p>Runtime errors in Preview</p>
+<ul>
+<li>When Custom JS misuses the API (e.g., unsupported event, unknown element, invalid select option), a visible error box appears inside the Preview canvas. This helps spot issues without checking the console.</li>
+<li>The error box can be dismissed with ESC.</li>
+</ul>
+<h2 id="custom-js-code--quick-start">Custom JS code — quick start</h2>
+<p>Dialog Creator supports custom JavaScript through a built-in API. For events, helper functions, and the full reference, open the <a href="API.md">API reference</a>.</p>
+<p>This section includes quick-start recipes, container population examples, validation helpers, and practical scripting patterns.</p>
+<img src="./images/actions_window.png" alt="The action window" style="width: 793px;">
+
+<p>Some dialogs have complex behaviors that require custom JavaScript code. Open the code window with the Actions button at the bottom of the Editor. This code runs at the top level automatically, with a dedicated, provided API.</p>
+<p>The stored dialog format is now split on purpose:</p>
+<ul>
+<li><code class="hljs">dialog.json</code> carries the dialog structure and properties.</li>
+<li><code class="hljs">actions.js</code> carries the dialog behavior and is the canonical script file for saved dialogs.</li>
+</ul>
+<p>Elements can be referred to by their Name (ID) either quoted or not. For example, <code class="hljs"><span class="hljs-title function_">getValue</span>(<span class="api-param">input1</span>)</code> is the same as <code class="hljs"><span class="hljs-title function_">getValue</span>(<span class="hljs-string">'input1'</span>)</code>.</p>
+<p>Notes on missing elements and strict operations:</p>
+<ul>
+<li>For simple getters/setters (getValue/setValue), if a name is not found, reads return <code class="hljs"><span class="api-param">null</span></code> (or a safe default) and writes are ignored.</li>
+<li>For event-related or selection operations (on, select), using an unknown element will throw a SyntaxError and show the error overlay in Preview.</li>
+</ul>
+<p>Common patterns that can be used:</p>
+<ol>
+<li>Show the input's value in a label on change</li>
+</ol>
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">onChange</span>(<span class="api-param">input1</span>, () =&gt; {
+&nbsp;&nbsp;<span class="hljs-keyword">const</span> <span class="api-param">value</span> = <span class="hljs-string">"input1: "</span> + <span class="hljs-title function_">getValue</span>(<span class="api-param">input1</span>);
+&nbsp;&nbsp;<span class="hljs-title function_">setValue</span>(<span class="api-param">statusLabel</span>, <span class="api-param">value</span>);
+});
+</code></pre>
+
+<ol start="2">
+<li>Show or hide a label when a checkbox is toggled</li>
+</ol>
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">onClick</span>(<span class="api-param">checkbox1</span>, () =&gt; <span class="hljs-title function_">show</span>(<span class="api-param">label1</span>, <span class="hljs-title function_">isChecked</span>(<span class="api-param">checkbox1</span>)));
+</code></pre>
+
+<p>Which is equivalent to:</p>
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">onClick</span>(<span class="api-param">checkbox1</span>, () =&gt; {
+&nbsp;&nbsp;<span class="hljs-keyword">if</span> (<span class="hljs-title function_">isChecked</span>(<span class="api-param">checkbox1</span>)) {
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="hljs-title function_">show</span>(<span class="api-param">label1</span>);
+&nbsp;&nbsp;} <span class="hljs-keyword">else</span> {
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="hljs-title function_">hide</span>(<span class="api-param">label1</span>);
+&nbsp;&nbsp;}
+});
+</code></pre>
+
+<ol start="3">
+<li>Show a select value in a label</li>
+</ol>
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">onChange</span>(<span class="api-param">countrySelect</span>, () =&gt; {
+&nbsp;&nbsp;<span class="hljs-title function_">setValue</span>(<span class="api-param">statusLabel</span>, <span class="hljs-string">"Country: "</span> + <span class="hljs-title function_">getValue</span>(<span class="api-param">countrySelect</span>));
+});
+</code></pre>
+
+<ol start="4">
+<li>Update text programmatically</li>
+</ol>
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">setValue</span>(<span class="api-param">statusLabel</span>, <span class="hljs-string">"Ready"</span>);
+</code></pre>
+
+<ol start="5">
+<li>Preserve the old selection-memory behavior as an app-specific external helper</li>
+</ol>
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">onChange</span>(<span class="api-param">c_datasets</span>, <span class="hljs-keyword">async</span> () =&gt; {
+&nbsp;&nbsp;<span class="hljs-keyword">await</span> <span class="hljs-title function_">callExternal</span>(<span class="hljs-string">'rememberSelectionBy'</span>, {
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="api-param">source</span>: <span class="api-param">c_datasets</span>,
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="api-param">dependents</span>: [<span class="api-param">c_x</span>, <span class="api-param">c_y</span>]
+&nbsp;&nbsp;});
+});
+</code></pre>
+
+<p>This keeps the old idea available as a host-app extension without keeping it in Dialog Creator's core UI API.</p>
+<ol start="6">
+<li>Make an input act like a search box for a container</li>
+</ol>
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">searchIn</span>(<span class="api-param">i_search</span>, <span class="api-param">c_variables</span>);
+</code></pre>
+
+<p>As the user types in the input, the container is filtered live by item name. The match is case-insensitive, partial matches are allowed, and the current search remains active even if the container is repopulated later with <code class="hljs"><span class="hljs-title function_">setValue</span>()</code>.</p>
+<ol start="7">
+<li>Enable transient <code class="hljs">Cmd/Ctrl+F</code> search for specific containers</li>
+</ol>
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">enableSearch</span>(<span class="api-param">c_outcome</span>, <span class="api-param">c_condition</span>);
+</code></pre>
+
+<p>When the pointer is over an enabled registered container, pressing <code class="hljs">Cmd/Ctrl+F</code> opens a transient search box above that container in Preview. Only one transient search box can be open at a time. <code class="hljs"><span class="api-param">Esc</span></code> closes it and clears the filter; if it loses focus while empty, it closes automatically.</p>
+<p>Events:</p>
+<ul>
+<li>Buttons and custom checkboxes/radios usually use <code class="hljs"><span class="hljs-string">'click'</span></code>.</li>
+<li>Text inputs can use <code class="hljs"><span class="hljs-string">'change'</span></code> (on blur) or <code class="hljs"><span class="hljs-string">'input'</span></code> (as you type).</li>
+<li>Selects use <code class="hljs"><span class="hljs-string">'change'</span></code>.</li>
+<li>Tip: Prefer the helpers <code class="hljs"><span class="hljs-title function_">onClick</span></code>, <code class="hljs"><span class="hljs-title function_">onChange</span></code>, <code class="hljs"><span class="hljs-title function_">onInput</span></code> for readability.</li>
+<li>Radio groups: pass the group name to <code class="hljs"><span class="hljs-title function_">onChange</span>(<span class="api-param">groupName</span>, <span class="api-param">handler</span>)</code> to attach a handler to every radio in that group. Similar to element names, if the group name is a valid identifier (e.g. <code class="hljs"><span class="api-param">radiogroup1</span></code>), the quotes may be omitted.</li>
+</ul>
+<p>Programmatic events:</p>
+<ul>
+<li>Convenience functions: <code class="hljs"><span class="hljs-title function_">triggerChange</span>(<span class="api-param">name</span>)</code> and <code class="hljs"><span class="hljs-title function_">triggerClick</span>(<span class="api-param">name</span>)</code> are shortcuts for triggering 'change' and 'click' events respectively.</li>
+</ul>
+<p>Initialization</p>
+<ul>
+<li>The top-level custom code runs after the Preview is ready (elements rendered and listeners attached). Handlers can be directly registered and initial state can be set without extra lifecycle wrappers.</li>
+<li>Event helpers:<ul>
+<li><code class="hljs"><span class="hljs-title function_">onClick</span>(<span class="api-param">name</span>, <span class="api-param">fn</span>)</code></li>
+<li><code class="hljs"><span class="hljs-title function_">onChange</span>(<span class="api-param">name</span>, <span class="api-param">fn</span>)</code></li>
+<li><code class="hljs"><span class="hljs-title function_">onInput</span>(<span class="api-param">name</span>, <span class="api-param">fn</span>)</code></li>
+</ul>
+</li>
+</ul>
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">onClick</span>(<span class="api-param">button1</span>, () =&gt; {
+&nbsp;&nbsp;<span class="hljs-comment">// do something</span>
+});
+</code></pre>
+
+
+<h2 id="file-menu-actions">File menu actions</h2>
+<ul>
+<li>New: Optionally saves current work, then clears the canvas.</li>
+<li>Load dialog: Load a <code class="hljs">.dc.zip</code> package or an unzipped dialog directory into the editor.</li>
+<li>Save dialog: Save the current dialog as a <code class="hljs">.dc.zip</code> DialogCreator package. The package is a zip file containing <code class="hljs">dialog.json</code> and <code class="hljs">actions.js</code>; unzipping <code class="hljs">xyz.dc.zip</code> produces an editable <code class="hljs">xyz/</code> dialog directory.</li>
+<li>Save as: Save as <code class="hljs">.dc.zip</code>.</li>
+<li>Preview: Open the live preview window.</li>
+</ul>
+<h2 id="multi-selection-and-grouping">Multi-selection and grouping</h2>
+<h3 id="select-multiple-elements">Select multiple elements</h3>
+<ul>
+<li>Shift + Click to add or remove elements from the current selection.</li>
+<li>Lasso selection: Click and drag on an empty area of the dialog canvas to draw a selection rectangle. All elements overlapping the rectangle are selected.<ul>
+<li>Hold Shift while lassoing to add to the existing selection instead of replacing it.</li>
+</ul>
+</li>
+</ul>
+<h3 id="move-multiple-elements-together-ephemeral-selection">Move multiple elements together (ephemeral selection)</h3>
+<ul>
+<li>When two or more elements are selected (but not grouped), dragging any selected element will move all selected elements together.</li>
+<li>Arrow key nudging also moves all selected elements together.</li>
+<li>In the Properties panel, the Type field shows "Multiple selection" and only Left and Top are editable; changing these moves the whole selection.</li>
+</ul>
+<h3 id="group-selection-persistent-group">Group selection (persistent group)</h3>
+<ul>
+<li>To lock a multi-selection into a single movable unit, click the Group button in the toolbar or press Cmd/Ctrl + G.</li>
+<li>A group container is created around the selected elements. Selecting a child of a group selects the whole group.</li>
+<li>Groups can be moved and nudged like individual elements.</li>
+</ul>
+<h3 id="ungroup">Ungroup</h3>
+<ul>
+<li>Select the group container and click Ungroup in the toolbar or press Cmd/Ctrl + Shift + G to return the elements to the top level. The former members remain selected.</li>
+</ul>
+<h2 id="tips-and-tricks">Tips and tricks</h2>
+<ul>
+<li>Right-click an element or group to access quick actions like Duplicate, Group, or Ungroup.</li>
+<li>Press Enter while editing a property field to commit changes (the editor will blur the field to trigger the update).</li>
+<li>Some numeric fields are constrained (e.g., size within the canvas, line clamp limited to a small maximum). If a value is out of range, the editor will adjust it automatically.</li>
+<li>Element Name (ID) must be unique. If a duplicate is entered, it will be rejected and an error shown.</li>
+<li>Visibility (isVisible) and Enabled (isEnabled) toggles affect how elements render and behave in the editor.</li>
+</ul>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<ul>
+<li><p>Arrange buttons are disabled</p>
+<ul>
+<li>Ensure an element is selected. Click an element on the canvas.</li>
+</ul>
+</li>
+<li><p>Delete key doesn't remove the element</p>
+<ul>
+<li>Make sure focus isn't inside a text field. Click on the canvas and try again.</li>
+</ul>
+</li>
+<li><p>Property change seems ignored</p>
+<ul>
+<li>Most properties apply on blur (when the input loses focus). Press Enter or click elsewhere to commit.</li>
+</ul>
+</li>
+</ul>
+
+	
+
+</main>
+</div>
+
+<script>(function(){
+  const $ = (sel, root) => Array.from((root||document).querySelectorAll(sel));
+  // Collapsible ToC sections
+  $('.toc-toggle').forEach(btn=>{
+    btn.addEventListener('click', function(e){
+      e.preventDefault();
+      const li = btn.closest('li');
+      const expanded = btn.getAttribute('aria-expanded') === 'true';
+      const label = (li && li.querySelector('.toc-section-link')) ? li.querySelector('.toc-section-link').textContent.trim() : 'section';
+      btn.setAttribute('aria-expanded', String(!expanded));
+      btn.setAttribute('aria-label', (expanded ? 'Expand ' : 'Collapse ') + label);
+      btn.setAttribute('title', expanded ? 'Expand section' : 'Collapse section');
+      if(li) li.classList.toggle('collapsed', expanded);
+    });
+  });
+  // Smooth scrolling and close mobile on click
+  function handleToCClick(e){
+    const a = e.target.closest('a[href^="#"]');
+    if(!a) return;
+    const id = decodeURIComponent(a.getAttribute('href').slice(1));
+    const target = document.getElementById(id);
+    if(target){
+      e.preventDefault();
+      target.scrollIntoView({behavior:'smooth', block:'start'});
+      const det = a.closest('details.toc-mobile');
+      if(det) det.open = false;
+      history.replaceState(null, '', '#'+id);
+    }
+  }
+  const sidebar = document.querySelector('.toc-sidebar');
+  if(sidebar) sidebar.addEventListener('click', handleToCClick, {passive:false});
+  $('.toc-mobile').forEach(det=> det.addEventListener('click', handleToCClick, {passive:false}));
+  // Heading anchor links
+  const main = document.getElementById('main') || document.querySelector('main');
+  if(main){
+    $('#main h2[id], #main h3[id]').forEach(h=>{
+      if(!h.querySelector('.heading-anchor')){
+        const a = document.createElement('a');
+        a.className = 'heading-anchor';
+        a.href = '#'+h.id;
+        a.setAttribute('aria-label','Link to this section');
+        a.textContent = '#';
+        h.appendChild(a);
+      }
+    });
+  }
+  // Scrollspy
+  const headings = main ? $('#main h2[id], #main h3[id]') : [];
+  const linkMap = new Map();
+  function registerLinks(root){
+    $('a[href^="#"]', root).forEach(a=>{
+      const id = decodeURIComponent(a.getAttribute('href').slice(1));
+      if(!id) return;
+      if(!linkMap.has(id)) linkMap.set(id, []);
+      linkMap.get(id).push(a);
+    });
+  }
+  if(sidebar) registerLinks(sidebar);
+  $('.toc-mobile').forEach(det=> registerLinks(det));
+  function setActive(id){
+    linkMap.forEach(links => links.forEach(l => l.classList.remove('active')));
+    (linkMap.get(id)||[]).forEach(l => l.classList.add('active'));
+  }
+  function onScroll(){
+    const fromTop = window.scrollY + 120;
+    let currentId = null;
+    for(const h of headings){
+      if(h.offsetTop <= fromTop) currentId = h.id; else break;
+    }
+    if(currentId) setActive(currentId);
+  }
+  document.addEventListener('scroll', onScroll, {passive:true});
+  window.addEventListener('load', onScroll, {once:true});
+  onScroll();
+})();</script>
+
+</body></html>

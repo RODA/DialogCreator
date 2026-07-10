@@ -1,11 +1,14 @@
 import * as path from "path";
 import * as sqlite3 from "sqlite3";
-import { DBInterface, DBElementsProps } from "../interfaces/database";
-import { elements } from "../modules/elements";
-import { utils } from "../library/utils";
-import { AnyElement, StringNumber } from '../interfaces/elements';
-const sqlite = sqlite3.verbose();
 import * as fs from "fs";
+
+import type { ElementCatalog } from "../../core/catalog/elementCatalog";
+import { DBElementsProps } from "../../interfaces/database";
+import { elements } from "../../modules/elements";
+import { utils } from "../../library/utils";
+import { AnyElement, StringNumber } from '../../interfaces/elements';
+
+const sqlite = sqlite3.verbose();
 
 let dbFile = '';
 if (process.env.NODE_ENV == 'development') {
@@ -31,7 +34,7 @@ if (process.env.NODE_ENV == 'development') {
 
 export const db = new sqlite.Database(dbFile);
 
-export const database: DBInterface = {
+export const elementCatalog: ElementCatalog = {
     getProperties: async (element) => {
         const sql = "SELECT property, value FROM elements WHERE element = ?";
         return new Promise<Record<string, string>>((resolve, reject) => {
@@ -52,16 +55,11 @@ export const database: DBInterface = {
                 const missing = allowed.filter(p => !existing.has(p));
 
                 if (missing.length > 0) {
-                    // Insert missing properties with defaults from modules/elements
                     if (!utils.isKeyOf(elements, element)) {
                         reject(new Error(`Unknown element: ${element}`));
                         return;
                     }
 
-                    // The type for defaults, but only for those elements in $persist
-                    // We need to assert that the properties we want to insert exist on the defaults
-                    // to avoid runtime errors. The $persist array should ensure this, but we add
-                    // StringNumber to coerce AnyElement to a regular object.
                     type DefaultsType = AnyElement & StringNumber & { $persist?: readonly string[] };
                     const defaults = (elements[element] || {}) as DefaultsType;
                     const insSql = "INSERT INTO elements (element, property, value) VALUES (?, ?, ?)";
@@ -70,20 +68,21 @@ export const database: DBInterface = {
                             const v = String(defaults[p]);
                             db.run(insSql, [element, p, v], () => res());
                         })));
-                    } catch (_e) {
-                        // ignore insert errors; continue
+                    } catch {
+                        // Missing default inserts are non-fatal; continue with a fresh read.
                     }
-                    // Re-read full set
+
                     db.all(sql, [element], (err2, rows2) => {
                         if (err2) {
                             reject(err2);
-                        } else {
-                            const out: Record<string, string> = {};
-                            for (const r of rows2 as { property: string; value: string }[]) {
-                                out[r.property] = r.value;
-                            }
-                            resolve(out);
+                            return;
                         }
+
+                        const out: Record<string, string> = {};
+                        for (const r of rows2 as { property: string; value: string }[]) {
+                            out[r.property] = r.value;
+                        }
+                        resolve(out);
                     });
                 } else {
                     resolve(result);
@@ -139,12 +138,10 @@ export const database: DBInterface = {
                             return resolve();
                         }
                         if (this.changes === 0) {
-                            // Insert if missing
                             db.run(
                                 "INSERT INTO elements (element, property, value) VALUES (?, ?, ?)",
                                 [element, property, String(value)],
-                                function (_err2) {
-                                    // ignore _err2 here; success flag remains accurate
+                                function () {
                                     resolve();
                                 }
                             );
