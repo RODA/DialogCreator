@@ -18,7 +18,7 @@ const main = async function() {
 
     try {
         const codeUrl = pathToFileURL(
-            path.join(rootDir, "docs/live/pages/code.html")
+            path.join(rootDir, "dist", "web", "pages", "code.html")
         ).toString();
 
         await page.goto(codeUrl);

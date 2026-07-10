@@ -6,7 +6,7 @@ const path = require("path");
 const { spawnSync } = require("child_process");
 
 const rootDir = path.resolve(__dirname, "..");
-const webDir = path.join(rootDir, "docs", "live");
+const webDir = path.join(rootDir, "dist", "web");
 const args = process.argv.slice(2);
 
 const shouldBuild = !args.includes("--no-build");

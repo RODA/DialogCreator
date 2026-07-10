@@ -31,6 +31,10 @@ import {
 } from "./shell-electron/windows/infoWindow";
 import { maybeShowWaylandNotice } from "./shell-electron/platform/waylandNotice";
 import { SyntaxPanelWindowHost } from "./shell-electron/windows/syntaxPanelWindow";
+import {
+    createElectronUpdateService,
+    ElectronUpdateService
+} from "./shell-electron/updater/electronUpdateService";
 import * as path from "path";
 
 // Note: For packaged Linux builds, avoid forcing platform/env vars here. Users on Wayland can launch
@@ -40,6 +44,7 @@ let editorWindow: BrowserWindow;
 let secondWindow: BrowserWindow;
 let syntaxPanelHost: SyntaxPanelWindowHost;
 let documentSession: ElectronDialogDocumentSession;
+let updateService: ElectronUpdateService;
 let lastEditorBounds: Electron.Rectangle | null = null;
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
@@ -49,6 +54,10 @@ if (!gotTheLock) {
 const windowid: { [key: string]: number } = {
     editorWindow: 1,
     secondWindow: 2
+}
+
+function reportMainProcessError(error: unknown): void {
+    console.error(error instanceof Error ? error.stack : String(error));
 }
 
 function rebuildApplicationMenu() {
@@ -103,9 +112,18 @@ function createMainWindow() {
         getEditorWindow: () => editorWindow,
         getPreviewWindow
     });
+    updateService = createElectronUpdateService({
+        app,
+        enabled: process.env.NODE_ENV !== 'test',
+        getMainWindow: () => editorWindow,
+        reportError: reportMainProcessError
+    });
 
     // and load the index.html of the app.
     editorWindow.loadFile(path.join(__dirname, "../src/pages/editor.html"));
+    editorWindow.webContents.once('did-finish-load', () => {
+        updateService.checkForUpdates();
+    });
 
     // Build and set the application menu dynamically per platform (macOS vs Windows/Linux)
     rebuildApplicationMenu();
@@ -198,7 +216,8 @@ app.whenReady().then(() => {
         getSecondWindow: () => secondWindow,
         createSecondWindow,
         syntaxPanelHost: () => syntaxPanelHost,
-        documentSession: () => documentSession
+        documentSession: () => documentSession,
+        updateService: () => updateService
     });
     // Intercept OS-level quits (e.g., Cmd+Q) to prompt for save when dirty
     app.on('before-quit', (e) => {

@@ -1,4 +1,3 @@
-
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -7,40 +6,46 @@ NAME=$(node -p "(p=> (p.build && p.build.productName) ? p.build.productName : p.
 # Use a filename-safe variant (replace spaces with underscores)
 NAME_FILE=$(printf '%s' "$NAME" | sed 's/[[:space:]]\+/_/g')
 
-# Expected electron-builder outputs (current config produces mac DMGs)
-ORIGINAL_APPLE_ARM="build/output/${NAME}-${VERSION}-arm64.dmg"
-NEW_APPLE_ARM="${NAME_FILE}_${VERSION}_silicon.dmg"
+ORIGINAL_UNIVERSAL_DMG="build/output/${NAME}-${VERSION}-universal.dmg"
+STABLE_UNIVERSAL_DMG="${NAME_FILE}_universal.dmg"
+LATEST_MAC="build/output/latest-mac.yml"
 
-ORIGINAL_APPLE_INTEL="build/output/${NAME}-${VERSION}.dmg"
-NEW_APPLE_INTEL="${NAME_FILE}_${VERSION}_intel.dmg"
+if [ -f "$LATEST_MAC" ]; then
+    node <<'NODE'
+const fs = require('fs');
+const path = require('path');
+const yaml = require('js-yaml');
 
-renamed_any=0
+const latestPath = path.join('build', 'output', 'latest-mac.yml');
+const latest = yaml.load(fs.readFileSync(latestPath, 'utf8')) || {};
+const files = Array.isArray(latest.files) ? latest.files : [];
+const zipEntry = files.find((entry) => /\.zip$/i.test(String((entry || {}).url || '')));
 
-if [ -f "$ORIGINAL_APPLE_ARM" ]; then
-    echo "Renaming $(basename "$ORIGINAL_APPLE_ARM") -> $NEW_APPLE_ARM"
-    mv "$ORIGINAL_APPLE_ARM" "build/output/$NEW_APPLE_ARM"
-    renamed_any=1
+if (!zipEntry) {
+    process.exit(0);
+}
+
+const zipPath = path.join('build', 'output', String(zipEntry.url || ''));
+if (fs.existsSync(zipPath)) {
+    zipEntry.size = fs.statSync(zipPath).size;
+}
+
+latest.files = [zipEntry];
+latest.path = String(zipEntry.url || '');
+latest.sha512 = zipEntry.sha512;
+
+fs.writeFileSync(latestPath, yaml.dump(latest, {
+    lineWidth: -1,
+    noRefs: true
+}));
+NODE
 fi
 
-if [ -f "$ORIGINAL_APPLE_INTEL" ]; then
-    echo "Renaming $(basename "$ORIGINAL_APPLE_INTEL") -> $NEW_APPLE_INTEL"
-    mv "$ORIGINAL_APPLE_INTEL" "build/output/$NEW_APPLE_INTEL"
-    renamed_any=1
+if [ -f "$ORIGINAL_UNIVERSAL_DMG" ]; then
+    echo "Renaming $(basename "$ORIGINAL_UNIVERSAL_DMG") -> $STABLE_UNIVERSAL_DMG"
+    mv "$ORIGINAL_UNIVERSAL_DMG" "build/output/$STABLE_UNIVERSAL_DMG"
+else
+    echo "No universal DMG found at $ORIGINAL_UNIVERSAL_DMG." >&2
 fi
 
-if [ "$renamed_any" -eq 0 ]; then
-    echo "No matching artifacts found to rename in build/output for version $VERSION." >&2
-fi
-
-# Clean up auxiliary files we don't want to distribute
-echo "Cleaning up .yml, .yaml, and .blockmap files in build/output..."
-for f in build/output/*; do
-    if [ -f "$f" ]; then
-        case "$f" in
-            *.yml|*.yaml|*.blockmap)
-                echo "Removing $(basename "$f")"
-                rm -f "$f"
-                ;;
-        esac
-    fi
-done
+rm -f build/output/*.dmg.blockmap

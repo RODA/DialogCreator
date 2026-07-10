@@ -53,7 +53,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22.13.0
 
       - name: Install dependencies
         run: npm install
@@ -77,7 +77,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          files=(build/output/*.AppImage)
+          files=(
+            build/output/*.AppImage
+            build/output/*.AppImage.blockmap
+            build/output/latest-linux.yml
+          )
           cmd=(gh release upload "$RELEASE_TAG" --repo "$TARGET_REPO")
           if [ "$OVERWRITE_RELEASE_ASSETS" = "true" ]; then
             cmd+=(--clobber)
@@ -100,7 +104,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22.13.0
 
       - name: Install dependencies
         run: npm install
@@ -133,6 +137,9 @@ jobs:
           timestamp-rfc3161: http://timestamp.acs.microsoft.com
           timestamp-digest: SHA256
 
+      - name: Refresh Windows updater metadata
+        run: npm run refresh:win-update
+
       - name: Upload Windows assets to GitHub release
         if: ${{ inputs.release_tag != '' }}
         shell: bash
@@ -143,7 +150,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          files=(build/output/*.exe)
+          files=(
+            build/output/*.exe
+            build/output/*.exe.blockmap
+            build/output/latest.yml
+          )
           cmd=(gh release upload "$RELEASE_TAG" --repo "$TARGET_REPO")
           if [ "$OVERWRITE_RELEASE_ASSETS" = "true" ]; then
             cmd+=(--clobber)
@@ -151,10 +162,10 @@ jobs:
           cmd+=("${files[@]}")
           "${cmd[@]}"
 
-  macos-intel:
+  macos-universal:
     needs: prepare-release
     if: ${{ always() && (needs.prepare-release.result == 'success' || needs.prepare-release.result == 'skipped') }}
-    runs-on: macos-15-intel
+    runs-on: macos-15
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
@@ -167,7 +178,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22.13.0
 
       - name: Verify macOS signing secrets
         shell: bash
@@ -184,8 +195,8 @@ jobs:
       - name: Build TypeScript output
         run: npm run build
 
-      - name: Build Electron app (macOS intel, signed)
-        run: npx electron-builder --mac dmg --x64 --publish never -c.mac.forceCodeSigning=true
+      - name: Build Electron app (macOS universal, signed)
+        run: npx electron-builder --mac dmg zip --universal --publish never -c.mac.forceCodeSigning=true
 
       - name: Verify macOS code signature
         shell: bash
@@ -212,7 +223,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          files=(build/output/*.dmg)
+          files=(
+            build/output/*.dmg
+            build/output/*.zip
+            build/output/*.zip.blockmap
+            build/output/latest-mac.yml
+          )
           cmd=(gh release upload "$RELEASE_TAG" --repo "$TARGET_REPO")
           if [ "$OVERWRITE_RELEASE_ASSETS" = "true" ]; then
             cmd+=(--clobber)

@@ -8,24 +8,7 @@ $nameForFile = ($name -replace "\s+", "_")
 
 $artifactDir = "build/output"
 
-function Rename-Artifact {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string] $SourcePath,
-        [Parameter(Mandatory = $true)]
-        [string] $TargetName
-    )
-
-    if (-not (Test-Path -LiteralPath $SourcePath)) {
-        return $false
-    }
-
-    Rename-Item -LiteralPath $SourcePath -NewName $TargetName -Force
-    Write-Host "Renamed to $TargetName"
-    return $true
-}
-
-# Rename NSIS installer to NAME_setup_VERSION_intel.exe
+# Copy NSIS installer to a stable manual-download name.
 $installerCandidates = @(
     Get-ChildItem -Path $artifactDir -Filter "*.exe" -File -ErrorAction SilentlyContinue |
         Where-Object { $_.Name -match [regex]::Escape("Setup $version") }
@@ -36,16 +19,16 @@ if ($installerCandidates.Count -eq 0) {
     exit 1
 }
 
-$installerTargetName = "${nameForFile}_setup_${version}_intel.exe"
-[void](Rename-Artifact -SourcePath $installerCandidates[0].FullName -TargetName $installerTargetName)
+$installerTargetName = "${nameForFile}_setup_intel.exe"
+Copy-Item -LiteralPath $installerCandidates[0].FullName -Destination (Join-Path -Path $artifactDir -ChildPath $installerTargetName) -Force
+Write-Host "Copied installer to $installerTargetName"
 
-# Rename portable executable to NAME_VERSION_intel.exe
+# Copy portable executable to a stable manual-download name.
 $portableCandidates = @(
     Get-ChildItem -Path $artifactDir -Filter "*.exe" -File -ErrorAction SilentlyContinue |
         Where-Object {
             $_.Name -ne $installerTargetName -and
-            $_.Name -notmatch [regex]::Escape("Setup $version") -and
-            $_.Name -notmatch [regex]::Escape("_setup_${version}_intel.exe")
+            $_.Name -notmatch [regex]::Escape("Setup $version")
         }
 )
 
@@ -54,23 +37,9 @@ if ($portableCandidates.Count -eq 0) {
     exit 1
 }
 
-$portableTargetName = "${nameForFile}_${version}_intel.exe"
-[void](Rename-Artifact -SourcePath $portableCandidates[0].FullName -TargetName $portableTargetName)
-
-# Also remove update metadata artifacts we don't want to ship alongside the installer
-$patterns = @("*.yml", "*.yaml", "*.blockmap")
-
-foreach ($pattern in $patterns) {
-    $files = Get-ChildItem -Path $artifactDir -Filter $pattern -File -ErrorAction SilentlyContinue
-    foreach ($f in $files) {
-        try {
-            Remove-Item -Path $f.FullName -Force -ErrorAction Stop
-            Write-Host "Removed: $($f.Name)"
-        } catch {
-            Write-Warning "Could not remove: $($f.Name) - $($_.Exception.Message)"
-        }
-    }
-}
+$portableTargetName = "${nameForFile}_portable_intel.exe"
+Copy-Item -LiteralPath $portableCandidates[0].FullName -Destination (Join-Path -Path $artifactDir -ChildPath $portableTargetName) -Force
+Write-Host "Copied portable executable to $portableTargetName"
 
 # Hide all files in win-unpacked except the executable, resources, and licenses
 $unpackedDir = "build/output/win-unpacked"

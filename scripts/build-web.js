@@ -6,7 +6,7 @@ const esbuild = require("esbuild");
 const { syncAboutMetadata } = require("./sync-about-metadata");
 
 const rootDir = path.resolve(__dirname, "..");
-const outDir = path.join(rootDir, "docs", "live");
+const outDir = path.join(rootDir, "dist", "web");
 
 const copyDirectory = function(source, target) {
     if (!fs.existsSync(source)) {

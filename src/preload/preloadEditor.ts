@@ -7,6 +7,8 @@
 */
 
 import { bootEditor } from "../editor/editorBootstrap";
+import { installElectronUpdateButton } from "../shell-electron/renderer/electronUpdateButton";
 import { createElectronRendererTransport } from "../shell-electron/renderer/electronRendererTransport";
 
 bootEditor(createElectronRendererTransport());
+installElectronUpdateButton();

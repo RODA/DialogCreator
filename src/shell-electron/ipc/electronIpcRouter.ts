@@ -5,6 +5,7 @@ import { DBElements } from "../../interfaces/database";
 import type { DialogChildWindowArgs } from "../../core/host/dialogChildWindow";
 import { elementCatalog } from "../catalog/sqliteElementCatalog";
 import type { ElectronDialogDocumentSession } from "../document/electronDialogDocumentSession";
+import type { ElectronUpdateService } from "../updater/electronUpdateService";
 import type { SyntaxPanelWindowHost } from "../windows/syntaxPanelWindow";
 
 type WindowIdMap = { [key: string]: number };
@@ -16,6 +17,7 @@ type ElectronIpcRouterOptions = {
     createSecondWindow: (args: DialogChildWindowArgs) => void;
     syntaxPanelHost: () => SyntaxPanelWindowHost;
     documentSession: () => ElectronDialogDocumentSession;
+    updateService: () => ElectronUpdateService;
 };
 
 export function installElectronIpcRouter(options: ElectronIpcRouterOptions): void {
@@ -89,6 +91,9 @@ async function handleMainChannel(
             break;
         case 'document-json-updated':
             options.documentSession().handleDocumentJsonUpdated(String(args[0] ?? ''));
+            break;
+        case 'app-update-button':
+            options.updateService().handleUpdateButton();
             break;
         default:
             break;

@@ -25,6 +25,7 @@ package-lock.json
 src/bundles/codemirror.bundle.js
 src/bundles/codemirror.bundle.js.map
 docs/fonts/
+docs/live/
 
 # Editor directories and files
 .vscode/*

@@ -57,7 +57,7 @@ const main = async function() {
         }
     });
 
-    const previewPath = path.join(rootDir, "docs", "live", "pages", "preview.html");
+    const previewPath = path.join(rootDir, "dist", "web", "pages", "preview.html");
     await page.goto(`file://${previewPath}`);
     await page.waitForSelector("#preview-root");
 

@@ -18,7 +18,7 @@ const main = async function() {
 
     try {
         const defaultsUrl = pathToFileURL(
-            path.join(rootDir, "docs/live/pages/defaults.html")
+            path.join(rootDir, "dist", "web", "pages", "defaults.html")
         ).toString();
 
         await page.goto(defaultsUrl);

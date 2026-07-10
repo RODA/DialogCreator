@@ -30,7 +30,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22.13.0
 
       - name: Install dependencies
         run: npm install
@@ -70,7 +70,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          files=(build/output/*.AppImage)
+          files=(
+            build/output/*.AppImage
+            build/output/*.AppImage.blockmap
+            build/output/latest-linux.yml
+          )
           cmd=(gh release upload "$RELEASE_TAG" --repo "$TARGET_REPO")
           if [ "$OVERWRITE_RELEASE_ASSETS" = "true" ]; then
             cmd+=(--clobber)
