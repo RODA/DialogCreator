@@ -28,6 +28,25 @@ function installStyles(): void {
     const style = document.createElement('style');
     style.id = styleId;
     style.textContent = `
+        @keyframes topDownActivity {
+            0% {
+                transform: translateY(-8px);
+                opacity: 0;
+            }
+            30% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+            70% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(8px);
+                opacity: 0;
+            }
+        }
+
         .editor-toolbar .toolbar-spacer {
             flex: 1 1 auto;
         }
@@ -45,6 +64,34 @@ function installStyles(): void {
             border-radius: 6px;
             box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset;
             cursor: pointer;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 11px;
+            font-weight: 600;
+            overflow: hidden;
+        }
+
+        .app-update-button .update-text {
+            display: none;
+        }
+
+        /* Downloading activity animation */
+        .app-update-button[data-update-mode="downloading"] .codicon {
+            animation: topDownActivity 1.5s infinite linear;
+            display: inline-block;
+        }
+
+        /* State style once update is downloaded */
+        .app-update-button[data-update-mode="downloaded"] {
+            width: auto;
+            padding: 0 8px;
+        }
+
+        .app-update-button[data-update-mode="downloaded"] .codicon {
+            display: none;
+        }
+
+        .app-update-button[data-update-mode="downloaded"] .update-text {
+            display: inline-block;
         }
 
         .app-update-button:hover {
@@ -86,6 +133,11 @@ function createUpdateButton(): HTMLButtonElement {
     icon.className = 'codicon codicon-download';
     icon.setAttribute('aria-hidden', 'true');
     button.appendChild(icon);
+
+    const text = document.createElement('span');
+    text.className = 'update-text';
+    text.textContent = 'Update';
+    button.appendChild(text);
 
     return button;
 }

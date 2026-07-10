@@ -131,9 +131,8 @@
       "category": "Development / Science"
     },
     "publish": {
-      "provider": "github",
-      "owner": "RODA",
-      "repo": "DialogCreator"
+      "provider": "generic",
+      "url": "https://github.com/RODA/DialogCreator/releases/download/latest"
     }
   },
   "devDependencies": {

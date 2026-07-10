@@ -63,6 +63,7 @@ export const createElectronUpdateService = function(
     options: ElectronUpdateServiceOptions
 ): ElectronUpdateService {
     const autoUpdater: AppUpdater = electronAutoUpdater;
+    autoUpdater.logger = console;
     let checking = false;
     let downloading = false;
     let downloaded = false;
@@ -202,8 +203,55 @@ export const createElectronUpdateService = function(
 
     return {
         checkForUpdates: function(): void {
+            let targetUrl = "https://github.com/RODA/DialogCreator/releases/download/latest";
+            if (process.env.DIALOGCREATOR_UPDATE_URL) {
+                targetUrl = process.env.DIALOGCREATOR_UPDATE_URL;
+                autoUpdater.setFeedURL({
+                    provider: "generic",
+                    url: targetUrl
+                });
+                autoUpdater.forceDevUpdateConfig = true;
+            } else if (!options.app.isPackaged) {
+                autoUpdater.setFeedURL({
+                    provider: "generic",
+                    url: targetUrl
+                });
+                autoUpdater.forceDevUpdateConfig = true;
+            }
+
+            if (!options.app.isPackaged) {
+                try {
+                    const fs = require("fs");
+                    const path = require("path");
+                    const appPath = options.app.getAppPath();
+                    
+                    const devConfigPath = path.join(appPath, "dev-app-update.yml");
+                    const yamlContent = `provider: generic\nurl: ${targetUrl}\nupdaterCacheDirName: dialog-creator-updater\n`;
+                    fs.writeFileSync(devConfigPath, yamlContent, "utf8");
+
+                    let pkgPath = path.join(appPath, "package.json");
+                    if (!fs.existsSync(pkgPath)) {
+                        pkgPath = path.join(path.dirname(appPath), "package.json");
+                    }
+                    if (fs.existsSync(pkgPath)) {
+                        const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
+                        if (pkg && pkg.version) {
+                            const semver = require("semver");
+                            const semVer = semver.parse(pkg.version);
+                            if (semVer) {
+                                Object.defineProperty(autoUpdater, "currentVersion", {
+                                    get: () => semVer,
+                                    configurable: true
+                                });
+                            }
+                        }
+                    }
+                } catch (e) {
+                    options.reportError(e);
+                }
+            }
+
             if (!options.enabled
-                || !options.app.isPackaged
                 || checking
                 || downloading
                 || downloaded) {
