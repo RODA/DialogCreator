@@ -28,7 +28,7 @@ function getRequestedArchArgs() {
   const archArgs = [];
   if (fromEnv.includes('x64')) archArgs.push('--x64');
   if (fromEnv.includes('arm64')) archArgs.push('--arm64');
-  return archArgs.length > 0 ? archArgs : ['--x64', '--arm64'];
+  return archArgs.length > 0 ? archArgs : ['--x64'];
 }
 
 function getRequestedTargets() {

@@ -23,13 +23,7 @@ function productDmgPath() {
     const packagePath = path.join(projectRoot, 'package.json');
     const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
     const productName = String(pkg.build?.productName || pkg.name || 'DialogCreator').trim();
-    const version = String(pkg.version || '').trim();
-
-    if (!version) {
-        fail(`Missing version in ${packagePath}`);
-    }
-
-    const fileName = `${productName.replace(/\s+/g, '_')}_${version}_silicon.dmg`;
+    const fileName = `${productName.replace(/\s+/g, '_')}_universal.dmg`;
     const dmgPath = path.join(projectRoot, 'build', 'output', fileName);
 
     if (!fs.existsSync(dmgPath)) {

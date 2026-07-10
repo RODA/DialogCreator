@@ -10,9 +10,14 @@ process.env.NODE_ENV = process.env.NODE_ENV || 'production';
 const isWin = process.platform === 'win32';
 const isMac = process.platform === 'darwin';
 const isLinux = process.platform === 'linux';
+const shouldSign = process.argv.includes('--sign');
 
-function bin(name) {
-  return path.join(root, 'node_modules', '.bin', isWin ? `${name}.cmd` : name);
+if (shouldSign) {
+  if (process.env.CSC_IDENTITY_AUTO_DISCOVERY === 'false') {
+    delete process.env.CSC_IDENTITY_AUTO_DISCOVERY;
+  }
+} else {
+  process.env.CSC_IDENTITY_AUTO_DISCOVERY = 'false';
 }
 
 function run(cmd, args, opts = {}) {
@@ -57,7 +62,13 @@ function writeChecksums() {
 
   // macOS and Windows: run electron-builder via its JS CLI to avoid .cmd spawn issues on Windows
   const builderCli = require.resolve('electron-builder/out/cli/cli.js', { paths: [root] });
-  await run(process.execPath, [builderCli, '--publish', 'never']);
+  const builderArgs = [builderCli, '--publish', 'never'];
+
+  if (isMac && shouldSign) {
+    builderArgs.push('-c.mac.forceCodeSigning=true');
+  }
+
+  await run(process.execPath, builderArgs);
 
   if (isMac) {
     await run.npm('rename:mac');
