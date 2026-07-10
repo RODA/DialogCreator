@@ -70,6 +70,19 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          if [ "$OVERWRITE_RELEASE_ASSETS" = "true" ]; then
+            release_assets=()
+            while IFS= read -r asset; do
+              release_assets+=("$asset")
+            done < <(gh release view "$RELEASE_TAG" --repo "$TARGET_REPO" --json assets --jq '.assets[].name')
+            for asset in "${release_assets[@]}"; do
+              case "$asset" in
+                *.AppImage|latest-linux.yml)
+                  gh release delete-asset "$RELEASE_TAG" "$asset" --repo "$TARGET_REPO" --yes
+                  ;;
+              esac
+            done
+          fi
           files=(
             build/output/*.AppImage
             build/output/latest-linux.yml
