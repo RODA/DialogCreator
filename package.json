@@ -4,7 +4,7 @@
   "description": "A dialog creating application",
   "main": "dist/main.js",
   "scripts": {
-    "build": "node scripts/sync-docs-fonts.js && node scripts/sync-codicons.js && tsc && npm run bundle:cm6",
+    "build": "node scripts/sync-about-metadata.js && node scripts/sync-docs-fonts.js && node scripts/sync-codicons.js && tsc && npm run bundle:cm6",
     "build:web": "node scripts/build-web.js",
     "dev:web": "node scripts/serve-web.js --replace-port",
     "serve:web": "node scripts/serve-web.js --no-build --replace-port",
@@ -93,7 +93,7 @@
       "icon": "icons/DialogCreator.icns",
       "category": "public.app-category.productivity",
       "extendInfo": {
-        "NSHumanReadableCopyright": "© 2025 Adrian Dusa — Academic Non-Commercial License (see LICENSE file for details)."
+        "NSHumanReadableCopyright": "© 2025-2026 Adrian Dusa — Academic Non-Commercial License (see LICENSE file for details)."
       },
       "target": {
         "target": "dmg",

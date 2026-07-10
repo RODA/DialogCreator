@@ -3,6 +3,7 @@
 const assert = require("assert");
 const { chromium } = require("playwright");
 const { startRenderedWebServer } = require("./rendered-web-server");
+const pkg = require("../package.json");
 
 const clickMenuItem = async function(page, label, itemSelector) {
     await page.getByRole("button", { name: label }).click();
@@ -86,6 +87,8 @@ const main = async function() {
         await clickMenuItem(page, "Info", '[data-browser-info-command="about"]');
         const aboutFrame = page.frameLocator("#dialogcreator-info-layer iframe");
         await aboutFrame.locator("h1").filter({ hasText: "Dialog Creator" }).waitFor();
+        await aboutFrame.locator(".version").filter({ hasText: `Version ${pkg.version}` }).waitFor();
+        await aboutFrame.locator(".meta").filter({ hasText: "Copyright © 2025-2026" }).waitFor();
         const aboutResizeHandles = await page
             .locator("#dialogcreator-info-layer .web-workbench-resize-handle")
             .count();

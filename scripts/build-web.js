@@ -3,6 +3,7 @@
 const fs = require("fs");
 const path = require("path");
 const esbuild = require("esbuild");
+const { syncAboutMetadata } = require("./sync-about-metadata");
 
 const rootDir = path.resolve(__dirname, "..");
 const outDir = path.join(rootDir, "docs", "live");
@@ -130,6 +131,8 @@ const injectBrowserPreviewScript = function() {
 };
 
 const main = async function() {
+    syncAboutMetadata();
+
     removeDirectory(outDir);
     fs.mkdirSync(outDir, { recursive: true });
 
