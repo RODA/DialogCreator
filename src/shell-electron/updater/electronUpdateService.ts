@@ -10,6 +10,10 @@ import type {
     ProgressInfo,
     UpdateInfo
 } from "electron-updater";
+import {
+    appUpdateChannels,
+    type AppUpdateService
+} from "../../core/host/appUpdate";
 
 type UpdateButtonMode = "available" | "downloading" | "downloaded" | "hidden";
 
@@ -26,13 +30,9 @@ export interface ElectronUpdateServiceOptions {
     reportError(error: unknown): void;
 }
 
-export interface ElectronUpdateService {
-    checkForUpdates(): void;
-    handleUpdateButton(): void;
-}
+export type ElectronUpdateService = AppUpdateService;
 
-const channel = "dialogcreator-updater-state";
-const rendererChannel = `message-from-main-${channel}`;
+const rendererChannel = `message-from-main-${appUpdateChannels.state}`;
 
 const formatVersion = function(info: UpdateInfo | null): string {
     return String(info?.version || "").trim();
@@ -95,12 +95,6 @@ export const createElectronUpdateService = function(
         const normalizedPercent = Math.max(0, Math.min(100, percent || 0));
         const win = options.getMainWindow();
 
-        sendState({
-            mode: "downloading",
-            percent: normalizedPercent,
-            version: formatVersion(availableInfo)
-        });
-
         if (!win || win.isDestroyed()) {
             return;
         }
@@ -127,16 +121,19 @@ export const createElectronUpdateService = function(
         progressTitleRestore = null;
     };
 
-    const showAvailable = function(info: UpdateInfo): void {
+    const downloadAvailableUpdate = async function(info: UpdateInfo): Promise<void> {
         availableInfo = info;
         downloaded = false;
-        downloading = false;
+        hideButton();
 
-        sendState({
-            mode: "available",
-            percent: 0,
-            version: formatVersion(info)
-        });
+        try {
+            await downloadUpdate();
+        } catch (error) {
+            downloading = false;
+            clearProgress();
+            hideButton();
+            options.reportError(error);
+        }
     };
 
     const showDownloaded = function(info: UpdateInfo): void {
@@ -172,7 +169,7 @@ export const createElectronUpdateService = function(
     };
 
     autoUpdater.on("update-available", (info) => {
-        showAvailable(info);
+        void downloadAvailableUpdate(info);
     });
 
     autoUpdater.on("update-not-available", () => {
@@ -275,19 +272,7 @@ export const createElectronUpdateService = function(
         handleUpdateButton: function(): void {
             if (downloaded) {
                 installUpdate();
-                return;
             }
-
-            void downloadUpdate().catch((error) => {
-                downloading = false;
-                clearProgress();
-                if (availableInfo) {
-                    showAvailable(availableInfo);
-                } else {
-                    hideButton();
-                }
-                options.reportError(error);
-            });
         }
     };
 };

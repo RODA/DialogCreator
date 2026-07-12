@@ -1,24 +1,10 @@
 import { coms } from "../../modules/coms";
-
-interface AppUpdateState {
-    mode: "available" | "downloading" | "downloaded" | "hidden";
-    percent: number;
-    version: string;
-}
+import {
+    onAppUpdateState,
+    sendAppUpdateButtonAction
+} from "../../core/host/appUpdate";
 
 const styleId = "dialogcreator-electron-update-button-styles";
-
-function isAppUpdateState(value: unknown): value is AppUpdateState {
-    if (!value || typeof value !== 'object') {
-        return false;
-    }
-
-    const state = value as Record<string, unknown>;
-    return state.mode === 'available'
-        || state.mode === 'downloading'
-        || state.mode === 'downloaded'
-        || state.mode === 'hidden';
-}
 
 function installStyles(): void {
     if (document.getElementById(styleId)) {
@@ -58,16 +44,18 @@ function installStyles(): void {
             width: 32px;
             height: 24px;
             padding: 0;
-            background: #1677ff;
+            background: #328ee9;
             color: #ffffff;
             border: 1px solid #0b5ed7;
-            border-radius: 6px;
+            border-radius: 999px;
             box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset;
             cursor: pointer;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            font-size: 11px;
+            font-size: 13px;
             font-weight: 600;
+            line-height: 1;
             overflow: hidden;
+            transition: width 120ms ease, background-color 120ms ease;
         }
 
         .app-update-button .update-text {
@@ -80,17 +68,19 @@ function installStyles(): void {
             display: inline-block;
         }
 
-        /* State style once update is downloaded */
-        .app-update-button[data-update-mode="downloaded"] {
-            width: auto;
-            padding: 0 8px;
+        .app-update-button[data-update-mode="available"]:hover,
+        .app-update-button[data-update-mode="downloaded"]:hover {
+            width: 76px;
+            padding: 0 12px;
         }
 
-        .app-update-button[data-update-mode="downloaded"] .codicon {
+        .app-update-button[data-update-mode="available"]:hover .codicon,
+        .app-update-button[data-update-mode="downloaded"]:hover .codicon {
             display: none;
         }
 
-        .app-update-button[data-update-mode="downloaded"] .update-text {
+        .app-update-button[data-update-mode="available"]:hover .update-text,
+        .app-update-button[data-update-mode="downloaded"]:hover .update-text {
             display: inline-block;
         }
 
@@ -170,15 +160,11 @@ export function installElectronUpdateButton(): void {
 
         button.addEventListener('click', () => {
             if (!button.disabled) {
-                coms.sendTo('main', 'app-update-button');
+                sendAppUpdateButtonAction(coms);
             }
         });
 
-        coms.on('dialogcreator-updater-state', (payload) => {
-            if (!isAppUpdateState(payload)) {
-                return;
-            }
-
+        onAppUpdateState(coms, (payload) => {
             button.dataset.updateMode = payload.mode;
 
             if (payload.mode === 'hidden') {
@@ -187,7 +173,7 @@ export function installElectronUpdateButton(): void {
             }
 
             if (payload.mode === 'downloading') {
-                showButton(true);
+                hideButton();
                 return;
             }
 

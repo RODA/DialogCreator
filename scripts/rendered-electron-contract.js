@@ -41,7 +41,7 @@ const main = async function() {
 
         assert.strictEqual(result.title, "Dialog creator");
         assert.strictEqual(result.toolbarButtons, 13, "Electron toolbar icon buttons should render");
-        assert.strictEqual(result.updateButtonHidden, true, "Update button should be hidden until an update is available");
+        assert.strictEqual(result.updateButtonHidden, true, "Update button should be hidden until an update is downloaded");
         assert.strictEqual(result.updateButtonTitle, "Update", "Update button hover title should be Update");
         assert.ok(result.availableElements >= 10, "Electron editor should populate available elements");
         assert.strictEqual(result.actionsEnabled, true, "Actions button should be enabled");
@@ -55,8 +55,26 @@ const main = async function() {
                 return candidate.webContents.getURL().includes("editor.html");
             });
             mainWindow.webContents.send("message-from-main-dialogcreator-updater-state", {
-                mode: "available",
-                percent: 0,
+                mode: "downloading",
+                percent: 50,
+                version: "9.9.9"
+            });
+        });
+
+        const updateButtonDownloading = await window.locator("body").evaluate(() => {
+            const updateButton = document.getElementById("app-update-button");
+            return updateButton?.classList.contains("hidden") ?? false;
+        });
+
+        assert.strictEqual(updateButtonDownloading, true, "Update button should stay hidden while the update is downloading");
+
+        await electronApp.evaluate(({ BrowserWindow }) => {
+            const mainWindow = BrowserWindow.getAllWindows().find((candidate) => {
+                return candidate.webContents.getURL().includes("editor.html");
+            });
+            mainWindow.webContents.send("message-from-main-dialogcreator-updater-state", {
+                mode: "downloaded",
+                percent: 100,
                 version: "9.9.9"
             });
         });
@@ -81,10 +99,28 @@ const main = async function() {
             };
         });
 
-        assert.strictEqual(updateButtonPosition.enabled, true, "Update button should be enabled when an update is available");
+        assert.strictEqual(updateButtonPosition.enabled, true, "Update button should be enabled when an update is downloaded");
         assert.strictEqual(updateButtonPosition.iconPresent, true, "Update button should render a download icon");
         assert.strictEqual(updateButtonPosition.rightAligned, true, "Update button should sit on the right side of the toolbar");
         assert.strictEqual(updateButtonPosition.title, "Update", "Update button hover title should remain Update");
+
+        await window.locator("#app-update-button").hover();
+        await window.waitForTimeout(200);
+        const updateButtonHover = await window.locator("#app-update-button").evaluate((button) => {
+            const icon = button.querySelector(".codicon-download");
+            const text = button.querySelector(".update-text");
+            return {
+                iconDisplay: icon ? window.getComputedStyle(icon).display : "",
+                text: text?.textContent || "",
+                textDisplay: text ? window.getComputedStyle(text).display : "",
+                width: button.getBoundingClientRect().width
+            };
+        });
+
+        assert.strictEqual(updateButtonHover.iconDisplay, "none", "Update icon should hide on hover");
+        assert.strictEqual(updateButtonHover.text, "Update", "Update button should reveal the Update label on hover");
+        assert.notStrictEqual(updateButtonHover.textDisplay, "none", "Update label should be visible on hover");
+        assert.ok(updateButtonHover.width >= 70, "Update button should expand on hover");
 
         console.log("Rendered Electron contract passed.");
     } finally {
