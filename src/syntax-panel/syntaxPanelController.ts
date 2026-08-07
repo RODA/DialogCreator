@@ -1,5 +1,6 @@
 import { coms, setRendererTransport } from '../modules/coms';
 import type { RendererTransport } from '../core/ipc/rendererTransport';
+import { resizeHostSyntaxPanel } from '../core/host/dialogChildWindow';
 
 export function bootSyntaxPanel(transport: RendererTransport): void {
     setRendererTransport(transport);
@@ -51,7 +52,7 @@ export function bootSyntaxPanel(transport: RendererTransport): void {
 
             lastHeight = nextHeight;
             setMinHeightFor(lastHeight);
-            coms.sendTo('main', 'syntaxpanel-resize', { height: lastHeight });
+            resizeHostSyntaxPanel(coms, { height: lastHeight });
         };
 
         const render = function(text: string): void {

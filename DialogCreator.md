@@ -411,6 +411,78 @@ enableSearch(c_outcome, c_condition);
 
 When the pointer is over an enabled registered container, pressing `Cmd/Ctrl+F` opens a transient search box above that container in Preview. Only one transient search box can be open at a time. `Esc` closes it and clears the filter; if it loses focus while empty, it closes automatically.
 
+8. Build the generated command without formatting it by hand
+
+```javascript
+updateSyntax(call('using', 'ess', 't.testhv(F3_agea ~ F2_gndr)'));
+```
+
+```text
+using(
+  ess,
+  t.testhv(F3_agea ~ F2_gndr)
+)
+```
+
+`call()` puts one argument per line, and `block()` does the same for a group of
+statements wrapped in braces:
+
+```javascript
+updateSyntax(call('using', [
+  'ess',
+  block([
+    '.table <- wtable(B1_polintr, F2_gndr)',
+    'print(.table)',
+    'chisq.test(.table)'
+  ])
+]));
+```
+
+```text
+using(
+  ess,
+  {
+    .table <- wtable(B1_polintr, F2_gndr)
+    print(.table)
+    chisq.test(.table)
+  }
+)
+```
+
+The indentation is worked out from how deeply each piece is nested, so a dialog
+never needs to write line breaks or count spaces. Arguments that are empty are
+dropped, which means an optional part of a command can be added unconditionally.
+See the [API reference](API.md) for the details, including `indent()`.
+
+9. Refer to the selected dataset in the command
+
+```javascript
+updateSyntax(call('using', [
+  getReference(c_datasets),
+  't.testhv(F3_agea ~ F2_gndr)'
+]));
+```
+
+Use `getSelected(c_datasets)[0]` for the dialog's own logic, and
+`getReference(c_datasets)` for the text that goes into the command. They are
+usually the same name, but a target app may have a filter active on that
+dataset, in which case `getReference()` returns the matching `subset()` call and
+the command runs on that subset instead:
+
+```text
+using(
+  subset(
+    ess,
+    F1_cntry == "RO"
+  ),
+  t.testhv(F3_agea ~ F2_gndr)
+)
+```
+
+The dialog does not need to know whether a filter is active, and `call()` takes
+care of indenting the nested `subset()` correctly. In Preview there is no host
+data environment, so `getReference()` returns the plain dataset name.
+
 Events:
 
 - Buttons and custom checkboxes/radios usually use `'click'`.

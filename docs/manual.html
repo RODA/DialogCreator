@@ -343,6 +343,67 @@ The items in a Container can be selected and deselected by clicking, and multi-s
 </code></pre>
 
 <p>When the pointer is over an enabled registered container, pressing <code class="hljs">Cmd/Ctrl+F</code> opens a transient search box above that container in Preview. Only one transient search box can be open at a time. <code class="hljs"><span class="api-param">Esc</span></code> closes it and clears the filter; if it loses focus while empty, it closes automatically.</p>
+<ol start="8">
+<li>Build the generated command without formatting it by hand</li>
+</ol>
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">updateSyntax</span>(<span class="hljs-title function_">call</span>(<span class="hljs-string">'using'</span>, <span class="hljs-string">'ess'</span>, <span class="hljs-string">'t.testhv(F3_agea ~ F2_gndr)'</span>));
+</code></pre>
+
+<pre><code class="hljs text">using(
+  ess,
+  t.testhv(F3_agea ~ F2_gndr)
+)
+</code></pre>
+<p><code class="hljs"><span class="hljs-title function_">call</span>()</code> puts one argument per line, and <code class="hljs"><span class="hljs-title function_">block</span>()</code> does the same for a group of
+statements wrapped in braces:</p>
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">updateSyntax</span>(<span class="hljs-title function_">call</span>(<span class="hljs-string">'using'</span>, [
+&nbsp;&nbsp;<span class="hljs-string">'ess'</span>,
+&nbsp;&nbsp;<span class="hljs-title function_">block</span>([
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="hljs-string">'.table &lt;- wtable(B1_polintr, F2_gndr)'</span>,
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="hljs-string">'print(.table)'</span>,
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="hljs-string">'chisq.test(.table)'</span>
+&nbsp;&nbsp;])
+]));
+</code></pre>
+
+<pre><code class="hljs text">using(
+  ess,
+  {
+    .table &lt;- wtable(B1_polintr, F2_gndr)
+    print(.table)
+    chisq.test(.table)
+  }
+)
+</code></pre>
+<p>The indentation is worked out from how deeply each piece is nested, so a dialog
+never needs to write line breaks or count spaces. Arguments that are empty are
+dropped, which means an optional part of a command can be added unconditionally.
+See the <a href="API.md">API reference</a> for the details, including <code class="hljs"><span class="hljs-title function_">indent</span>()</code>.</p>
+<ol start="9">
+<li>Refer to the selected dataset in the command</li>
+</ol>
+<pre><code class="language-javascript hljs"><span class="hljs-title function_">updateSyntax</span>(<span class="hljs-title function_">call</span>(<span class="hljs-string">'using'</span>, [
+&nbsp;&nbsp;<span class="hljs-title function_">getReference</span>(<span class="api-param">c_datasets</span>),
+&nbsp;&nbsp;<span class="hljs-string">'t.testhv(F3_agea ~ F2_gndr)'</span>
+]));
+</code></pre>
+
+<p>Use <code class="hljs">getSelected(c_datasets)[<span class="hljs-number">0</span>]</code> for the dialog's own logic, and
+<code class="hljs"><span class="hljs-title function_">getReference</span>(<span class="api-param">c_datasets</span>)</code> for the text that goes into the command. They are
+usually the same name, but a target app may have a filter active on that
+dataset, in which case <code class="hljs"><span class="hljs-title function_">getReference</span>()</code> returns the matching <code class="hljs"><span class="hljs-title function_">subset</span>()</code> call and
+the command runs on that subset instead:</p>
+<pre><code class="hljs text">using(
+  subset(
+    ess,
+    F1_cntry == "RO"
+  ),
+  t.testhv(F3_agea ~ F2_gndr)
+)
+</code></pre>
+<p>The dialog does not need to know whether a filter is active, and <code class="hljs"><span class="hljs-title function_">call</span>()</code> takes
+care of indenting the nested <code class="hljs"><span class="hljs-title function_">subset</span>()</code> correctly. In Preview there is no host
+data environment, so <code class="hljs"><span class="hljs-title function_">getReference</span>()</code> returns the plain dataset name.</p>
 <p>Events:</p>
 <ul>
 <li>Buttons and custom checkboxes/radios usually use <code class="hljs"><span class="hljs-string">'click'</span></code>.</li>

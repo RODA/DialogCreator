@@ -8,7 +8,6 @@ export interface Communications {
     runLocal(channel: string, ...args: unknown[]): Promise<unknown>;
     on(channel: string, listener: (...args: unknown[]) => void): void;
     once(channel: string, listener: (...args: unknown[]) => void): void;
-    handlers: { [key: string]: string };
     fontSize: number;
     fontFamily: string;
 }

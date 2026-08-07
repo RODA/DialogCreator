@@ -17,6 +17,8 @@
     "test:rendered:electron": "npm run build && node scripts/rendered-electron-contract.js",
     "test:rendered:package": "npm run build:web && node scripts/rendered-browser-package-contract.js",
     "test:rendered:preview": "npm run build:web && node scripts/rendered-preview-contract.js",
+    "test:rendered:syntax": "npm run build:web && node scripts/rendered-syntax-contract.js",
+    "test:rendered:binding": "npm run build:web && node scripts/rendered-binding-contract.js",
     "test:rendered:web": "npm run build:web && node scripts/rendered-web-contract.js",
     "start": "npm run build && node scripts/start.js",
     "docs:pdf": "node scripts/manual/build-pdf.js",

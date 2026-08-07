@@ -14,6 +14,12 @@ import { GeneralElements } from "../interfaces/elements";
 import { elements } from "../modules/elements";
 import { attachColorPickers, syncColorPickers } from "../library/colorpicker";
 import { attachIconPickers, syncIconPickers } from "../library/iconpicker";
+import {
+    onElementProperties,
+    onResetElementProperties,
+    resetElementProperties,
+    updateElementProperty
+} from "../core/catalog/elementCatalogIpc";
 
 export function bootDefaultsController(transport: RendererTransport): void {
     setRendererTransport(transport);
@@ -125,13 +131,7 @@ export function bootDefaultsController(transport: RendererTransport): void {
                         return;
                     }
                     field.blur();
-                    coms.sendTo(
-                        'main',
-                        'updateProperty',
-                        currentElement,
-                        field.name,
-                        field.value
-                    );
+                    updateElementProperty(coms, currentElement, field.name, field.value);
                 });
                 field.dataset.defaultsBound = 'true';
             }
@@ -182,13 +182,8 @@ export function bootDefaultsController(transport: RendererTransport): void {
         syncIconPickers();
     });
 
-    coms.on('propertiesFromDB', (...args: unknown[]) => {
-        // Defensive: get the name from args[0] and ensure it's a string
-        const name = typeof args[0] === 'string' ? args[0] : '';
-
+    onElementProperties(coms, (name, properties) => {
         defaultElementSelected = name;
-
-        const properties = args[1] as DBElements[keyof DBElements];
 
         // Warn developer if element defaults define properties missing from DB interface mapping
         const allowed = DBElementsProps[name] || [];
@@ -216,14 +211,13 @@ export function bootDefaultsController(transport: RendererTransport): void {
 
     document.getElementById('reset')?.addEventListener('click', () => {
         if (defaultElementSelected) {
-            coms.sendTo('main', 'resetProperties', defaultElementSelected);
+            resetElementProperties(coms, defaultElementSelected);
         } else {
             showError("No default element selected to reset properties.");
         }
     });
 
-    coms.on('resetOK', (...args: unknown[]) => {
-        const updatedProperties = args[0] as Record<string, string>;
+    onResetElementProperties(coms, (updatedProperties) => {
         if (!updatedProperties) return;
         // Update the UI fields in the defaults window with the new values
         const ellist = document.querySelectorAll('#propertiesList [id^="el"]');

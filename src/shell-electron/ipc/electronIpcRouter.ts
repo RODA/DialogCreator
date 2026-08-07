@@ -2,7 +2,14 @@ import { BrowserWindow, dialog, ipcMain } from "electron";
 
 import { utils } from "../../library/utils";
 import { DBElements } from "../../interfaces/database";
-import type { DialogChildWindowArgs } from "../../core/host/dialogChildWindow";
+import {
+    hostWindowChannels,
+    type DialogChildWindowArgs
+} from "../../core/host/dialogChildWindow";
+import { appUpdateChannels } from "../../core/host/appUpdate";
+import { dialogDocumentChannels } from "../../core/document/dialogDocumentIpc";
+import { elementCatalogChannels } from "../../core/catalog/elementCatalogIpc";
+import { hostMessageChannels } from "../../core/host/hostMessages";
 import { elementCatalog } from "../catalog/sqliteElementCatalog";
 import type { ElectronDialogDocumentSession } from "../document/electronDialogDocumentSession";
 import type { ElectronUpdateService } from "../updater/electronUpdateService";
@@ -13,7 +20,7 @@ type WindowIdMap = { [key: string]: number };
 type ElectronIpcRouterOptions = {
     windowIds: WindowIdMap;
     getEditorWindow: () => BrowserWindow;
-    getSecondWindow: () => BrowserWindow;
+    getSecondWindow: () => BrowserWindow | null;
     createSecondWindow: (args: DialogChildWindowArgs) => void;
     syntaxPanelHost: () => SyntaxPanelWindowHost;
     documentSession: () => ElectronDialogDocumentSession;
@@ -49,14 +56,14 @@ async function handleMainChannel(
     const editorWindow = options.getEditorWindow();
 
     switch (channel) {
-        case 'showError':
+        case hostMessageChannels.showError:
             dialog.showMessageBox(editorWindow, {
                 type: "error",
                 title: "Error",
                 message: String(args[0] ?? '')
             });
             break;
-        case 'showDialogMessage':
+        case hostMessageChannels.showDialogMessage:
             dialog.showMessageBox(editorWindow, {
                 type: args[0] as Electron.MessageBoxOptions['type'],
                 message: String(args[1] ?? ''),
@@ -64,35 +71,35 @@ async function handleMainChannel(
                 title: String(args[1] ?? '')
             });
             break;
-        case 'openSyntaxPanel':
+        case hostWindowChannels.openSyntaxPanel:
             openSyntaxPanel(options, args);
             break;
-        case 'syntaxpanel-resize':
+        case hostWindowChannels.resizeSyntaxPanel:
             try {
                 options.syntaxPanelHost().resize(args[0]);
             } catch { /* noop */ }
             break;
-        case 'secondWindow':
+        case hostWindowChannels.openSecondWindow:
             options.createSecondWindow(args[0] as DialogChildWindowArgs);
             break;
-        case 'getProperties':
+        case elementCatalogChannels.getProperties:
             await sendElementProperties(args[0] as keyof DBElements);
             break;
-        case 'resetProperties':
+        case elementCatalogChannels.resetProperties:
             await resetElementProperties(options, args[0] as keyof DBElements);
             break;
-        case 'updateProperty':
+        case elementCatalogChannels.updateProperty:
             await updateElementProperty(options, args);
             break;
-        case 'close-secondWindow':
-        case 'close-codeWindow':
-        case 'close-previewWindow':
+        case hostWindowChannels.closeSecondWindow:
+        case hostWindowChannels.closeCodeWindow:
+        case hostWindowChannels.closePreviewWindow:
             closeSecondWindow(options);
             break;
-        case 'document-json-updated':
+        case dialogDocumentChannels.documentJsonUpdated:
             options.documentSession().handleDocumentJsonUpdated(String(args[0] ?? ''));
             break;
-        case 'app-update-button':
+        case appUpdateChannels.button:
             options.updateService().handleUpdateButton();
             break;
         default:
@@ -112,7 +119,11 @@ function openSyntaxPanel(options: ElectronIpcRouterOptions, args: unknown[]): vo
 async function sendElementProperties(element: keyof DBElements): Promise<void> {
     const properties = await elementCatalog.getProperties(element);
     BrowserWindow.getAllWindows().forEach((win) => {
-        win.webContents.send("message-from-main-propertiesFromDB", element, properties);
+        win.webContents.send(
+            `message-from-main-${elementCatalogChannels.propertiesFromDB}`,
+            element,
+            properties
+        );
     });
 }
 
@@ -129,12 +140,14 @@ async function resetElementProperties(
     const secondWindow = options.getSecondWindow();
     const editorWindow = options.getEditorWindow();
 
-    secondWindow.webContents.send(
-        "message-from-main-resetOK",
-        properties
-    );
+    if (secondWindow && !secondWindow.isDestroyed()) {
+        secondWindow.webContents.send(
+            `message-from-main-${elementCatalogChannels.resetOK}`,
+            properties
+        );
+    }
     editorWindow.webContents.send(
-        "message-from-main-propertiesFromDB",
+        `message-from-main-${elementCatalogChannels.propertiesFromDB}`,
         element,
         properties
     );
@@ -152,7 +165,7 @@ async function updateElementProperty(
     if (ok) {
         const properties = await elementCatalog.getProperties(element);
         options.getEditorWindow().webContents.send(
-            "message-from-main-propertiesFromDB",
+            `message-from-main-${elementCatalogChannels.propertiesFromDB}`,
             element,
             properties
         );

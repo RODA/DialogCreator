@@ -2,10 +2,12 @@
 
 import type {
     ContainerItemDescriptor,
+    ObjectBinding,
     ObjectBindingRequest,
     ObjectBindingVariables,
     PreviewUI,
-    PreviewUIEnv
+    PreviewUIEnv,
+    SyntaxPart
 } from '../interfaces/preview';
 import { renderutils, errorhelpers } from './renderutils';
 import { utils } from './utils';
@@ -42,7 +44,10 @@ export const API_NAMES: ReadonlyArray<keyof PreviewUI> = Object.freeze([
     'addError', 'clearError',
 
     // object/data helpers
-    'listObjects', 'listColumns', 'bindObjects'
+    'listObjects', 'listColumns', 'bindObjects', 'getReference',
+
+    // syntax building
+    'call', 'block', 'indent'
 ]);
 
 // Methods that take (elementName, ...) as first argument; used by the linter.
@@ -56,7 +61,10 @@ const NEUTRAL_NAMES = new Set<keyof PreviewUI>([
     'callExternal',
     'run',
     'resetDialog',
-    'closeDialog'
+    'closeDialog',
+    'call',
+    'block',
+    'indent'
 ]);
 
 export const ELEMENT_FIRST_ARG_CALLS: ReadonlyArray<keyof PreviewUI> = Object.freeze(
@@ -70,6 +78,92 @@ type ContainerItem = {
     active?: boolean;
     flags: Partial<Record<DatasetItemFlag, boolean>>;
 };
+
+// Syntax-building helpers.
+//
+// These only arrange whitespace, so they stay provider-neutral: an R, Python,
+// or Julia command nests the same way. Dialog authors describe the structure of
+// the command and the indentation is computed from the actual nesting depth,
+// instead of being typed by hand as "\n    " literals.
+const INDENT_UNIT = '  ';
+
+// Shift every non-blank line right. Blank lines are left alone so the result
+// never carries trailing whitespace.
+function indentLines(text: string, levels: number): string {
+    if (levels <= 0) {
+        return text;
+    }
+
+    const padding = INDENT_UNIT.repeat(levels);
+
+    return text
+        .split('\n')
+        .map((line) => line.trim().length ? padding + line : line)
+        .join('\n');
+}
+
+// Accept both call('f', [a, b]) and call('f', a, b), and drop the parts that
+// carry nothing, so a dialog can push optional arguments unconditionally.
+function collectSyntaxParts(parts: SyntaxPart[]): string[] {
+    const flattened: Array<string | number | null | undefined> = [];
+
+    parts.forEach((part) => {
+        if (Array.isArray(part)) {
+            flattened.push(...part);
+        } else {
+            flattened.push(part);
+        }
+    });
+
+    const collected: string[] = [];
+
+    flattened.forEach((part) => {
+        if (part === null || part === undefined) {
+            return;
+        }
+
+        const text = String(part);
+        if (text.trim().length) {
+            collected.push(text);
+        }
+    });
+
+    return collected;
+}
+
+function renderSyntaxCall(name: unknown, parts: SyntaxPart[]): string {
+    const callName = String(name ?? '').trim();
+
+    if (!callName) {
+        throw new SyntaxError('call() expects a function name');
+    }
+
+    const args = collectSyntaxParts(parts);
+
+    if (!args.length) {
+        return callName + '()';
+    }
+
+    const body = args
+        .map((arg) => indentLines(arg, 1))
+        .join(',\n');
+
+    return callName + '(\n' + body + '\n)';
+}
+
+function renderSyntaxBlock(parts: SyntaxPart[]): string {
+    const statements = collectSyntaxParts(parts);
+
+    if (!statements.length) {
+        return '{}';
+    }
+
+    const body = statements
+        .map((statement) => indentLines(statement, 1))
+        .join('\n');
+
+    return '{\n' + body + '\n}';
+}
 
 // Factory: build the Preview UI API bound to a specific canvas and adapters.
 export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
@@ -651,14 +745,11 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         };
     };
 
-    const bindObjectsInPreview = (request: ObjectBindingRequest): void => {
+    // Populate the bound controls from the Preview example datasets. The
+    // dataset change listener is attached once, when the binding is declared,
+    // so refreshing never stacks another listener on the same control.
+    const createPreviewObjectBinding = (request: ObjectBindingRequest): ObjectBinding => {
         const variableContainers = collectObjectBindingVariableContainers(request.variables);
-
-        api.setValue(request.datasets, listObjectsByType('datasets'));
-
-        if (!variableContainers.length) {
-            return;
-        }
 
         const refreshVariables = () => {
             const selectedDataset = api.getSelected(request.datasets)[0] || '';
@@ -669,8 +760,42 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             });
         };
 
-        api.onChange(request.datasets, refreshVariables);
-        refreshVariables();
+        if (variableContainers.length) {
+            api.onChange(request.datasets, refreshVariables);
+        }
+
+        return {
+            refresh: async () => {
+                api.setValue(request.datasets, listObjectsByType('datasets'));
+
+                if (variableContainers.length) {
+                    refreshVariables();
+                }
+            }
+        };
+    };
+
+    // When a host owns the data environment it owns the refresh too.
+    const createHostObjectBinding = (
+        request: ObjectBindingRequest,
+        bindThroughHost: (request: ObjectBindingRequest) => unknown
+    ): ObjectBinding => {
+        return {
+            refresh: async () => {
+                await bindThroughHost(request);
+            }
+        };
+    };
+
+    // The refresh that follows bindObjects() runs in the background, so a
+    // failure has to be surfaced rather than left as an unhandled rejection.
+    const refreshObjectBinding = (binding: ObjectBinding): void => {
+        Promise.resolve()
+            .then(() => binding.refresh())
+            .catch((error) => {
+                const detail = error instanceof Error ? error.message : String(error);
+                showRuntimeError(`bindObjects() could not refresh: ${detail}`);
+            });
     };
 
     const api: PreviewUI = {
@@ -1372,15 +1497,49 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
         // Simulated workspace columns listing
         listColumns: (input) => listColumnsFromDataset(input),
 
-        bindObjects: async (request) => {
-            const normalized = normalizeObjectBindingRequest(request);
+        // How the generated command should refer to the selected object. In
+        // Preview there is no host data environment, so this is simply the
+        // selected name; a host substitutes an expression when the object is
+        // filtered or derived.
+        getReference: (name) => {
+            const selected = String(api.getSelected(name)[0] ?? '').trim();
 
-            if (typeof env.bindObjects === 'function') {
-                return env.bindObjects(normalized);
+            if (typeof env.resolveReference === 'function') {
+                return String(env.resolveReference(coerceName(name), selected) ?? '');
             }
 
-            bindObjectsInPreview(normalized);
-            return normalized;
+            return selected;
+        },
+
+        // Declaring the binding is synchronous and returns a handle; the data
+        // refresh is the asynchronous part.
+        bindObjects: (request) => {
+            const normalized = normalizeObjectBindingRequest(request);
+
+            const binding = typeof env.bindObjects === 'function'
+                ? createHostObjectBinding(normalized, env.bindObjects)
+                : createPreviewObjectBinding(normalized);
+
+            refreshObjectBinding(binding);
+
+            return binding;
+        },
+
+        // Build a call with one argument per line. Arguments that are
+        // themselves multi-line are re-indented to their real nesting depth.
+        call: (name, ...args) => renderSyntaxCall(name, args),
+
+        // Build a brace-delimited block of statements.
+        block: (...statements) => renderSyntaxBlock(statements),
+
+        indent: (text, levels) => {
+            const steps = levels === undefined ? 1 : Math.trunc(Number(levels));
+
+            if (!Number.isFinite(steps)) {
+                throw new SyntaxError('indent() expects a number of levels');
+            }
+
+            return indentLines(String(text ?? ''), steps);
         },
 
         on: (name, event, handler: (ev: Event, el: HTMLElement) => void) => {
@@ -1967,7 +2126,13 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                     return;
                 }
 
-                throw new SyntaxError(`clearContent() supports only Input and Container elements`);
+                // A Choice is a list too, so clearing it empties its items.
+                if (eltype === 'Choice') {
+                    api.setValue(key, []);
+                    return;
+                }
+
+                throw new SyntaxError(`clearContent() supports only Input, Container, and Choice elements`);
             };
 
             list.forEach(clearOne);

@@ -13,6 +13,12 @@ import { renderutils } from "../library/renderutils";
 import { AnyElement, StringNumber } from "../interfaces/elements";
 import { PreviewDialog, PreviewScriptExports, PreviewUI, PreviewUIEnv } from "../interfaces/preview";
 import type { DialogLocaleDictionary } from "../interfaces/dialog";
+import {
+    closeHostPreviewWindow,
+    openHostSyntaxPanel
+} from "../core/host/dialogChildWindow";
+import { sendEditorConsoleLog } from "../core/host/editorWindowEvents";
+import { showHostDialogMessage } from "../core/host/hostMessages";
 
 import { API_NAMES, createPreviewUI } from '../library/api';
 
@@ -580,19 +586,13 @@ function buildUI(canvas: HTMLElement, dialog: PreviewDialog): PreviewUI {
         findRadioGroupMembers: (group: string) => renderutils.findRadioGroupMembers(group, canvas),
         updateElement: (el, props) => renderutils.updateElement(el, props),
         showRuntimeError: (msg: string) => renderutils.showRuntimeError(msg, canvas),
-        logToEditor: (msg: string) => coms.sendTo('editorWindow', 'consolog', msg),
-        showDialogMessage: (type, message, detail) => coms.sendTo(
-            'main',
-            'showDialogMessage',
-            type,
-            message,
-            detail
-        ),
+        logToEditor: (msg: string) => sendEditorConsoleLog(coms, msg),
+        showDialogMessage: (type, message, detail) => showHostDialogMessage(coms, type, message, detail),
         callExternal: async (_name: string, _parameters?: unknown) => undefined,
         translateMessage: createDialogMessageTranslator(dialog, activePreviewLocale),
-        openSyntaxPanel: (command: string) => coms.sendTo('main', 'openSyntaxPanel', command),
+        openSyntaxPanel: (command: string) => openHostSyntaxPanel(coms, command),
         resetDialog: resetPreview,
-        closeDialog: () => coms.sendTo('main', 'close-previewWindow')
+        closeDialog: () => closeHostPreviewWindow(coms)
     };
 
     return createPreviewUI(env);
@@ -1202,7 +1202,7 @@ function renderPreview(dialog: PreviewDialog) {
             }
 
             // Otherwise, close the Preview window
-            coms.sendTo('main', 'close-previewWindow');
+            closeHostPreviewWindow(coms);
 
             ev.preventDefault();
             ev.stopPropagation();
@@ -1315,7 +1315,7 @@ function renderPreview(dialog: PreviewDialog) {
                 fn = new Function('ui', 'exports', bindings + '\n' + code);
             } catch (e: any) {
                 const msg = `Code syntax error: ${String(e && e.message ? e.message : e)}`;
-                coms.sendTo('editorWindow', 'consolog', msg);
+                sendEditorConsoleLog(coms, msg);
             }
 
             if (fn) {
@@ -1339,7 +1339,7 @@ function renderPreview(dialog: PreviewDialog) {
                 try { if (typeof exports.dispose === 'function') exports.dispose(ui); } finally { ui.__disposeAll?.(); }
             });
         } else {
-            coms.sendTo('editorWindow', 'consolog', 'Preview: no customJS to execute (post-render).');
+            sendEditorConsoleLog(coms, 'Preview: no customJS to execute (post-render).');
         }
     } catch {}
 }
@@ -1373,9 +1373,8 @@ export const bootPreviewController = function(transport: RendererTransport) {
                     : (locales[0] || '');
                 renderPreview(localizePreviewDialog(initialPreviewDialog, activePreviewLocale));
             } catch (e) {
-                coms.sendTo(
-                    'editorWindow',
-                    'consolog',
+                sendEditorConsoleLog(
+                    coms,
                     `Failed to parse preview data: ${String(utils.isRecord(e) && e.message ? e.message : e)}`
                 );
             }
@@ -1393,9 +1392,8 @@ export const renderPreviewDialog = function(data: unknown) {
             : (locales[0] || '');
         renderPreview(localizePreviewDialog(initialPreviewDialog, activePreviewLocale));
     } catch (e) {
-        coms.sendTo(
-            'editorWindow',
-            'consolog',
+        sendEditorConsoleLog(
+            coms,
             `Failed to parse preview data: ${String(utils.isRecord(e) && e.message ? e.message : e)}`
         );
     }

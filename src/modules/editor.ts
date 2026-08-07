@@ -8,6 +8,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { dialog } from './dialog';
 import { renderutils } from '../library/renderutils';
 import { utils } from '../library/utils';
+import { requestElementProperties } from '../core/catalog/elementCatalogIpc';
+import { openHostSecondWindow } from '../core/host/dialogChildWindow';
 
 let lastContextTargetId: string | null = null;
 let contextMenu: HTMLElement | null = null;
@@ -1149,7 +1151,7 @@ export const editor: Editor = {
                         // basically a "note to self"
                         coms.emit('defaultElementSelected', name);
 
-                        coms.sendTo('main', 'getProperties', name);
+                        requestElementProperties(coms, name);
 
                     } else if (window === "editor") {
                         const elementType = name as keyof Elements;
@@ -1612,9 +1614,8 @@ export const editor: Editor = {
             button.setAttribute('type', 'button');
             button.style.width = '150px';
             button.addEventListener('click', function () {
-                coms.sendTo(
-                    'main',
-                    'secondWindow',
+                openHostSecondWindow(
+                    coms,
                     {
                         width: 640,
                         height: 520,
@@ -1879,9 +1880,8 @@ export const editor: Editor = {
         const height = Math.max(Number(dialog.properties.height) || 480, 200);
         // Use custom dialog title when available
         const winTitle = String(dialog.properties.title || dialog.properties.name || 'Preview');
-        coms.sendTo(
-            'main',
-            'secondWindow',
+        openHostSecondWindow(
+            coms,
             {
                 width: width,
                 height: height,

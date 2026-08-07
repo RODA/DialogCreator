@@ -2,11 +2,19 @@
 
 import { Communications } from '../interfaces/coms';
 import { utils } from '../library/utils';
-import { renderutils } from '../library/renderutils';
 import {
     createMissingRendererTransport,
     RendererTransport
 } from '../core/ipc/rendererTransport';
+import {
+    rendererCommandNames,
+    runRendererCommand
+} from './rendererCommandRegistry';
+import {
+    HostMessageType,
+    showHostDialogMessage,
+    showHostError
+} from '../core/host/hostMessages';
 
 
 type Listener = (...args: unknown[]) => void;
@@ -49,13 +57,6 @@ const pendingTransportChannels = new Set<string>();
 // Track which channels have been hooked into the active renderer transport
 const registeredChannels = new Set<string>();
 
-const handlers: Record<string, string> = {
-    addCover: '../modules/cover',
-    removeCover: '../modules/cover',
-    addAvailableElementsTo: '../modules/editor',
-    previewDialog: '../modules/editor',
-};
-
 export function setRendererTransport(nextTransport: RendererTransport): void {
     transport = nextTransport;
     rendererTransportConfigured = true;
@@ -94,10 +95,10 @@ function registerHandlerChannels(): void {
         return;
     }
 
-    for (const eventName in coms.handlers) {
+    for (const eventName of rendererCommandNames) {
         transport.on(eventName, async (...args) => {
             // assume the event returns something
-            const result = await renderutils.handleEvent(eventName, ...args);
+            const result = await runRendererCommand(eventName, ...args);
             if (utils.exists(result)) {
                 messenger.emit(eventName + '-result', result);
             }
@@ -123,7 +124,7 @@ export const coms = {
     },
 
     async runLocal(channel, ...args) {
-        const result = await renderutils.handleEvent(channel, ...args);
+        const result = await runRendererCommand(channel, ...args);
         return result;
     },
 
@@ -147,9 +148,6 @@ export const coms = {
         messenger.once(channel, listener);
     },
 
-    // IPC dispatcher
-    handlers,
-
     fontSize: 12,
     fontFamily: "'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, 'Noto Sans', 'Liberation Sans', sans-serif",
 } satisfies Communications;
@@ -160,13 +158,13 @@ coms.on('consolog', (...args: unknown[]) => {
 
 
 export const showMessage = (
-    type: 'info' | 'error' | 'question' | 'warning',
+    type: HostMessageType,
     title: string,
     message: string
 ) => {
-    coms.sendTo('main', 'showDialogMessage', type, title, message);
+    showHostDialogMessage(coms, type, title, message);
 }
 
 export const showError = (message: string) => {
-    coms.sendTo('main', 'showError', message);
+    showHostError(coms, message);
 }

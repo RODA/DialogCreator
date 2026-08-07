@@ -22,7 +22,12 @@ const forbiddenImports = {
         "zlib"
     ],
     sharedFeature: [
-        "electron"
+        "fs",
+        "path",
+        "sqlite3",
+        "zlib",
+        "child_process",
+        "os"
     ]
 };
 
@@ -32,8 +37,22 @@ const allowedElectronImportPaths = [
     path.join("src", "shell-electron")
 ];
 
+const sharedFeaturePaths = [
+    path.join("src", "editor"),
+    path.join("src", "preview"),
+    path.join("src", "code-editor"),
+    path.join("src", "defaults"),
+    path.join("src", "syntax-panel")
+];
+
 function normalizeRelative(filePath) {
     return path.relative(projectRoot, filePath).split(path.sep).join("/");
+}
+
+function shouldSkipSourceFile(filePath) {
+    const relativePath = normalizeRelative(filePath);
+
+    return relativePath.startsWith("src/bundles/");
 }
 
 function readSourceFiles(dirPath) {
@@ -52,7 +71,9 @@ function readSourceFiles(dirPath) {
         }
 
         if (/\.(ts|tsx|js|jsx)$/.test(entry.name)) {
-            files.push(entryPath);
+            if (!shouldSkipSourceFile(entryPath)) {
+                files.push(entryPath);
+            }
         }
     }
 
@@ -92,6 +113,14 @@ function isAllowedElectronImport(filePath) {
     });
 }
 
+function isSharedFeatureFile(filePath) {
+    const relativePath = normalizeRelative(filePath);
+
+    return sharedFeaturePaths.some((sharedPath) => {
+        return relativePath === sharedPath || relativePath.startsWith(`${sharedPath}/`);
+    });
+}
+
 function checkCoreImports(filePath, imports, failures) {
     const relativePath = normalizeRelative(filePath);
     if (!relativePath.startsWith("src/core/")) {
@@ -112,8 +141,21 @@ function checkElectronImports(filePath, imports, failures) {
     }
 
     for (const value of imports) {
-        if (importMatches(value, forbiddenImports.sharedFeature)) {
+        if (importMatches(value, ["electron"])) {
             failures.push(`${relativePath} imports Electron outside the shell boundary`);
+        }
+    }
+}
+
+function checkSharedFeatureImports(filePath, imports, failures) {
+    const relativePath = normalizeRelative(filePath);
+    if (!isSharedFeatureFile(filePath)) {
+        return;
+    }
+
+    for (const value of imports) {
+        if (importMatches(value, forbiddenImports.sharedFeature)) {
+            failures.push(`${relativePath} imports native dependency "${value}" in shared feature code`);
         }
     }
 }
@@ -131,6 +173,18 @@ function checkWebShellImports(filePath, imports, failures) {
     }
 }
 
+function checkRawMainComsChannels(filePath, source, failures) {
+    const relativePath = normalizeRelative(filePath);
+    const pattern = /\bcoms\.sendTo\(\s*['"]main['"]\s*,\s*['"]([^'"]+)['"]/g;
+    const matches = Array.from(source.matchAll(pattern));
+
+    for (const match of matches) {
+        failures.push(
+            `${relativePath} sends raw main-process channel "${match[1]}"; use an owner-local host helper`
+        );
+    }
+}
+
 function main() {
     const failures = [];
     const files = readSourceFiles(sourceRoot);
@@ -141,7 +195,9 @@ function main() {
 
         checkCoreImports(filePath, imports, failures);
         checkElectronImports(filePath, imports, failures);
+        checkSharedFeatureImports(filePath, imports, failures);
         checkWebShellImports(filePath, imports, failures);
+        checkRawMainComsChannels(filePath, source, failures);
     }
 
     if (failures.length > 0) {

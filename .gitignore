@@ -10,7 +10,7 @@ log.txt
 todo.txt
 log-*
 Instructions.Rmd
-
+internal/
 node_modules
 dist
 *.local

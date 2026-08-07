@@ -24,6 +24,26 @@ export interface ObjectBindingRequest {
     variables?: ObjectBindingVariables;
 }
 
+/**
+ * Handle returned by bindObjects(). Declaring a binding is synchronous; only
+ * the data refresh is asynchronous. Dialogs keep the handle and call refresh()
+ * when they reset.
+ */
+export interface ObjectBinding {
+    refresh(): Promise<void>;
+}
+
+/**
+ * One piece of a generated command. Arrays are flattened, and parts that carry
+ * nothing are dropped, so optional arguments can be collected unconditionally.
+ */
+export type SyntaxPart =
+    | string
+    | number
+    | null
+    | undefined
+    | Array<string | number | null | undefined>;
+
 export interface PreviewUI {
     /** Log helper (forwards to editor console) */
     log(...args: unknown[]): void;
@@ -124,7 +144,28 @@ export interface PreviewUI {
     /** Return list of columns specific to a dataset */
     listColumns(dataset: string | string[]): Array<string | ContainerItemDescriptor>;
     /** Bind object and field controls to the host data environment. */
-    bindObjects(request: ObjectBindingRequest): Promise<unknown>;
+    bindObjects(request: ObjectBindingRequest): ObjectBinding;
+
+    /**
+     * The object selected in the given control, written the way the generated
+     * command should refer to it. Normally the plain object name, but a host
+     * may return an expression when the object is filtered or otherwise
+     * derived. Returns an empty string when nothing is selected.
+     */
+    getReference(element: string): string;
+
+    /**
+     * Build a call rendered with one argument per line. Multi-line arguments
+     * are re-indented to their nesting depth, so nested calls and blocks lay
+     * themselves out without the script counting spaces.
+     */
+    call(name: string, ...args: SyntaxPart[]): string;
+
+    /** Build a brace-delimited block of statements, indented one level. */
+    block(...statements: SyntaxPart[]): string;
+
+    /** Shift every line of the text right by the given number of levels (default 1). */
+    indent(text: string, levels?: number): string;
 
     /** Register an event handler on the wrapper */
     on(element: string, event: string, handler: (ev: Event, el: HTMLElement) => void): void;
@@ -202,8 +243,12 @@ export interface PreviewUIEnv {
     showDialogMessage: (type: 'info' | 'warning' | 'error' | 'question', message: string, detail: string) => void;
     // Optional app-specific external function bridge
     callExternal?: (name: string, parameters?: unknown) => Promise<unknown>;
-    // Optional standard host binding for object selectors and dependent fields
-    bindObjects?: (request: ObjectBindingRequest) => Promise<unknown>;
+    // Optional standard host binding for object selectors and dependent fields.
+    // Called once when the binding is declared and again on every refresh().
+    bindObjects?: (request: ObjectBindingRequest) => unknown;
+    // Optional host resolver turning a selected object name into the reference
+    // the generated command should use, for example an active subset() filter.
+    resolveReference?: (element: string, selected: string) => string;
     // Optional dialog-local message translation lookup
     translateMessage?: (text: string) => string;
     // Open an external floating run panel near the Preview window

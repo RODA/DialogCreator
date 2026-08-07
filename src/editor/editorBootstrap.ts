@@ -16,13 +16,19 @@ import { attachIconPickers, syncIconPickers } from '../library/iconpicker';
 import { dialog } from "../modules/dialog";
 import type { RendererTransport } from "../core/ipc/rendererTransport";
 import { installEditorDocumentController } from "./editorDocumentController";
+import {
+    onElementProperties,
+    requestElementProperties
+} from "../core/catalog/elementCatalogIpc";
+import { sendDialogDocumentJsonUpdated } from "../core/document/dialogDocumentIpc";
+import { openHostSecondWindow } from "../core/host/dialogChildWindow";
 
 export function bootEditor(rendererTransport: RendererTransport): void {
 setRendererTransport(rendererTransport);
 
 let elements = { ...els } as Elements;
 Object.keys(elements).forEach((element) => {
-    coms.sendTo('main', 'getProperties', element);
+    requestElementProperties(coms, element);
 });
 
 
@@ -406,7 +412,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     const sendJsonToMain = () => {
         try {
             // const json = editor.stringifyDialog();
-            coms.sendTo('main', 'document-json-updated', editor.stringifyDialog());
+            sendDialogDocumentJsonUpdated(coms, editor.stringifyDialog());
         } catch { /* noop */ }
     };
     const scheduleJsonUpdate = debounce(sendJsonToMain, 300);
@@ -440,7 +446,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             const screenW = Number(window.innerWidth) || 1024;
             const width = Math.max(560, Math.round(screenW * 0.66));
             const height = 520;
-            coms.sendTo('main', 'secondWindow', {
+            openHostSecondWindow(coms, {
                 width,
                 height,
                 useContentSize: true,
@@ -675,12 +681,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     // Conditions window removed; no-op
 
-    coms.on("propertiesFromDB", (...args: unknown[]) => {
-        // TODO: properties do not return from the DB...
-        // the channel does not behaves properly: message is sent from main
-        // but not properly handled in coms.ts
-        const name = args[0] as string;
-        const properties = args[1] as Record<string, string>;
+    onElementProperties(coms, (name, properties) => {
         const pkeys = Object.keys(properties);
         if (pkeys.length > 0) {
             for (const pkey of pkeys) {

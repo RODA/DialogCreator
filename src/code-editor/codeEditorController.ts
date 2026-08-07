@@ -1,6 +1,8 @@
 import { coms, setRendererTransport } from '../modules/coms';
 import { utils } from '../library/utils';
 import type { RendererTransport } from '../core/ipc/rendererTransport';
+import { closeHostCodeWindow } from '../core/host/dialogChildWindow';
+import { sendDialogCustomJS } from '../core/host/editorWindowEvents';
 
 type CodeEditorInstance = {
     view?: unknown;
@@ -196,7 +198,7 @@ export async function bootCodeEditor(options: CodeEditorControllerOptions): Prom
 
     const saveOnly = function(): void {
         const text = editor?.getValue?.() || '';
-        coms.sendTo('editorWindow', 'setDialogCustomJS', text);
+        sendDialogCustomJS(coms, text);
 
         try {
             if (!status) return;
@@ -217,7 +219,7 @@ export async function bootCodeEditor(options: CodeEditorControllerOptions): Prom
 
     button.addEventListener('click', () => {
         saveOnly();
-        coms.sendTo('main', 'close-codeWindow');
+        closeHostCodeWindow(coms);
     });
 
     window.addEventListener('keydown', (event: KeyboardEvent) => {

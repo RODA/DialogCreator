@@ -15,6 +15,7 @@ import {
 } from "../interfaces/elements";
 import { showError, coms } from '../modules/coms';
 import { EVENT_NAMES, EventName } from '../library/api';
+import { sendEditorConsoleLog } from '../core/host/editorWindowEvents';
 import { v4 as uuidv4 } from 'uuid';
 import tippy from "tippy.js";
 import Sortable = require("sortablejs");
@@ -26,10 +27,6 @@ const error_tippy: ErrorTippy = {};
 const auto_highlight = new Set<string>();
 const highlight_targets = new Map<string, Set<HTMLElement>>();
 const enhancedButtons = new WeakSet<HTMLButtonElement>();
-const handlerModules: Record<string, () => Promise<Record<string, unknown>>> = {
-    '../modules/cover': () => import('../modules/cover'),
-    '../modules/editor': () => import('../modules/editor')
-};
 const KNOWN_CONTAINER_ITEM_TYPES = new Set<string>([
     'numeric',
     'factor',
@@ -1224,9 +1221,8 @@ export const renderutils: RenderUtils = {
 
         const errs = (renderutils.assertTypes(data, { collect: true }) || []) as string[];
         if (errs.length) {
-            coms.sendTo(
-                'editorWindow',
-                'consolog',
+            sendEditorConsoleLog(
+                coms,
                 'Element creation aborted due to invalid or missing properties:\n' + errs.join('\n')
             );
         }
@@ -3893,39 +3889,6 @@ export const renderutils: RenderUtils = {
         }
     },
 
-    async handleEvent(eventName, ...args) {
-        const handler = coms.handlers[eventName];
-        if (!handler) {
-            console.error(`No handler for event: ${eventName}`);
-            return;
-        }
-        try {
-            const moduleLabel = String(handler || '').split('/').pop() || String(handler || '');
-            const loadHandler = handlerModules[handler];
-
-            if (loadHandler) {
-                const imported = await loadHandler();
-                // the object of interest is the first exported one from that module
-                const key = Object.keys(imported)[0];
-                // (there really should be only one export per module)
-
-                // then extract the function from that object
-                const exported = imported[key] as Record<string, unknown>;
-                const func = exported[eventName];
-
-                if (typeof func === 'function') {
-                    return await func(...args);
-                } else {
-                    console.error(`Function ${eventName} not found in module ${moduleLabel}`);
-                }
-            } else {
-                showError(`Module "${moduleLabel}" not found in the modules/ directory.`);
-            }
-        } catch (error: any) {
-            showError(`Error handling ${eventName}: ${error.message}`);
-        }
-    },
-
     collectDialogProperties: function() {
         const properties = document.querySelectorAll<HTMLInputElement | HTMLSelectElement>('#dialog-properties [id^="dialog"]');
         const obj = {} as DialogProperties;
@@ -4270,7 +4233,7 @@ export const renderutils: RenderUtils = {
     // Surface runtime errors to end users in Preview (not just console)
     showRuntimeError: function(msg, canvas) {
         // Forward to editor console as well
-        coms.sendTo('editorWindow', 'consolog', msg);
+        sendEditorConsoleLog(coms, msg);
         // Create or update a visible error box inside the canvas
         let box = canvas.querySelector('.customjs-error.runtime') as HTMLDivElement | null;
         if (!box) {

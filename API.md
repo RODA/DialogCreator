@@ -127,7 +127,7 @@ Use this reference when writing custom JavaScript for Dialog Creator. It contain
 `clearContent(...elements)`
 
 - Clears the content/value of supported elements.
-- Supported: Input (clears the text), Container (removes all rows).
+- Supported: Input (clears the text), Container (removes all rows), Choice (removes all items).
 - Throws an error if used on unsupported types.
 
 `setLabel(element, label)`
@@ -224,15 +224,23 @@ Object and data helpers
   - `request.datasets` is the container that lists the available datasets or table-like objects.
   - `request.variables` is optional. It names one or more containers that should list fields from the selected dataset. It can be a single container, an array of containers, or a role map such as `{ rows: c_rows, columns: c_columns }`.
   - `request.dialog` is optional. It identifies the dialog so a host application can apply dialog-specific defaults or policies without exposing product-specific function names in the dialog script.
+  - Returns a binding handle **synchronously**. Declaring a binding is immediate; only the data refresh is asynchronous, so the call is not awaited.
+  - The handle exposes `refresh()`, which re-reads the object list and any dependent field containers and returns a Promise. Keep the handle and call it when the dialog resets.
+  - `refresh()` is safe to call as often as needed, and `bindObjects({ ... }).refresh()` is a valid shorthand when the handle is not kept.
   - In Dialog Creator Preview, `bindObjects()` uses the built-in example datasets so the dialog can be tested without a target application.
   - In a consuming application, `bindObjects()` is a standard API method that the host must implement. Do not write `callExternal('bindObjects', ...)` as a substitute; `callExternal()` is for app-specific extensions outside the shared API.
   - Example:
 
 ```javascript
-bindObjects({
+const objectBinding = bindObjects({
   dialog: 'recode',
   datasets: c_datasets,
   variables: c_variables
+});
+
+onClick(b_reset, () => {
+  resetDialog();
+  objectBinding.refresh();
 });
 
 onChange(c_datasets, () => {
@@ -253,6 +261,152 @@ onChange(c_datasets, () => {
 `listColumns(dataset)`
 
   - Returns an array of column metadata objects available in the specified dataset. Each object has a `name` field and boolean type flags such as `numeric`, `factor`, `calibrated`, `binary`, `character`, `categorical`, and `date`.
+
+`getReference(element)`
+
+  - Returns the object selected in `element`, written the way the generated command should refer to it.
+  - Use it wherever a command needs to name the selected dataset. `getSelected(element)[0]` gives the plain name for the dialog's own logic; `getReference(element)` gives the text to put in the command.
+  - Returns an empty string when nothing is selected.
+  - It is synchronous, so a command builder stays an ordinary function.
+
+Most of the time the two are the same:
+
+```javascript
+getSelected(c_datasets)[0];   // "ess"
+getReference(c_datasets);     // "ess"
+```
+
+They differ when the host application has narrowed the object. A target app may
+let the user keep a filter on a dataset, in which case the command has to run on
+that subset rather than on the whole dataset. The host reports that through
+`getReference()`, and the dialog does not have to know it happened:
+
+```javascript
+getSelected(c_datasets)[0];   // still "ess"
+
+getReference(c_datasets);
+// subset(
+//   ess,
+//   F1_cntry == "RO"
+// )
+```
+
+Because `call()` re-indents whatever it is given, that multi-line reference
+drops into the command without any extra handling:
+
+```javascript
+const buildCommand = () => {
+  return call('using', [
+    getReference(c_datasets),
+    't.testhv(' + selected_testvar + ' ~ ' + selected_groupvar + ')'
+  ]);
+};
+```
+
+```text
+using(
+  subset(
+    ess,
+    F1_cntry == "RO"
+  ),
+  t.testhv(F3_agea ~ F2_gndr)
+)
+```
+
+and with no filter active the same code produces:
+
+```text
+using(
+  ess,
+  t.testhv(F3_agea ~ F2_gndr)
+)
+```
+
+  - In Dialog Creator Preview there is no host data environment, so `getReference()` always returns the plain selected name and the first form is what appears in the syntax panel.
+
+Syntax building helpers
+
+These describe the *shape* of a generated command and work out the indentation
+from the actual nesting depth. A dialog script should not contain hand-written
+line breaks or runs of spaces. They only arrange whitespace, so they behave the
+same whatever the dialog's Runtime provider is.
+
+`call(name, ...args)`
+
+  - Builds a call rendered with one argument per line.
+  - Arguments can be passed individually or as an array: `call('using', a, b)` and `call('using', [a, b])` produce the same result. Arrays are flattened, so a script can collect arguments in a list and push the optional ones conditionally.
+  - Empty strings, `null`, and `undefined` arguments are dropped, so an optional argument can be pushed without a surrounding `if`.
+  - Any argument that spans several lines is re-indented to its real depth. Nested `call()` and `block()` results therefore place themselves correctly.
+  - With no arguments it returns `name()`.
+
+```javascript
+updateSyntax(call('using', 'ess', 't.testhv(F3_agea ~ F2_gndr)'));
+```
+
+```text
+using(
+  ess,
+  t.testhv(F3_agea ~ F2_gndr)
+)
+```
+
+`block(...statements)`
+
+  - Builds a brace-delimited block with one statement per line, indented one level.
+  - Handles arguments like `call()`: arrays are flattened and empty parts are dropped.
+  - With no statements it returns `{}`.
+
+```javascript
+updateSyntax(call('using', [
+  selected_dataset,
+  block([
+    '.table <- wtable(' + rows + ', ' + cols + ')',
+    'print(.table)',
+    isChecked(cb_chisq) ? 'chisq.test(.table)' : '',
+    isChecked(cb_fischer) ? 'fischer.exact(.table)' : ''
+  ])
+]));
+```
+
+```text
+using(
+  ess,
+  {
+    .table <- wtable(B1_polintr, F2_gndr)
+    print(.table)
+    chisq.test(.table)
+    fischer.exact(.table)
+  }
+)
+```
+
+The two unchecked options above contribute empty strings, and those are dropped
+rather than leaving blank lines behind.
+
+Because a nested call is re-indented automatically, a dataset reference that is
+itself a call needs no special handling:
+
+```javascript
+call('using', [
+  call('subset', ['ess', 'F2_gndr == 1']),
+  't.testhv(F3_agea ~ F2_gndr)'
+]);
+```
+
+```text
+using(
+  subset(
+    ess,
+    F2_gndr == 1
+  ),
+  t.testhv(F3_agea ~ F2_gndr)
+)
+```
+
+`indent(text, levels = 1)`
+
+  - Shifts every line of `text` right by `levels` levels of two spaces. Blank lines are left alone, so no trailing whitespace is introduced.
+  - `call()` and `block()` already indent whatever they are given, so `indent()` is only needed for text assembled by hand.
 
 
 ## Element-specific details
