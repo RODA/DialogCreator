@@ -93,6 +93,25 @@ The dialog-level **Language** property sets the source locale of the dialog text
 
 The dialog-level **Runtime provider** property carries the target execution provider that the dialog scripts are meant to build commands for, such as `R`, `Python`, or `Julia`. Preview exposes this value to custom JavaScript as `runtimeProvider` so dialogs can branch on provider-specific command syntax when needed.
 
+The dialog-level **Dependencies** property lists the packages the dialog needs
+from that runtime provider, separated by a comma or a semicolon. A dialog whose
+commands call `wtable()` and `recode()` would declare:
+
+```text
+admisc, declared
+```
+
+Every runtime provider has some notion of packages, even though the word differs
+between them, so the field is a plain list and the meaning follows whichever
+provider the dialog targets. Leave it empty when the dialog only uses what the
+provider offers out of the box.
+
+Dialog Creator itself does not install anything, and Preview ignores this
+property: it exists so the requirement travels with the dialog. It is saved into
+`dialog.json` inside the `.dc.zip` package, which lets a target application see
+what a dialog needs at the moment it is imported, instead of discovering a
+missing package when a user first runs the command.
+
 There is also an Actions button to open the code window for adding custom JavaScript logic for dialog behavior. It can be used to define how the elements interact with each other based on user input: showing/hiding/enabling controls, and updating values programmatically.
 
 <img src="docs/images/dialog_actions.png" alt="The dialog properties and actions" style="width: 793px;">

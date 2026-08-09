@@ -784,6 +784,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             setDialogInput('dialogTitle', 'New dialog');
             setDialogInput('dialogLanguage', 'en_US');
             setDialogInput('dialogRuntimeProvider', 'R');
+            setDialogInput('dialogDependencies', '');
             setTimeout(() => {
                 try { scheduleJsonUpdate(); } catch {}
             }, 300);

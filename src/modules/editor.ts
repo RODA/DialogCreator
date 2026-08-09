@@ -1955,6 +1955,9 @@ export const editor: Editor = {
             const druntime = document.getElementById('dialogRuntimeProvider') as HTMLInputElement | null;
             if (druntime) druntime.value = loadedRuntimeProvider;
 
+            const ddeps = document.getElementById('dialogDependencies') as HTMLInputElement | null;
+            if (ddeps) ddeps.value = String(props.dependencies || '');
+
             const dfont = document.getElementById('dialogFontSize') as HTMLInputElement | null;
             if (dfont) dfont.value = String(props.fontSize || '');
 

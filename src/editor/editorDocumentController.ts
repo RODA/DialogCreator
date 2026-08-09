@@ -51,6 +51,7 @@ function resetDialogProperties(payload: unknown): void {
     updateDialogPropertyInput('dialogTitle', String(data.title ?? 'New dialog'));
     updateDialogPropertyInput('dialogLanguage', String(data.language ?? 'en_US'));
     updateDialogPropertyInput('dialogRuntimeProvider', String(data.runtimeProvider ?? 'R'));
+    updateDialogPropertyInput('dialogDependencies', '');
 }
 
 function disableButton(id: string): void {

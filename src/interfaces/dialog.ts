@@ -11,6 +11,12 @@ export interface DialogProperties {
     title: string;
     language: string;
     runtimeProvider?: string;
+    /**
+     * Packages the dialog needs from its runtime provider, comma or semicolon
+     * separated. Travels inside the package so a target app can pick the
+     * requirement up on import.
+     */
+    dependencies?: string;
     width: string;
     height: string;
     fontSize: string;
