@@ -1243,9 +1243,16 @@ function renderPreview(dialog: PreviewDialog) {
 
         const translatedHeight = Math.ceil(wrapper.getBoundingClientRect().height || 0);
         if (baseHeight > 0 && translatedHeight > 0) {
-            const centeredTop = Math.round(baseTop + (baseHeight / 2) - (translatedHeight / 2));
-            wrapper.style.top = `${centeredTop}px`;
-            wrapper.dataset.top = String(centeredTop);
+            const valign = String(wrapper.dataset.valign || 'top').toLowerCase();
+            let nextTop = baseTop;
+            if (valign === 'bottom') {
+                nextTop = Math.round(baseTop + baseHeight - translatedHeight);
+            } else if (valign === 'middle') {
+                nextTop = Math.round(baseTop + (baseHeight / 2) - (translatedHeight / 2));
+            }
+
+            wrapper.style.top = `${nextTop}px`;
+            wrapper.dataset.top = String(nextTop);
             return;
         }
 

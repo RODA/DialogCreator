@@ -50,6 +50,48 @@ const main = async function() {
         assert.ok(menuLabels.includes("Edit"), "Electron application menu should include Edit");
         assert.ok(menuLabels.includes("Info"), "Electron application menu should include Info");
 
+        await window.locator('[data-element-key="labelElement"]').click();
+        const label = window.locator('#dialog .element-wrapper[data-type="Label"]');
+        await label.click();
+
+        for (const lines of ["1", "2", "3"]) {
+            await window.locator("#ellineClamp").fill(lines);
+            await window.locator("#ellineClamp").press("Enter");
+
+            for (const alignment of ["bottom", "middle", "top", "middle"]) {
+                await window.locator("#elvalign").focus();
+                await window.locator("#elvalign").selectOption(alignment);
+                await window.locator("#ellineClamp").focus();
+
+                const labelState = await label.evaluate((element) => {
+                    return {
+                        control: document.getElementById("elvalign").value,
+                        saved: element.dataset.valign,
+                        rendered: getComputedStyle(element).alignItems,
+                        lines: element.dataset.lineClamp
+                    };
+                });
+
+                const expectedStyle = alignment === "middle"
+                    ? "center"
+                    : alignment === "bottom" ? "flex-end" : "flex-start";
+                assert.deepStrictEqual(labelState, {
+                    control: alignment,
+                    saved: alignment,
+                    rendered: expectedStyle,
+                    lines
+                }, `Label alignment should agree in the editor with ${lines} lines`);
+            }
+        }
+
+        await window.locator("#dialogName").click();
+        await label.click();
+        assert.strictEqual(
+            await window.locator("#elvalign").inputValue(),
+            "middle",
+            "Reselecting a label should retain Middle without visiting Preview"
+        );
+
         await electronApp.evaluate(({ BrowserWindow }) => {
             const mainWindow = BrowserWindow.getAllWindows().find((candidate) => {
                 return candidate.webContents.getURL().includes("editor.html");

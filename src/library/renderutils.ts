@@ -122,7 +122,7 @@ const resolveElementIconSize = (iconSize: unknown, fallback: number): number => 
 
 const normalizeLabelVAlign = (value: unknown): 'top' | 'middle' | 'bottom' => {
     const raw = String(value ?? '').trim().toLowerCase();
-    if (raw === 'top' || raw === 'bottom') {
+    if (raw === 'top' || raw === 'middle' || raw === 'bottom') {
         return raw;
     }
     return 'top';
@@ -2820,10 +2820,12 @@ export const renderutils: RenderUtils = {
 
                 case 'valign':
                     if (label) {
-                        const next = normalizeLabelVAlign(value);
-                        element.dataset.valign = next;
+                        value = normalizeLabelVAlign(value);
+                        element.dataset.valign = value;
                         const valignInput = document.getElementById('elvalign') as HTMLSelectElement | null;
-                        if (valignInput) valignInput.value = next;
+                        if (valignInput) {
+                            valignInput.value = value;
+                        }
                         renderutils.updateLabel(element);
                     }
                     break;
