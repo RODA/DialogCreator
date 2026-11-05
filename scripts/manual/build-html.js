@@ -196,7 +196,9 @@ async function renderPage({ input, output, title }, repoRoot, outputDir, manualC
     fs.mkdirSync(path.dirname(manualCssTarget), { recursive: true });
   }
   try {
-    fs.copyFileSync(manualCssSource, manualCssTarget);
+    const stylesheet = fs.readFileSync(manualCssSource, 'utf8')
+        .replace(/\.\.\/assets\/fonts\//g, '../fonts/');
+    fs.writeFileSync(manualCssTarget, stylesheet);
     if (fs.existsSync(manualEmbedSource)) {
       fs.copyFileSync(manualEmbedSource, manualEmbedTarget);
     }

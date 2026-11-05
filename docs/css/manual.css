@@ -1,20 +1,20 @@
 @font-face {
     font-family: 'DialogCreator Mono';
-    src: url('../assets/fonts/liberation-mono/LiberationMono-Regular.ttf') format('truetype');
+    src: url('../fonts/liberation-mono/LiberationMono-Regular.ttf') format('truetype');
     font-weight: 400;
     font-style: normal;
     font-display: block;
 }
 @font-face {
     font-family: 'DialogCreator Mono';
-    src: url('../assets/fonts/liberation-mono/LiberationMono-Bold.ttf') format('truetype');
+    src: url('../fonts/liberation-mono/LiberationMono-Bold.ttf') format('truetype');
     font-weight: 600;
     font-style: normal;
     font-display: block;
 }
 @font-face {
     font-family: 'DialogCreator Mono';
-    src: url('../assets/fonts/liberation-mono/LiberationMono-Bold.ttf') format('truetype');
+    src: url('../fonts/liberation-mono/LiberationMono-Bold.ttf') format('truetype');
     font-weight: 700;
     font-style: normal;
     font-display: block;

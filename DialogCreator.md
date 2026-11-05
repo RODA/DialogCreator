@@ -205,6 +205,8 @@ The Slider element provides a graphical interface for selecting a value from a c
 The Label element displays static text or information. It can be customized with different font colors, and its size depends on the text content, up to a certain maximum width.
 If the text exceeds the maximum width, it will be truncated with an ellipsis (`...`). There is a control for how many lines of text are shown before truncation using the Line Clamp property.
 
+Like the other individual elements, a Label can use optional [Anchor positioning](#anchor-positioning) to follow another element.
+
 ### Separator
 The Separator element is a visual divider used to separate different sections or groups of elements within the dialog.
 
@@ -249,6 +251,70 @@ Its properties include:
 - **Colors**: Background/Font/Active background/Active font/Border colors affect the list and the active item styling, just like the Container element.
 
 In custom JS, `getValue(element)` returns the ordered items along with their state (`off`, `asc`, `desc`). `getSelected(element)` returns the active selections; for Ordering-enabled lists, this includes the direction suffix, while for `No` it returns labels only. Programmatic updates via `setValue()` or `setSelected()` may also include direction suffixes such as `income:desc`.
+
+
+## Anchor positioning
+
+All individual controls support optional **Attach to** positioning: Button, Input, Select, Checkbox, Radio, Counter, Slider, Label, Separator, Container, and Choice. Any of these can follow another individual control. Absolute **Left** and **Top** positioning remains the default; existing dialogs keep their absolute positions unless you choose an attachment.
+
+Select a control and choose a target in **Attach to**, under Layout properties. The two controls must have the same immediate parent: both directly on the canvas, or both inside the same group. A control inside one group cannot attach to a control outside that group or inside a different group. Groups themselves cannot be attached or used as targets. A radio-button selection group is separate from an element group and does not determine attachment eligibility.
+
+### Attach properties
+
+| Property | Meaning |
+| --- | --- |
+| **Attach to** | The control whose position and measured size the selected control follows. Choose **None (absolute)** to use Left and Top instead. |
+| **Side** | Places the selected control Left, Right, Above, or Below the target. |
+| **Gap** | Distance in pixels between the two control boxes on the chosen side. Zero makes the boxes touch; a negative gap allows overlap. |
+| **Align** | Aligns the boxes along the other axis: Start, Middle, or End. See the examples below. |
+| **Offset** | Additional displacement in pixels along that other axis. Positive values move down for Left/Right, or right for Above/Below; negative values move up or left. |
+
+A new attachment starts with Side **Left**, Gap **10**, Align **Middle**, and Offset **0**. The properties panel scrolls vertically when its contents exceed the available height.
+
+### What Align means
+
+Attach **Align** positions the whole control relative to its target. Its meaning depends on Side:
+
+| Side | Start | Middle | End |
+| --- | --- | --- | --- |
+| **Left** or **Right** | Match the top edges | Match the vertical centres | Match the bottom edges |
+| **Above** or **Below** | Match the left edges | Match the horizontal centres | Match the right edges |
+
+For example, to put a label beside an input, select the label, attach it to the input, and choose **Left**, Gap **10**, Align **Middle**, and Offset **0**. The label's right edge stays 10 pixels from the input's left edge, and their vertical centres line up. If a translation makes the label wrap onto two lines, it remains centred beside the input.
+
+To place a button below another control and align their right edges, choose **Below** and Align **End**. Gap controls the vertical separation; Offset shifts the button horizontally. With Side **Right**, Align **Middle**, and Offset **-1**, the selected control sits one pixel above the vertically centred position.
+
+Attach **Align** is separate from a Label's **H align** and **V align**, which control the text within its own layout. Changing Attach Align moves the label box; changing text alignment does not change the attachment's Side or Gap. Gap measures control-box edges, so padding and the shapes of the letters or radio mark can make the visible ink-to-ink distance slightly larger.
+
+### Moving, detaching, and saving
+
+While attached, **Left** and **Top** show the calculated position and are read-only. Dragging or nudging the control adjusts its Gap and Offset without detaching it. Moving or resizing the target moves its dependents. Choose **None (absolute)** to detach at the current position and edit Left and Top again.
+
+Attachments use measured control sizes, including translated text, wrapping, and clipping. They do not translate or resize the dialog canvas itself. Check Preview in the languages you intend to distribute to see whether the whole layout still fits.
+
+The package stores the attachment and authored fallback coordinates. Calculated runtime positions do not overwrite those fallback coordinates. An attachment refers to the target's stable element ID, rather than its scripting name in `actions.js`; renaming a control does not require rewriting the attachment.
+
+### Chains and circular references
+
+An attached control can itself be a target. For example, a label can follow an input, and a radio button can follow that label. The chain is resolved from the target outward, so the radio follows changes to the translated label's size.
+
+Circular references are invalid:
+
+- A control cannot attach to itself.
+- If A follows B, B cannot follow A.
+- If A follows B and B follows C, C cannot follow A. The same rule applies to longer chains.
+
+Targets that would create a loop are disabled in **Attach to** and marked **circular reference**. Their tooltip shows the dependency path. Change a target or detach a control to break the loop.
+
+If an imported dialog has a missing target, a cross-group reference, or a circular dependency, an explicit warning identifies the problem. Affected controls and any controls depending on them keep their fallback or last position; independent valid chains continue to work. The attachment remains available for repair and is never silently converted to absolute positioning. Resolve these relationship errors before saving. Malformed attachment properties are rejected during validation.
+
+### Shared rendering with DialogForge
+
+DialogCreator owns the canonical control renderer. Its Editor uses the shared control factory with authoring covers and selection tools; Preview mounts the runtime controls. DialogForge consumes a versioned package generated from that same implementation, including the control DOM, CSS, fonts, icons, localization, and attachment layout rules. It does not maintain a separate standard-control renderer or app-specific alignment corrections.
+
+For the same dialog, translation, and runtime state, Preview and DialogForge follow the same control layout and attachment contract, including the circular-reference rules above. DialogForge's native and browser hosts use the same packaged renderer. Host adapters provide window operations, backend data, command execution, and saved-state integration. Explicit host extensions, such as the Venn plot toolbar, can compose controls into their own surfaces.
+
+Use Preview to check the portable layout. Also check the dialog in its target application when actions depend on runtime data or host services, since those services can populate controls or change their state. The shared renderer does not make Preview execute DialogForge's backend commands.
 
 
 ## Keyboard shortcuts
