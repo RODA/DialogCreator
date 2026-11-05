@@ -1,6 +1,6 @@
 {
   "name": "dialog-creator",
-  "version": "1.2.0",
+  "version": "1.2.2",
   "description": "A dialog creating application",
   "main": "dist/main.js",
   "scripts": {
@@ -113,7 +113,7 @@
       "category": "public.app-category.productivity",
       "artifactName": "${productName}_${version}_${arch}.${ext}",
       "extendInfo": {
-        "NSHumanReadableCopyright": "© 2025-2026 Adrian Dusa — Academic Non-Commercial License (see LICENSE file for details)."
+        "NSHumanReadableCopyright": "\u00a9 2025-2026 Adrian Dusa \u2014 Academic Non-Commercial License (see LICENSE file for details)."
       },
       "target": [
         {
