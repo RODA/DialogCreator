@@ -1,148 +1,77 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-    <title>DialogCreator - User Manual</title>
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Download DialogCreator</title>
+    <meta name="description" content="Download DialogCreator for Windows, macOS, or Linux, or use the browser demo without installing the application.">
+    <meta name="theme-color" content="#252a30">
     <link rel="icon" type="image/x-icon" href="./favicon.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
-    <link href="./css/styles.css" rel="stylesheet">
-    <link href="./scripts/prism.css" rel="stylesheet">
+    <link rel="stylesheet" href="./css/site.css">
+    <script src="./scripts/download.js" defer></script>
 </head>
-
 <body>
-    <div id="page" class="page open-menu">
-        <div id="st-sidebar" class="sidebar">
-            <a href="./index.html">About Dialog Creator</a>
-            <a href="./download.html" class="active">Download</a>
-            <a href="./run-from-sources.html">Run / Build from sources</a>
-            <a href="./usermanual.html">User manual</a>
-            <a href="./apireference.html">API reference</a>
-            <a href="./live/">Test live</a>
-            <p style="margin-top: 2rem; padding: 10px 10px 10px 20px;font-size: 0.8rem;">Other tools by RODA:</p>
-            <a href="https://roda.github.io/StatConverter/" target="_blank"><b>StatConverter</b></a>
-            <a class="roda-logo" href="http://www.roda.ro" target="_blank">
-                <img src="./images/RODA.png" alt="RODA"/>
-            </a>
-        </div>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header wrap">
+        <a class="brand" href="./index.html" aria-label="DialogCreator home"><img class="product-logo" src="./images/dialogcreator-logo.svg" width="32" height="32" alt="">DialogCreator</a>
+        <nav aria-label="Main navigation">
+            <a href="./index.html#how-it-works">How it works</a>
+            <a href="./usermanual.html">Documentation</a>
+            <a class="nav-download" aria-current="page" href="./download.html">Download <span aria-hidden="true">↗</span></a>
+        </nav>
+    </header>
 
-        <div id="main" class="main-body">
-            <div class="main-header">
-                <button class="openbtn" onclick="toggleNavigation()">☰</button>
-                <a class="github" href="https://github.com/roda/DialogCreator/" target="_blank">
-                    <img src="./images/GitHub-Mark-32px.png" alt="GitHub DialogCreator">
-                </a>
+    <main id="main" class="downloads wrap">
+        <section class="download-intro" aria-labelledby="download-title">
+            <p class="eyebrow">DIALOGCREATOR / DOWNLOAD</p>
+            <h1 id="download-title">Install<br><em>DialogCreator.</em></h1>
+            <p>Choose the package for your operating system. The desktop application provides the complete authoring workflow.</p>
+            <a class="text-link" href="./live/">Use the browser demo instead <span aria-hidden="true">↗</span></a>
+        </section>
+
+        <section class="download-grid" aria-label="Choose your operating system">
+            <article class="download-card">
+                <span class="platform-label">01 / WINDOWS</span>
+                <h2>Windows</h2>
+                <p class="platform-detail">64-bit Intel / AMD</p>
+                <p>Install the desktop app, or choose the portable edition to run it without an installer.</p>
+                <a id="download-windows" class="button button-primary" href="https://github.com/RODA/DialogCreator/releases/download/latest/DialogCreator_setup_intel.exe">Download installer <span aria-hidden="true">↓</span></a>
+                <a id="download-portable" class="text-link" href="https://github.com/RODA/DialogCreator/releases/download/latest/DialogCreator_portable_intel.exe">Download portable edition <span aria-hidden="true">↓</span></a>
+                <span class="file-detail" id="windows-detail">EXE installer · Portable EXE also available</span>
+            </article>
+            <article class="download-card">
+                <span class="platform-label">02 / MACOS</span>
+                <h2>macOS</h2>
+                <p class="platform-detail">Apple Silicon &amp; Intel</p>
+                <p>One universal download for both Mac architectures. Open the disk image to install DialogCreator.</p>
+                <a id="download-mac" class="button button-primary" href="https://github.com/RODA/DialogCreator/releases/download/latest/DialogCreator_universal.dmg">Download for Mac <span aria-hidden="true">↓</span></a>
+                <span class="file-detail" id="mac-detail">DMG disk image · Universal</span>
+            </article>
+            <article class="download-card">
+                <span class="platform-label">03 / LINUX</span>
+                <h2>Linux</h2>
+                <p class="platform-detail">64-bit Intel / AMD</p>
+                <p>Download the AppImage, allow it to run as a program, and launch it. Your system may also need FUSE.</p>
+                <a id="download-linux" class="button button-primary" href="https://github.com/RODA/DialogCreator/releases/download/latest/DialogCreator_1.2.0_x86_64.AppImage">Download AppImage <span aria-hidden="true">↓</span></a>
+                <span class="file-detail" id="linux-detail">AppImage · x86-64</span>
+            </article>
+        </section>
+        <p class="release-status" id="release-status" role="status">Downloads are hosted on GitHub. <a href="https://github.com/RODA/DialogCreator/releases/tag/latest">View the release and all files ↗</a></p>
+
+        <section class="download-help" aria-labelledby="download-help-title">
+            <div><p class="eyebrow">DOCUMENTATION AND SUPPORT</p><h2 id="download-help-title">After<br>installation.</h2></div>
+            <div class="help-links">
+                <a href="./usermanual.html"><strong>Read the user manual <span aria-hidden="true">↗</span></strong><span>Learn the controls, arrange a dialog, and test it in preview.</span></a>
+                <a href="./run-from-sources.html"><strong>Build from source <span aria-hidden="true">↗</span></strong><span>Follow the setup and build instructions for your operating system.</span></a>
+                <a href="https://github.com/RODA/DialogCreator/issues"><strong>Report an issue <span aria-hidden="true">↗</span></strong><span>Include your operating system and a description of what happened.</span></a>
             </div>
-            <div class="main-inner">
-                <section>
-                    <h1>Download Dialog Creator</h1>
-                    <p>
-                        Disclaimer: the application files are generated as platform specific binaries for your convenience only.
-                        However (at least currently), they are not digitally signed for authenticity. The operating system will
-                        ask for all sorts of permissions to install / run the application and will warn it is unknown and unsafe.
-                    </p>
-                    <p>&nbsp;</p>
-                    <p>
-                        If you do not trust these binaries, the application can be started from its source files, or
-                        <a href="./run-from-sources.html">build your own</a>
-                        binaries (see the left menu for instructions).
-                    </p>
-                    <p>&nbsp;</p>
-                    <p>
-                        All links below assume a 64-bit architecture. If you need a 32-bit architecture, please file an issue on GitHub.
-                    </p>
+        </section>
+        <p class="download-license">Please read the <a href="https://github.com/RODA/DialogCreator/blob/master/LICENSE">license</a> and <a href="https://github.com/RODA/DialogCreator/releases/tag/latest">release notes</a> before installing.</p>
+    </main>
 
-                    <p>&nbsp;</p>
-                    <p>&nbsp;</p>
-
-                    <h2>Windows</h2>
-
-                    <p>
-                        Executable installation file (needs admininstrative privileges):
-                    </p>
-
-                    <p>
-                            <a href="https://github.com/RODA/DialogCreator/releases/download/latest/DialogCreator_setup_intel.exe?raw=true">DialogCreator_setup_intel.exe</a>
-                    </p>
-
-                    <p>&nbsp;</p>
-                    <p>
-                        If you do not have administrative privileges to install, or simply don't want to install the application, it can be downloaded and directly run as an executable file:
-                    </p>
-
-                    <p>
-                            <a href="https://github.com/RODA/DialogCreator/releases/download/latest/DialogCreator_portable_intel.exe?raw=true">DialogCreator_portable_intel.exe</a>
-                    </p>
-
-
-                    <!-- <p>&nbsp;</p>
-                    <h2>Windows 32bit</h2>
-
-                    <p>
-                        Executable installation file (needs admininstrative privileges):
-                    </p>
-                    <p>
-                        <span style="color:#7a7a7a">DialogCreator_1.1.4_setup_x86_32.exe</span>
-                    </p>
-
-                    <p>&nbsp;</p>
-                    <p>
-                        Zip file (no need to install):
-                    </p>
-
-                    <p>
-                        <span style="color:#7a7a7a">DialogCreator_1.1.4_x86_32.zip</span>
-                    </p> -->
-
-                    <p>&nbsp;</p>
-                    <p>&nbsp;</p>
-
-                    <h2>Apple MacOS</h2>
-
-                    <p>Disk image file (needs admininstrative privileges)</p>
-
-                    <p>&nbsp;</p>
-
-                    <p>For Intel and Apple Silicon architectures (Big Sur and higher):</p>
-
-                    <p>
-                            <a href="https://github.com/RODA/DialogCreator/releases/download/latest/DialogCreator_universal.dmg?raw=true">DialogCreator_universal.dmg</a>
-                    </p>
-
-                    <p>&nbsp;</p>
-                    <p>&nbsp;</p>
-
-                    <h2>Linux (most distributions)</h2>
-
-                    <p>
-                        Make the .AppImage file executable (chmod +x) and have FUSE installed.
-                    </p>
-
-                    <p>&nbsp;</p>
-
-                    <p>For Intel architectures:</p>
-
-                    <p>
-                            <a href="https://github.com/RODA/DialogCreator/releases/download/latest/DialogCreator_intel.AppImage?raw=true">DialogCreator_intel.AppImage</a>
-                    </p>
-
-                    <p>&nbsp;</p>
-
-                    <br>
-
-
-                </section>
-            </div>
-        </div>
-    </div>
-
-    <script src="./scripts/scripts.js"></script>
-    <script src="./scripts/prism.js"></script>
-
+    <footer class="site-footer wrap">
+        <div><a class="brand" href="./index.html">DialogCreator</a><p>Part of the <a href="https://www.roda.ro/">RODA</a> tools for research.</p></div>
+        <nav aria-label="Project links"><a href="https://github.com/RODA/DialogCreator">Source code</a><a href="./run-from-sources.html">Build from source</a><a href="https://github.com/RODA/DialogCreator/issues">Report an issue</a><a href="https://roda.github.io/StatConverter/">StatConverter <span aria-hidden="true">↗</span></a></nav>
+    </footer>
 </body>
-
 </html>

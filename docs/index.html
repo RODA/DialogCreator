@@ -1,103 +1,119 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-    <title>DialogCreator</title>
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DialogCreator — Visual dialogs for command-based applications</title>
+    <meta name="description" content="Design graphical dialogs, connect interactions to JavaScript actions, and inspect the commands they generate. Use DialogCreator in your browser or install the desktop application.">
+    <meta name="theme-color" content="#252a30">
+    <meta property="og:title" content="DialogCreator — Visual dialogs for command-based applications">
+    <meta property="og:description" content="Design graphical dialogs, connect interactions to JavaScript actions, and inspect the commands they generate.">
+    <meta property="og:type" content="website">
     <link rel="icon" type="image/x-icon" href="./favicon.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
-    <link href="./css/styles.css" rel="stylesheet">
-    <link href="./scripts/prism.css" rel="stylesheet">
+    <link rel="stylesheet" href="./css/site.css">
+    <script src="./scripts/home.js" defer></script>
 </head>
-
 <body>
-    <div id="page" class="page open-menu">
-        <div id="st-sidebar" class="sidebar">
-            <a href="./index.html" class="active">About Dialog Creator</a>
-            <a href="./download.html">Download</a>
-            <a href="./run-from-sources.html">Run / Build from sources</a>
-            <a href="./usermanual.html">User manual</a>
-            <a href="./apireference.html">API reference</a>
-            <a href="./live/">Test live</a>
-            <p style="margin-top: 2rem; padding: 10px 10px 10px 20px;font-size: 0.8rem;">Other tools by RODA:</p>
-            <a href="https://roda.github.io/StatConverter/" target="_blank"><b>StatConverter</b></a>
-            <a class="roda-logo" href="http://www.roda.ro" target="_blank">
-                <img src="./images/RODA.png" alt="RODA"/>
-            </a>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header wrap">
+        <a class="brand" href="./index.html" aria-label="DialogCreator home"><img class="product-logo" src="./images/dialogcreator-logo.svg" width="32" height="32" alt="">DialogCreator</a>
+        <nav aria-label="Main navigation">
+            <a href="#how-it-works">How it works</a>
+            <a href="./usermanual.html">Documentation</a>
+            <a class="nav-download" href="./download.html">Download <span aria-hidden="true">↗</span></a>
+        </nav>
+    </header>
+
+    <main id="main">
+        <section class="hero wrap" aria-labelledby="hero-title">
+            <div class="hero-copy">
+                <p class="eyebrow"><span class="status-dot" aria-hidden="true"></span> A visual builder by RODA</p>
+                <h1 id="hero-title">Your commands.<br>A clearer <em>interface.</em></h1>
+                <p class="hero-description">DialogCreator is a visual authoring tool for command-based applications. Arrange the controls, connect them to JavaScript actions, and inspect the generated command before packaging the dialog.</p>
+                <div class="hero-actions">
+                    <a class="button button-primary" href="./live/">Open the browser demo <span aria-hidden="true">↗</span></a>
+                    <a class="button button-secondary" href="./download.html">Download DialogCreator <span aria-hidden="true">↓</span></a>
+                </div>
+                <p class="hero-note">Use the browser demo or install the desktop application.</p>
+                <a class="tour-link" href="#dialogr-example">Explore the example <span aria-hidden="true">↓</span></a>
+            </div>
+
+            <div class="product-tour" id="product-tour" role="region" aria-label="DialogCreator screenshot walkthrough">
+                <div class="tour-heading"><span><span class="status-dot" aria-hidden="true"></span> FROM DIALOG TO COMMAND</span><span class="tour-counter" aria-hidden="true">01 / 03</span></div>
+                <div class="tour-stage">
+                    <figure class="tour-scene" id="tour-design">
+                        <img fetchpriority="high" src="./images/recode_design.png" width="1084" height="734" alt="Design of the Recode dialog: dataset and variable lists, value inputs, radio buttons, and action buttons.">
+                    </figure>
+                    <figure class="tour-scene" id="tour-actions" hidden>
+                        <img src="./images/recode_actions.png" width="1586" height="1098" alt="Actions editor showing JavaScript that responds to dataset and variable selections and updates the generated syntax.">
+                    </figure>
+                    <figure class="tour-scene" id="tour-preview" hidden>
+                        <img src="./images/recode_preview.png" width="1082" height="1064" alt="Recode dialog preview with dataset choices, recoding options, and the generated R command beneath it.">
+                    </figure>
+                </div>
+                <div class="tour-caption">
+                    <p id="tour-description">Arrange the controls and define their labels, values, and layout.</p>
+                    <button id="tour-play" type="button" hidden aria-label="Play screenshot tour">Play tour <span aria-hidden="true">▷</span></button>
+                </div>
+                <div class="tour-steps" aria-label="Choose a walkthrough view" hidden>
+                    <button type="button" aria-pressed="true" aria-controls="tour-design" data-scene="0"><span>01</span> Design</button>
+                    <button type="button" aria-pressed="false" aria-controls="tour-actions" data-scene="1"><span>02</span> Add behaviour</button>
+                    <button type="button" aria-pressed="false" aria-controls="tour-preview" data-scene="2"><span>03</span> Preview</button>
+                </div>
+                <p class="tour-footnote">A walkthrough in screenshots · Recode example from the documentation</p>
+            </div>
+        </section>
+
+        <div class="capability-strip">
+            <div class="wrap"><span>ONE AUTHORING WORKFLOW</span><p>Visual layout <b aria-hidden="true">/</b> JavaScript actions <b aria-hidden="true">/</b> Command preview <b aria-hidden="true">/</b> Portable dialogs</p></div>
         </div>
 
-        <div id="main" class="main-body">
-            <div class="main-header">
-                <button class="openbtn" onclick="toggleNavigation()">☰</button>
-                <a class="github" href="https://github.com/roda/DialogCreator/" target="_blank">
-                    <img src="./images/GitHub-Mark-32px.png" alt="GitHub DialogCreator">
-                </a>
+        <section class="workflow wrap" id="how-it-works" aria-labelledby="workflow-title">
+            <div class="section-heading"><p class="eyebrow">THE WORKFLOW</p><h2 id="workflow-title">From interface design<br>to a portable dialog.</h2><p>Design the layout, connect each interaction to code, and test the resulting command.</p></div>
+            <div class="workflow-grid">
+                <article><span class="step-number">01 / DESIGN</span><h3>Design the interface.</h3><p>Arrange inputs, lists, buttons, and other controls on the canvas. Set their labels, values, and layout.</p><a href="./usermanual.html">Read about the editor <span aria-hidden="true">↗</span></a></article>
+                <article><span class="step-number">02 / CONNECT</span><h3>Connect choices to commands.</h3><p>JavaScript actions capture the intent expressed by each choice and translate it immediately into a written command — R syntax in this example.</p><a href="./apireference.html">Read the actions API <span aria-hidden="true">↗</span></a></article>
+                <article><span class="step-number">03 / PREVIEW</span><h3>Test the complete dialog.</h3><p>Use the dialog as an end user would. Inspect the syntax, refine the interaction, and export a portable dialog package.</p><a href="./live/">Open the browser demo <span aria-hidden="true">↗</span></a></article>
             </div>
-            <div class="main-inner">
-                <section>
-                    <h1>Dialog Creator</h1>
+        </section>
 
-                    <p>
-                            Dialog Creator v1.1.9 (part of the <a href="http://www.roda.ro" target="_blank">RODA</a> Tools)
-                        is a software to create graphical dialog interfaces for various purposes, allowing users to interactively construct a written command line.
-                    </p>
-
-                    <br>
-
-                    <p style="text-align:center">
-                        <img src="./images/DialogCreator.png" alt="DialogCreator screenshot" class="center-image">
-                    </p>
-
-                    <br>
-
-                    <p>
-                        The dialogs constructed with this application are intended to be imported into a different (main) application, that will use the constructed command and send it to the language of choice.
-                    </p>
-
-                    <br>
-
-                    <p>
-                        This app uses <a href="https://nodejs.org/" target="_blank">Node.js</a> and
-                        <a href="https://www.electronjs.org/" target="_blank">Electron</a> that help building cross-platform desktop applications embedding HTML, CSS, and JavaScript.
-                    </p>
-
-                    <br>
-
-                    <p>
-                        It is available in multiple formats, depending on the operating system: apart from the
-                        <a href="https://github.com/RODA/DialogCreator" target="_blank">GitHub</a>
-                        source files, platform specific binaries and installers can be found in the <a href="./download.html">Download</a> menu.
-                    </p>
-
-
-                    <br>
-                    <br>
-
-
-                    <p>&nbsp;</p>
-                    <p>
-                        Contact: roda[at]roda.ro
-                    </p>
-
-
-                    <p>&nbsp;</p>
-                    <p>
-                        For issues and bug reports, please use the
-                        <a href="https://github.com/RODA/DialogCreator/issues" target="_blank">GitHub issues</a>
-                        page.
-                    </p>
-                </section>
+        <section class="case-study wrap" id="dialogr-example" aria-labelledby="dialogr-title">
+            <div class="case-study-copy">
+                <p class="eyebrow">IN PRACTICE / DIALOGR</p>
+                <h2 id="dialogr-title">A dialog selection.<br>A corresponding R command.</h2>
+                <p>DialogR brings this workflow to statistical analysis. Its Frequency table dialog lets a researcher choose a dataset and a variable, then inspect the R command before running it.</p>
+                <p>For example, selecting <strong>B1_polintr</strong> from <strong>ess</strong> builds a frequency-table command. Choosing to include the variable label adds <code>vlabel = TRUE</code>. JavaScript captures that intent; DialogR runs the resulting R code.</p>
+                <a class="text-link" href="https://github.com/RODA/DialogR">Explore the DialogR project <span aria-hidden="true">↗</span></a>
             </div>
-        </div>
-    </div>
+            <div class="command-example">
+                <div class="example-heading"><img src="./images/dialogr-logo.svg" width="30" height="30" alt=""><strong>DialogR</strong><span>Frequency table</span></div>
+                <div class="example-intent"><span class="eyebrow">THE RESEARCHER’S INTENT</span><p>“Show the frequency table for political interest, including its variable label.”</p></div>
+                <div class="example-command"><span class="eyebrow">THE GENERATED R COMMAND</span><pre><code>using(
+  ess,
+  wtable(B1_polintr, vlabel = TRUE)
+)</code></pre></div>
+                <p class="example-note">An example from DialogR’s frequency-table actions. The command stays visible and can be inspected.</p>
+            </div>
+        </section>
 
-    <script src="./scripts/scripts.js"></script>
-    <script src="./scripts/prism.js"></script>
+        <section class="integration wrap" aria-labelledby="integration-title">
+            <div><p class="eyebrow">INTEGRATION</p><h2 id="integration-title">A portable dialog<br>for your application.</h2><p>DialogCreator defines the dialog and the commands it generates. The host application imports the package, supplies its data, and executes the generated commands.</p><a href="./apireference.html">Read the integration reference <span aria-hidden="true">↗</span></a></div>
+            <ol class="integration-flow" aria-label="How DialogCreator fits into your application">
+                <li><span class="flow-icon" aria-hidden="true">01</span><div><strong>Design in DialogCreator</strong><span>Layout, controls, and behaviour</span></div></li>
+                <li><span class="flow-icon" aria-hidden="true">02</span><div><strong>Export your dialog</strong><span>A portable .dc.zip package</span></div></li>
+                <li><span class="flow-icon" aria-hidden="true">03</span><div><strong>Use it in your application</strong><span>Your data and command execution</span></div></li>
+            </ol>
+        </section>
 
+        <section class="getting-started wrap" aria-labelledby="start-title">
+            <div><p class="eyebrow">TRY DIALOGCREATOR</p><h2 id="start-title">See the workflow in practice.</h2><p>Open the browser demo to inspect the editor, actions, preview, and generated command.</p><div class="hero-actions"><a class="button button-primary" href="./live/">Open the browser demo <span aria-hidden="true">↗</span></a><a class="button button-secondary" href="./download.html">Download DialogCreator <span aria-hidden="true">↓</span></a></div></div>
+            <a class="manual-link" href="./usermanual.html"><span class="manual-icon" aria-hidden="true">↗</span><strong>User manual</strong><span>Learn the editor controls and follow a complete example.</span><b>Open the documentation <span aria-hidden="true">→</span></b></a>
+        </section>
+    </main>
+
+    <footer class="site-footer wrap">
+        <div><a class="brand" href="./index.html">DialogCreator</a><p>Part of the <a href="https://www.roda.ro/">RODA</a> tools for research.</p></div>
+        <nav aria-label="Project links"><a href="https://github.com/RODA/DialogCreator">Source code</a><a href="./run-from-sources.html">Build from source</a><a href="https://github.com/RODA/DialogCreator/issues">Report an issue</a><a href="https://roda.github.io/StatConverter/">StatConverter <span aria-hidden="true">↗</span></a></nav>
+    </footer>
 </body>
-
 </html>
