@@ -272,6 +272,8 @@ Object and data helpers
   - Use this when a dialog lets the user choose a dataset, table, or other runtime object and should stay in step with the host application.
   - The host owns the object list, refresh behavior, selection memory, and dependent variable or field lists. The dialog should react to selections with `onChange()`, but it should not also fill the same selector manually with `setValue(..., listObjects(...))`.
   - `request.datasets` is the container that lists the available datasets or table-like objects.
+  - `request.autoSelect: false` starts the dataset selector empty on each dialog opening and preserves explicit selections during workspace refreshes. It does not follow or change the host application's active dataset.
+  - `request.excludeSelected` names another dataset container. Its selected dataset is shown disabled in this container. Use it on both bindings for two mutually exclusive selectors. Both containers may use **Single, radio** and start empty.
   - `request.variables` is optional. It names one or more containers that should list fields from the selected dataset. It can be a single container, an array of containers, or a role map such as `{ rows: c_rows, columns: c_columns }`.
   - `request.dialog` is optional. It identifies the dialog so a host application can apply dialog-specific defaults or policies without exposing product-specific function names in the dialog script.
   - Returns a binding handle **synchronously**. Declaring a binding is immediate; only the data refresh is asynchronous, so the call is not awaited.

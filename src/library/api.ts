@@ -768,13 +768,40 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             api.onChange(request.datasets, refreshVariables);
         }
 
+        let refreshing = false;
+        const refreshDatasets = () => {
+            if (request.autoSelect !== false && !request.excludeSelected) {
+                api.setValue(request.datasets, listObjectsByType('datasets'));
+                refreshVariables();
+                return;
+            }
+            if (refreshing) {
+                return;
+            }
+            refreshing = true;
+            try {
+                const selected = api.getSelected(request.datasets) || [];
+                const excluded = request.excludeSelected ? api.getSelected(request.excludeSelected) : [];
+                const names = listObjectsByType('datasets');
+                api.setValue(request.datasets, names.map(name => ({
+                    name,
+                    enabled: !excluded.includes(name)
+                })));
+                api.setSelected(request.datasets, selected.filter(name =>
+                    names.includes(name) && !excluded.includes(name)));
+                refreshVariables();
+            } finally {
+                refreshing = false;
+            }
+        };
+
+        if (request.excludeSelected) {
+            api.onChange(request.excludeSelected, refreshDatasets);
+        }
+
         return {
             refresh: async () => {
-                api.setValue(request.datasets, listObjectsByType('datasets'));
-
-                if (variableContainers.length) {
-                    refreshVariables();
-                }
+                refreshDatasets();
             }
         };
     };

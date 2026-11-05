@@ -23,6 +23,8 @@ export interface ObjectBindingRequest {
     dialog?: string;
     datasets: string;
     variables?: ObjectBindingVariables;
+    autoSelect?: boolean;
+    excludeSelected?: string;
 }
 
 /**
