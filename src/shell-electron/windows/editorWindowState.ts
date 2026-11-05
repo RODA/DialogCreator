@@ -4,7 +4,7 @@ import * as path from 'path';
 
 const EDITOR_WINDOW_STATE_FILE = 'editor-window-state.json';
 
-export const EDITOR_WINDOW_DEFAULT_WIDTH = 1050;
+export const EDITOR_WINDOW_DEFAULT_WIDTH = 1064;
 export const EDITOR_WINDOW_DEFAULT_HEIGHT = 680;
 
 function getEditorWindowStatePath(): string {

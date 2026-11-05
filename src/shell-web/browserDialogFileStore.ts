@@ -3,7 +3,10 @@ import {
     isDialogPackageName,
     readDialogPackage
 } from '../core/dialog-package/dialogPackageFormat';
-import { defaultDialogPackageFileName } from '../core/document/dialogDocumentRules';
+import {
+    defaultDialogPackageFileName,
+    validateDialogJsonForSave
+} from '../core/document/dialogDocumentRules';
 
 export type BrowserDialogLoadResult =
     | { ok: true; json: string; fileName: string }
@@ -38,6 +41,7 @@ export async function readBrowserDialogPackage(file: File): Promise<BrowserDialo
 
 export function createBrowserDialogPackage(json: string, requestedName?: string): BrowserDialogSaveResult {
     try {
+        validateDialogJsonForSave(json);
         const fileName = requestedName && isDialogPackageName(requestedName)
             ? requestedName
             : defaultDialogPackageFileName(json);

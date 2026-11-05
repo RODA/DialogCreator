@@ -1,3 +1,4 @@
+import { rendererEnvironment } from '../renderer/environment';
 // encapsulation
 
 import { Communications } from '../interfaces/coms';
@@ -59,6 +60,8 @@ const registeredChannels = new Set<string>();
 
 export function setRendererTransport(nextTransport: RendererTransport): void {
     transport = nextTransport;
+    rendererEnvironment.log = (message) => coms.sendTo('editorWindow', 'consolog', message);
+    rendererEnvironment.reportError = (message) => showError(message);
     rendererTransportConfigured = true;
     for (const channel of pendingTransportChannels) {
         registerTransportListener(channel);
@@ -148,8 +151,10 @@ export const coms = {
         messenger.once(channel, listener);
     },
 
-    fontSize: 12,
-    fontFamily: "'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, 'Noto Sans', 'Liberation Sans', sans-serif",
+    get fontSize() { return rendererEnvironment.fontSize; },
+    set fontSize(value: number) { rendererEnvironment.fontSize = value; },
+    get fontFamily() { return rendererEnvironment.fontFamily; },
+    set fontFamily(value: string) { rendererEnvironment.fontFamily = value; },
 } satisfies Communications;
 
 coms.on('consolog', (...args: unknown[]) => {
@@ -168,3 +173,10 @@ export const showMessage = (
 export const showError = (message: string) => {
     showHostError(coms, message);
 }
+
+export const expect = <T>(channel: string, ...args: unknown[]): Promise<T> => {
+    return new Promise<T>((resolve) => {
+        coms.once(`${channel}-result`, (payload) => resolve(payload as T));
+        coms.emit(channel, ...args);
+    });
+};

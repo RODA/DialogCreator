@@ -1,5 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export type buttonElementType = {
+import type { ElementAnchorProperties } from '../core/layout/elementAnchoring';
+
+export type { ElementAnchorProperties } from '../core/layout/elementAnchoring';
+
+export type buttonElementType = ElementAnchorProperties & {
     id: string;
     type: 'Button';
     nameid: string;
@@ -18,7 +22,7 @@ export type buttonElementType = {
     isVisible: boolean;
     elementIds: string[];
 }
-export type inputElementType = {
+export type inputElementType = ElementAnchorProperties & {
     id: string;
     type: 'Input';
     nameid: string;
@@ -34,7 +38,7 @@ export type inputElementType = {
     isVisible: boolean;
     elementIds: string[];
 }
-export type selectElementType = {
+export type selectElementType = ElementAnchorProperties & {
     id: string;
     type: 'Select';
     nameid: string;
@@ -50,7 +54,7 @@ export type selectElementType = {
     isVisible: boolean;
     elementIds: string[];
 }
-export type checkboxElementType = {
+export type checkboxElementType = ElementAnchorProperties & {
     id: string;
     type: 'Checkbox';
     nameid: string;
@@ -66,7 +70,7 @@ export type checkboxElementType = {
     isVisible: boolean;
     elementIds: string[];
 }
-export type radioElementType = {
+export type radioElementType = ElementAnchorProperties & {
     id: string;
     type: 'Radio';
     nameid: string;
@@ -81,7 +85,7 @@ export type radioElementType = {
     isVisible: boolean;
     elementIds: string[];
 }
-export type counterElementType = {
+export type counterElementType = ElementAnchorProperties & {
     id: string;
     type: 'Counter';
     nameid: string;
@@ -99,7 +103,7 @@ export type counterElementType = {
     isVisible: boolean;
     elementIds: string[];
 }
-export type sliderElementType = {
+export type sliderElementType = ElementAnchorProperties & {
     id: string;
     type: 'Slider';
     nameid: string;
@@ -117,7 +121,7 @@ export type sliderElementType = {
     handlesize: number;
     elementIds: string[];
 }
-export type labelElementType = {
+export type labelElementType = ElementAnchorProperties & {
     id: string;
     type: 'Label';
     nameid: string;
@@ -136,7 +140,7 @@ export type labelElementType = {
     isVisible: boolean;
     elementIds: string[];
 }
-export type separatorElementType = {
+export type separatorElementType = ElementAnchorProperties & {
     id: string;
     type: 'Separator';
     nameid: string;
@@ -150,7 +154,7 @@ export type separatorElementType = {
     isVisible: boolean;
     elementIds: string[];
 }
-export type containerElementType = {
+export type containerElementType = ElementAnchorProperties & {
     id: string;
     type: 'Container';
     nameid: string;
@@ -172,7 +176,7 @@ export type containerElementType = {
     isVisible: boolean;
     elementIds: string[];
 }
-export type choiceElementType = {
+export type choiceElementType = ElementAnchorProperties & {
     id: string;
     type: 'Choice';
     nameid: string;
@@ -226,6 +230,7 @@ export interface Elements {
 export type StringNumber = Record<string, string | number>;
 export type GeneralElements = Record<string, AnyElement>;
 export type AnyElement = Elements[keyof Elements];
+export type NonGroupElement = Exclude<AnyElement, groupElementType>;
 export type keyofAnyElement = keyof AnyElement;
 
 

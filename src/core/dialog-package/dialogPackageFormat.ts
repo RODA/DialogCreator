@@ -1,3 +1,5 @@
+import { validateDialogElementAnchorMetadata } from '../document/dialogDocumentRules';
+
 const DIALOG_JSON = 'dialog.json';
 const ACTIONS_JS = 'actions.js';
 const LEGACY_CUSTOM_JS = 'custom.js';
@@ -262,6 +264,7 @@ export function createDialogPackage(json: string): Uint8Array {
 
 export function readDialogFiles(dialogJson: string, customJS?: string): string {
     const dialog = parseDialogJson(dialogJson);
+    validateDialogElementAnchorMetadata(dialog);
     const script = dialog.script as { entry?: unknown } | undefined;
 
     if (customJS !== undefined) {

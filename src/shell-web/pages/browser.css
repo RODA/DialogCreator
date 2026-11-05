@@ -169,9 +169,9 @@ textarea {
     top: 18px;
     display: grid;
     grid-template-rows: 31px minmax(0, 1fr);
-    width: min(1050px, calc(100% - 36px));
+    width: min(1064px, calc(100% - 36px));
     height: min(680px, calc(100% - 36px));
-    min-width: 720px;
+    min-width: 734px;
     min-height: 420px;
     max-width: calc(100% - 36px);
     max-height: calc(100% - 36px);

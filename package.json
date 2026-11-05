@@ -12,11 +12,15 @@
     "lint": "eslint ./src",
     "check:host-boundaries": "node scripts/check-host-boundaries.js",
     "test:rendered": "node scripts/rendered-editor-contract.js",
+    "test:anchoring": "node scripts/check-label-anchoring-contract.js && node scripts/check-label-anchor-document-rules.js && node scripts/check-element-anchor-schema-contract.js",
+    "test:rendered:anchoring": "npm run build:web && node scripts/rendered-label-anchoring-contract.js && node scripts/rendered-element-anchoring-contract.js && node scripts/rendered-wrapped-label-anchors-contract.js",
     "test:rendered:code": "npm run build:web && node scripts/rendered-code-contract.js",
     "test:rendered:defaults": "npm run build:web && node scripts/rendered-defaults-contract.js",
     "test:rendered:electron": "npm run build && node scripts/rendered-electron-contract.js",
+    "test:rendered:electron:anchoring": "npm run build && node scripts/rendered-electron-label-anchoring-contract.js",
     "test:rendered:package": "npm run build:web && node scripts/rendered-browser-package-contract.js",
     "test:rendered:preview": "npm run build:web && node scripts/rendered-preview-contract.js",
+    "test:rendered:properties": "npm run build:web && node scripts/rendered-properties-scroll-contract.js",
     "test:rendered:syntax": "npm run build:web && node scripts/rendered-syntax-contract.js",
     "test:rendered:binding": "npm run build:web && node scripts/rendered-binding-contract.js",
     "test:rendered:web": "npm run build:web && node scripts/rendered-web-contract.js",
@@ -34,7 +38,8 @@
     "rename:linux": "bash scripts/rename-binaries-linux.sh",
     "rename:mac": "bash scripts/rename-binaries-mac.sh",
     "rename:win": "powershell -ExecutionPolicy Bypass -File scripts/rename-binaries-windows.ps1",
-    "refresh:win-update": "node scripts/refresh-windows-update-metadata.js"
+    "refresh:win-update": "node scripts/refresh-windows-update-metadata.js",
+    "package:renderer": "node scripts/export-renderer-package.js"
   },
   "author": "Adrian Dusa",
   "contributors": [

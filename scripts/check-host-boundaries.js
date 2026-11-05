@@ -38,6 +38,7 @@ const allowedElectronImportPaths = [
 ];
 
 const sharedFeaturePaths = [
+    path.join("src", "renderer"),
     path.join("src", "editor"),
     path.join("src", "preview"),
     path.join("src", "code-editor"),

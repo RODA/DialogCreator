@@ -1,7 +1,57 @@
 
 # Dialog Creator — API Reference
 
-Use this reference when writing custom JavaScript for Dialog Creator. It contains information about window helpers, event utilities, and data APIs available in the preview runtime.
+Use this reference for element-layout metadata in `dialog.json` and custom JavaScript in `actions.js`. It describes the package's declarative layout contract alongside the window helpers, event utilities, and data APIs available in the Preview runtime.
+
+
+## Element layout API — Attach to
+
+**Attach to** is an optional layout property stored on an element in `dialog.json`. It is available on Button, Input, Select, Checkbox, Radio, Counter, Slider, Label, Separator, Container, and Choice elements. The source and target must be direct siblings on the canvas or in the same Group. Groups themselves cannot be sources or targets.
+
+### Attachment fields
+
+| Editor property | JSON field | Values | Default |
+| --- | --- | --- | --- |
+| Attach to | `anchorTarget` | Target element's stable `id` string | Empty or absent: absolute positioning |
+| Side | `anchorPosition` | `left`, `right`, `above`, `below` | `left` |
+| Gap | `anchorGap` | Finite signed pixel distance | `10` |
+| Align | `anchorAlign` | `start`, `middle`, `end` | `middle` |
+| Offset | `anchorOffset` | Finite signed cross-axis pixel distance | `0` |
+
+For Left/Right, Align and Offset apply vertically; for Above/Below, they apply horizontally. A negative Gap allows overlap. Gap is measured between the rendered element boxes, including their internal padding.
+
+`anchorTarget` references the target's stable **`id`**, rather than the **`nameid`** used by scripting references such as `setValue(myLabel, text)`. Renaming the target's scripting name preserves the attachment.
+
+### Example: a Radio follows a Label
+
+Suppose a Label in the same canvas has `id: "c8d90655-0701-42c5-a673-19b0a34738da"` and `nameid: "label_bykeys"`. This Radio record places `by_order` 10px to its right, aligns their vertical centres, and moves the Radio 1px upwards:
+
+```json
+{
+    "id": "f8049952-a0a0-46a7-9fe4-844e075c1581",
+    "type": "Radio",
+    "nameid": "by_order",
+    "group": "match_method",
+    "left": 288,
+    "top": 368,
+    "size": 14,
+    "anchorTarget": "c8d90655-0701-42c5-a673-19b0a34738da",
+    "anchorPosition": "right",
+    "anchorGap": 10,
+    "anchorAlign": "middle",
+    "anchorOffset": -1
+}
+```
+
+The attachment fields are authored package metadata. Configure them through the editor's Layout properties or the element record in `dialog.json`; `actions.js` continues to use the scripting API below for interaction.
+
+### Dependencies, measurement, and persistence
+
+An attached element can itself be a target. For example, a Radio can follow a Label that follows another Radio. Chains resolve from targets to their dependants using measured element sizes. Labels are measured after translation and font layout; `maxWidth` is a cap, and untruncated wrapped labels fit their visible lines with the standard insets. `lineClamp` still controls visible lines and ellipsis. Text changes through `setValue()` update the attachment layout as well.
+
+Self-references and direct or transitive cycles are invalid. The editor disables circular targets and shows the dependency path in their tooltip. Imported missing or cyclic relationships remain visible with an error so they can be repaired; they are never silently detached. Saving requires a valid attachment graph. Malformed active field values are rejected during package loading.
+
+Absolute positioning remains the default, and new writes omit the five attachment fields for absolute elements. While attached, serialized `left` and `top` retain the authored fallback position; the editor and Preview calculate the visible position. The editor displays that calculated Left/Top as read-only. Choosing **None (absolute)** detaches at the current visible position and stores it as the new absolute Left/Top.
 
 
 ## Scripting API — reference
@@ -27,7 +77,7 @@ Use this reference when writing custom JavaScript for Dialog Creator. It contain
 
 - Set the value/text.
 - Input/Label: set string; Counter: set number within its min/max; Select: set selected option by value; Checkbox/Radio: set boolean state.
-- For Container, pass an array of strings or objects shaped like `{ name, numeric, active }`, where type flags are boolean fields.
+- For Container, pass an array of strings or objects shaped like `{ name, numeric, active, enabled }`, where type flags are boolean fields. Set `enabled: false` to gray out an item and prevent selection.
 - For Container with **Pin on top** enabled, selected rows are re-rendered above unselected rows in Preview after the value update. If **Item Order** is also enabled, pinned rows follow the stored selection order.
 - For Choice, pass either an array of strings like `['var1:asc', 'var2:desc']`, plain strings like `['var1', 'var2']`, or objects shaped like `{ text, state }`.
 - For Choice with Ordering set to `no`, any active state is normalized to a simple selected state. For Ordering set to `increasing` or `decreasing`, both `asc` and `desc` are preserved.

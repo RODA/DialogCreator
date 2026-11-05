@@ -89,7 +89,9 @@ function clearStalePropertiesPanel(
     document.querySelectorAll('#propertiesList .element-property').forEach((item) => {
         item.classList.add('hidden-element');
     });
-    document.querySelectorAll('#propertiesList [id^="el"]').forEach((item) => {
+    document.querySelectorAll(
+        '#propertiesList [id^="el"]:not([id^="element-anchor-"])'
+    ).forEach((item) => {
         (item as HTMLInputElement).value = '';
     });
 

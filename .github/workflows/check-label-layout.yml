@@ -1,0 +1,50 @@
+name: check dialog layout
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dialog-layout:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22.13.0
+          cache: npm
+
+      - name: Install dependencies and browser
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Check label contract and host boundaries
+        run: |
+          npm run test:anchoring
+          npm run check:host-boundaries
+
+      - name: Build browser host
+        run: npm run build:web
+
+      - name: Check rendered editor and Preview geometry
+        run: |
+          node scripts/rendered-editor-contract.js
+          node scripts/rendered-preview-contract.js
+          node scripts/rendered-label-anchoring-contract.js
+          node scripts/rendered-element-anchoring-contract.js
+          node scripts/rendered-wrapped-label-anchors-contract.js
+          node scripts/rendered-properties-scroll-contract.js

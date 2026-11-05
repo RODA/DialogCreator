@@ -10,6 +10,13 @@ import { renderutils } from '../library/renderutils';
 import { utils } from '../library/utils';
 import { requestElementProperties } from '../core/catalog/elementCatalogIpc';
 import { openHostSecondWindow } from '../core/host/dialogChildWindow';
+import {
+    followsSelectedAnchor,
+    hasElementAnchor,
+    moveAnchoredElement,
+    refreshElementAnchors
+} from '../library/elementAnchoring';
+import { refreshElementAnchorProperties } from '../editor/elementAnchorProperties';
 
 let lastContextTargetId: string | null = null;
 let contextMenu: HTMLElement | null = null;
@@ -495,6 +502,21 @@ function makeGroupFromSelection(persistent = false) {
         return;
     }
 
+    const selected = ids.map((id) => dialog.getElement(id)).filter(Boolean) as HTMLElement[];
+    const selectedContains = (element: HTMLElement): boolean => {
+        return selected.some((candidate) => candidate === element || candidate.contains(element));
+    };
+    for (const element of dialog.canvas.querySelectorAll<HTMLElement>('.element-wrapper')) {
+        if (!hasElementAnchor(element)) {
+            continue;
+        }
+        const target = dialog.getElement(element.dataset.anchorTarget?.trim() || '');
+        if (selectedContains(element) !== Boolean(target && selectedContains(target))) {
+            showError('Select both the attached control and its target when grouping, or detach the control first.');
+            return;
+        }
+    }
+
     const groupId = renderutils.makeGroupFromSelection(ids, true);
     if (!groupId) return;
     const groupEl = dialog.getElement(groupId) as HTMLElement | undefined;
@@ -520,8 +542,12 @@ export const editor: Editor = {
             return;
         }
 
-        const anchorLeft = Number(anchor.dataset.left ?? (parseInt(anchor.style.left || '0', 10) || 0));
-        const anchorTop = Number(anchor.dataset.top ?? (parseInt(anchor.style.top || '0', 10) || 0));
+        const anchorLeft = hasElementAnchor(anchor)
+            ? parseFloat(anchor.style.left) || 0
+            : Number(anchor.dataset.left ?? (parseFloat(anchor.style.left) || 0));
+        const anchorTop = hasElementAnchor(anchor)
+            ? parseFloat(anchor.style.top) || 0
+            : Number(anchor.dataset.top ?? (parseFloat(anchor.style.top) || 0));
         const anchorWidth = anchor.offsetWidth;
         const anchorHeight = anchor.offsetHeight;
         const targets = orderedIds.slice(1);
@@ -575,8 +601,12 @@ export const editor: Editor = {
             }
 
             const isGroupContainer = el.classList.contains('element-group');
-            const currentLeft = Number(el.dataset.left ?? (parseInt(el.style.left || '0', 10) || 0));
-            const currentTop = Number(el.dataset.top ?? (parseInt(el.style.top || '0', 10) || 0));
+            const currentLeft = hasElementAnchor(el)
+                ? parseFloat(el.style.left) || 0
+                : Number(el.dataset.left ?? (parseFloat(el.style.left) || 0));
+            const currentTop = hasElementAnchor(el)
+                ? parseFloat(el.style.top) || 0
+                : Number(el.dataset.top ?? (parseFloat(el.style.top) || 0));
             const elWidth = el.offsetWidth;
             const elHeight = el.offsetHeight;
             const props: Record<string, number> = {};
@@ -642,10 +672,10 @@ export const editor: Editor = {
             }
 
             renderutils.updateElement(el, props as StringNumber);
-            if (props.left !== undefined) {
+            if (props.left !== undefined && !hasElementAnchor(el)) {
                 el.dataset.left = String(props.left);
             }
-            if (props.top !== undefined) {
+            if (props.top !== undefined && !hasElementAnchor(el)) {
                 el.dataset.top = String(props.top);
             }
         }
@@ -868,6 +898,10 @@ export const editor: Editor = {
 
             for (const [key, value] of datasetEntries) {
                 if (value === undefined || SKIP_KEYS.has(key)) continue;
+                if (key === 'anchorTarget') {
+                    copy[key] = value;
+                    continue;
+                }
                 const kind = elementKinds[key] ?? inferKindFromTemplate(template, key);
                 const templateValue = template[key];
                 copy[key] = coerceDatasetValue(value, kind, templateValue);
@@ -983,13 +1017,34 @@ export const editor: Editor = {
                 .filter((el): el is HTMLElement => el instanceof HTMLElement && el.classList.contains('element-wrapper'));
 
             const newIds: string[] = [];
+            const duplicatedIds = new Map<string, string>();
             for (const child of children) {
                 const id = duplicateChildIntoGroup(child, groupEl);
-                if (id) newIds.push(id);
+                if (id) {
+                    newIds.push(id);
+                    duplicatedIds.set(child.id, id);
+                }
+            }
+            for (const id of newIds) {
+                const child = dialog.getElement(id)!;
+                const target = duplicatedIds.get(child.dataset.anchorTarget?.trim() || '');
+                if (target) {
+                    child.dataset.anchorTarget = target;
+                }
             }
             groupEl.dataset.elementIds = newIds.join(',');
+            refreshElementAnchors(dialog.canvas);
 
             applySelection([groupEl.id]);
+            return;
+        }
+
+        if (hasElementAnchor(source) && source.parentElement?.classList.contains('element-group')) {
+            const id = duplicateChildIntoGroup(source, source.parentElement);
+            if (id) {
+                refreshElementAnchors(dialog.canvas);
+                applySelection([id]);
+            }
             return;
         }
 
@@ -1002,6 +1057,10 @@ export const editor: Editor = {
 
         for (const [key, value] of datasetEntries) {
             if (value === undefined || SKIP_KEYS.has(key)) continue;
+            if (key === 'anchorTarget') {
+                copy[key] = value;
+                continue;
+            }
             const kind = elementKinds[key] ?? inferKindFromTemplate(template, key);
             const templateValue = template[key];
             copy[key] = coerceDatasetValue(value, kind, templateValue);
@@ -1444,8 +1503,13 @@ export const editor: Editor = {
                     if (ntop > maxTop) ntop = maxTop;
                     if (ntop < 10) ntop = 10;
 
-                    el.style.left = Math.round(nleft) + 'px';
-                    el.style.top = Math.round(ntop) + 'px';
+                    if (followsSelectedAnchor(el, multiSelected)) {
+                        continue;
+                    }
+                    if (!moveAnchoredElement(el, Math.round(nleft), Math.round(ntop))) {
+                        el.style.left = Math.round(nleft) + 'px';
+                        el.style.top = Math.round(ntop) + 'px';
+                    }
                 }
                 isMoved = true;
                 return;
@@ -1476,8 +1540,10 @@ export const editor: Editor = {
             top = Math.round(top);
             left = Math.round(left);
 
-            dragTarget.style.left = left + 'px';
-            dragTarget.style.top = top + 'px';
+            if (!moveAnchoredElement(dragTarget, left, top)) {
+                dragTarget.style.left = left + 'px';
+                dragTarget.style.top = top + 'px';
+            }
             isMoved = true;
         });
 
@@ -1496,6 +1562,10 @@ export const editor: Editor = {
 
                         const leftNum = Math.round(parseInt(el.style.left || '0', 10) || 0);
                         const topNum = Math.round(parseInt(el.style.top || '0', 10) || 0);
+                        if (hasElementAnchor(el)) {
+                            suppressClickFor.add(id);
+                            continue;
+                        }
                         el.dataset.left = String(leftNum);
                         el.dataset.top = String(topNum);
                         dialog.updateElementProperties(id, { top: String(topNum), left: String(leftNum) });
@@ -1509,17 +1579,19 @@ export const editor: Editor = {
                         }
                     }
 
-                    dragTarget.style.top = top + 'px';
-                    dragTarget.dataset.left = String(left);
-                    dragTarget.dataset.top = String(top);
+                    if (!hasElementAnchor(dragTarget)) {
+                        dragTarget.style.top = top + 'px';
+                        dragTarget.dataset.left = String(left);
+                        dragTarget.dataset.top = String(top);
 
-                    dialog.updateElementProperties(
-                        dragTarget.id,
-                        {
-                            top: String(top),
-                            left: String(left)
-                        }
-                    );
+                        dialog.updateElementProperties(
+                            dragTarget.id,
+                            {
+                                top: String(top),
+                                left: String(left)
+                            }
+                        );
+                    }
 
                     // Suppress the click that follows mouseup for the moved target and its children (if group)
                     suppressClickFor.add(dragTarget.id);
@@ -1533,6 +1605,7 @@ export const editor: Editor = {
             }
             multiDragActive = false;
             multiDragSnapshot.clear();
+            refreshElementAnchors(dialog.canvas);
         });
 
         document.addEventListener('dragend', () => {
@@ -1582,8 +1655,11 @@ export const editor: Editor = {
 
     // clear element props
     clearPropsList() {
+        refreshElementAnchorProperties(null);
         // clear data form
-        const properties = document.querySelectorAll('#propertiesList [id^="el"]');
+        const properties = document.querySelectorAll(
+            '#propertiesList [id^="el"]:not([id^="element-anchor-"])'
+        );
 
         properties.forEach(item => {
             (item as HTMLInputElement).value = '';
@@ -1633,6 +1709,9 @@ export const editor: Editor = {
 
     propertyUpdate: function(ev) {
         const el = ev.target as HTMLInputElement;
+        if (el instanceof HTMLInputElement && el.readOnly) {
+            return;
+        }
             // console.log(el);
             // editor.updateElement({ [el.name]: el.value });
 
@@ -1794,8 +1873,13 @@ export const editor: Editor = {
 
             for (const [key, raw] of Object.entries(node.dataset)) {
                 if (key === 'id') continue;
+                if (key.startsWith('anchor') && !hasElementAnchor(node)) {
+                    continue;
+                }
                 let value: unknown = raw;
-                if (raw === 'true' || raw === 'false') {
+                if (key === 'anchorTarget') {
+                    value = String(raw || '');
+                } else if (raw === 'true' || raw === 'false') {
                     value = raw === 'true';
                 } else if (typeof raw === 'string' && utils.possibleNumeric(raw)) {
                     value = utils.asNumeric(raw);
@@ -2139,6 +2223,7 @@ export const editor: Editor = {
                 el.dataset.left = String(pos.left);
                 el.dataset.top = String(pos.top);
             });
+            refreshElementAnchors(dialog.canvas);
         } catch (error) {
             console.error('loadDialogFromJson failed', error);
         }

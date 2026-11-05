@@ -74,6 +74,7 @@ export const ELEMENT_FIRST_ARG_CALLS: ReadonlyArray<keyof PreviewUI> = Object.fr
 const DATASET_ITEM_FLAGS = ['numeric', 'factor', 'calibrated', 'binary', 'character', 'categorical', 'date'] as const;
 type DatasetItemFlag = typeof DATASET_ITEM_FLAGS[number];
 type ContainerItem = {
+    enabled?: boolean;
     name: string;
     active?: boolean;
     flags: Partial<Record<DatasetItemFlag, boolean>>;
@@ -364,6 +365,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             return {
                 name,
                 active: source.active === true,
+                enabled: source.enabled !== false,
                 flags
             };
         }
@@ -423,14 +425,15 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
             }, { passive: false });
         }
 
-        target.replaceChildren();
+        const fragment = document.createDocumentFragment();
 
-        items.forEach((item) => {
+        items.forEach((item, index) => {
             const value = item.name;
             const div = document.createElement('div');
             div.className = 'container-item';
             div.dataset.value = value;
-            div.dataset.baseOrder = String(target!.children.length);
+            div.dataset.itemEnabled = String(item.enabled !== false);
+            div.dataset.baseOrder = String(index);
             const activeFlags = DATASET_ITEM_FLAGS.filter((flag) => item.flags[flag] === true);
             if (activeFlags.length > 0) {
                 div.dataset.itemFlags = activeFlags.join(',');
@@ -449,8 +452,9 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
 
             attachContainerItemHandler(host, target, div);
 
-            target.appendChild(div);
+            fragment.appendChild(div);
         });
+        target.replaceChildren(fragment);
 
         host.dataset.activeValues = Array.from(
             target.querySelectorAll<HTMLElement>('.container-item.active')
@@ -1142,6 +1146,10 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                 return Number.isFinite(n) ? n : 0;
             }
 
+            if (eltype === 'Slider') {
+                return Number(el.dataset.handlepos ?? 50) / 100;
+            }
+
             if (eltype === 'Choice') {
                 return readSorterItems(el);
             }
@@ -1226,6 +1234,20 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                     el.dataset.value = String(value);
                 }
 
+                return;
+            }
+
+            if (eltype === 'Counter') {
+                updateElement(el, { startval: String(value) });
+                return;
+            }
+
+            if (eltype === 'Slider') {
+                const position = Number(value);
+                if (!Number.isFinite(position)) {
+                    throw new TypeError('Slider value must be a finite number');
+                }
+                updateElement(el, { handlepos: String(Math.max(0, Math.min(1, position)) * 100) });
                 return;
             }
 
@@ -1324,7 +1346,7 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
                     ? ds.split(',').map(s => s.trim()).filter(s => s.length > 0)
                     : [];
 
-                return dsVals.length > 0 ? dsVals : '';
+                return dsVals;
             }
 
             if (eltype === 'Choice') {
@@ -1784,11 +1806,6 @@ export function createPreviewUI(env: PreviewUIEnv): PreviewUI {
 
                 if (kind !== 'multiple') {
                     selValues = selValues.length ? [selValues[0]] : [];
-                    if (kind === 'single-radio' && selValues.length === 0) {
-                        const firstSelectable = items.find((item) => item.dataset.disabled !== 'true');
-                        const fallback = (firstSelectable?.querySelector('.container-text') as HTMLElement | null)?.textContent || '';
-                        selValues = fallback.trim() ? [fallback.trim()] : [];
-                    }
                 }
 
                 // Replace selection to exactly match selValues

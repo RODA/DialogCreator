@@ -11,6 +11,7 @@ export interface ContainerItemDescriptor {
     categorical?: boolean;
     date?: boolean;
     active?: boolean;
+    enabled?: boolean;
 }
 
 export type ObjectBindingVariables =

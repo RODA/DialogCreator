@@ -506,7 +506,7 @@ function installMainWindowResize(): void {
             const startY = event.clientY;
             const startWidth = win.offsetWidth;
             const startHeight = win.offsetHeight;
-            const minWidth = 720;
+            const minWidth = 734;
             const minHeight = 420;
             const maxWidth = Math.max(minWidth, desktop.clientWidth - win.offsetLeft);
             const maxHeight = Math.max(minHeight, desktop.clientHeight - win.offsetTop);

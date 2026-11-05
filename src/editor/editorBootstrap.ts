@@ -1,3 +1,4 @@
+import { expect } from '../modules/coms';
 /*
     Copyright (c) 2025, Adrian Dusa
     All rights reserved.
@@ -7,7 +8,7 @@
 */
 
 import { showError, coms, setRendererTransport } from "../modules/coms";
-import { renderutils, expect } from "../library/renderutils";
+import { renderutils } from "../library/renderutils";
 import { utils } from "../library/utils";
 import { Elements, AnyElement, keyofAnyElement, StringNumber } from '../interfaces/elements';
 import { elements as els } from '../modules/elements';
@@ -22,6 +23,13 @@ import {
 } from "../core/catalog/elementCatalogIpc";
 import { sendDialogDocumentJsonUpdated } from "../core/document/dialogDocumentIpc";
 import { openHostSecondWindow } from "../core/host/dialogChildWindow";
+import { installElementAnchorProperties, refreshElementAnchorProperties } from './elementAnchorProperties';
+import {
+    hasElementAnchor,
+    installElementAnchors,
+    refreshElementAnchors,
+    setElementAnchorProperties
+} from '../library/elementAnchoring';
 
 export function bootEditor(rendererTransport: RendererTransport): void {
 setRendererTransport(rendererTransport);
@@ -116,7 +124,9 @@ coms.on('elementSelected', (id) => {
     }
     const dataset = element.dataset;
 
-    const ellist = document.querySelectorAll('#propertiesList [id^="el"]');
+    const ellist = document.querySelectorAll(
+        '#propertiesList [id^="el"]:not([id^="element-anchor-"])'
+    );
     // disable all elements and hide everything | reseting props tab
     ellist.forEach(el => {
         const item = el as HTMLInputElement | HTMLSelectElement;
@@ -237,12 +247,13 @@ coms.on('elementSelected', (id) => {
         groupBtn.disabled = !(selectedCount >= 2 && !isGroup);
         ungroupBtn.disabled = !isGroup;
     }
-
+    refreshElementAnchorProperties(element);
 });
 
     // Multi-selection (ephemeral): show group-like properties (Left/Top + read-only Width/Height) and enable Group button
 coms.on('elementSelectedMultiple', (...args: unknown[]) => {
     elementSelected = true;
+    refreshElementAnchorProperties(null);
 
     // Show properties panel and prepare fields
     const propsList = document.getElementById('propertiesList');
@@ -398,6 +409,35 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     await editor.initializeDialogProperties();
     await editor.makeDialog();
+    installElementAnchors(dialog.canvas, {
+        updateLabel: (label) => renderutils.updateLabel(label)
+    });
+    installElementAnchorProperties({
+        onChange(element, properties) {
+            const detachedPosition = hasElementAnchor(element) && properties.anchorTarget === ''
+                ? { left: element.style.left, top: element.style.top }
+                : null;
+            setElementAnchorProperties(element, { ...properties });
+            if (element.dataset.type === 'Label') {
+                renderutils.updateLabel(element);
+            }
+            if (detachedPosition) {
+                for (const property of ['left', 'top'] as const) {
+                    element.style[property] = detachedPosition[property];
+                    element.dataset[property] = String(parseFloat(detachedPosition[property]));
+                    const input = document.getElementById(`el${property}`) as HTMLInputElement | null;
+                    if (input) {
+                        input.value = element.dataset[property] || '';
+                    }
+                }
+            }
+            refreshElementAnchors(dialog.canvas);
+            scheduleJsonUpdate();
+        }
+    });
+    dialog.canvas.addEventListener('element-anchors-updated', () => {
+        refreshElementAnchorProperties();
+    });
     await editor.addAvailableElementsTo("editor");
     await editor.addDefaultsButton();
 
@@ -563,51 +603,13 @@ window.addEventListener("DOMContentLoaded", async () => {
         const selectedEls = Array.from(document.querySelectorAll('#dialog .selectedElement')) as HTMLElement[];
         if (selectedEls.length === 0) return;
 
-        if (selectedEls.length > 1) {
-            // Ephemeral multi-selection: nudge all selected elements together
-            let dx = 0, dy = 0;
-            if (isArrowUp) dy = -step;
-            if (isArrowDown) dy = step;
-            if (isArrowLeft) dx = -step;
-            if (isArrowRight) dx = step;
-            if (dx !== 0 || dy !== 0) {
-                for (const sel of selectedEls) {
-                    const currentLeft = Number(sel.dataset.left ?? (parseInt(sel.style.left || '0', 10) || 0));
-                    const currentTop = Number(sel.dataset.top ?? (parseInt(sel.style.top || '0', 10) || 0));
-                    const props = {
-                        left: currentLeft + dx,
-                        top: currentTop + dy
-                    } as StringNumber;
-                    renderutils.updateElement(sel, props);
-                    sel.dataset.left = String(props.left);
-                    sel.dataset.top = String(props.top);
-                }
-            }
-        } else {
-            // Single selection (or a persistent group container)
-            const info = renderutils.getDialogInfo();
-            const el = info.selected as HTMLElement | null;
-            if (!el) return;
-
-            const currentLeft = Number(el.dataset.left ?? (parseInt(el.style.left || '0', 10) || 0));
-            const currentTop = Number(el.dataset.top ?? (parseInt(el.style.top || '0', 10) || 0));
-            let newLeft = currentLeft;
-            let newTop = currentTop;
-
-            if (isArrowUp) newTop = currentTop - step;
-            if (isArrowDown) newTop = currentTop + step;
-            if (isArrowLeft) newLeft = currentLeft - step;
-            if (isArrowRight) newLeft = currentLeft + step;
-
-            const props = {} as StringNumber;
-            if (newLeft !== currentLeft) props.left = newLeft;
-            if (newTop !== currentTop) props.top = newTop;
-            if (Object.keys(props).length) {
-                renderutils.updateElement(el, props);
-                if (props.left !== undefined) el.dataset.left = String(props.left);
-                if (props.top !== undefined) el.dataset.top = String(props.top);
-            }
-        }
+        let dx = 0;
+        let dy = 0;
+        if (isArrowUp) dy = -step;
+        if (isArrowDown) dy = step;
+        if (isArrowLeft) dx = -step;
+        if (isArrowRight) dx = step;
+        renderutils.moveElementsBy(selectedEls.map((element) => element.id), dx, dy);
 
         ev.preventDefault();
     });

@@ -159,6 +159,38 @@
                             <label for="eltop">Top</label>
                             <input name="top" type="text" id="eltop" />
                         </div>
+                        <div class="element-property hidden-element" id="element-anchor-target-row">
+                            <label for="element-anchor-target">Attach to</label>
+                            <select name="anchorTarget" id="element-anchor-target" aria-describedby="element-anchor-error">
+                                <option value="">None (absolute)</option>
+                            </select>
+                        </div>
+                        <div class="element-property element-anchor-detail hidden-element" id="element-anchor-position-row">
+                            <label for="element-anchor-position">Side</label>
+                            <select name="anchorPosition" id="element-anchor-position">
+                                <option value="left">Left</option>
+                                <option value="right">Right</option>
+                                <option value="above">Above</option>
+                                <option value="below">Below</option>
+                            </select>
+                        </div>
+                        <div class="element-property element-anchor-detail hidden-element" id="element-anchor-gap-row">
+                            <label for="element-anchor-gap">Gap</label>
+                            <input name="anchorGap" type="text" inputmode="decimal" id="element-anchor-gap" aria-describedby="element-anchor-error" />
+                        </div>
+                        <div class="element-property element-anchor-detail hidden-element" id="element-anchor-align-row">
+                            <label for="element-anchor-align">Align</label>
+                            <select name="anchorAlign" id="element-anchor-align">
+                                <option value="start">Start</option>
+                                <option value="middle">Middle</option>
+                                <option value="end">End</option>
+                            </select>
+                        </div>
+                        <div class="element-property element-anchor-detail hidden-element" id="element-anchor-offset-row">
+                            <label for="element-anchor-offset">Offset</label>
+                            <input name="anchorOffset" type="text" inputmode="decimal" id="element-anchor-offset" aria-describedby="element-anchor-error" />
+                        </div>
+                        <p id="element-anchor-error" class="element-anchor-error hidden-element" role="status" aria-live="polite"></p>
                         <div class="element-property hidden-element">
                             <label for="elwidth">Width</label>
                             <input name="width" type="text" id="elwidth" />

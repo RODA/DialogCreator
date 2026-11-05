@@ -13,12 +13,23 @@ import {
     UniformSchema,
     StringNumber
 } from "../interfaces/elements";
-import { showError, coms } from '../modules/coms';
+import { rendererEnvironment as coms } from '../renderer/environment';
+const showError = (message: string): void => coms.reportError(message);
 import { EVENT_NAMES, EventName } from '../library/api';
-import { sendEditorConsoleLog } from '../core/host/editorWindowEvents';
 import { v4 as uuidv4 } from 'uuid';
 import tippy from "tippy.js";
 import Sortable = require("sortablejs");
+import {
+    ELEMENT_ANCHOR_PROPERTY_TYPES,
+    readElementAnchor
+} from '../core/layout/elementAnchoring';
+import {
+    followsSelectedAnchor,
+    hasElementAnchor,
+    moveAnchoredElement,
+    refreshElementAnchors,
+    requestElementAnchorLayout
+} from './elementAnchoring';
 
 let __uniformSchema: UniformSchema | null = null;
 
@@ -416,7 +427,8 @@ const applyContainerItemFilter = (host: HTMLElement | null) => {
             .map(flag => normalizeContainerItemType(flag))
             .filter(Boolean);
         const hasExplicitType = Boolean(rawItemType) || itemFlags.length > 0;
-        const blocked = !allowAll && hasExplicitType && itemType !== allowed && !itemFlags.includes(allowed);
+        const blocked = item.dataset.itemEnabled === 'false'
+            || (!allowAll && hasExplicitType && itemType !== allowed && !itemFlags.includes(allowed));
         const label = item.querySelector('.container-text') as HTMLElement | null;
         const text = String(label?.textContent || item.dataset.value || '').trim().toLowerCase();
         const matchesQuery = !query || text.includes(query);
@@ -1221,8 +1233,7 @@ export const renderutils: RenderUtils = {
 
         const errs = (renderutils.assertTypes(data, { collect: true }) || []) as string[];
         if (errs.length) {
-            sendEditorConsoleLog(
-                coms,
+            coms.log(
                 'Element creation aborted due to invalid or missing properties:\n' + errs.join('\n')
             );
         }
@@ -1649,6 +1660,10 @@ export const renderutils: RenderUtils = {
             element.dataset.ordering = normalizeChoiceOrdering(data.ordering);
             element.dataset.orientation = normalizeChoiceOrientation((data as Record<string, unknown>).orientation);
             element.dataset.items = String(data.items || '');
+            const itemLabels = (data as Record<string, unknown>).__itemLabels;
+            if (itemLabels && typeof itemLabels === 'object') {
+                element.dataset.itemLabels = JSON.stringify(itemLabels);
+            }
             element.dataset.align = String(data.align || 'left');
 
             // Preview should start with no selection (Choice has no "Value" property).
@@ -1770,6 +1785,15 @@ export const renderutils: RenderUtils = {
         // const all: Record<string, any> = {... element.dataset, ... properties};
         const props: Record<string, any> = {... properties}; // copy of properties only
         const inner = element.firstElementChild as HTMLElement | null;
+
+        if (hasElementAnchor(element) && (props.left !== undefined || props.top !== undefined)) {
+            const left = props.left === undefined ? parseFloat(element.style.left) : Number(props.left);
+            const top = props.top === undefined ? parseFloat(element.style.top) : Number(props.top);
+            if (moveAnchoredElement(element, left, top)) {
+                delete props.left;
+                delete props.top;
+            }
+        }
 
         Object.keys(props).forEach((key) => {
 
@@ -2736,6 +2760,10 @@ export const renderutils: RenderUtils = {
                     break;
 
                 case 'isSelected':
+                    const nativeRadio = element.querySelector<HTMLInputElement>('input[type="radio"]');
+                    if (nativeRadio) {
+                        nativeRadio.checked = utils.isTrue(value);
+                    }
                     if (customRadio) {
                         if (utils.isTrue(value)) {
                             // Enforce single selection within the same radio group
@@ -2863,7 +2891,7 @@ export const renderutils: RenderUtils = {
         if (sorter && sorterNeedsRender) {
             renderutils.renderSorter(element);
         }
-
+        requestElementAnchorLayout(element);
     },
 
     // Propagate an element name change across customJS for ui.on(...) and ui.trigger(...) first argument (identifier or quoted)
@@ -3011,7 +3039,8 @@ export const renderutils: RenderUtils = {
 
             const label = document.createElement('span');
             label.className = 'sorter-label';
-            label.textContent = item.text;
+            const itemLabels = JSON.parse(datasetSource.dataset.itemLabels || '{}') as Record<string, string>;
+            label.textContent = itemLabels[item.text] ?? item.text;
             label.style.textAlign = align as 'left' | 'center' | 'right';
 
             const indicator = document.createElement('span');
@@ -3211,6 +3240,7 @@ export const renderutils: RenderUtils = {
         const host = (element.firstElementChild as HTMLElement | null) || element;
 
         let dataset = element.dataset;
+        const anchored = hasElementAnchor(element);
         const currentLeft = Number(element.dataset.left ?? (parseInt(element.style.left || '0', 10) || 0));
         const currentTop = Number(element.dataset.top ?? (parseInt(element.style.top || '0', 10) || 0));
         const currentWidth = Math.ceil(element.getBoundingClientRect().width || utils.asNumeric(element.style.width.replace('px', '')) || 0);
@@ -3401,6 +3431,79 @@ export const renderutils: RenderUtils = {
             return width + (horizontalInset * 2) + 2;
         };
 
+        const measureWrappedLabelWidth = (maximumWidth: number): number => {
+            const probe = host.cloneNode(true) as HTMLElement;
+            const probeText = probe.querySelector('.smart-label-text');
+            if (!probeText) {
+                return maximumWidth;
+            }
+
+            const computed = window.getComputedStyle(host);
+            probe.removeAttribute('id');
+            probe.style.position = 'absolute';
+            probe.style.left = '-100000px';
+            probe.style.top = '0px';
+            probe.style.visibility = 'hidden';
+            probe.style.pointerEvents = 'none';
+            probe.style.font = computed.font;
+            probe.style.letterSpacing = computed.letterSpacing;
+            probe.style.wordSpacing = computed.wordSpacing;
+            probe.style.direction = computed.direction;
+            probe.style.textTransform = computed.textTransform;
+            probe.style.textAlign = 'left';
+            probe.style.transform = 'none';
+            probe.style.display = 'block';
+            probe.style.height = 'auto';
+            probe.style.maxHeight = 'none';
+            probe.style.width = `${maximumWidth}px`;
+            probe.style.maxWidth = `${maximumWidth}px`;
+            probe.style.overflow = 'visible';
+            probe.style.removeProperty('-webkit-line-clamp');
+            probe.style.removeProperty('-webkit-box-orient');
+            document.body.appendChild(probe);
+
+            try {
+                const range = document.createRange();
+                range.selectNodeContents(probeText);
+                const lineHeight = fontSize * 1.2;
+                const measureLines = (): number[] => {
+                    const rectangles = Array.from(range.getClientRects()).filter((rect) => {
+                        return rect.width > 0 && rect.height > 0;
+                    });
+                    const firstTop = Math.min(...rectangles.map((rect) => rect.top));
+                    const bounds = new Map<number, { left: number; right: number }>();
+                    for (const rect of rectangles) {
+                        const line = Math.round((rect.top - firstTop) / lineHeight);
+                        const current = bounds.get(line);
+                        bounds.set(line, {
+                            left: Math.min(current?.left ?? rect.left, rect.left),
+                            right: Math.max(current?.right ?? rect.right, rect.right)
+                        });
+                    }
+                    return Array.from(bounds).sort(([left], [right]) => left - right)
+                        .map(([, rect]) => rect.right - rect.left);
+                };
+
+                const originalLines = measureLines();
+                if (originalLines.length < 2 || originalLines.length > lines) {
+                    // Clamped overflow needs room for its ellipsis at the width limit.
+                    return maximumWidth;
+                }
+
+                const fittedWidth = Math.min(maximumWidth, Math.ceil(
+                    Math.max(...originalLines) + (horizontalInset * 2) + 2
+                ));
+                probe.style.width = `${fittedWidth}px`;
+                probe.style.maxWidth = `${fittedWidth}px`;
+                const fittedLines = measureLines();
+                const sameLines = fittedLines.length === originalLines.length
+                    && fittedLines.every((width, index) => Math.abs(width - originalLines[index]) < 0.1);
+                return sameLines ? fittedWidth : maximumWidth;
+            } finally {
+                probe.remove();
+            }
+        };
+
         // Measure the unclamped one-line DOM width. Canvas text metrics are too tight for
         // Electron's rendered Inter stack in some labels; layout metrics on `host` are also
         // unsafe here because multi-line clamping can already have wrapped the element.
@@ -3413,7 +3516,10 @@ export const renderutils: RenderUtils = {
             natural = Math.max(measuredScroll, measuredBox, singleLineHeight);
         }
 
-        const finalW = Math.max(0, maxW > 0 ? Math.min(natural, maxW) : natural);
+        let finalW = Math.max(0, maxW > 0 ? Math.min(natural, maxW) : natural);
+        if (!iconMode && lines > 1 && maxW > 0 && natural > finalW) {
+            finalW = measureWrappedLabelWidth(finalW);
+        }
         host.style.maxWidth = maxW > 0 ? `${maxW}px` : '';
         host.style.width = `${finalW}px`;
 
@@ -3424,9 +3530,13 @@ export const renderutils: RenderUtils = {
         const wrappedTextHeight = wrappedTextLabel
             ? Math.ceil(fontSize * 1.2 * Math.max(1, lines))
             : 0;
+        // Hidden overflow must not change the box when attaching or detaching a label.
+        const measuredScrollHeight = wrappedTextLabel
+            ? Math.min(host.scrollHeight || 0, wrappedTextHeight)
+            : host.scrollHeight || 0;
         const naturalH = Math.max(
             0,
-            Math.ceil(host.scrollHeight || 0),
+            Math.ceil(measuredScrollHeight),
             Math.ceil(host.getBoundingClientRect().height || 0),
             wrappedTextHeight,
             iconMode ? Math.ceil(iconSize * 1.1) : singleLineHeight
@@ -3439,7 +3549,7 @@ export const renderutils: RenderUtils = {
 
         let anchoredLeft = currentLeft;
         let anchoredTop = currentTop;
-        if (hasMeasuredWidth) {
+        if (hasMeasuredWidth && !anchored) {
             if (align === 'right') {
                 anchoredLeft = currentLeft + currentWidth - finalBoxW;
             } else if (align === 'center') {
@@ -3447,7 +3557,7 @@ export const renderutils: RenderUtils = {
                 anchoredLeft = Math.round(center - finalBoxW / 2);
             }
         }
-        if ((rotate === 90 || rotate === 270) && hasMeasuredHeight) {
+        if ((rotate === 90 || rotate === 270) && hasMeasuredHeight && !anchored) {
             if (align === 'right') {
                 anchoredTop = currentTop + currentHeight - finalBoxH;
             } else if (align === 'center') {
@@ -3455,10 +3565,12 @@ export const renderutils: RenderUtils = {
                 anchoredTop = Math.round(center - finalBoxH / 2);
             }
         }
-        element.style.left = `${anchoredLeft}px`;
-        element.style.top = `${anchoredTop}px`;
-        element.dataset.left = String(anchoredLeft);
-        element.dataset.top = String(anchoredTop);
+        if (!anchored) {
+            element.style.left = `${anchoredLeft}px`;
+            element.style.top = `${anchoredTop}px`;
+            element.dataset.left = String(anchoredLeft);
+            element.dataset.top = String(anchoredTop);
+        }
 
         // Toggle ellipsis only when needed (single-line labels)
         if (lines <= 1) {
@@ -3470,7 +3582,7 @@ export const renderutils: RenderUtils = {
         }
 
         // Keep in canvas bounds (Editor only). In Preview, do not auto-shift position.
-        if (!renderutils.previewWindow()) {
+        if (!renderutils.previewWindow() && !anchored) {
             const dialogW = dialog.canvas.getBoundingClientRect().width;
             const dialogH = dialog.canvas.getBoundingClientRect().height;
             const elleft = document.getElementById('elleft') as HTMLInputElement | null;
@@ -3555,6 +3667,10 @@ export const renderutils: RenderUtils = {
         } else {
             element.removeAttribute('title');
         }
+        if (renderutils.previewWindow() && utils.isFalse(dataset.isVisible)) {
+            element.style.display = 'none';
+        }
+        requestElementAnchorLayout(element);
     },
 
     updateHandleStyle: function(handle, obj) {
@@ -3818,6 +3934,9 @@ export const renderutils: RenderUtils = {
         const canvasRect = dialog.canvas.getBoundingClientRect();
 
         const parseAxis = (el: HTMLElement, axis: 'left' | 'top') => {
+            if (hasElementAnchor(el)) {
+                return parseFloat(el.style[axis]) || 0;
+            }
             const datasetValue = el.dataset[axis];
             if (datasetValue !== undefined) {
                 const numeric = Number(datasetValue);
@@ -3867,21 +3986,30 @@ export const renderutils: RenderUtils = {
     },
 
     moveElementsBy: function(ids: string[], dx: number, dy: number) {
+        const selectedIds = new Set(ids);
         for (const id of ids) {
             const el = dialog.getElement(id) as HTMLElement | undefined;
             if (!el) {
                 continue;
             }
 
-            const currentLeft = Number(el.dataset.left ?? (parseInt(el.style.left || '0', 10) || 0));
-            const currentTop = Number(el.dataset.top ?? (parseInt(el.style.top || '0', 10) || 0));
+            if (followsSelectedAnchor(el, selectedIds)) {
+                continue;
+            }
+            const currentLeft = hasElementAnchor(el)
+                ? parseFloat(el.style.left) : Number(el.dataset.left ?? 0);
+            const currentTop = hasElementAnchor(el)
+                ? parseFloat(el.style.top) : Number(el.dataset.top ?? 0);
             const props: Record<string, number> = { left: currentLeft + dx, top: currentTop + dy };
 
             renderutils.updateElement(el, props as StringNumber);
 
-            el.dataset.left = String(props.left);
-            el.dataset.top = String(props.top);
+            if (!hasElementAnchor(el)) {
+                el.dataset.left = String(props.left);
+                el.dataset.top = String(props.top);
+            }
         }
+        refreshElementAnchors(dialog.canvas);
     },
 
     updateCheckboxColor: function(uuid, color) {
@@ -4063,6 +4191,12 @@ export const renderutils: RenderUtils = {
             }
         }
 
+        for (const [key, kind] of Object.entries(ELEMENT_ANCHOR_PROPERTY_TYPES)) {
+            if (!skipKeys.includes(key) && allowed.has(kind)) {
+                typeMap[key] = new Set([kind]);
+            }
+        }
+
         const schema: UniformSchema = {};
 
         for (const [k, set] of Object.entries(typeMap)) {
@@ -4089,7 +4223,22 @@ export const renderutils: RenderUtils = {
         const active = schema || __uniformSchema!;
         const errors: string[] = [];
 
+        if (!schema) {
+            // Attachment metadata is optional and has shared semantic validation.
+            try {
+                readElementAnchor(data);
+            } catch (error) {
+                if (!collect) {
+                    throw error;
+                }
+                errors.push(error instanceof Error ? error.message : String(error));
+            }
+        }
+
         for (const [key, expected] of Object.entries(active)) {
+            if (!schema && Object.prototype.hasOwnProperty.call(ELEMENT_ANCHOR_PROPERTY_TYPES, key)) {
+                continue;
+            }
             const has = Object.prototype.hasOwnProperty.call(data, key);
             if (!has) {
                 if (strictPresence) {
@@ -4235,7 +4384,7 @@ export const renderutils: RenderUtils = {
     // Surface runtime errors to end users in Preview (not just console)
     showRuntimeError: function(msg, canvas) {
         // Forward to editor console as well
-        sendEditorConsoleLog(coms, msg);
+        coms.log(msg);
         // Create or update a visible error box inside the canvas
         let box = canvas.querySelector('.customjs-error.runtime') as HTMLDivElement | null;
         if (!box) {
@@ -4378,13 +4527,4 @@ export const renderutils: RenderUtils = {
     applyContainerItemFilter: function(host) {
         applyContainerItemFilter(host || null);
     },
-}
-
-
-
-export const expect = <T>(channel: string, ...args: unknown[]) => {
-    return new Promise<T>((resolve) => {
-        coms.once(`${channel}-result`, (payload) => resolve(payload as T));
-        coms.emit(channel, ...args);
-    });
 }
