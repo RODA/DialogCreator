@@ -62,6 +62,7 @@ function run(cmd, args, opts = {}) {
 (async () => {
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
   const base = pkg.build || {};
+  const archArgs = getRequestedArchArgs();
 
   const baseDesktop = base.linux?.desktop || {};
   // electron-builder >= 26 expects linux.desktop.entry instead of freeform keys
@@ -86,6 +87,12 @@ function run(cmd, args, opts = {}) {
     })
   });
 
+  if (archArgs.every((arch) => arch === '--x64')) {
+    linuxConfig.appImage = Object.assign({}, base.appImage, {
+      artifactName: '${productName}_intel.AppImage'
+    });
+  }
+
   // Clean undefined keys (like mac: undefined)
   const cleaned = JSON.parse(JSON.stringify(linuxConfig));
 
@@ -101,7 +108,7 @@ function run(cmd, args, opts = {}) {
   );
 
   // Build only Linux targets, do not publish by default
-  const args = ['--linux', ...getRequestedArchArgs(), '--publish', 'never', '-c', cfgPath];
+  const args = ['--linux', ...archArgs, '--publish', 'never', '-c', cfgPath];
 
   console.log('Using electron-builder config at', cfgPath);
   await run(bin, args, { cwd: root });

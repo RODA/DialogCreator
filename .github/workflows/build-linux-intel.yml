@@ -44,9 +44,6 @@ jobs:
       - name: Build Electron app (Linux intel)
         run: node scripts/build-linux.js --x64
 
-      - name: Rename Linux artifacts
-        run: npm run rename:linux
-
       - name: Confirm target release exists
         if: ${{ inputs.release_tag != '' }}
         shell: bash
@@ -73,6 +70,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          appimage=build/output/DialogCreator_intel.AppImage
+          metadata=build/output/latest-linux.yml
+          test -f "$appimage"
+          test -f "$metadata"
+          files=("$appimage" "$metadata")
+          if [ -f "$appimage.blockmap" ]; then
+            files+=("$appimage.blockmap")
+          fi
+
           if [ "$OVERWRITE_RELEASE_ASSETS" = "true" ]; then
             release_assets=()
             while IFS= read -r asset; do
@@ -80,16 +86,14 @@ jobs:
             done < <(gh release view "$RELEASE_TAG" --repo "$TARGET_REPO" --json assets --jq '.assets[].name')
             for asset in "${release_assets[@]}"; do
               case "$asset" in
-                *.AppImage|latest-linux.yml)
+                DialogCreator_intel.AppImage|DialogCreator_intel.AppImage.blockmap|\
+                DialogCreator_*_x86_64.AppImage|DialogCreator_*_x86_64.AppImage.blockmap|\
+                DialogCreator_*_x64.AppImage|DialogCreator_*_x64.AppImage.blockmap|latest-linux.yml)
                   gh release delete-asset "$RELEASE_TAG" "$asset" --repo "$TARGET_REPO" --yes
                   ;;
               esac
             done
           fi
-          files=(
-            build/output/*.AppImage
-            build/output/latest-linux.yml
-          )
           cmd=(gh release upload "$RELEASE_TAG" --repo "$TARGET_REPO")
           if [ "$OVERWRITE_RELEASE_ASSETS" = "true" ]; then
             cmd+=(--clobber)

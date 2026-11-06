@@ -53,9 +53,8 @@ function writeChecksums() {
   await run.npm('build');
 
   if (isLinux) {
-    // Use the Linux-specific builder to avoid mac config, then rename
+    // Use the Linux-specific builder to avoid mac config
     await run(process.execPath, ['scripts/build-linux.js']);
-    await run.npm('rename:linux');
     await writeChecksums();
     return;
   }
