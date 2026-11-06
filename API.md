@@ -53,6 +53,14 @@ Self-references and direct or transitive cycles are invalid. The editor disables
 
 Absolute positioning remains the default, and new writes omit the five attachment fields for absolute elements. While attached, serialized `left` and `top` retain the authored fallback position; the editor and Preview calculate the visible position. The editor displays that calculated Left/Top as read-only. Choosing **None (absolute)** detaches at the current visible position and stores it as the new absolute Left/Top.
 
+### Label vertical alignment
+
+A Label stores its **V align** setting in the optional `valign` string in `dialog.json`. The values are `top` (default), `middle`, `optical-middle`, and `bottom`.
+
+`optical-middle` centers the visible text as a block after wrapping. The renderer recomputes the shift after translation or a `setValue()` update and estimates the visible prefix on a line with an ellipsis. The shift preserves the label box and the positions calculated from its attachment edges. `anchorAlign` still controls how that box aligns with another control.
+
+DialogForge supports `valign: "optical-middle"` through the shared renderer package starting at version `0.1.1`.
+
 
 ## Scripting API — reference
 

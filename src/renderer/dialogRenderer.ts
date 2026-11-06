@@ -8,6 +8,7 @@ import type { DialogLocaleDictionary } from '../interfaces/dialog';
 import { API_NAMES, createPreviewUI } from '../library/api';
 import { readElementAnchor } from '../core/layout/elementAnchoring';
 import { hasElementAnchor, installElementAnchors, refreshElementAnchors } from '../library/elementAnchoring';
+import { normalizeLabelVAlign } from './labelInk';
 
 export interface DialogRendererHost {
     log(message: string): void;
@@ -651,8 +652,7 @@ export function createDialogRenderer(
                 try {
                     const baseValue = (data as any).__baseValue;
                     const align = String((data as any).align || core.dataset.align || '').toLowerCase();
-                    const valignRaw = String((data as any).valign || core.dataset.valign || 'top').toLowerCase();
-                    const valign = valignRaw === 'top' || valignRaw === 'middle' || valignRaw === 'bottom' ? valignRaw : 'top';
+                    const valign = normalizeLabelVAlign(core.dataset.valign);
                     let anchoredFromBaseValue = false;
                     let baseAnchorY: number | null = null;
                     const translatedValue = core.dataset.value ?? '';
@@ -681,7 +681,7 @@ export function createDialogRenderer(
                         if (translatedHeight > 0) {
                             const nextTop = valign === 'bottom'
                                 ? Math.round(baseAnchorY - translatedHeight)
-                                : valign === 'middle'
+                                : valign === 'middle' || valign === 'optical-middle'
                                     ? Math.round(baseAnchorY - (translatedHeight / 2))
                                     : Math.round(baseAnchorY);
                             wrapper.style.top = `${nextTop}px`;
@@ -1096,6 +1096,9 @@ export function createDialogRenderer(
             const baseValue = wrapper.dataset.__baseValue;
             const translatedValue = wrapper.dataset.value ?? '';
             if (baseValue === undefined || String(baseValue) === String(translatedValue)) {
+                if (normalizeLabelVAlign(wrapper.dataset.valign) === 'optical-middle') {
+                    renderutils.updateLabel(wrapper);
+                }
                 return;
             }
 
@@ -1119,11 +1122,11 @@ export function createDialogRenderer(
 
             const translatedHeight = Math.ceil(wrapper.getBoundingClientRect().height || 0);
             if (baseHeight > 0 && translatedHeight > 0) {
-                const valign = String(wrapper.dataset.valign || 'top').toLowerCase();
+                const valign = normalizeLabelVAlign(wrapper.dataset.valign);
                 let nextTop = baseTop;
                 if (valign === 'bottom') {
                     nextTop = Math.round(baseTop + baseHeight - translatedHeight);
-                } else if (valign === 'middle') {
+                } else if (valign === 'middle' || valign === 'optical-middle') {
                     nextTop = Math.round(baseTop + (baseHeight / 2) - (translatedHeight / 2));
                 }
 

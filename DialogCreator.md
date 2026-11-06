@@ -207,6 +207,8 @@ If the text exceeds the maximum width, it will be truncated with an ellipsis (`.
 
 Like the other individual elements, a Label can use optional [Anchor positioning](#anchor-positioning) to follow another element.
 
+Choose **Optical middle** in **V align** to center the visible text within the label box. The renderer measures the visible lines together and recalculates the shift when the text or language changes. The shift preserves line spacing and the box used by attachments. Choose **Middle** when you want to center the line box and keep a consistent baseline across labels.
+
 ### Separator
 The Separator element is a visual divider used to separate different sections or groups of elements within the dialog.
 

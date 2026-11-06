@@ -14,6 +14,7 @@ import {
     StringNumber
 } from "../interfaces/elements";
 import { rendererEnvironment as coms } from '../renderer/environment';
+import { measureRenderedLabelInk, normalizeLabelVAlign } from '../renderer/labelInk';
 const showError = (message: string): void => coms.reportError(message);
 import { EVENT_NAMES, EventName } from '../library/api';
 import { v4 as uuidv4 } from 'uuid';
@@ -129,14 +130,6 @@ const resolveElementIconSize = (iconSize: unknown, fallback: number): number => 
         return parsed;
     }
     return fallback;
-};
-
-const normalizeLabelVAlign = (value: unknown): 'top' | 'middle' | 'bottom' => {
-    const raw = String(value ?? '').trim().toLowerCase();
-    if (raw === 'top' || raw === 'middle' || raw === 'bottom') {
-        return raw;
-    }
-    return 'top';
 };
 
 const resolveElementTemplate = (typeName: unknown): Record<string, unknown> => {
@@ -3657,6 +3650,18 @@ export const renderutils: RenderUtils = {
                 default:
                     host.style.transform = '';
                     break;
+            }
+        }
+
+        if (valign === 'optical-middle' && textNode && !iconMode && host !== element) {
+            // Move the already-clipped paint in the label's local coordinates.
+            // The wrapper remains the box used by selection and attachments.
+            const hostTop = rotate === 0
+                ? host.getBoundingClientRect().top - element.getBoundingClientRect().top
+                : 0;
+            const ink = measureRenderedLabelInk(host, textNode, Math.max(1, Math.floor(lines)), naturalH, hostTop);
+            if (ink?.offsetY) {
+                host.style.transform = `${host.style.transform} translateY(${ink.offsetY}px)`.trim();
             }
         }
 

@@ -346,6 +346,80 @@ const checkLabelVariations = async function(page, url, measurements) {
     assert.equal(empty.value, "");
 };
 
+const checkOpticalMiddle = async function(page, editor) {
+    const caption = '.element-wrapper[data-nameid="caption"]';
+    const source = {
+        id: "optical-middle-fixture",
+        properties: { name: "OpticalMiddle", title: "Optical middle", width: 450, height: 280, fontSize: 20, language: "en_US" },
+        syntax: {},
+        elements: [
+            { id: "caption", nameid: "caption", type: "Label", value: "gyp", left: 60, top: 60,
+                maxWidth: 120, lineClamp: 2, valign: "middle", isVisible: true, isEnabled: true },
+            { id: "follower", nameid: "follower", type: "Radio", left: 200, top: 60, size: 14,
+                anchorTarget: "caption", anchorPosition: "right", anchorGap: 10, anchorAlign: "middle",
+                isVisible: true, isEnabled: true },
+            { id: "change_caption", nameid: "change_caption", type: "Button", label: "Change caption", left: 60, top: 160,
+                width: 180, height: 30, isVisible: true, isEnabled: true }
+        ],
+        i18n: { baseLocale: "en_US", locales: {
+            en_US: {},
+            el_GR: { "elements.caption.value": "Με μεταβλητές κλειδιά" },
+            fr_FR: { "elements.caption.value": "Étiquetage" }
+        } },
+        customJS: 'onClick(change_caption, () => setValue(caption, "Label"));'
+    };
+    await page.locator("#dialogcreator-browser-file-input").setInputFiles({
+        name: "OpticalMiddle.dc.zip", mimeType: "application/zip", buffer: makePackage(source)
+    });
+    await editor.locator(caption).click();
+    await settle(editor);
+    const middle = await measureLabel(editor, "caption", "follower");
+    await choose(editor, "#elvalign", "optical-middle");
+    assert.equal(await editor.locator(caption).getAttribute("data-valign"), "optical-middle");
+    const optical = await measureLabel(editor, "caption", "follower");
+    assert.deepEqual(optical.wrapper, middle.wrapper, "Optical middle preserves the authored label box");
+    assert.deepEqual(optical.radio, middle.radio, "Optical middle preserves the attached control position");
+    assert.ok(optical.host.top < middle.host.top - 1, "The descenders move the ink upward toward the center");
+
+    await page.getByRole("button", { name: "File", exact: true }).click();
+    await page.locator("#dialogcreator-browser-preview").click();
+    const handle = await editor.locator("#dialogcreator-browser-panel iframe").elementHandle();
+    const preview = await handle.contentFrame();
+    const canvas = preview.locator(".preview-canvas");
+    await canvas.waitFor();
+
+    const checkPaint = async function(expected) {
+        await settle(preview);
+        const label = await measureLabel(preview, "caption", "follower");
+        assert.equal(label.value, expected);
+        near(label.gap, 10, "The follower keeps its gap after optical layout");
+        const png = PNG.sync.read(await canvas.screenshot());
+        const origin = await canvas.evaluate((node) => ({
+            left: node.getBoundingClientRect().left, top: node.getBoundingClientRect().top
+        }));
+        const box = {
+            left: label.wrapper.left - origin.left, right: label.wrapper.right - origin.left,
+            top: label.wrapper.top - origin.top, bottom: label.wrapper.bottom - origin.top
+        };
+        const ink = paintedBounds(png, box);
+        assert.ok(Math.abs((ink.top + ink.bottom - box.top - box.bottom) / 2) <= 1,
+            `${expected}: the painted ink is centered`);
+        return label.host.top - label.wrapper.top;
+    };
+
+    const englishShift = await checkPaint("gyp");
+    for (const [locale, value] of [["el_GR", "Με μεταβλητές κλειδιά"], ["fr_FR", "Étiquetage"], ["en_US", "gyp"]]) {
+        await preview.locator(".preview-language-hover-area").hover();
+        await preview.locator(".preview-language-select").selectOption(locale);
+        await page.mouse.move(1400, 1000);
+        await checkPaint(value);
+    }
+    await preview.locator('.element-wrapper[data-nameid="change_caption"]').click();
+    const changedShift = await checkPaint("Label");
+    assert.ok(Math.abs(changedShift - englishShift) > 1, "setValue recalculates optical centering");
+    await editor.getByRole("button", { name: "Close", exact: true }).click();
+};
+
 const main = async function() {
     const server = await startRenderedWebServer();
     const browser = await chromium.launch();
@@ -359,6 +433,7 @@ const main = async function() {
         await page.frameLocator("#dialogcreator-browser-frame").locator('[data-element-key="inputElement"]').waitFor();
         const editor = page.frames().find((frame) => frame.url().includes("/pages/editor.html"));
         await checkAuthenticDialog(page, editor, measurements);
+        await checkOpticalMiddle(page, editor);
         await checkLabelVariations(page, server.url, measurements);
         assert.deepEqual(errors, []);
         console.log("Rendered wrapped-label anchors passed: real AddVariables UI and multilingual Preview visible geometry.");

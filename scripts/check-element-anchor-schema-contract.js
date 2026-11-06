@@ -37,6 +37,7 @@ const { renderutils } = loadSource(rendererSource, {
     "../modules/dialog": { dialog: {} },
     "../modules/elements": { elements },
     "../renderer/environment": { rendererEnvironment: { reportError() {} } },
+    "../renderer/labelInk": {},
     "../library/api": { EVENT_NAMES: new Set() },
     "../core/layout/elementAnchoring": anchorContract,
     "uuid": {},

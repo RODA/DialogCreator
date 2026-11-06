@@ -383,7 +383,11 @@ export function installElementAnchors(
             const targets = new Set(elements.map((element) => element.dataset.anchorTarget?.trim()));
             elements.filter((element) => {
                 return element.dataset.type === 'Label'
-                    && (hasElementAnchor(element) || targets.has(element.id));
+                    && (
+                        hasElementAnchor(element)
+                        || targets.has(element.id)
+                        || element.dataset.valign === 'optical-middle'
+                    );
             }).forEach(options.updateLabel);
         }
         refresh();
