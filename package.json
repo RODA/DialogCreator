@@ -102,10 +102,10 @@
       }
     },
     "nsis": {
-      "artifactName": "${productName}_Setup_${version}.${ext}"
+      "artifactName": "${productName}_setup_${version}.${ext}"
     },
     "portable": {
-      "artifactName": "${productName}_Portable_${version}.${ext}"
+      "artifactName": "${productName}_portable_${version}.${ext}"
     },
     "mac": {
       "icon": "icons/DialogCreator.icns",
