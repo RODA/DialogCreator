@@ -32,18 +32,18 @@ const forbiddenImports = {
 };
 
 const allowedElectronImportPaths = [
-    path.join("src", "main.ts"),
-    path.join("src", "preload"),
-    path.join("src", "shell-electron")
+    "src/main.ts",
+    "src/preload",
+    "src/shell-electron"
 ];
 
 const sharedFeaturePaths = [
-    path.join("src", "renderer"),
-    path.join("src", "editor"),
-    path.join("src", "preview"),
-    path.join("src", "code-editor"),
-    path.join("src", "defaults"),
-    path.join("src", "syntax-panel")
+    "src/renderer",
+    "src/editor",
+    "src/preview",
+    "src/code-editor",
+    "src/defaults",
+    "src/syntax-panel"
 ];
 
 function normalizeRelative(filePath) {
