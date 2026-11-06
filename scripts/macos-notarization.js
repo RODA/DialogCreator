@@ -1,13 +1,17 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
-const crypto = require('crypto');
-const path = require('path');
 const { spawnSync } = require('child_process');
 const yaml = require('js-yaml');
 const { appBuilderPath } = require('app-builder-bin');
+const {
+    projectRoot,
+    productDetails,
+    requireFile,
+    fileSha512,
+    updaterZipPath
+} = require('./macos-artifacts');
 
-const projectRoot = path.resolve(__dirname, '..');
 const keychainProfile = String(
     process.env.DIALOGCREATOR_NOTARY_PROFILE || 'developer-id-notary'
 ).trim();
@@ -20,29 +24,6 @@ function requireMacOS() {
     if (process.platform !== 'darwin') {
         fail('macOS notarization commands must run on macOS.');
     }
-}
-
-function productDetails() {
-    const packagePath = path.join(projectRoot, 'package.json');
-    const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
-    const productName = String(pkg.build?.productName || pkg.name || 'DialogCreator').trim();
-    const outputDir = path.join(projectRoot, 'build', 'output');
-    const productFileName = productName.replace(/\s+/g, '_');
-
-    return {
-        appPath: path.join(outputDir, 'mac-universal', `${productName}.app`),
-        dmgPath: path.join(outputDir, `${productFileName}_universal.dmg`),
-        latestMacPath: path.join(outputDir, 'latest-mac.yml'),
-        outputDir
-    };
-}
-
-function requireFile(targetPath, label) {
-    if (!fs.existsSync(targetPath)) {
-        fail(`Missing ${label}: ${targetPath}`);
-    }
-
-    return targetPath;
 }
 
 function runCommand(command, args) {
@@ -62,31 +43,6 @@ function runCommand(command, args) {
 
 function runXcrun(args) {
     runCommand('xcrun', args);
-}
-
-function fileSha512(filePath) {
-    return crypto.createHash('sha512')
-        .update(fs.readFileSync(filePath))
-        .digest('base64');
-}
-
-function updaterZipPath(latestMacPath, outputDir) {
-    requireFile(latestMacPath, 'macOS updater metadata');
-    const latest = yaml.load(fs.readFileSync(latestMacPath, 'utf8')) || {};
-    const files = Array.isArray(latest.files) ? latest.files : [];
-    const zipEntry = files.find((entry) => {
-        return /\.zip$/i.test(String(entry?.url || ''));
-    });
-
-    if (!zipEntry) {
-        fail(`No updater ZIP is listed in ${latestMacPath}.`);
-    }
-
-    return {
-        latest,
-        zipEntry,
-        zipPath: path.join(outputDir, String(zipEntry.url))
-    };
 }
 
 function rebuildUpdaterZip(appPath, latestMacPath, outputDir) {
